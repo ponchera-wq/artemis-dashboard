@@ -100,100 +100,128 @@
   const emLine = new THREE.Line(emGeo, new THREE.LineDashedMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, dashSize: 0.25, gapSize: 0.18 }));
   scene.add(emLine);
 
-  // ── Trajectory curve (physically-inspired parametric generation) ──
+  // ── Trajectory curve (physically-accurate Artemis II flight path) ──
   function generateTrajectory() {
     const pts = [];
     const V3 = (x,y,z) => new THREE.Vector3(x,y,z);
     const MOON_X = 8.2;
+    const EARTH_R = 0.9; // Earth sphere radius in scene
 
-    // Phase A: 1.5 elliptical Earth orbits with orbit-raising
-    // Orbit tilted ~15deg to XZ plane for visual depth
-    const TILT = 0.26; // radians
+    // Phase A: 1.5 highly elliptical Earth orbits (1,500 × 46,000 mi)
+    // Keplerian ellipse: r = a(1-e²)/(1+e·cos(θ))
+    // Orbit tilted ~28° (KSC inclination) for visual depth
+    // Apogee oriented toward +X (Moon direction)
+    // Start at θ₀=π (apogee) so after 1.5 orbits we arrive at perigee for TLI
+    const TILT = 0.49; // ~28° inclination
     const ORBITS = 1.5;
-    const ORB_STEPS = 55;
+    const ORB_STEPS = 80;
     for (let i = 0; i <= ORB_STEPS; i++) {
       const f = i / ORB_STEPS;
-      const angle = f * ORBITS * Math.PI * 2;
-      // Semi-axes expand over time (orbit-raising burns)
-      const semiA = 1.2 + f * 1.3;  // 1.2 → 2.5
-      const semiB = 1.1 + f * 0.4;  // 1.1 → 1.5
-      const x = semiB * Math.cos(angle);
-      const rawY = semiA * Math.sin(angle);
-      const y = rawY * Math.sin(TILT);
-      const z = rawY * Math.cos(TILT) * 0.6;
+      const theta = Math.PI + f * ORBITS * Math.PI * 2; // start at apogee
+
+      // Orbit-raising: eccentricity and semi-major axis grow over time
+      // First orbit: smaller (perigee raise), second orbit: full HEO
+      const ecc = 0.55 + f * 0.25;     // 0.55 → 0.80 (highly elliptical)
+      const sma = 1.15 + f * 0.45;     // semi-major axis grows with burns
+
+      const r = sma * (1 - ecc * ecc) / (1 + ecc * Math.cos(theta));
+
+      // Apogee at θ=π → cos(π)=-1 → r=a(1+e) → points toward +X
+      // Perigee at θ=0 → cos(0)=1 → r=a(1-e) → points toward -X (near Earth)
+      const localX = -r * Math.cos(theta); // flip so apogee → +X
+      const localY = r * Math.sin(theta);
+
+      // Apply orbital tilt
+      const x = localX;
+      const y = localY * Math.sin(TILT);
+      const z = localY * Math.cos(TILT) * 0.55;
       pts.push(V3(x, y, z));
     }
 
-    // Phase B: TLI departure — tangent from last orbit blending toward Moon
+    // Phase B: TLI departure — tangent from perigee, smooth acceleration moonward
     const lastOrb = pts[pts.length - 1].clone();
     const prevOrb = pts[pts.length - 2].clone();
     const tangent = lastOrb.clone().sub(prevOrb).normalize();
-    const moonDir = V3(MOON_X, 0.5, 0).sub(lastOrb).normalize();
-    const TLI_STEPS = 10;
+    const moonTarget = V3(MOON_X, 1.6, 0); // aim above Moon for outbound arc
+    const moonDir = moonTarget.clone().sub(lastOrb).normalize();
+    const TLI_STEPS = 15;
     let tliPos = lastOrb.clone();
     for (let i = 1; i <= TLI_STEPS; i++) {
       const f = i / TLI_STEPS;
-      // Ease-in blend from tangent to moon direction
-      const eased = f * f;
+      // Smooth cubic ease-in blend from orbital tangent to Moon direction
+      const eased = f * f * f;
       const dir = tangent.clone().lerp(moonDir, eased).normalize();
-      const step = 0.25 + f * 0.45;
+      const step = 0.18 + f * 0.55; // accelerating steps (TLI boost)
       tliPos = tliPos.clone().add(dir.multiplyScalar(step));
       pts.push(tliPos.clone());
     }
 
-    // Phase C: Outbound transfer arc (quadratic Bezier above Earth-Moon line)
+    // Phase C: Outbound coast arc — curves ABOVE Earth-Moon line
+    // Cubic Bezier for smooth, realistic transfer orbit
     const outStart = pts[pts.length - 1].clone();
-    const outMid = V3(4.5, 1.4, 0.3);
-    const outEnd = V3(7.6, 0.7, -0.15);
-    const OUT_STEPS = 25;
+    const outP1 = V3(3.2, 2.2, 0.3);   // high above E-M line early
+    const outP2 = V3(5.8, 2.0, -0.1);  // still high, curving toward Moon
+    const outEnd = V3(7.5, 0.8, -0.2);  // approach Moon from above-behind
+    const OUT_STEPS = 30;
     for (let i = 1; i <= OUT_STEPS; i++) {
       const t = i / OUT_STEPS;
       const mt = 1 - t;
-      // Quadratic Bezier
-      const x = mt*mt*outStart.x + 2*mt*t*outMid.x + t*t*outEnd.x;
-      const y = mt*mt*outStart.y + 2*mt*t*outMid.y + t*t*outEnd.y;
-      const z = mt*mt*outStart.z + 2*mt*t*outMid.z + t*t*outEnd.z;
+      // Cubic Bezier: P = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
+      const x = mt*mt*mt*outStart.x + 3*mt*mt*t*outP1.x + 3*mt*t*t*outP2.x + t*t*t*outEnd.x;
+      const y = mt*mt*mt*outStart.y + 3*mt*mt*t*outP1.y + 3*mt*t*t*outP2.y + t*t*t*outEnd.y;
+      const z = mt*mt*mt*outStart.z + 3*mt*mt*t*outP1.z + 3*mt*t*t*outP2.z + t*t*t*outEnd.z;
       pts.push(V3(x, y, z));
     }
 
-    // Phase D: Lunar flyby — hyperbolic pass behind Moon (far side = X > MOON_X)
-    const FLYBY_STEPS = 22;
-    const closest = 0.7; // closest approach distance from Moon center
+    // Phase D: Lunar flyby — tight hyperbolic swing behind the far side
+    // Closest approach ~0.55 from Moon center (Moon radius=0.46, so ~4,100 mi above surface)
+    // Hyperbolic trajectory: r = p/(1 + e·cos(θ)), e > 1
+    const FLYBY_STEPS = 25;
+    const flybyE = 1.8;     // hyperbolic eccentricity
+    const flybyP = 0.42;    // semi-latus rectum (controls closest approach)
+    // Sweep from above (+Y approach) around behind Moon to below (-Y departure)
+    const flybyAngleStart = -1.6;  // approach from outbound side
+    const flybyAngleEnd = 1.6;     // depart toward return side
     for (let i = 0; i <= FLYBY_STEPS; i++) {
       const f = i / FLYBY_STEPS;
-      // Sweep from approach angle to departure angle (wrapping behind Moon)
-      const angle = -0.9 + f * 2.2; // -0.9 to 1.3 radians
-      // Hyperbolic-like radius: tightest at angle=0
-      const r = closest + 0.35 * angle * angle;
-      // "Behind" Moon means going to X > MOON_X
-      const x = MOON_X + r * Math.cos(angle + Math.PI);
-      const y = r * Math.sin(angle + Math.PI) * 0.65;
-      const z = -0.2 - 0.18 * Math.sin(angle);
+      const angle = flybyAngleStart + f * (flybyAngleEnd - flybyAngleStart);
+      const r = flybyP / (1 + flybyE * Math.cos(angle));
+      // Rotate so closest approach is behind Moon (+X from Moon center)
+      // and trajectory goes from above to below
+      const localX = r * Math.cos(angle);
+      const localY = r * Math.sin(angle);
+      const x = MOON_X + localX * 0.7 + Math.abs(localY) * 0.3; // push behind Moon
+      const y = localY * 0.75;  // above-to-below sweep
+      const z = -0.2 - 0.15 * Math.sin(angle * 0.8);
       pts.push(V3(x, y, z));
     }
 
-    // Phase E: Return arc (Bezier below Earth-Moon line — offset from outbound)
+    // Phase E: Return arc — curves BELOW Earth-Moon line (visibly separated from outbound)
+    // Cubic Bezier for smooth return trajectory
     const retStart = pts[pts.length - 1].clone();
-    const retMid = V3(4.2, -1.5, 0.15);
-    const retEnd = V3(0.8, -0.5, 0.05);
-    const RET_STEPS = 25;
+    const retP1 = V3(5.5, -2.1, 0.15);  // deep below E-M line
+    const retP2 = V3(2.8, -1.9, 0.2);   // still below, curving toward Earth
+    const retEnd = V3(0.7, -0.45, 0.08); // approach Earth from below
+    const RET_STEPS = 30;
     for (let i = 1; i <= RET_STEPS; i++) {
       const t = i / RET_STEPS;
       const mt = 1 - t;
-      const x = mt*mt*retStart.x + 2*mt*t*retMid.x + t*t*retEnd.x;
-      const y = mt*mt*retStart.y + 2*mt*t*retMid.y + t*t*retEnd.y;
-      const z = mt*mt*retStart.z + 2*mt*t*retMid.z + t*t*retEnd.z;
+      const x = mt*mt*mt*retStart.x + 3*mt*mt*t*retP1.x + 3*mt*t*t*retP2.x + t*t*t*retEnd.x;
+      const y = mt*mt*mt*retStart.y + 3*mt*mt*t*retP1.y + 3*mt*t*t*retP2.y + t*t*t*retEnd.y;
+      const z = mt*mt*mt*retStart.z + 3*mt*mt*t*retP1.z + 3*mt*t*t*retP2.z + t*t*t*retEnd.z;
       pts.push(V3(x, y, z));
     }
 
-    // Phase F: Re-entry — deceleration arc spiraling to Earth surface
+    // Phase F: Re-entry — skip re-entry trajectory to Earth surface
     const reStart = pts[pts.length - 1].clone();
-    const RE_STEPS = 8;
+    const RE_STEPS = 10;
     for (let i = 1; i <= RE_STEPS; i++) {
       const f = i / RE_STEPS;
-      const eased = f * f; // ease-in toward Earth
-      const x = reStart.x * (1 - eased);
-      const y = reStart.y * (1 - eased) - f * 0.15;
+      const eased = f * f;
+      // Curve toward Earth with slight skip bounce at ~60%
+      const skip = (f > 0.5 && f < 0.75) ? 0.08 * Math.sin((f - 0.5) / 0.25 * Math.PI) : 0;
+      const x = reStart.x * (1 - eased) * 0.95;
+      const y = reStart.y * (1 - eased) - f * 0.12 + skip;
       const z = reStart.z * (1 - eased);
       pts.push(V3(x, y, z));
     }
@@ -235,38 +263,38 @@
   scene.add(new THREE.Line(activeSegGeo, activeSegMat));
 
   // ── Waypoints ──
-  // t values mapped to parametric curve phases:
-  //   0.00-0.20 = Earth orbits (55 ctrl pts), 0.20-0.28 = TLI departure,
-  //   0.28-0.52 = outbound coast, 0.52-0.68 = lunar flyby,
-  //   0.68-0.92 = return arc, 0.92-1.0 = re-entry
+  // t values mapped to parametric curve phases (192 control points total):
+  //   0.000-0.417 = Earth orbits (81 pts), 0.417-0.495 = TLI departure (15 pts),
+  //   0.495-0.651 = outbound coast (30 pts), 0.651-0.786 = lunar flyby (26 pts),
+  //   0.786-0.943 = return arc (30 pts), 0.943-1.0 = re-entry (10 pts)
   const WAYPOINTS = [
     // ── DAY 1: LAUNCH & ASCENT ──
     { t:0.000, label:'LAUNCH',            met:'T+00:00:00', metSec:0,      desc:'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.', crit:'CRITICAL', status:'nominal', activeWin:600 },
     { t:0.010, label:'SRB SEP',           met:'T+00:02:12', metSec:132,    desc:'Solid Rocket Boosters separate after burning 5.5 million pounds of propellant.', crit:'CRITICAL', status:'nominal', activeWin:600 },
     { t:0.020, label:'CORE MECO',         met:'T+00:08:06', metSec:486,    desc:'Core stage main engine cutoff. Core stage separates from ICPS upper stage.', crit:'HIGH', status:'nominal', activeWin:600 },
-    { t:0.035, label:'SOLAR ARRAYS',      met:'T+00:18:00', metSec:1080,   desc:'Orion solar arrays deploy, providing electrical power to the spacecraft.', crit:'HIGH', status:'nominal', activeWin:900 },
-    { t:0.065, label:'PERIGEE RAISE',     met:'T+00:49:00', metSec:2940,   desc:'ICPS fires to raise perigee altitude, setting up for apogee raise.', crit:'HIGH', status:'nominal', activeWin:900 },
-    { t:0.100, label:'APOGEE RAISE',      met:'T+01:30:00', metSec:5400,   desc:'ICPS second burn raises apogee to high elliptical orbit.', crit:'HIGH', status:'nominal', activeWin:900 },
-    { t:0.140, label:'ICPS SEP',          met:'T+02:00:00', metSec:7200,   desc:'ICPS upper stage separates. Orion is now free-flying.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+    { t:0.040, label:'SOLAR ARRAYS',      met:'T+00:18:00', metSec:1080,   desc:'Orion solar arrays deploy, providing electrical power to the spacecraft.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.070, label:'PERIGEE RAISE',     met:'T+00:49:00', metSec:2940,   desc:'ICPS fires to raise perigee altitude, setting up for apogee raise.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.120, label:'APOGEE RAISE',      met:'T+01:30:00', metSec:5400,   desc:'ICPS second burn raises apogee to high elliptical orbit.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.180, label:'ICPS SEP',          met:'T+02:00:00', metSec:7200,   desc:'ICPS upper stage separates. Orion is now free-flying.', crit:'CRITICAL', status:'nominal', activeWin:600 },
     // ── DAY 1-2: EARTH ORBIT ──
-    { t:0.175, label:'PROX OPS',          met:'T+02:30:00', metSec:9000,   desc:'Proximity operations demo \u2014 Orion maneuvers near separated ICPS.', crit:'HIGH', status:'nominal', activeWin:7200 },
+    { t:0.220, label:'PROX OPS',          met:'T+02:30:00', metSec:9000,   desc:'Proximity operations demo \u2014 Orion maneuvers near separated ICPS.', crit:'HIGH', status:'nominal', activeWin:7200 },
     // ── DAY 2: TLI ──
-    { t:0.230, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
+    { t:0.430, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
     // ── DAY 3-4: OUTBOUND COAST ──
-    { t:0.350, label:'TCB-1',             met:'T+52:00:00', metSec:187200, desc:'Outbound trajectory correction burn 1 \u2014 fine-tunes course toward the Moon.', crit:'HIGH', status:'nominal', activeWin:900 },
-    { t:0.420, label:'O2O LASER',         met:'T+80:00:00', metSec:288000, desc:'Optical to Orion laser comms test \u2014 4K video downlink via laser from deep space.', crit:'HIGH', status:'nominal', activeWin:7200 },
+    { t:0.540, label:'TCB-1',             met:'T+52:00:00', metSec:187200, desc:'Outbound trajectory correction burn 1 \u2014 fine-tunes course toward the Moon.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.590, label:'O2O LASER',         met:'T+80:00:00', metSec:288000, desc:'Optical to Orion laser comms test \u2014 4K video downlink via laser from deep space.', crit:'HIGH', status:'nominal', activeWin:7200 },
     // ── DAY 5-6: LUNAR FLYBY ──
-    { t:0.490, label:'LUNAR SOI',         met:'T+100:00:00',metSec:360000, desc:'Orion enters the Moon\u2019s gravitational sphere of influence.', crit:'HIGH', status:'nominal', activeWin:7200 },
-    { t:0.580, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Breaks Apollo 13\u2019s distance record of 400,171 km.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
-    { t:0.610, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
-    { t:0.640, label:'SIGNAL ACQ',        met:'T+129:11:00',metSec:465060, desc:'Signal reacquired after far-side pass. Crew reports status.', crit:'HIGH', status:'nominal', activeWin:1800 },
+    { t:0.640, label:'LUNAR SOI',         met:'T+100:00:00',metSec:360000, desc:'Orion enters the Moon\u2019s gravitational sphere of influence.', crit:'HIGH', status:'nominal', activeWin:7200 },
+    { t:0.715, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Breaks Apollo 13\u2019s distance record of 400,171 km.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
+    { t:0.730, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
+    { t:0.750, label:'SIGNAL ACQ',        met:'T+129:11:00',metSec:465060, desc:'Signal reacquired after far-side pass. Crew reports status.', crit:'HIGH', status:'nominal', activeWin:1800 },
     // ── DAY 7-9: RETURN ──
-    { t:0.740, label:'RETURN TCB',        met:'T+150:00:00',metSec:540000, desc:'Return trajectory correction burn \u2014 targets Pacific Ocean splashdown zone.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.850, label:'RETURN TCB',        met:'T+150:00:00',metSec:540000, desc:'Return trajectory correction burn \u2014 targets Pacific Ocean splashdown zone.', crit:'HIGH', status:'nominal', activeWin:900 },
     // ── DAY 10: ENTRY & SPLASHDOWN ──
-    { t:0.920, label:'SM SEP',            met:'T+228:00:00',metSec:820800, desc:'Service module separates. Only crew module continues to re-entry.', crit:'CRITICAL', status:'nominal', activeWin:600 },
-    { t:0.940, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Atmospheric entry at 40,000 km/h. Heat shield reaches 2,800\u00b0C during skip re-entry.', crit:'CRITICAL', status:'nominal', activeWin:1800 },
-    { t:0.960, label:'PEAK HEATING',      met:'T+228:45:00',metSec:823500, desc:'Peak heating \u2014 heat shield surface reaches 2,800\u00b0C.', crit:'CRITICAL', status:'nominal', activeWin:600 },
-    { t:0.980, label:'CHUTES',            met:'T+229:05:00',metSec:824700, desc:'Main parachutes deploy at ~7,600m altitude, slowing Orion to ~30 km/h.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+    { t:0.950, label:'SM SEP',            met:'T+228:00:00',metSec:820800, desc:'Service module separates. Only crew module continues to re-entry.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+    { t:0.965, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Atmospheric entry at 40,000 km/h. Heat shield reaches 2,800\u00b0C during skip re-entry.', crit:'CRITICAL', status:'nominal', activeWin:1800 },
+    { t:0.975, label:'PEAK HEATING',      met:'T+228:45:00',metSec:823500, desc:'Peak heating \u2014 heat shield surface reaches 2,800\u00b0C.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+    { t:0.988, label:'CHUTES',            met:'T+229:05:00',metSec:824700, desc:'Main parachutes deploy at ~7,600m altitude, slowing Orion to ~30 km/h.', crit:'CRITICAL', status:'nominal', activeWin:600 },
     { t:0.997, label:'SPLASHDOWN',        met:'T+229:10:00',metSec:825000, desc:'Orion splashes down in the Pacific Ocean. Recovery by USS Portland.', crit:'CRITICAL', status:'nominal', activeWin:600 },
   ];
 
@@ -794,4 +822,201 @@
     }
   }
   animate();
+
+  // ── Telemetry HUD update logic ──────────────────────────────────────
+  const hudEl = document.getElementById('traj-hud');
+  const hudToggle = document.getElementById('hud-toggle');
+  let hudVisible = true;
+  if (hudToggle) {
+    hudToggle.addEventListener('click', () => {
+      hudVisible = !hudVisible;
+      hudEl.classList.toggle('collapsed', !hudVisible);
+      hudToggle.classList.toggle('collapsed', !hudVisible);
+      hudToggle.innerHTML = hudVisible ? '&#9666;' : '&#9656;';
+    });
+  }
+
+  // Physical constants
+  const EARTH_DIAM_KM = 12742;
+  const MOON_DIAM_KM = 3474;
+  const SPEED_OF_LIGHT_KMS = 299792.458;
+  const KM_TO_MI = 0.621371;
+
+  // Delta-V budget per phase (m/s remaining, from NASA press kit estimates)
+  const DV_BUDGET = [
+    { metSec: 0,      dv: 3900 },  // total mission budget
+    { metSec: 2940,   dv: 3700 },  // after perigee raise
+    { metSec: 5400,   dv: 3400 },  // after apogee raise
+    { metSec: 90000,  dv: 1600 },  // after TLI
+    { metSec: 187200, dv: 1500 },  // after TCB-1
+    { metSec: 540000, dv: 800 },   // after return TCB
+    { metSec: 820800, dv: 50 },    // after SM sep (RCS only)
+    { metSec: 825000, dv: 0 },     // splashdown
+  ];
+
+  // Eccentricity lookup by mission phase
+  const ECC_PHASES = [
+    { metSec: 0,      ecc: 0.01 },   // LEO circular
+    { metSec: 2940,   ecc: 0.35 },   // perigee raise
+    { metSec: 5400,   ecc: 0.80 },   // HEO
+    { metSec: 90000,  ecc: 0.97 },   // TLI hyperbolic departure
+    { metSec: 360000, ecc: 1.20 },   // lunar approach (hyperbolic)
+    { metSec: 460800, ecc: 1.80 },   // closest approach (hyperbolic flyby)
+    { metSec: 540000, ecc: 0.97 },   // return coast
+    { metSec: 820800, ecc: 0.98 },   // re-entry
+  ];
+
+  function lerpTable(table, key, val) {
+    if (val <= table[0][key]) return table[0];
+    if (val >= table[table.length-1][key]) return table[table.length-1];
+    for (let i = 1; i < table.length; i++) {
+      if (val <= table[i][key]) {
+        const f = (val - table[i-1][key]) / (table[i][key] - table[i-1][key]);
+        const result = {};
+        for (const k in table[i]) {
+          if (k === key) { result[k] = val; continue; }
+          result[k] = table[i-1][k] + (table[i][k] - table[i-1][k]) * f;
+        }
+        return result;
+      }
+    }
+    return table[table.length-1];
+  }
+
+  const _hudFmt = new Intl.NumberFormat('en-US');
+
+  function tickHUD() {
+    if (!hudEl) return;
+    const ds = window.dashboardState || {};
+    const isImp = ds.useImperial !== false;
+    const elapsed = Date.now() - LAUNCH_UTC;
+    const metSec = elapsed / 1000;
+    const metMin = metSec / 60;
+
+    // Read telemetry from DOM (already computed by stats.js)
+    const earthStr = document.getElementById('tv-earth')?.textContent?.trim() || '';
+    const moonStr = document.getElementById('tv-moon')?.textContent?.trim() || '';
+    const speedStr = document.getElementById('tv-speed')?.textContent?.trim() || '';
+    const earthUnit = document.getElementById('tu-earth')?.textContent || 'MI';
+    const speedUnit = document.getElementById('tu-speed')?.textContent || 'MPH';
+
+    // Parse numeric values (remove commas)
+    const earthVal = parseFloat(earthStr.replace(/,/g, '')) || 0;
+    const moonVal = parseFloat(moonStr.replace(/,/g, '')) || 0;
+    const speedVal = parseFloat(speedStr.replace(/,/g, '')) || 0;
+
+    // Convert to km for calculations
+    const earthKm = earthUnit === 'MI' ? earthVal / KM_TO_MI : earthVal;
+    const moonKm = earthUnit === 'MI' ? moonVal / KM_TO_MI : moonVal;
+
+    // Altitude & Velocity
+    const altEl = document.getElementById('hud-alt');
+    const velEl = document.getElementById('hud-vel');
+    if (altEl) altEl.textContent = earthStr ? earthStr + ' ' + earthUnit.toLowerCase() : '\u2014';
+    if (velEl) velEl.textContent = speedStr ? speedStr + ' ' + speedUnit.toLowerCase() : '\u2014';
+
+    // Eccentricity
+    const eccEl = document.getElementById('hud-ecc');
+    if (eccEl) {
+      const eccData = lerpTable(ECC_PHASES, 'metSec', metSec);
+      eccEl.textContent = eccData.ecc.toFixed(3);
+    }
+
+    // Position
+    const hudEarth = document.getElementById('hud-earth');
+    const hudMoon = document.getElementById('hud-moon');
+    if (hudEarth) hudEarth.textContent = earthStr ? earthStr + ' ' + earthUnit.toLowerCase() : '\u2014';
+    if (hudMoon) hudMoon.textContent = moonStr ? moonStr + ' ' + earthUnit.toLowerCase() : '\u2014';
+
+    // Round-trip light time
+    const rtlEl = document.getElementById('hud-rtl');
+    if (rtlEl && earthKm > 0) {
+      const rtlSec = (earthKm * 2) / SPEED_OF_LIGHT_KMS;
+      rtlEl.textContent = rtlSec < 1 ? (rtlSec * 1000).toFixed(0) + ' ms' : rtlSec.toFixed(2) + ' s';
+    }
+
+    // Angular sizes from Orion's viewpoint
+    const esizeEl = document.getElementById('hud-esize');
+    const msizeEl = document.getElementById('hud-msize');
+    if (esizeEl && earthKm > 100) {
+      const angEarth = 2 * Math.atan2(EARTH_DIAM_KM / 2, earthKm) * (180 / Math.PI);
+      esizeEl.textContent = angEarth >= 1 ? angEarth.toFixed(1) + '\u00b0' : (angEarth * 60).toFixed(1) + "'";
+    }
+    if (msizeEl && moonKm > 100) {
+      const angMoon = 2 * Math.atan2(MOON_DIAM_KM / 2, moonKm) * (180 / Math.PI);
+      msizeEl.textContent = angMoon >= 1 ? angMoon.toFixed(1) + '\u00b0' : (angMoon * 60).toFixed(1) + "'";
+    }
+
+    // DSN station
+    const dsnEl = document.getElementById('hud-dsn');
+    if (dsnEl) dsnEl.textContent = ds.dsnStation || 'ACQUIRING';
+
+    // LOS countdown (far-side LOS at T+128:30:00 = 462600s, duration ~41 min)
+    const losEl = document.getElementById('hud-los');
+    if (losEl) {
+      const losStart = 462600, losDur = 2460;
+      if (metSec < losStart) {
+        const rem = losStart - metSec;
+        const hh = Math.floor(rem / 3600); const mm = Math.floor((rem % 3600) / 60);
+        losEl.textContent = hh > 0 ? hh + 'h ' + mm + 'm' : mm + 'm';
+        if (rem < 7200) losEl.className = 'hud-val warn';
+        else losEl.className = 'hud-val';
+      } else if (metSec < losStart + losDur) {
+        losEl.textContent = 'BLACKOUT';
+        losEl.className = 'hud-val crit';
+      } else {
+        losEl.textContent = 'CLEAR';
+        losEl.className = 'hud-val good';
+      }
+    }
+
+    // Environment
+    const kpEl = document.getElementById('hud-kp');
+    if (kpEl) {
+      const kp = ds.kpIndex;
+      if (kp !== null && kp !== undefined) {
+        kpEl.textContent = kp;
+        kpEl.className = kp >= 5 ? 'hud-val crit' : kp >= 4 ? 'hud-val warn' : 'hud-val good';
+      }
+    }
+    const solarEl = document.getElementById('hud-solar');
+    if (solarEl) {
+      const sw = ds.solarWind;
+      if (sw !== null && sw !== undefined) {
+        solarEl.textContent = sw + ' km/s';
+        solarEl.className = sw >= 600 ? 'hud-val warn' : 'hud-val';
+      }
+    }
+
+    // Mission
+    const phaseEl = document.getElementById('hud-phase');
+    if (phaseEl) {
+      const phaseName = document.getElementById('current-phase-name')?.textContent?.trim() || '\u2014';
+      phaseEl.textContent = phaseName;
+    }
+    const dayEl = document.getElementById('hud-day');
+    if (dayEl) {
+      const fd = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1);
+      dayEl.textContent = fd + ' of 10';
+    }
+    const nextEl = document.getElementById('hud-next');
+    if (nextEl) {
+      if (ds.nextEvent) {
+        const short = ds.nextEvent.length > 10 ? ds.nextEvent.slice(0, 10) : ds.nextEvent;
+        nextEl.textContent = short + (ds.nextEventEta ? ' ' + ds.nextEventEta : '');
+        nextEl.title = ds.nextEvent + (ds.nextEventEta ? ' in ' + ds.nextEventEta : '');
+      }
+    }
+
+    // Delta-V remaining
+    const dvEl = document.getElementById('hud-dv');
+    if (dvEl) {
+      const dvData = lerpTable(DV_BUDGET, 'metSec', metSec);
+      dvEl.textContent = Math.round(dvData.dv) + ' m/s';
+      dvEl.className = dvData.dv < 100 ? 'hud-val warn' : 'hud-val';
+    }
+  }
+
+  tickHUD();
+  setInterval(tickHUD, 2000);
 })();

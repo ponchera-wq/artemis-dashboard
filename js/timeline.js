@@ -131,6 +131,10 @@
         tln.innerHTML =
           `<div><span class="tl-next-label">NEXT: </span>${nextEv.name}</div>` +
           `<div class="tl-next-when">in ${countStr} \u00b7 ${localWhen}</div>`;
+        if (window.dashboardState) {
+          window.dashboardState.nextEvent = nextEv.name;
+          window.dashboardState.nextEventEta = countStr;
+        }
       } else { tln.textContent = ''; }
     }
 

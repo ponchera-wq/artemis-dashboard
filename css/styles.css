@@ -1917,3 +1917,96 @@
       .size-btn { display: none; }
       #reset-layout-btn { display: none; }
     }
+
+/* ── Trajectory HUD Panel ────────────────────────────────────────────── */
+.traj-hud {
+  position: absolute;
+  top: 38px;
+  left: 6px;
+  width: 172px;
+  max-height: calc(100% - 52px);
+  overflow-y: auto;
+  background: rgba(4, 8, 18, 0.82);
+  border: 1px solid rgba(74, 144, 217, 0.22);
+  border-radius: 3px;
+  z-index: 4;
+  font-family: 'Share Tech Mono', monospace;
+  padding: 4px 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74,144,217,0.25) transparent;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.traj-hud::-webkit-scrollbar { width: 3px; }
+.traj-hud::-webkit-scrollbar-track { background: transparent; }
+.traj-hud::-webkit-scrollbar-thumb { background: rgba(74,144,217,0.25); border-radius: 2px; }
+.traj-hud.collapsed {
+  transform: translateX(calc(-100% - 8px));
+  opacity: 0;
+  pointer-events: none;
+}
+.hud-toggle {
+  position: absolute;
+  top: 38px;
+  left: 182px;
+  z-index: 5;
+  width: 20px;
+  height: 28px;
+  background: rgba(4, 8, 18, 0.82);
+  border: 1px solid rgba(74, 144, 217, 0.3);
+  border-radius: 0 3px 3px 0;
+  color: rgba(74, 144, 217, 0.7);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: 'Share Tech Mono', monospace;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.hud-toggle:hover { border-color: #4A90D9; color: #fff; }
+.hud-toggle.collapsed { left: 6px; border-radius: 3px; }
+.hud-section {
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(74, 144, 217, 0.10);
+}
+.hud-section:last-child { border-bottom: none; }
+.hud-section-label {
+  font-size: 7.5px;
+  color: rgba(74, 144, 217, 0.50);
+  letter-spacing: 0.14em;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+}
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 9.5px;
+  line-height: 1.55;
+  gap: 6px;
+}
+.hud-key {
+  color: rgba(168, 212, 255, 0.40);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.hud-val {
+  color: #a8d4ff;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-val.warn { color: var(--amber); }
+.hud-val.crit { color: #ef5350; }
+.hud-val.good { color: #00e676; }
+
+@media (max-width: 767px) {
+  .traj-hud { display: none; }
+  .hud-toggle { display: none; }
+}

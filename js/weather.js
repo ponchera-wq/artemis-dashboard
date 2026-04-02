@@ -72,6 +72,7 @@ async function fetchSpaceWeather() {
       ? last.Kp
       : parseFloat(last[1]);
     updateKpGauge(kp);
+    if (window.dashboardState) window.dashboardState.kpIndex = kp;
   } catch (e) { console.warn('Kp fetch:', e); }
 
   // 2. X-ray flares
@@ -88,6 +89,7 @@ async function fetchSpaceWeather() {
       badgeEl.style.textShadow = `0 0 14px ${color}88`;
       labelEl.textContent  = xrayDesc(cls);
       labelEl.style.color  = color;
+      if (window.dashboardState) window.dashboardState.xrayFlux = cls || 'QUIET';
     } else {
       badgeEl.textContent  = 'QUIET';
       badgeEl.style.color  = '#00e676';
@@ -112,6 +114,7 @@ async function fetchSpaceWeather() {
       speedEl.textContent = Math.round(latest);
       trendEl.textContent = trend;
       trendEl.style.color = tColor;
+      if (window.dashboardState) window.dashboardState.solarWind = Math.round(latest);
     }
   } catch (e) { console.warn('Wind fetch:', e); }
 

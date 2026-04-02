@@ -32,5 +32,12 @@ window.dashboardState = {
   KM_TO_MI: 0.621371,
   usingLive: false,
   currentPhase: null,
-  elapsed: 0
+  elapsed: 0,
+  // Cross-module HUD data (set by respective modules)
+  dsnStation: null,
+  kpIndex: null,
+  xrayFlux: null,
+  solarWind: null,
+  nextEvent: null,
+  nextEventEta: null
 };

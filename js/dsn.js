@@ -263,6 +263,13 @@
     const el    = document.getElementById('dsn-content');
     const badge = document.getElementById('dsn-badge');
     if (!el) return;
+    // Expose active DSN station to HUD
+    if (links.length > 0 && window.dashboardState) {
+      const si = STATIONS[links[0].station] || { name: links[0].station };
+      window.dashboardState.dsnStation = si.name + ' ' + links[0].dish;
+    } else if (window.dashboardState) {
+      window.dashboardState.dsnStation = null;
+    }
     badge.textContent = isLive ? '● LIVE' : '● EST';
     badge.className   = isLive ? 'news-live-badge' : 'news-live-badge dsn-badge-est';
     badge.style.marginLeft = 'auto';

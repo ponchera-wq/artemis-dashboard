@@ -203,6 +203,42 @@
     <div id="trajectory-3d" style="flex:1;width:100%;min-height:0;position:relative;overflow:hidden;">
       <div id="traj-progress" style="position:absolute;bottom:7px;left:9px;font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(74,144,217,0.9);pointer-events:none;z-index:2;letter-spacing:0.05em;"></div>
       <div id="traj-tooltip" style="position:absolute;top:0;left:0;background:rgba(8,12,26,0.88);border:1px solid rgba(74,144,217,0.55);padding:3px 9px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#a8d4ff;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:3;white-space:nowrap;border-radius:2px;"></div>
+      <!-- Telemetry HUD overlay -->
+      <div id="traj-hud" class="traj-hud">
+        <div class="hud-section">
+          <div class="hud-section-label">ORBITAL MECHANICS</div>
+          <div class="hud-row"><span class="hud-key">ALT</span><span class="hud-val" id="hud-alt">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">VEL</span><span class="hud-val" id="hud-vel">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">ECC</span><span class="hud-val" id="hud-ecc">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">INC</span><span class="hud-val" id="hud-inc">28.5&deg;</span></div>
+        </div>
+        <div class="hud-section">
+          <div class="hud-section-label">POSITION</div>
+          <div class="hud-row"><span class="hud-key">EARTH</span><span class="hud-val" id="hud-earth">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">MOON</span><span class="hud-val" id="hud-moon">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">RTL</span><span class="hud-val" id="hud-rtl">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">&oplus; SIZE</span><span class="hud-val" id="hud-esize">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">&#9789; SIZE</span><span class="hud-val" id="hud-msize">&mdash;</span></div>
+        </div>
+        <div class="hud-section">
+          <div class="hud-section-label">COMMS</div>
+          <div class="hud-row"><span class="hud-key">DSN</span><span class="hud-val" id="hud-dsn">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">LOS</span><span class="hud-val" id="hud-los">&mdash;</span></div>
+        </div>
+        <div class="hud-section">
+          <div class="hud-section-label">ENVIRONMENT</div>
+          <div class="hud-row"><span class="hud-key">Kp</span><span class="hud-val" id="hud-kp">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">SOLAR</span><span class="hud-val" id="hud-solar">&mdash;</span></div>
+        </div>
+        <div class="hud-section">
+          <div class="hud-section-label">MISSION</div>
+          <div class="hud-row"><span class="hud-key">PHASE</span><span class="hud-val" id="hud-phase">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">DAY</span><span class="hud-val" id="hud-day">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">NEXT</span><span class="hud-val" id="hud-next">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">&Delta;v REM</span><span class="hud-val" id="hud-dv">&mdash;</span></div>
+        </div>
+      </div>
+      <button id="hud-toggle" class="hud-toggle" title="Toggle telemetry HUD">&#9666;</button>
     </div>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
