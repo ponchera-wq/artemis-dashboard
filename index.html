@@ -533,16 +533,16 @@
       border-left: 3px solid transparent;
     }
     .tl-event.tl-complete { border-left-color: var(--green); }
-    .tl-event.tl-active   { border-left-color: var(--accent-light); background: rgba(74,144,217,0.07); }
+    .tl-event.tl-active   { border-left-color: var(--amber); background: rgba(255,167,38,0.06); }
     .tl-event.tl-upcoming { border-left-color: rgba(74,144,217,0.18); }
     .tl-dot {
       width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 4px;
     }
     .tl-event.tl-complete .tl-dot { background: var(--green); }
-    .tl-event.tl-active   .tl-dot { background: var(--accent-light); animation: tl-pulse 1.3s ease-in-out infinite; }
+    .tl-event.tl-active   .tl-dot { background: var(--amber); animation: tl-pulse 1.3s ease-in-out infinite; }
     .tl-event.tl-upcoming .tl-dot { background: rgba(74,144,217,0.28); }
     @keyframes tl-pulse {
-      0%, 100% { box-shadow: 0 0 5px var(--accent-light); opacity: 1; }
+      0%, 100% { box-shadow: 0 0 5px var(--amber); opacity: 1; }
       50%       { box-shadow: none; opacity: 0.35; }
     }
     .tl-met {
@@ -551,13 +551,13 @@
       letter-spacing: 0.04em; padding-top: 1px;
     }
     .tl-event.tl-complete .tl-met { color: var(--green); }
-    .tl-event.tl-active   .tl-met { color: var(--accent-light); }
+    .tl-event.tl-active   .tl-met { color: var(--amber); }
     .tl-event.tl-upcoming .tl-met { color: rgba(74,144,217,0.4); }
     .tl-name {
       font-family: var(--font-mono); font-size: 0.52rem; line-height: 1.35;
     }
     .tl-event.tl-complete .tl-name { color: var(--text-dim); }
-    .tl-event.tl-active   .tl-name { color: var(--accent-light); }
+    .tl-event.tl-active   .tl-name { color: var(--amber); font-weight: 700; }
     .tl-event.tl-upcoming .tl-name { color: var(--text-dim); }
     .tl-check { color: var(--green); font-size: 0.46rem; margin-left: 3px; }
     /* Local time lines inside .tl-met */
@@ -693,6 +693,45 @@
       border: 1px solid var(--border);
       border-radius: 4px;
       background: #000;
+    }
+
+    /* ── Panel expand overlay ── */
+    #panel-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    #panel-overlay.open { opacity: 1; pointer-events: all; }
+    #panel-overlay-header {
+      display: flex; align-items: center; gap: 12px;
+      width: min(92vw, 1400px); margin-bottom: 8px;
+    }
+    #panel-overlay-title {
+      font-family: var(--font-ui); font-size: 0.7rem;
+      letter-spacing: 0.14em; color: var(--blue-light);
+    }
+    #panel-overlay-close {
+      margin-left: auto;
+      background: transparent; border: 1px solid rgba(74,144,217,0.4);
+      border-radius: 3px; color: var(--text-dim);
+      font-family: var(--font-mono); font-size: 0.8rem;
+      width: 28px; height: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    #panel-overlay-close:hover { border-color: var(--blue-light); color: var(--blue-light); }
+    #panel-overlay-content {
+      width: min(92vw, 1400px);
+      height: min(80vh, 800px);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg-panel);
+      overflow: auto;
     }
 
     /* ── Placeholder grid positions ── */
@@ -1144,6 +1183,7 @@
     <div id="tb-phase">
       <span class="tb-sect-label">MISSION PHASE</span>
       <div id="current-phase-name">—</div>
+      <div id="current-event-name" style="font-family:var(--font-mono);font-size:0.42rem;color:var(--amber);letter-spacing:0.06em;text-align:center;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;"></div>
       <div class="phase-bar" id="phase-bar"></div>
     </div>
 
@@ -1152,6 +1192,7 @@
       <div class="telem-label">🌍 DISTANCE FROM EARTH</div>
       <div class="telem-value" id="tv-earth">—</div>
       <div class="telem-unit" id="tu-earth">KM</div>
+      <div id="earth-annotation" style="font-family:var(--font-mono);font-size:0.32rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
     </div>
 
     <!-- Distance from Moon -->
@@ -1159,6 +1200,7 @@
       <div class="telem-label">🌕 DISTANCE FROM MOON</div>
       <div class="telem-value" id="tv-moon">—</div>
       <div class="telem-unit" id="tu-moon">KM</div>
+      <div id="moon-annotation" style="font-family:var(--font-mono);font-size:0.32rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
     </div>
 
     <!-- Orion Speed -->
@@ -1192,7 +1234,7 @@
   </div>
 
   <div class="panel" id="feed-arow">
-    <div class="panel-header" style="letter-spacing:2px"><span class="dot"></span>MISSION TRAJECTORY — LIVE POSITION</div>
+    <div class="panel-header" style="letter-spacing:2px"><span class="dot"></span>MISSION TRAJECTORY — LIVE POSITION<button class="yt-expand-btn panel-expand" data-panel="feed-arow" title="Expand">&#x26F6; EXPAND</button></div>
     <div id="trajectory-3d" style="flex:1;width:100%;min-height:0;position:relative;overflow:hidden;">
       <div id="traj-progress" style="position:absolute;bottom:7px;left:9px;font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(74,144,217,0.9);pointer-events:none;z-index:2;letter-spacing:0.05em;"></div>
       <div id="traj-tooltip" style="position:absolute;top:0;left:0;background:rgba(8,12,26,0.88);border:1px solid rgba(74,144,217,0.55);padding:3px 9px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#a8d4ff;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:3;white-space:nowrap;border-radius:2px;"></div>
@@ -1203,6 +1245,7 @@
   <div class="panel" id="feed-dsn">
     <div class="panel-header">
       <span class="dot"></span>DEEP SPACE NETWORK — ARTEMIS II LINK
+      <button class="yt-expand-btn panel-expand" data-panel="feed-dsn" title="Expand">&#x26F6;</button>
       <span id="dsn-badge" class="news-live-badge" style="margin-left:auto;">● LIVE</span>
       <span id="dsn-local-time" style="font-size:0.38rem;color:rgba(74,144,217,0.5);letter-spacing:0.06em;white-space:nowrap;margin-left:8px;"></span>
     </div>
@@ -1333,6 +1376,7 @@
   <div class="panel" id="feed-blog">
     <div class="panel-header">
       <span class="dot"></span>MISSION TIMELINE
+      <button class="yt-expand-btn panel-expand" data-panel="feed-blog" title="Expand">&#x26F6;</button>
       <span id="flight-day-badge">FLIGHT DAY —</span>
     </div>
     <div id="tl-next-event"></div>
@@ -1429,6 +1473,15 @@
       <div class="crew-modal-quote" id="cm-quote"></div>
     </div>
   </div>
+</div>
+
+<!-- PANEL EXPAND OVERLAY -->
+<div id="panel-overlay">
+  <div id="panel-overlay-header">
+    <span id="panel-overlay-title"></span>
+    <button id="panel-overlay-close" aria-label="Close">&#x2715;</button>
+  </div>
+  <div id="panel-overlay-content"></div>
 </div>
 
 <!-- VIDEO FULLSCREEN OVERLAY -->
@@ -1563,6 +1616,10 @@
       const flightDay      = Math.floor((nowMidnight - launchMidnight) / 86400000) + 1;
       const badge = document.getElementById('flight-day-badge');
       if (badge) badge.textContent = `FLIGHT DAY ${Math.max(1, flightDay)}`;
+
+      // Show active event in Mission Phase box
+      const curEvEl = document.getElementById('current-event-name');
+      if (curEvEl) curEvEl.textContent = '\u25b6 ' + EVENTS[activeIdx].name;
 
       // ── Next-event countdown ──────────────────────────────────────
       const nextEv  = EVENTS[activeIdx + 1];
@@ -1736,6 +1793,26 @@
         if (i === phaseIdx) node.classList.add('active');
         else if (i < phaseIdx) node.classList.add('done');
       });
+
+      // Context-aware distance annotations
+      const eAnn = document.getElementById('earth-annotation');
+      const mAnn = document.getElementById('moon-annotation');
+      const pName = PHASES[phaseIdx].name;
+      if (eAnn) {
+        if (pName === 'LAUNCH' || pName === 'EARTH ORBIT') { eAnn.textContent = '(elliptical orbit \u2014 altitude varies)'; eAnn.style.color = 'var(--text-dim)'; }
+        else if (pName === 'TLI BURN' || pName === 'OUTBOUND COAST') { eAnn.textContent = '(departing Earth)'; eAnn.style.color = 'var(--text-dim)'; }
+        else if (pName === 'RETURN COAST') { eAnn.textContent = '(approaching Earth \u2014 closing)'; eAnn.style.color = 'var(--green)'; }
+        else if (pName === 'ENTRY') { eAnn.textContent = '(re-entry imminent)'; eAnn.style.color = 'var(--red)'; }
+        else { eAnn.textContent = ''; }
+      }
+      if (mAnn) {
+        if (pName === 'LAUNCH' || pName === 'EARTH ORBIT') { mAnn.textContent = '(orbiting Earth \u2014 distance varies)'; mAnn.style.color = 'var(--text-dim)'; }
+        else if (pName === 'TLI BURN' || pName === 'OUTBOUND COAST') { mAnn.textContent = '(en route to Moon \u2014 closing)'; mAnn.style.color = 'var(--green)'; }
+        else if (pName === 'LUNAR FLYBY') { mAnn.textContent = '(closest approach)'; mAnn.style.color = 'var(--amber)'; }
+        else if (pName === 'RETURN COAST') { mAnn.textContent = '(returning to Earth \u2014 increasing)'; mAnn.style.color = 'var(--text-dim)'; }
+        else if (pName === 'ENTRY' || pName === 'SPLASHDOWN') { mAnn.textContent = ''; }
+        else { mAnn.textContent = ''; }
+      }
     }
   }
 
@@ -2601,16 +2678,37 @@
     scene.add(new THREE.Line(compGlowGeo, compGlowMat));
 
     // ── Waypoints ──
+    // Waypoints: key HIGH and CRITICAL events from mission schedule
+    // t values mapped to 22-point curve (0-8=orbits, 8-12=outbound, 13-15=flyby, 16-21=return)
     const WAYPOINTS = [
-      { t:0.000, label:'LAUNCH',            met:'T+00:00:00', metSec:0,      desc:'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.' },
-      { t:0.190, label:'LEO',               met:'T+06:00:00', metSec:21600,  desc:'Orion enters low Earth orbit at ~200km altitude for initial systems checkout.' },
-      { t:0.381, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.' },
-      { t:0.476, label:'OUTBOUND',          met:'T+72:00:00', metSec:259200, desc:'Orion coasts toward the Moon for 3\u20134 days. Crew performs systems tests and trajectory correction burns.' },
-      { t:0.619, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Potentially breaks Apollo 13\u2019s distance record.' },
-      { t:0.667, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.' },
-      { t:0.762, label:'RETURN COAST',      met:'T+150:00:00',metSec:540000, desc:'Orion coasts back toward Earth. Crew reviews re-entry procedures.' },
-      { t:0.952, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Orion hits atmosphere at 40,000 km/h. Heat shield reaches 2,800\u00b0C.' },
-      { t:0.999, label:'SPLASHDOWN',        met:'T+229:10:00',metSec:825000, desc:'Parachutes deploy. Orion splashes down in the Pacific Ocean.' },
+      // ── DAY 1: LAUNCH & ASCENT (CRITICAL) ──
+      { t:0.000, label:'LAUNCH',            met:'T+00:00:00', metSec:0,      desc:'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.', crit:'CRITICAL' },
+      { t:0.015, label:'SRB SEP',           met:'T+00:02:12', metSec:132,    desc:'Solid Rocket Boosters separate after burning 5.5 million pounds of propellant.', crit:'CRITICAL' },
+      { t:0.030, label:'CORE MECO',         met:'T+00:08:06', metSec:486,    desc:'Core stage main engine cutoff. Core stage separates from ICPS upper stage.', crit:'HIGH' },
+      { t:0.060, label:'SOLAR ARRAYS',      met:'T+00:18:00', metSec:1080,   desc:'Orion solar arrays deploy, providing electrical power to the spacecraft.', crit:'HIGH' },
+      { t:0.095, label:'PERIGEE RAISE',     met:'T+00:49:00', metSec:2940,   desc:'ICPS fires to raise perigee altitude, setting up for apogee raise.', crit:'HIGH' },
+      { t:0.140, label:'APOGEE RAISE',      met:'T+01:30:00', metSec:5400,   desc:'ICPS second burn raises apogee to high elliptical orbit.', crit:'HIGH' },
+      { t:0.190, label:'ICPS SEP',          met:'T+02:00:00', metSec:7200,   desc:'ICPS upper stage separates. Orion is now free-flying.', crit:'CRITICAL' },
+      // ── DAY 1-2: EARTH ORBIT ──
+      { t:0.280, label:'PROX OPS',          met:'T+02:30:00', metSec:9000,   desc:'Proximity operations demo \u2014 Orion maneuvers near separated ICPS.', crit:'HIGH' },
+      // ── DAY 2: TLI ──
+      { t:0.381, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.', crit:'CRITICAL' },
+      // ── DAY 3-4: OUTBOUND COAST ──
+      { t:0.440, label:'TCB-1',             met:'T+52:00:00', metSec:187200, desc:'Outbound trajectory correction burn 1 \u2014 fine-tunes course toward the Moon.', crit:'HIGH' },
+      { t:0.476, label:'O2O LASER',         met:'T+80:00:00', metSec:288000, desc:'Optical to Orion laser comms test \u2014 4K video downlink via laser from deep space.', crit:'HIGH' },
+      // ── DAY 5-6: LUNAR FLYBY ──
+      { t:0.548, label:'LUNAR SOI',         met:'T+100:00:00',metSec:360000, desc:'Orion enters the Moon\u2019s gravitational sphere of influence.', crit:'HIGH' },
+      { t:0.619, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Breaks Apollo 13\u2019s distance record of 400,171 km.', crit:'CRITICAL' },
+      { t:0.667, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.', crit:'CRITICAL' },
+      { t:0.690, label:'SIGNAL ACQ',        met:'T+129:11:00',metSec:465060, desc:'Signal reacquired after far-side pass. Crew reports status.', crit:'HIGH' },
+      // ── DAY 7-9: RETURN ──
+      { t:0.762, label:'RETURN TCB',        met:'T+150:00:00',metSec:540000, desc:'Return trajectory correction burn \u2014 targets Pacific Ocean splashdown zone.', crit:'HIGH' },
+      // ── DAY 10: ENTRY & SPLASHDOWN ──
+      { t:0.905, label:'SM SEP',            met:'T+228:00:00',metSec:820800, desc:'Service module separates. Only crew module continues to re-entry.', crit:'CRITICAL' },
+      { t:0.930, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Atmospheric entry at 40,000 km/h. Heat shield reaches 2,800\u00b0C during skip re-entry.', crit:'CRITICAL' },
+      { t:0.960, label:'PEAK HEATING',      met:'T+228:45:00',metSec:823500, desc:'Peak heating \u2014 heat shield surface reaches 2,800\u00b0C.', crit:'CRITICAL' },
+      { t:0.980, label:'CHUTES',            met:'T+229:05:00',metSec:824700, desc:'Main parachutes deploy at ~7,600m altitude, slowing Orion to ~30 km/h.', crit:'CRITICAL' },
+      { t:0.999, label:'SPLASHDOWN',        met:'T+229:10:00',metSec:825000, desc:'Orion splashes down in the Pacific Ocean. Recovery by USS Portland.', crit:'CRITICAL' },
     ];
     const wpMeshes = [], wpMats = [];
     WAYPOINTS.forEach(wp => {
@@ -2700,7 +2798,9 @@
       if (nowMet > wp.metSec+900) { status='\u2713 COMPLETED'; sColor='#00e676'; }
       else if (nowMet >= wp.metSec-600) { status='\u25b6 IN PROGRESS'; sColor='#ffd740'; }
       else { status='\u25cb UPCOMING'; sColor='#7986a8'; }
-      popupEl.innerHTML = `<div style="font-size:0.6rem;font-weight:bold;color:#00ffaa;letter-spacing:0.12em;margin-bottom:6px;text-shadow:0 0 8px rgba(0,255,170,0.5)">${wp.label}</div><div style="font-size:0.48rem;color:#7986a8;margin-bottom:3px;">${wp.met}</div><div style="font-size:0.44rem;color:rgba(74,144,217,0.6);margin-bottom:6px;">${localStr}</div><div style="font-size:0.48rem;color:${sColor};margin-bottom:8px;letter-spacing:0.08em;">${status}</div><div style="font-size:0.48rem;color:#c8d0e0;line-height:1.5;">${wp.desc}</div>`;
+      const critColors = { CRITICAL:'#ef5350', HIGH:'#ffa726', MEDIUM:'#ffd740' };
+      const critC = critColors[wp.crit] || '#7986a8';
+      popupEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:0.6rem;font-weight:bold;color:#00ffaa;letter-spacing:0.12em;text-shadow:0 0 8px rgba(0,255,170,0.5)">${wp.label}</span>${wp.crit ? `<span style="font-size:0.36rem;color:${critC};border:1px solid ${critC}44;padding:1px 5px;border-radius:2px;letter-spacing:0.08em;">${wp.crit}</span>` : ''}</div><div style="font-size:0.48rem;color:#7986a8;margin-bottom:3px;">${wp.met}</div><div style="font-size:0.44rem;color:rgba(74,144,217,0.6);margin-bottom:6px;">${localStr}</div><div style="font-size:0.48rem;color:${sColor};margin-bottom:8px;letter-spacing:0.08em;">${status}</div><div style="font-size:0.48rem;color:#c8d0e0;line-height:1.5;">${wp.desc}</div>`;
       let left = sx+14; if (left+280 > W) left = sx-290;
       let top = sy-20; if (top+180 > H) top = H-190; if (top < 4) top = 4;
       popupEl.style.left = left+'px'; popupEl.style.top = top+'px'; popupEl.style.display = 'block'; popupOpen = true;
@@ -2843,7 +2943,8 @@
 
       // Earth-Moon distance (7)
       { const mid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5); mid.y += 0.7;
-        drawCallout('EARTH\u2013MOON: 238,855 MI', mid, 'rgba(255,255,255,0.35)', 0, 0, false, null); }
+        const emDistStr = useImperial ? '238,855 MI' : '384,400 KM';
+        drawCallout('EARTH\u2013MOON: ' + emDistStr, mid, 'rgba(255,255,255,0.35)', 0, 0, false, null); }
 
       // Altitude callout (7) — from Earth surface toward Orion
       const earthTxt = document.getElementById('tv-earth')?.textContent?.trim();
@@ -3100,6 +3201,50 @@
         frame.src = tab.dataset.ytSrc || '';
       });
     });
+  })();
+
+  // ── PANEL EXPAND OVERLAY ────────────────────────────────────────────
+  (function() {
+    const panelOverlay = document.getElementById('panel-overlay');
+    const panelContent = document.getElementById('panel-overlay-content');
+    const panelTitle   = document.getElementById('panel-overlay-title');
+    const panelClose   = document.getElementById('panel-overlay-close');
+    let sourcePanel = null;
+
+    function openPanel(panelId) {
+      const src = document.getElementById(panelId);
+      if (!src) return;
+      sourcePanel = src;
+      const header = src.querySelector('.panel-header');
+      panelTitle.textContent = header ? header.textContent.replace(/⛶.*/, '').trim() : panelId;
+      // Move the panel's inner content into overlay
+      panelContent.innerHTML = '';
+      const children = [...src.children].filter(c => !c.classList.contains('panel-header') && !c.classList.contains('corner-tl') && !c.classList.contains('corner-br'));
+      children.forEach(c => panelContent.appendChild(c));
+      panelOverlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      // Trigger resize for trajectory canvas
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    function closePanel() {
+      if (sourcePanel) {
+        // Move content back
+        const children = [...panelContent.children];
+        children.forEach(c => sourcePanel.appendChild(c));
+        sourcePanel = null;
+      }
+      panelOverlay.classList.remove('open');
+      document.body.style.overflow = '';
+      window.dispatchEvent(new Event('resize'));
+    }
+
+    document.querySelectorAll('.panel-expand').forEach(btn => {
+      btn.addEventListener('click', e => { e.stopPropagation(); openPanel(btn.dataset.panel); });
+    });
+    panelClose.addEventListener('click', closePanel);
+    panelOverlay.addEventListener('click', e => { if (e.target === panelOverlay) closePanel(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && panelOverlay.classList.contains('open')) closePanel(); });
   })();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
