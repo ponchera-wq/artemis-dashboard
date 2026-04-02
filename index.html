@@ -57,7 +57,7 @@
     /* ── Root grid ── */
     #dashboard {
       display: grid;
-      grid-template-rows: 160px 82px 1fr 1fr 36px;
+      grid-template-rows: 112px 1fr 1fr 36px;
       grid-template-columns: 1fr 2fr 1fr;
       gap: 6px;
       padding: 6px;
@@ -155,233 +155,194 @@
     }
 
     /* ════════════════════════════════
-       WIDGET 1 — MET CLOCK
+       TOP BAR — 5 sections in one row
     ════════════════════════════════ */
-    #met-clock {
-      grid-row: 1; grid-column: 1;
+    #top-bar {
+      grid-row: 1; grid-column: 1 / -1;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: stretch;
+      overflow: hidden;
+      position: relative;
     }
+    #top-bar > * + * { border-left: 1px solid var(--border); }
 
-    .met-label {
+    /* MET clock */
+    #tb-met {
+      flex: 0 0 190px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 12px;
+      gap: 1px;
+    }
+    .tb-sect-label {
       font-family: var(--font-ui);
-      font-size: 0.55rem;
-      letter-spacing: 0.2em;
-      color: var(--text-dim);
-      margin-bottom: 4px;
-      text-align: center;
+      font-size: 0.4rem;
+      letter-spacing: 0.18em;
+      color: var(--blue-light);
+      text-transform: uppercase;
     }
-
     #met-display {
       font-family: var(--font-mono);
-      font-size: clamp(1.6rem, 2.8vw, 3rem);
+      font-size: clamp(1.1rem, 1.8vw, 1.8rem);
       color: var(--blue-light);
       text-shadow: var(--glow-blue);
       letter-spacing: 0.06em;
       line-height: 1;
-      text-align: center;
     }
-
     .met-sub {
       font-family: var(--font-mono);
-      font-size: 0.6rem;
+      font-size: 0.4rem;
       color: var(--text-dim);
-      margin-top: 8px;
-      text-align: center;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.05em;
     }
-
     #utc-display {
       font-family: var(--font-mono);
-      font-size: 0.7rem;
+      font-size: 0.48rem;
       color: var(--text-dim);
-      margin-top: 4px;
-      text-align: center;
+    }
+    #signal-pill {
+      font-family: var(--font-mono);
+      font-size: 0.4rem;
+      letter-spacing: 0.1em;
+      padding: 1px 7px;
+      border-radius: 20px;
+      border: 1px solid;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      margin-top: 3px;
+      transition: background 0.4s, color 0.4s;
+    }
+    #signal-pill.acquired {
+      color: var(--green); border-color: rgba(0,230,118,0.45);
+      background: rgba(0,230,118,0.07);
+      animation: pulse-green 2.5s ease-in-out infinite;
+    }
+    #signal-pill.los {
+      color: var(--amber); border-color: rgba(255,167,38,0.45);
+      background: rgba(255,167,38,0.07); animation: none;
+    }
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 6px rgba(0,230,118,0.35); }
+      50%       { box-shadow: 0 0 14px rgba(0,230,118,0.7); }
     }
 
-    /* ════════════════════════════════
-       WIDGET 2 — MISSION PHASE
-    ════════════════════════════════ */
-    #mission-phase {
-      grid-row: 1; grid-column: 2 / -1;
-    }
-
-    #mission-phase .panel-body {
+    /* Mission Phase */
+    #tb-phase {
+      flex: 0 0 250px;
+      display: flex;
       flex-direction: column;
-      gap: 10px;
-      padding: 10px 16px;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 14px;
+      gap: 4px;
     }
-
-    .phase-current-label {
-      font-family: var(--font-ui);
-      font-size: 0.55rem;
-      letter-spacing: 0.2em;
-      color: var(--text-dim);
-      text-align: center;
-    }
-
     #current-phase-name {
       font-family: var(--font-ui);
-      font-size: clamp(1rem, 1.8vw, 1.8rem);
+      font-size: clamp(0.6rem, 1.1vw, 1rem);
       font-weight: 900;
       color: var(--green);
       text-shadow: var(--glow-green);
       text-align: center;
       letter-spacing: 0.1em;
     }
-
     .phase-bar {
-      display: flex;
-      width: 100%;
-      gap: 3px;
-      align-items: stretch;
+      display: flex; width: 100%; gap: 2px; align-items: stretch;
     }
-
     .phase-node {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
     }
-
     .phase-pip {
-      width: 100%;
-      height: 6px;
-      border-radius: 2px;
-      background: rgba(74,144,217,0.18);
-      border: 1px solid rgba(74,144,217,0.25);
+      width: 100%; height: 5px; border-radius: 2px;
+      background: rgba(74,144,217,0.18); border: 1px solid rgba(74,144,217,0.25);
       transition: all 0.4s ease;
     }
-
     .phase-node.active .phase-pip {
-      background: var(--green);
-      box-shadow: 0 0 8px rgba(0,230,118,0.7);
+      background: var(--green); box-shadow: 0 0 6px rgba(0,230,118,0.7);
       border-color: var(--green);
     }
-
     .phase-node.done .phase-pip {
-      background: rgba(74,144,217,0.5);
-      border-color: rgba(74,144,217,0.5);
+      background: rgba(74,144,217,0.5); border-color: rgba(74,144,217,0.5);
     }
-
     .phase-node-label {
       font-family: var(--font-ui);
-      font-size: clamp(0.3rem, 0.5vw, 0.48rem);
-      color: var(--text-dim);
-      text-align: center;
-      letter-spacing: 0.04em;
-      line-height: 1.2;
+      font-size: clamp(0.24rem, 0.42vw, 0.38rem);
+      color: var(--text-dim); text-align: center;
+      letter-spacing: 0.03em; line-height: 1.2;
     }
+    .phase-node.active .phase-node-label { color: var(--green); }
 
-    .phase-node.active .phase-node-label {
-      color: var(--green);
+    /* Telemetry sections */
+    .tb-telem {
+      flex: 1;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 6px 8px; gap: 1px; position: relative;
     }
-
-    /* ════════════════════════════════
-       WIDGET 3 — SIGNAL STATUS
-    ════════════════════════════════ */
-    #signal-status {
-      grid-row: 1; grid-column: 3;
-    }
-
-    #signal-status .panel-body {
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    #signal-badge {
+    .telem-label {
       font-family: var(--font-ui);
-      font-size: clamp(0.55rem, 1vw, 0.9rem);
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-align: center;
-      padding: 10px 14px;
-      border-radius: 4px;
-      border: 1px solid;
-      width: 100%;
-      transition: all 0.5s ease;
-    }
-
-    #signal-badge.acquired {
-      color: var(--green);
-      border-color: rgba(0,230,118,0.5);
-      background: rgba(0,230,118,0.06);
-      box-shadow: var(--glow-green), inset 0 0 12px rgba(0,230,118,0.04);
-      animation: pulse-green 2.5s ease-in-out infinite;
-    }
-
-    #signal-badge.los {
-      color: var(--amber);
-      border-color: rgba(255,167,38,0.5);
-      background: rgba(255,167,38,0.06);
-      box-shadow: 0 0 12px rgba(255,167,38,0.3);
-      animation: none;
-    }
-
-    @keyframes pulse-green {
-      0%, 100% { box-shadow: var(--glow-green), inset 0 0 12px rgba(0,230,118,0.04); }
-      50%       { box-shadow: 0 0 24px rgba(0,230,118,0.7), inset 0 0 16px rgba(0,230,118,0.06); }
-    }
-
-    .signal-sub {
-      font-family: var(--font-mono);
-      font-size: 0.58rem;
+      font-size: 0.36rem;
+      letter-spacing: 0.15em;
       color: var(--text-dim);
-      text-align: center;
-      letter-spacing: 0.08em;
-    }
-
-    #signal-toggle {
-      font-family: var(--font-ui);
-      font-size: 0.5rem;
-      letter-spacing: 0.12em;
-      color: var(--text-dim);
-      background: transparent;
-      border: 1px solid rgba(74,144,217,0.3);
-      border-radius: 3px;
-      padding: 4px 10px;
-      cursor: pointer;
-      transition: all 0.2s;
       text-transform: uppercase;
     }
-
-    #signal-toggle:hover {
-      border-color: var(--blue-light);
-      color: var(--blue-light);
-    }
-
-    /* DSN indicator dots */
-    .dsn-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .dsn-dot {
-      display: flex;
-      align-items: center;
-      gap: 4px;
+    .telem-value {
       font-family: var(--font-mono);
-      font-size: 0.52rem;
-      color: var(--text-dim);
+      font-size: clamp(1.4rem, 2vw, 2.2rem);
+      font-weight: 700; line-height: 1; letter-spacing: 0.04em;
     }
+    .telem-unit {
+      font-family: var(--font-mono);
+      font-size: 0.4rem; letter-spacing: 0.1em; color: var(--text-dim);
+    }
+    #telem-earth .telem-value { color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+    #telem-moon  .telem-value { color: #ffd740; text-shadow: 0 0 10px rgba(255,215,64,0.4); }
+    #telem-speed .telem-value { color: #ffa726; text-shadow: 0 0 10px rgba(255,167,38,0.45); }
 
-    .dsn-dot-pip {
-      width: 6px; height: 6px;
+    /* LIVE / EST badge */
+    #telem-badge {
+      position: absolute; top: 5px; right: 7px;
+      font-family: var(--font-mono); font-size: 0.36rem;
+      letter-spacing: 0.1em; padding: 1px 5px;
+      border-radius: 3px; border: 1px solid;
+    }
+    .telem-badge-live { color: var(--green); border-color: rgba(0,230,118,0.4); background: rgba(0,230,118,0.08); }
+    .telem-badge-est  { color: var(--amber); border-color: rgba(255,167,38,0.3); background: rgba(255,167,38,0.06); }
+
+    @keyframes digit-flip {
+      0%   { opacity: 1;   transform: translateY(0);    }
+      20%  { opacity: 0.6; transform: translateY(-3px); }
+      60%  { opacity: 1;   transform: translateY(0);    }
+    }
+    .telem-value.tick { animation: digit-flip 0.28s ease-out; }
+
+    /* Crew strip photo avatar */
+    .crew-strip-photo {
+      width: 22px; height: 22px;
       border-radius: 50%;
-      background: rgba(74,144,217,0.3);
+      object-fit: cover; object-position: top center;
+      border: 1px solid rgba(74,144,217,0.35);
+      flex-shrink: 0;
     }
-
-    .dsn-dot-pip.active {
-      background: var(--green);
-      box-shadow: 0 0 6px rgba(0,230,118,0.8);
+    .crew-backup .crew-strip-photo { opacity: 0.65; }
+    .crew-backup { opacity: 0.65; }
+    .backup-badge {
+      font-family: var(--font-mono); font-size: 0.36rem;
+      letter-spacing: 0.08em; color: var(--amber);
+      border: 1px solid rgba(255,167,38,0.3);
+      padding: 0px 3px; border-radius: 2px;
     }
 
     /* ════════════════════════════════
        WIDGET 4 — MISSION UPDATES
     ════════════════════════════════ */
     #mission-updates {
-      grid-row: 4; grid-column: 2;
+      grid-row: 3; grid-column: 2;
     }
 
     #mission-updates .panel-body {
@@ -485,7 +446,7 @@
        CREW STRIP — bottom row
     ════════════════════════════════ */
     #crew-strip {
-      grid-row: 5; grid-column: 1 / -1;
+      grid-row: 4; grid-column: 1 / -1;
       background: var(--bg-panel);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -691,109 +652,12 @@
 
     .yt-frame.active { display: block; }
 
-    /* ════════════════════════════════
-       TELEMETRY BAR
-    ════════════════════════════════ */
-    #telem-bar {
-      grid-row: 2; grid-column: 1 / -1;
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      display: flex;
-      align-items: stretch;
-      padding: 0 8px;
-      gap: 0;
-    }
-
-    .telem-card {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 4px 12px;
-      gap: 1px;
-      position: relative;
-    }
-
-    .telem-card + .telem-card::before {
-      content: '';
-      position: absolute;
-      left: 0; top: 12px; bottom: 12px;
-      width: 1px;
-      background: var(--border);
-    }
-
-    .telem-label {
-      font-family: var(--font-ui);
-      font-size: 0.38rem;
-      letter-spacing: 0.18em;
-      color: var(--text-dim);
-      text-transform: uppercase;
-    }
-
-    .telem-value {
-      font-family: var(--font-mono);
-      font-size: clamp(1.5rem, 2.2vw, 2.4rem);
-      font-weight: 700;
-      line-height: 1;
-      letter-spacing: 0.04em;
-    }
-
-    @keyframes digit-flip {
-      0%   { opacity: 1;   transform: translateY(0);    }
-      20%  { opacity: 0.6; transform: translateY(-3px); }
-      60%  { opacity: 1;   transform: translateY(0);    }
-    }
-    .telem-value.tick { animation: digit-flip 0.28s ease-out; }
-
-    /* ── Signal pill (bottom-left of MET clock) ── */
-    #signal-pill {
-      position: absolute;
-      bottom: 7px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-family: var(--font-mono);
-      font-size: 0.44rem;
-      letter-spacing: 0.1em;
-      padding: 2px 10px;
-      border-radius: 20px;
-      border: 1px solid;
-      cursor: pointer;
-      user-select: none;
-      white-space: nowrap;
-      transition: background 0.4s, color 0.4s;
-    }
-    #signal-pill.acquired {
-      color: var(--green);
-      border-color: rgba(0,230,118,0.45);
-      background: rgba(0,230,118,0.07);
-      animation: pulse-green 2.5s ease-in-out infinite;
-    }
-    #signal-pill.los {
-      color: var(--amber);
-      border-color: rgba(255,167,38,0.45);
-      background: rgba(255,167,38,0.07);
-      animation: none;
-    }
-
-    .telem-unit {
-      font-family: var(--font-mono);
-      font-size: 0.45rem;
-      letter-spacing: 0.1em;
-      color: var(--text-dim);
-    }
-
-    #telem-earth  .telem-value { color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
-    #telem-moon   .telem-value { color: #ffd740; text-shadow: 0 0 10px rgba(255,215,64,0.4); }
-    #telem-speed  .telem-value { color: #ffa726; text-shadow: 0 0 10px rgba(255,167,38,0.45); }
-
     /* ── Placeholder grid positions ── */
-    #feed-youtube  { grid-row: 3; grid-column: 1; }
-    #feed-arow     { grid-row: 3; grid-column: 2; }
-    #feed-dsn      { grid-row: 3; grid-column: 3; }
-    #feed-weather  { grid-row: 4; grid-column: 1; }
-    #feed-blog     { grid-row: 4; grid-column: 3; }
+    #feed-youtube  { grid-row: 2; grid-column: 1; }
+    #feed-arow     { grid-row: 2; grid-column: 2; }
+    #feed-dsn      { grid-row: 2; grid-column: 3; }
+    #feed-weather  { grid-row: 3; grid-column: 1; }
+    #feed-blog     { grid-row: 3; grid-column: 3; }
 
     /* ── Corner accent ── */
     .corner-tl, .corner-br {
@@ -1002,56 +866,50 @@
 
 <div id="dashboard">
 
-  <!-- ══ ROW 1: STATUS BAR ══════════════════════════════════════════════ -->
+  <!-- ══ ROW 1: TOP BAR (MET · PHASE · TELEMETRY) ════════════════════ -->
+  <div id="top-bar">
+    <div class="corner-tl"></div><div class="corner-br"></div>
 
-  <!-- MET CLOCK -->
-  <div class="panel" id="met-clock">
-    <div class="panel-header"><span class="dot"></span>MISSION ELAPSED TIME</div>
-    <div class="panel-body" style="flex-direction:column; gap:4px;">
-      <div class="met-label">MET</div>
+    <!-- MET Clock -->
+    <div id="tb-met">
+      <span class="tb-sect-label">MISSION ELAPSED TIME</span>
       <div id="met-display">D+000 00:00:00</div>
-      <div class="met-sub">LAUNCH: 2026-04-01 T 22:35 UTC</div>
       <div id="utc-display">UTC --:--:--</div>
+      <div class="met-sub">LAUNCH: 2026-04-01 · 22:35 UTC</div>
+      <div id="signal-pill" class="acquired">▶ SIGNAL ACQUIRED</div>
     </div>
-    <div id="signal-pill" class="acquired">▶ SIGNAL ACQUIRED</div>
-    <div class="corner-tl"></div><div class="corner-br"></div>
-  </div>
 
-  <!-- MISSION PHASE -->
-  <div class="panel" id="mission-phase">
-    <div class="panel-header"><span class="dot"></span>MISSION PHASE</div>
-    <div class="panel-body">
-      <div class="phase-current-label">CURRENT PHASE</div>
+    <!-- Mission Phase -->
+    <div id="tb-phase">
+      <span class="tb-sect-label">MISSION PHASE</span>
       <div id="current-phase-name">—</div>
-      <div class="phase-bar" id="phase-bar">
-        <!-- injected by JS -->
-      </div>
+      <div class="phase-bar" id="phase-bar"></div>
     </div>
-    <div class="corner-tl"></div><div class="corner-br"></div>
-  </div>
 
-
-  <!-- ══ ROW 2: TELEMETRY BAR ══════════════════════════════════════════ -->
-
-  <div id="telem-bar">
-    <div class="telem-card" id="telem-earth">
+    <!-- Distance from Earth -->
+    <div class="tb-telem" id="telem-earth">
       <div class="telem-label">🌍 DISTANCE FROM EARTH</div>
       <div class="telem-value" id="tv-earth">—</div>
       <div class="telem-unit">KM</div>
     </div>
-    <div class="telem-card" id="telem-moon">
+
+    <!-- Distance from Moon -->
+    <div class="tb-telem" id="telem-moon">
       <div class="telem-label">🌕 DISTANCE FROM MOON</div>
       <div class="telem-value" id="tv-moon">—</div>
       <div class="telem-unit">KM</div>
     </div>
-    <div class="telem-card" id="telem-speed">
+
+    <!-- Orion Speed -->
+    <div class="tb-telem" id="telem-speed">
       <div class="telem-label">🚀 ORION SPEED</div>
       <div class="telem-value" id="tv-speed">—</div>
       <div class="telem-unit">KM/H</div>
+      <div id="telem-badge" class="telem-badge-est">EST</div>
     </div>
   </div>
 
-  <!-- ══ ROW 3: MAIN FEEDS ══════════════════════════════════════════════ -->
+  <!-- ══ ROW 2: MAIN FEEDS ══════════════════════════════════════════════ -->
 
   <div class="panel" id="feed-youtube">
     <div class="panel-header"><span class="dot"></span>NASA LIVE</div>
@@ -1240,24 +1098,28 @@
     <span class="crew-strip-label">PRIMARY CREW</span>
     <div class="crew-strip-members">
       <div class="crew-strip-member" data-crew="wiseman" title="Click for bio">
+        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016434-alt.jpg" alt="Reid Wiseman" onerror="this.style.display='none'">
         <span class="crew-strip-flag">🇺🇸</span>
         <span class="crew-strip-name">REID WISEMAN</span>
         <span class="crew-strip-role">CDR</span>
       </div>
       <div class="crew-strip-sep"></div>
       <div class="crew-strip-member" data-crew="glover" title="Click for bio">
+        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016433-alt.jpg" alt="Victor Glover" onerror="this.style.display='none'">
         <span class="crew-strip-flag">🇺🇸</span>
         <span class="crew-strip-name">VICTOR GLOVER</span>
         <span class="crew-strip-role">PLT</span>
       </div>
       <div class="crew-strip-sep"></div>
       <div class="crew-strip-member" data-crew="koch" title="Click for bio">
+        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016435-alt.jpg" alt="Christina Koch" onerror="this.style.display='none'">
         <span class="crew-strip-flag">🇺🇸</span>
         <span class="crew-strip-name">CHRISTINA KOCH</span>
         <span class="crew-strip-role">MS</span>
       </div>
       <div class="crew-strip-sep"></div>
       <div class="crew-strip-member" data-crew="hansen" title="Click for bio">
+        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016436-alt.jpg" alt="Jeremy Hansen" onerror="this.style.display='none'">
         <span class="crew-strip-flag">🇨🇦</span>
         <span class="crew-strip-name">JEREMY HANSEN</span>
         <span class="crew-strip-role">MS · CSA</span>
@@ -1265,16 +1127,20 @@
     </div>
     <span class="crew-strip-label" style="margin-left:20px;margin-right:12px;padding-left:12px;border-left:1px solid var(--border);">BACKUP</span>
     <div class="crew-strip-members" style="flex:0;gap:16px;">
-      <div class="crew-strip-member" style="opacity:0.55;">
+      <div class="crew-strip-member crew-backup" data-crew="douglas" title="Click for bio">
+        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2021/12/astronaut_candidate_andre_douglas.jpg" alt="André Douglas" onerror="this.style.display='none'">
         <span class="crew-strip-flag">🇺🇸</span>
         <span class="crew-strip-name">ANDRE DOUGLAS</span>
         <span class="crew-strip-role">NASA</span>
+        <span class="backup-badge">BKUP</span>
       </div>
       <div class="crew-strip-sep"></div>
-      <div class="crew-strip-member" style="opacity:0.55;">
+      <div class="crew-strip-member crew-backup" data-crew="gibbons" title="Click for bio">
+        <img class="crew-strip-photo" src="https://www.asc-csa.gc.ca/images/recherche/tiles/b4c3e9c7-e839-4569-ab6a-a4b14607649b.jpg" alt="Jenni Gibbons" onerror="this.style.display='none'">
         <span class="crew-strip-flag">🇨🇦</span>
         <span class="crew-strip-name">JENNI GIBBONS</span>
         <span class="crew-strip-role">CSA</span>
+        <span class="backup-badge">BKUP</span>
       </div>
     </div>
   </div>
@@ -1314,6 +1180,9 @@
 <div id="watermark">ARTEMIS II MISSION DASHBOARD · LIVE</div>
 
 <script>
+  // ── GLOBAL CONFIG (used by all sections below) ───────────────────────
+  const LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
+
   // ══════════════════════════════════════════════════════════════════════
   // MISSION OBJECTIVES — Edit status: 'complete' | 'progress' | 'pending'
   // Click any item in the dashboard to toggle. States saved in localStorage.
@@ -1348,15 +1217,36 @@
     localStorage.setItem(OBJ_STORAGE_KEY, JSON.stringify(states));
   }
 
+  // Auto-status based on MET (elapsedMin = minutes since launch)
+  function autoObjStatus(id, em) {
+    const H = 60, D = 24 * 60;
+    const c = em >= 0, table = {
+      'obj-launch':  em >= 0          ? 'complete' : 'pending',
+      'obj-arrays':  em >= 18         ? 'complete' : 'pending',
+      'obj-perigee': em >= 14*H       ? 'complete' : 'pending',
+      'obj-prox':    em >= 20*H       ? 'complete' : 'pending',
+      'obj-ls':      em >= 24*H       ? 'complete' : em >= 3*H ? 'progress' : 'pending',
+      'obj-tli':     em >= 25*H       ? 'complete' : 'pending',
+      'obj-o2o':     em >= 48*H       ? 'complete' : 'pending',
+      'obj-manual':  em >= 20*H       ? 'complete' : 'pending',
+      'obj-flyby':   em >= 4*D        ? 'complete' : 'pending',
+      'obj-record':  em >= 4*D        ? 'complete' : 'pending',
+      'obj-reentry': em >= 9*D+12*H   ? 'complete' : 'pending',
+      'obj-splash':  em >= 10*D       ? 'complete' : 'pending',
+    };
+    return table[id] || 'pending';
+  }
+
   function renderObjectives() {
-    const saved  = loadObjStates();
-    const grid   = document.getElementById('obj-grid');
+    const saved   = loadObjStates();
+    const em      = (Date.now() - LAUNCH_UTC) / 60000;
+    const grid    = document.getElementById('obj-grid');
     const counter = document.getElementById('obj-counter');
     grid.innerHTML = '';
     let doneCount = 0;
 
     OBJECTIVES.forEach(obj => {
-      const status = saved[obj.id] || obj.status;
+      const status = saved[obj.id] || autoObjStatus(obj.id, em);
       if (status === 'complete') doneCount++;
 
       const el = document.createElement('div');
@@ -1391,17 +1281,18 @@
       const img  = document.getElementById('apod-img');
       const titleEl = document.getElementById('apod-title-text');
 
-      if (data.media_type === 'image' && (data.url || data.hdurl)) {
-        img.src = data.url || data.hdurl;
-        img.style.opacity = '1';
-        wrap.dataset.url  = data.hdurl || data.url;
-      } else if (data.media_type === 'video') {
-        // video APOD — show thumbnail from URL if available
-        img.src = data.thumbnail_url || '';
-        img.style.opacity = data.thumbnail_url ? '1' : '0';
-        wrap.dataset.url = data.url || 'https://apod.nasa.gov';
-      }
+      const imgUrl = data.media_type === 'video'
+        ? (data.thumbnail_url || '')
+        : (data.url || data.hdurl || '');
+
+      wrap.dataset.url = data.hdurl || data.url || 'https://apod.nasa.gov';
       titleEl.textContent = data.title || 'NASA APOD';
+
+      if (imgUrl) {
+        img.src = imgUrl;
+        img.onerror = () => { img.style.display = 'none'; };
+        img.onload  = () => { img.style.opacity = '1'; };
+      }
     } catch (e) {
       document.getElementById('apod-title-text').textContent = '↗ apod.nasa.gov';
       document.getElementById('apod-img-wrap').dataset.url = 'https://apod.nasa.gov';
@@ -1448,8 +1339,6 @@
   // ══════════════════════════════════════════════════════════════════════
 
   // ── CONFIG ──────────────────────────────────────────────────────────
-  const LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
-
   const PHASES = [
     { name: 'LAUNCH',         label: 'LAUNCH',    startMin:  0,              endMin:  12 },
     { name: 'EARTH ORBIT',    label: 'ORBIT',     startMin:  12,             endMin:  25 * 60 },
@@ -1583,33 +1472,103 @@
     return wps[wps.length - 1][1];
   }
 
-  const fmt = new Intl.NumberFormat('en-US');
+  // ── JPL HORIZONS REAL TELEMETRY ──────────────────────────────────────
+  const HORIZONS_API = 'https://ssd.jpl.nasa.gov/api/horizons.api';
 
+  function horizonsUrl(center, now) {
+    const pad = s => s.slice(0, 19).replace('T', '%20');
+    const t0  = pad(now.toISOString());
+    const t1  = pad(new Date(+now + 120000).toISOString());
+    return `${HORIZONS_API}?format=json` +
+      `&COMMAND=%27-1024%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27` +
+      `&EPHEM_TYPE=%27VECTORS%27&CENTER=%27${center}%27` +
+      `&START_TIME=%27${t0}%27&STOP_TIME=%27${t1}%27` +
+      `&STEP_SIZE=%271m%27&VEC_TABLE=%272%27`;
+  }
+
+  function parseHorizonsVec(result) {
+    if (!result) return null;
+    const soe = result.indexOf('$$SOE'), eoe = result.indexOf('$$EOE');
+    if (soe < 0 || eoe < 0) return null;
+    const blk = result.slice(soe, eoe);
+    const xyz = blk.match(/X\s*=\s*([-\d.E+]+)\s+Y\s*=\s*([-\d.E+]+)\s+Z\s*=\s*([-\d.E+]+)/);
+    const vel = blk.match(/VX\s*=\s*([-\d.E+]+)\s+VY\s*=\s*([-\d.E+]+)\s+VZ\s*=\s*([-\d.E+]+)/);
+    if (!xyz || !vel) return null;
+    const x = +xyz[1], y = +xyz[2], z = +xyz[3];
+    const vx = +vel[1], vy = +vel[2], vz = +vel[3];
+    const dist  = Math.sqrt(x*x + y*y + z*z);
+    const speed = Math.sqrt(vx*vx + vy*vy + vz*vz); // km/s
+    // radial rate of change: d|r|/dt = (r · v) / |r|
+    const radial = (x*vx + y*vy + z*vz) / dist;
+    return { dist, speed, radial, fetchedAt: Date.now() };
+  }
+
+  let liveEarth = null, liveMoon = null, usingLive = false;
+
+  function setTelemBadge(mode) {
+    const b = document.getElementById('telem-badge');
+    if (b) { b.textContent = mode; b.className = mode === 'LIVE' ? 'telem-badge-live' : 'telem-badge-est'; }
+  }
+
+  async function fetchHorizons() {
+    const now = new Date();
+    try {
+      const [rE, rM] = await Promise.all([
+        fetch(horizonsUrl('500%40399', now)),
+        fetch(horizonsUrl('500%40301', now))
+      ]);
+      if (!rE.ok || !rM.ok) throw new Error('HTTP ' + rE.status);
+      const [dE, dM] = await Promise.all([rE.json(), rM.json()]);
+      const vE = parseHorizonsVec(dE.result || '');
+      const vM = parseHorizonsVec(dM.result || '');
+      if (!vE || !vM) throw new Error('Parse failed');
+      liveEarth = vE; liveMoon = vM; usingLive = true;
+      setTelemBadge('LIVE');
+    } catch (e) {
+      console.warn('Horizons fetch:', e.message);
+      usingLive = false;
+      setTelemBadge('EST');
+    }
+  }
+
+  const fmt     = new Intl.NumberFormat('en-US');
   const tvEarth = document.getElementById('tv-earth');
   const tvMoon  = document.getElementById('tv-moon');
   const tvSpeed = document.getElementById('tv-speed');
 
   function flashEl(el) {
     el.classList.remove('tick');
-    void el.offsetWidth; // force reflow to restart animation
+    void el.offsetWidth;
     el.classList.add('tick');
   }
 
   function tickTelem() {
-    const elapsedSec = (Date.now() - LAUNCH_UTC) / 1000;
-    const floorMin   = Math.floor(elapsedSec / 60);
-    const frac       = (elapsedSec % 60) / 60;
+    let earthKm, moonKm, speedKmh;
 
-    // Sub-minute lerp: interpolate between minute N and N+1 for per-second ticking
-    function lerpSec(wps) {
-      const a = lerp(wps, floorMin);
-      const b = lerp(wps, floorMin + 1);
-      return a + (b - a) * frac;
+    if (usingLive && liveEarth && liveMoon) {
+      // Extrapolate from last fetch using radial velocity
+      const dtE = (Date.now() - liveEarth.fetchedAt) / 1000;
+      const dtM = (Date.now() - liveMoon.fetchedAt)  / 1000;
+      earthKm  = liveEarth.dist + liveEarth.radial * dtE;
+      moonKm   = liveMoon.dist  + liveMoon.radial  * dtM;
+      speedKmh = liveEarth.speed * 3600;
+    } else {
+      // Fallback: sub-minute lerp interpolation
+      const elapsedSec = (Date.now() - LAUNCH_UTC) / 1000;
+      const floorMin   = Math.floor(elapsedSec / 60);
+      const frac       = (elapsedSec % 60) / 60;
+      function lerpSec(wps) {
+        const a = lerp(wps, floorMin), b = lerp(wps, floorMin + 1);
+        return a + (b - a) * frac;
+      }
+      earthKm  = lerpSec(TELEM.earthDist);
+      moonKm   = lerpSec(TELEM.moonDist);
+      speedKmh = lerpSec(TELEM.speed);
     }
 
-    const eStr = fmt.format(Math.round(lerpSec(TELEM.earthDist)));
-    const mStr = fmt.format(Math.round(lerpSec(TELEM.moonDist)));
-    const sStr = fmt.format(Math.round(lerpSec(TELEM.speed)));
+    const eStr = fmt.format(Math.round(Math.max(0, earthKm)));
+    const mStr = fmt.format(Math.round(Math.max(0, moonKm)));
+    const sStr = fmt.format(Math.round(Math.max(0, speedKmh)));
 
     if (tvEarth.textContent !== eStr) { tvEarth.textContent = eStr; flashEl(tvEarth); }
     if (tvMoon.textContent  !== mStr) { tvMoon.textContent  = mStr; flashEl(tvMoon);  }
@@ -1618,8 +1577,10 @@
 
   tickTelem();
   setInterval(tickTelem, 1000);
+  fetchHorizons();
+  setInterval(fetchHorizons, 60000);
 
-  // ── SIGNAL PILL (inside MET clock) ──────────────────────────────────
+  // ── SIGNAL PILL ──────────────────────────────────────────────────────
   let signalAcquired = true;
   const signalPill = document.getElementById('signal-pill');
 
@@ -1853,7 +1814,7 @@
       role:    'CDR — COMMANDER',
       agency:  'NASA',
       flag:    '🇺🇸',
-      photo:   'https://www.nasa.gov/wp-content/uploads/2024/03/jsc2023e072375-wiseman-portrait.png',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016434-alt.jpg',
       missions: [
         'ISS Expedition 40/41 (2014) — 165 days in space',
         'Two spacewalks totalling 13h 5m',
@@ -1870,7 +1831,7 @@
       role:    'PLT — PILOT',
       agency:  'NASA',
       flag:    '🇺🇸',
-      photo:   'https://www.nasa.gov/wp-content/uploads/2023/10/jsc2021e020826.jpg',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016433-alt.jpg',
       missions: [
         'SpaceX Crew-1 (Nov 2020 – May 2021) — 168 days aboard ISS',
         '4 spacewalks totalling 23h 37m',
@@ -1888,7 +1849,7 @@
       role:    'MS — MISSION SPECIALIST',
       agency:  'NASA',
       flag:    '🇺🇸',
-      photo:   'https://www.nasa.gov/wp-content/uploads/2023/10/jsc2021e020765.jpg',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016435-alt.jpg',
       missions: [
         'ISS Expedition 59/60/61 (2019–2020) — 328 consecutive days',
         'Then-record for longest single spaceflight by a woman',
@@ -1907,7 +1868,7 @@
       role:    'MS — MISSION SPECIALIST',
       agency:  'CSA',
       flag:    '🇨🇦',
-      photo:   'https://www.nasa.gov/wp-content/uploads/2023/10/jsc2021e020794.jpg',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016436-alt.jpg',
       missions: [
         'Artemis II — First spaceflight',
         'Over 2,000 flight hours on CF-18 Hornet jets',
@@ -1920,6 +1881,44 @@
       ],
       quote: '"Canada has always been an explorer nation. Now we go to the Moon."',
       bio:   'Canadian Armed Forces Colonel and CF-18 fighter pilot. Selected as a CSA astronaut in 2009. Has supported ISS missions from Mission Control and served as astronaut liaison in Russia.',
+    },
+    douglas: {
+      name:    'ANDRÉ DOUGLAS',
+      role:    'MS — BACKUP MISSION SPECIALIST',
+      agency:  'NASA',
+      flag:    '🇺🇸',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2021/12/astronaut_candidate_andre_douglas.jpg',
+      missions: [
+        'Artemis II — Backup Mission Specialist (named 2024)',
+        'Johns Hopkins APL — DART planetary defense mission',
+        'Maritime robotics & space exploration research at APL',
+      ],
+      firsts: [
+        'PhD in Systems Engineering (George Washington University)',
+        'Former U.S. Coast Guard officer — naval architect & salvage engineer',
+        '5 degrees: mech. engineering, naval architecture, electrical/computer engineering',
+        'Black Engineer of the Year Award recipient',
+        'White House Fellowship National Finalist',
+      ],
+      quote: '"From the Coast Guard to the cosmos — service is at the core of everything I do."',
+      bio:   'Born in Miami, raised in Chesapeake, Virginia. Former U.S. Coast Guard officer with 5 degrees and a PhD in Systems Engineering from George Washington University. Previously at Johns Hopkins Applied Physics Lab on DART (planetary defense) and maritime robotics. Selected as NASA astronaut candidate 2021. Named Artemis II backup crew 2024.',
+    },
+    gibbons: {
+      name:    'JENNI GIBBONS',
+      role:    'MS — BACKUP MISSION SPECIALIST',
+      agency:  'CSA',
+      flag:    '🇨🇦',
+      photo:   'https://www.asc-csa.gc.ca/images/recherche/tiles/b4c3e9c7-e839-4569-ab6a-a4b14607649b.jpg',
+      missions: [
+        'Artemis II — Backup Mission Specialist (named 2024)',
+        'First spaceflight',
+      ],
+      firsts: [
+        'Would be second Canadian beyond low Earth orbit',
+        'CSA astronaut candidate',
+      ],
+      quote: '"Canada\'s commitment to space exploration runs deep — I\'m proud to carry that forward."',
+      bio:   'Canadian Space Agency astronaut selected as Artemis II backup crew alongside André Douglas. Would be the second Canadian to travel beyond low Earth orbit if called upon. CSA astronaut candidate.',
     },
   };
 
