@@ -2472,22 +2472,24 @@
     scene.add(emLine);
 
     // ── Free-return trajectory ──
+    // Moon at (8.2, 0, 0) radius 0.46. Path must arc AROUND far side, never intersect.
+    // Approach from above, swing behind Moon (x > 8.2), exit below.
     const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3( 0,     0,     0    ),  // 0: LAUNCH
-      new THREE.Vector3( 0.3,   0.9,   0.6  ),  // 1: APOGEE
-      new THREE.Vector3(-0.05,  0.05,  0    ),  // 2: PERIGEE
-      new THREE.Vector3( 0.7,   1.8,   1.4  ),  // 3: TLI
-      new THREE.Vector3( 3.2,   2.8,   2.0  ),  // 4: OUTBOUND
-      new THREE.Vector3( 5.8,   2.2,   0.6  ),  // 5: LUNAR SOI
-      new THREE.Vector3( 7.6,   1.0,  -0.4  ),  // 6: APPROACH
-      new THREE.Vector3( 8.15,  0.12,  0    ),  // 7: CLOSEST APPROACH
-      new THREE.Vector3( 9.1,   0.1,  -1.1  ),  // 8: FAR SIDE LOS
-      new THREE.Vector3( 8.6,  -1.1,  -0.6  ),  // 9: EXIT FAR SIDE
-      new THREE.Vector3( 6.4,  -2.2,   0.4  ),  // 10: RETURN
-      new THREE.Vector3( 3.8,  -2.8,   1.0  ),  // 11: MID-RETURN
-      new THREE.Vector3( 1.2,  -2.0,   0.0  ),  // 12: APPROACH EARTH
-      new THREE.Vector3( 0.1,  -0.6,   0.0  ),  // 13: ENTRY
-      new THREE.Vector3( 0,     0,     0    ),  // 14: SPLASHDOWN
+      new THREE.Vector3( 0,     0,     0    ),  // 0: LAUNCH (Earth)
+      new THREE.Vector3( 0.3,   0.9,   0.6  ),  // 1: APOGEE (~53k km, T+6h)
+      new THREE.Vector3(-0.05,  0.05,  0    ),  // 2: PERIGEE (T+18h)
+      new THREE.Vector3( 0.7,   1.8,   1.4  ),  // 3: TLI (T+25h)
+      new THREE.Vector3( 3.2,   2.6,   1.6  ),  // 4: OUTBOUND (T+48h)
+      new THREE.Vector3( 5.8,   2.4,   0.6  ),  // 5: LUNAR SOI (T+96h)
+      new THREE.Vector3( 7.6,   1.4,   0.0  ),  // 6: APPROACH — above Moon (T+120h)
+      new THREE.Vector3( 8.7,   0.4,  -0.35 ),  // 7: CLOSEST APPROACH — far side (T+128h)
+      new THREE.Vector3( 9.0,  -0.3,  -0.65 ),  // 8: FAR SIDE LOS — behind Moon (T+130h)
+      new THREE.Vector3( 8.4,  -1.2,  -0.2  ),  // 9: EXIT — below Moon (T+140h)
+      new THREE.Vector3( 6.4,  -2.4,   0.4  ),  // 10: RETURN (T+168h)
+      new THREE.Vector3( 3.8,  -2.6,   1.0  ),  // 11: MID-RETURN (T+192h)
+      new THREE.Vector3( 1.2,  -1.8,   0.0  ),  // 12: APPROACH EARTH (T+210h)
+      new THREE.Vector3( 0.1,  -0.5,   0.0  ),  // 13: ENTRY (T+228h)
+      new THREE.Vector3( 0,     0,     0    ),  // 14: SPLASHDOWN (T+229h)
     ], false, 'catmullrom', 0.5);
     const N_PTS  = 320;
     const allPts = curve.getPoints(N_PTS);
