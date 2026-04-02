@@ -36,7 +36,7 @@
   fillLight.position.set(-10, -5, -8);
   scene.add(fillLight);
   // Green point light on Orion (will move with it)
-  const orionLight = new THREE.PointLight(0x00ffaa, 0.5, 2);
+  const orionLight = new THREE.PointLight(0xfff5e0, 0.5, 2);
   scene.add(orionLight);
 
   // ── Texture loader helper ──
@@ -161,7 +161,7 @@
     const outStart = pts[pts.length - 1].clone();
     const outP1 = V3(3.2, 2.2, 0.3);   // high above E-M line early
     const outP2 = V3(5.8, 2.0, -0.1);  // still high, curving toward Moon
-    const outEnd = V3(7.5, 0.8, -0.2);  // approach Moon from above-behind
+    const outEnd = V3(7.7, 0.9, -0.1);  // approach Moon from above (figure-8 entry)
     const OUT_STEPS = 30;
     for (let i = 1; i <= OUT_STEPS; i++) {
       const t = i / OUT_STEPS;
@@ -173,27 +173,39 @@
       pts.push(V3(x, y, z));
     }
 
-    // Phase D: Lunar flyby — tight hyperbolic swing behind the far side
-    // Closest approach ~0.55 from Moon center (Moon radius=0.46, so ~4,100 mi above surface)
-    // Hyperbolic trajectory: r = p/(1 + e·cos(θ)), e > 1
-    const FLYBY_STEPS = 25;
-    const flybyE = 1.8;     // hyperbolic eccentricity
-    const flybyP = 0.42;    // semi-latus rectum (controls closest approach)
-    // Sweep from above (+Y approach) around behind Moon to below (-Y departure)
-    const flybyAngleStart = -1.6;  // approach from outbound side
-    const flybyAngleEnd = 1.6;     // depart toward return side
-    for (let i = 0; i <= FLYBY_STEPS; i++) {
-      const f = i / FLYBY_STEPS;
-      const angle = flybyAngleStart + f * (flybyAngleEnd - flybyAngleStart);
-      const r = flybyP / (1 + flybyE * Math.cos(angle));
-      // Rotate so closest approach is behind Moon (+X from Moon center)
-      // and trajectory goes from above to below
-      const localX = r * Math.cos(angle);
-      const localY = r * Math.sin(angle);
-      const x = MOON_X + localX * 0.7 + Math.abs(localY) * 0.3; // push behind Moon
-      const y = localY * 0.75;  // above-to-below sweep
-      const z = -0.2 - 0.15 * Math.sin(angle * 0.8);
-      pts.push(V3(x, y, z));
+    // Phase D: Lunar flyby — figure-8 free-return trajectory
+    // Approach from ABOVE (+Y), swing around far side (X > MOON_X), exit BELOW (-Y)
+    // Two cubic Bezier arcs sharing the periapsis:
+    //   Inbound:  entry (above Moon) → periapsis (far/dark side, MOON_X+0.6)
+    //   Outbound: periapsis → exit (below Moon toward Earth)
+    // Periapsis 0.6 scene units behind Moon centre ≈ 4,500 mi above lunar surface
+    const FLYBY_STEPS = 20;
+    const flyEntry = pts[pts.length - 1].clone();
+    const flyPeri  = V3(MOON_X + 0.6,  0,    0);   // closest approach, far/dark side
+    const flyExit  = V3(7.5,          -0.9,  0.1); // depart below Moon toward Earth
+    // Inbound control points: arc UP and sweep around behind Moon
+    const flyIn1 = V3(MOON_X + 0.6,  1.5,  0);
+    const flyIn2 = V3(MOON_X + 1.0,  0.5,  0);
+    // Outbound control points: mirror — sweep from behind Moon, pull DOWN
+    const flyOut1 = V3(MOON_X + 1.0, -0.5,  0);
+    const flyOut2 = V3(MOON_X + 0.6, -1.5,  0);
+    // Inbound arc: flyEntry → flyPeri
+    for (let i = 1; i <= FLYBY_STEPS; i++) {
+      const t = i / FLYBY_STEPS, mt = 1 - t;
+      pts.push(V3(
+        mt*mt*mt*flyEntry.x + 3*mt*mt*t*flyIn1.x + 3*mt*t*t*flyIn2.x + t*t*t*flyPeri.x,
+        mt*mt*mt*flyEntry.y + 3*mt*mt*t*flyIn1.y + 3*mt*t*t*flyIn2.y + t*t*t*flyPeri.y,
+        mt*mt*mt*flyEntry.z + 3*mt*mt*t*flyIn1.z + 3*mt*t*t*flyIn2.z + t*t*t*flyPeri.z
+      ));
+    }
+    // Outbound arc: flyPeri → flyExit
+    for (let i = 1; i <= FLYBY_STEPS; i++) {
+      const t = i / FLYBY_STEPS, mt = 1 - t;
+      pts.push(V3(
+        mt*mt*mt*flyPeri.x + 3*mt*mt*t*flyOut1.x + 3*mt*t*t*flyOut2.x + t*t*t*flyExit.x,
+        mt*mt*mt*flyPeri.y + 3*mt*mt*t*flyOut1.y + 3*mt*t*t*flyOut2.y + t*t*t*flyExit.y,
+        mt*mt*mt*flyPeri.z + 3*mt*mt*t*flyOut1.z + 3*mt*t*t*flyOut2.z + t*t*t*flyExit.z
+      ));
     }
 
     // Phase E: Return arc — curves BELOW Earth-Moon line (visibly separated from outbound)
@@ -262,6 +274,15 @@
   const activeSegMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.85 });
   scene.add(new THREE.Line(activeSegGeo, activeSegMat));
 
+  // Flame/gradient trail — white-hot at Orion, fades to black (transparent via additive blend)
+  const FLAME_LEN = 18;
+  const flameGeo = new THREE.BufferGeometry();
+  const flameMat = new THREE.LineBasicMaterial({ vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false });
+  scene.add(new THREE.Line(flameGeo, flameMat));
+  const flameGlowGeo = new THREE.BufferGeometry();
+  const flameGlowMat = new THREE.LineBasicMaterial({ color: 0xffeedd, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false });
+  scene.add(new THREE.Line(flameGlowGeo, flameGlowMat));
+
   // ── Waypoints ──
   // t values mapped to parametric curve phases (192 control points total):
   //   0.000-0.417 = Earth orbits (81 pts), 0.417-0.495 = TLI departure (15 pts),
@@ -317,11 +338,11 @@
   });
 
   // ── Orion (enhanced with green point light) ──
-  const orionMat = new THREE.MeshPhongMaterial({ color: 0x00ff88, emissive: 0x00ff88, emissiveIntensity: 1.0, shininess: 60 });
+  const orionMat = new THREE.MeshPhongMaterial({ color: 0xfff8f0, emissive: 0xfff0e0, emissiveIntensity: 1.0, shininess: 60 });
   const orion = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), orionMat);
   orion.userData = { label: 'ORION' };
   scene.add(orion);
-  const glowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.2, side: THREE.BackSide });
+  const glowMat = new THREE.MeshBasicMaterial({ color: 0xfff5e0, transparent: true, opacity: 0.2, side: THREE.BackSide });
   orion.add(new THREE.Mesh(new THREE.SphereGeometry(0.44, 16, 16), glowMat));
 
   // ── Trail particles (5) — 30 fading dots behind Orion ──
@@ -690,6 +711,22 @@
       const aStart = Math.max(0, splitIdx - 12);
       const aEnd   = Math.min(N_PTS, splitIdx + 4);
       activeSegGeo.setFromPoints(allPts.slice(aStart, aEnd + 1));
+      // Flame gradient trail: white-hot at Orion, fades to black → transparent (additive blend)
+      const fStart = Math.max(0, splitIdx - FLAME_LEN);
+      const flamePts = allPts.slice(fStart, splitIdx + 1);
+      const fLen = flamePts.length;
+      if (fLen > 1) {
+        const fColors = new Float32Array(fLen * 3);
+        for (let i = 0; i < fLen; i++) {
+          const f = i / (fLen - 1); // 0 = tail (black), 1 = Orion (white-hot)
+          fColors[i*3]   = Math.pow(f, 0.6);          // R — slowest fade (warm)
+          fColors[i*3+1] = Math.pow(f, 1.5) * 0.95;   // G — mid fade
+          fColors[i*3+2] = Math.pow(f, 3.0) * 0.90;   // B — fastest fade
+        }
+        flameGeo.setFromPoints(flamePts);
+        flameGeo.setAttribute('color', new THREE.BufferAttribute(fColors, 3));
+        flameGlowGeo.setFromPoints(flamePts);
+      }
     }
 
     // ── Reference lines ──
