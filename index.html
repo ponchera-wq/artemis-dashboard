@@ -929,13 +929,8 @@
   </div>
 
   <div class="panel" id="feed-arow">
-    <div class="panel-header"><span class="dot"></span>AROW / 3D TRACKER — ORION POSITION</div>
-    <iframe
-      src="https://artemislive.org/"
-      style="flex:1; width:100%; border:none; display:block;"
-      loading="lazy"
-      title="ArtemisLive 3D Tracker"
-    ></iframe>
+    <div class="panel-header"><span class="dot"></span>MISSION TRAJECTORY — LIVE POSITION</div>
+    <canvas id="trajectory-canvas" style="flex:1;width:100%;min-height:0;display:block;"></canvas>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
@@ -1971,6 +1966,213 @@
   document.querySelectorAll('.crew-strip-member[data-crew]').forEach(el => {
     el.addEventListener('click', () => openCrewModal(el.dataset.crew));
   });
+
+  // ── TRAJECTORY CANVAS ───────────────────────────────────────────────
+  (function() {
+    const canvas = document.getElementById('trajectory-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    const MISSION_MS = 10 * 24 * 3600 * 1000; // 10-day mission
+
+    // Normalized (0-1) body positions
+    const EARTH = { x: 0.15, y: 0.50 };
+    const MOON  = { x: 0.78, y: 0.50 };
+
+    // 5 cubic bezier segments: figure-8 free-return trajectory
+    // { s: globalT start, e: globalT end, p: [P0,P1,P2,P3] }
+    const SEGS = [
+      { s: 0.00, e: 0.12, p: [{x:0.15,y:0.50},{x:0.14,y:0.27},{x:0.30,y:0.17},{x:0.46,y:0.21}] },
+      { s: 0.12, e: 0.44, p: [{x:0.46,y:0.21},{x:0.62,y:0.16},{x:0.74,y:0.26},{x:0.78,y:0.40}] },
+      { s: 0.44, e: 0.54, p: [{x:0.78,y:0.40},{x:0.91,y:0.35},{x:0.91,y:0.65},{x:0.78,y:0.60}] },
+      { s: 0.54, e: 0.92, p: [{x:0.78,y:0.60},{x:0.60,y:0.73},{x:0.32,y:0.75},{x:0.18,y:0.62}] },
+      { s: 0.92, e: 1.00, p: [{x:0.18,y:0.62},{x:0.13,y:0.58},{x:0.13,y:0.53},{x:0.15,y:0.50}] },
+    ];
+
+    function bezier(t, p) {
+      const u = 1 - t;
+      return {
+        x: u*u*u*p[0].x + 3*u*u*t*p[1].x + 3*u*t*t*p[2].x + t*t*t*p[3].x,
+        y: u*u*u*p[0].y + 3*u*u*t*p[1].y + 3*u*t*t*p[2].y + t*t*t*p[3].y,
+      };
+    }
+
+    function getPosAt(gt) {
+      gt = Math.max(0, Math.min(1, gt));
+      for (let i = 0; i < SEGS.length; i++) {
+        const sg = SEGS[i];
+        if (gt <= sg.e || i === SEGS.length - 1) {
+          const lt = Math.max(0, Math.min(1, (gt - sg.s) / (sg.e - sg.s)));
+          return bezier(lt, sg.p);
+        }
+      }
+      return SEGS[SEGS.length - 1].p[3];
+    }
+
+    // Pre-sample 600 normalized points
+    const N = 600;
+    const TRAJ = Array.from({ length: N + 1 }, (_, i) => getPosAt(i / N));
+
+    function resize() {
+      canvas.width  = canvas.clientWidth  || 100;
+      canvas.height = canvas.clientHeight || 100;
+    }
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas);
+    resize();
+
+    function cx(nx) { return nx * canvas.width; }
+    function cy(ny) { return ny * canvas.height; }
+
+    function draw() {
+      requestAnimationFrame(draw);
+      const W = canvas.width, H = canvas.height;
+      if (W < 20 || H < 20) return;
+
+      ctx.clearRect(0, 0, W, H);
+
+      const elapsed  = Date.now() - LAUNCH_UTC;
+      const gt       = Math.max(0, Math.min(1, elapsed / MISSION_MS));
+      const trailEnd = Math.min(Math.floor(gt * N), N);
+      const orionN   = TRAJ[trailEnd] || TRAJ[0];
+      const ox = cx(orionN.x), oy = cy(orionN.y);
+      const ex = cx(EARTH.x),  ey = cy(EARTH.y);
+      const mx = cx(MOON.x),   my = cy(MOON.y);
+
+      const earthR = Math.min(W, H) * 0.068;
+      const moonR  = Math.min(W, H) * 0.032;
+
+      // Full dashed trajectory
+      ctx.save();
+      ctx.setLineDash([4, 8]);
+      ctx.strokeStyle = 'rgba(74,144,217,0.18)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      TRAJ.forEach((p, i) => {
+        i === 0 ? ctx.moveTo(cx(p.x), cy(p.y)) : ctx.lineTo(cx(p.x), cy(p.y));
+      });
+      ctx.stroke();
+      ctx.restore();
+
+      // Trail: draw in 12 chunks with increasing opacity
+      if (trailEnd > 1) {
+        const CHUNKS = 12;
+        const chunk = Math.ceil(trailEnd / CHUNKS);
+        ctx.save();
+        ctx.setLineDash([]);
+        ctx.lineWidth = 2;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        for (let c = 0; c < CHUNKS; c++) {
+          const from = c * chunk;
+          const to   = Math.min((c + 1) * chunk, trailEnd);
+          if (from >= to) continue;
+          const alpha = 0.04 + 0.68 * ((c + 1) / CHUNKS);
+          ctx.strokeStyle = `rgba(74,144,217,${alpha.toFixed(2)})`;
+          ctx.beginPath();
+          ctx.moveTo(cx(TRAJ[from].x), cy(TRAJ[from].y));
+          for (let i = from + 1; i <= to; i++) {
+            ctx.lineTo(cx(TRAJ[i].x), cy(TRAJ[i].y));
+          }
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // Earth
+      ctx.save();
+      const eg = ctx.createRadialGradient(ex, ey, 0, ex, ey, earthR);
+      eg.addColorStop(0,    '#6ab0ff');
+      eg.addColorStop(0.45, '#2870c0');
+      eg.addColorStop(0.82, '#0B3D91');
+      eg.addColorStop(1,    'rgba(11,61,145,0)');
+      ctx.shadowColor = '#4A90D9';
+      ctx.shadowBlur  = 22;
+      ctx.beginPath();
+      ctx.arc(ex, ey, earthR * 0.72, 0, Math.PI * 2);
+      ctx.fillStyle = eg;
+      ctx.fill();
+      ctx.restore();
+
+      // Moon
+      ctx.save();
+      const mg = ctx.createRadialGradient(mx - moonR * 0.25, my - moonR * 0.25, 0, mx, my, moonR);
+      mg.addColorStop(0,   '#e2dfd6');
+      mg.addColorStop(0.6, '#9e9c94');
+      mg.addColorStop(1,   'rgba(80,78,72,0)');
+      ctx.shadowColor = 'rgba(210,205,190,0.4)';
+      ctx.shadowBlur  = 10;
+      ctx.beginPath();
+      ctx.arc(mx, my, moonR * 0.78, 0, Math.PI * 2);
+      ctx.fillStyle = mg;
+      ctx.fill();
+      ctx.restore();
+
+      // Orion — pulsing dot
+      const pulse = 0.5 + 0.5 * Math.sin(Date.now() / 430);
+      const dotR  = 4.5 + pulse * 2.5;
+      ctx.save();
+      // outer glow ring
+      ctx.shadowColor = '#a8d4ff';
+      ctx.shadowBlur  = 12 + pulse * 14;
+      ctx.beginPath();
+      ctx.arc(ox, oy, dotR, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      // bright core
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(ox, oy, dotR * 0.45, 0, Math.PI * 2);
+      ctx.fillStyle = '#cce8ff';
+      ctx.fill();
+      ctx.restore();
+
+      // Labels
+      const fz = Math.max(9, Math.min(W * 0.021, 13));
+      ctx.save();
+      ctx.font = `bold ${fz}px 'Share Tech Mono', monospace`;
+
+      // Earth label
+      ctx.fillStyle   = 'rgba(100,170,255,0.9)';
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText('EARTH', ex, ey + earthR * 0.72 + 5);
+
+      // Moon label
+      ctx.fillStyle = 'rgba(205,200,188,0.88)';
+      ctx.textAlign = 'center';
+      ctx.fillText('MOON', mx, my + moonR * 0.78 + 5);
+
+      // Orion label
+      const normX = orionN.x;
+      ctx.fillStyle   = 'rgba(255,255,255,0.92)';
+      ctx.font        = `bold ${Math.max(8, fz - 1)}px 'Share Tech Mono', monospace`;
+      ctx.textAlign   = normX > 0.68 ? 'right' : normX < 0.32 ? 'left' : 'center';
+      ctx.textBaseline = 'bottom';
+      const lox = normX > 0.68 ? ox - 10 : normX < 0.32 ? ox + 10 : ox;
+      ctx.fillText('ORION', lox, oy - 9);
+
+      // Distance readouts
+      const sfz = Math.max(7, fz - 2);
+      ctx.font = `${sfz}px 'Share Tech Mono', monospace`;
+      ctx.textBaseline = 'top';
+      const earthTxt = document.getElementById('tv-earth')?.textContent?.trim();
+      const moonTxt  = document.getElementById('tv-moon')?.textContent?.trim();
+      if (earthTxt && earthTxt !== '—') {
+        ctx.fillStyle = 'rgba(74,144,217,0.65)';
+        ctx.textAlign = 'center';
+        ctx.fillText(earthTxt + ' km', ex, ey + earthR * 0.72 + 5 + fz + 2);
+      }
+      if (moonTxt && moonTxt !== '—') {
+        ctx.fillStyle = 'rgba(180,175,163,0.62)';
+        ctx.textAlign = 'center';
+        ctx.fillText(moonTxt + ' km', mx, my + moonR * 0.78 + 5 + fz + 2);
+      }
+      ctx.restore();
+    }
+
+    draw();
+  })();
 
   // ── YOUTUBE TAB SWITCHER ─────────────────────────────────────────────
   document.querySelectorAll('.yt-tab').forEach(tab => {
