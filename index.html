@@ -557,6 +557,100 @@
       text-transform: uppercase;
     }
 
+    /* ════════════════════════════════
+       MISSION OBJECTIVES + APOD
+    ════════════════════════════════ */
+    #apod-img-wrap {
+      flex-shrink: 0;
+      position: relative;
+      overflow: hidden;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      height: 90px;
+    }
+
+    #apod-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: opacity 0.3s;
+    }
+
+    #apod-title-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      background: linear-gradient(transparent, rgba(8,8,14,0.92));
+      padding: 6px 8px 5px;
+      font-family: var(--font-mono);
+      font-size: 0.5rem;
+      color: var(--text);
+      letter-spacing: 0.04em;
+      line-height: 1.3;
+    }
+
+    #apod-label {
+      font-family: var(--font-ui);
+      font-size: 0.38rem;
+      letter-spacing: 0.14em;
+      color: var(--blue-light);
+      margin-bottom: 1px;
+    }
+
+    .obj-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px 8px;
+      overflow-y: auto;
+      flex: 1;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(74,144,217,0.3) transparent;
+      padding-right: 2px;
+    }
+
+    .obj-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 5px;
+      border-left: 2px solid transparent;
+      border-radius: 0 2px 2px 0;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .obj-item:hover { background: rgba(74,144,217,0.07); }
+
+    .obj-item.complete  { border-left-color: var(--green); }
+    .obj-item.progress  { border-left-color: var(--amber); }
+    .obj-item.pending   { border-left-color: rgba(74,144,217,0.25); }
+
+    .obj-box {
+      width: 10px; height: 10px;
+      border-radius: 2px;
+      border: 1px solid;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 7px; font-weight: 700;
+      transition: all 0.15s;
+    }
+
+    .obj-item.complete .obj-box  { border-color: var(--green); color: var(--green); background: rgba(0,230,118,0.12); }
+    .obj-item.progress .obj-box  { border-color: var(--amber); color: var(--amber); background: rgba(255,167,38,0.12); }
+    .obj-item.pending  .obj-box  { border-color: rgba(74,144,217,0.3); color: transparent; }
+
+    .obj-label {
+      font-family: var(--font-mono);
+      font-size: 0.5rem;
+      line-height: 1.3;
+      letter-spacing: 0.02em;
+    }
+
+    .obj-item.complete .obj-label { color: var(--green); }
+    .obj-item.progress .obj-label { color: var(--amber); }
+    .obj-item.pending  .obj-label { color: var(--text-dim); }
+
     /* ── Placeholder grid positions ── */
     #feed-youtube  { grid-row: 2; grid-column: 1; }
     #feed-arow     { grid-row: 2; grid-column: 2; }
@@ -793,27 +887,32 @@
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
-  <div class="panel placeholder" id="feed-blog">
-    <div class="panel-header"><span class="dot"></span>MISSION BLOG — LATEST UPDATES</div>
-    <div class="panel-body" style="flex-direction:column; gap:14px; padding:20px;">
-      <div class="placeholder-icon">📝</div>
-      <div class="placeholder-title">MISSION BLOG FEEDS</div>
-      <div class="placeholder-sub" style="opacity:0.6;">Embedding blocked — open in new tab</div>
-      <a href="https://www.nasa.gov/blogs/missions/" target="_blank" rel="noopener" style="width:100%;display:flex;flex-direction:column;gap:4px;text-decoration:none;background:rgba(74,144,217,0.07);border:1px solid rgba(74,144,217,0.3);border-radius:4px;padding:10px 14px;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--blue-light)'" onmouseout="this.style.borderColor='rgba(74,144,217,0.3)'">
-        <span style="font-family:var(--font-ui);font-size:0.6rem;letter-spacing:0.12em;color:var(--blue-light);">↗ NASA MISSIONS BLOG</span>
-        <span style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-dim);">nasa.gov/blogs/missions</span>
-      </a>
-      <a href="https://blogs.esa.int/orion/" target="_blank" rel="noopener" style="width:100%;display:flex;flex-direction:column;gap:4px;text-decoration:none;background:rgba(74,144,217,0.07);border:1px solid rgba(74,144,217,0.3);border-radius:4px;padding:10px 14px;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--blue-light)'" onmouseout="this.style.borderColor='rgba(74,144,217,0.3)'">
-        <span style="font-family:var(--font-ui);font-size:0.6rem;letter-spacing:0.12em;color:var(--blue-light);">↗ ESA ORION BLOG</span>
-        <span style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-dim);">blogs.esa.int/orion</span>
-      </a>
+  <div class="panel" id="feed-blog">
+    <div class="panel-header">
+      <span class="dot"></span>MISSION OBJECTIVES
+      <span id="obj-counter" style="margin-left:auto;font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.08em;">0 / 12</span>
+    </div>
+    <div class="panel-body" style="flex-direction:column;gap:6px;padding:8px 10px;overflow:hidden;">
+
+      <!-- NASA APOD -->
+      <div id="apod-img-wrap" title="Click to open full APOD" onclick="window.open(this.dataset.url,'_blank')">
+        <img id="apod-img" src="" alt="NASA APOD" style="opacity:0;">
+        <div id="apod-title-overlay">
+          <div id="apod-label">NASA ASTRONOMY PICTURE OF THE DAY</div>
+          <span id="apod-title-text">LOADING…</span>
+        </div>
+      </div>
+
+      <!-- Objectives grid (rendered by JS) -->
+      <div class="obj-grid" id="obj-grid"></div>
+
     </div>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
   <!-- CREW STRIP -->
   <div id="crew-strip">
-    <span class="crew-strip-label">ARTEMIS II CREW</span>
+    <span class="crew-strip-label">PRIMARY CREW</span>
     <div class="crew-strip-members">
       <div class="crew-strip-member">
         <span class="crew-strip-flag">🇺🇸</span>
@@ -839,6 +938,20 @@
         <span class="crew-strip-role">MS · CSA</span>
       </div>
     </div>
+    <span class="crew-strip-label" style="margin-left:20px;margin-right:12px;padding-left:12px;border-left:1px solid var(--border);">BACKUP</span>
+    <div class="crew-strip-members" style="flex:0;gap:16px;">
+      <div class="crew-strip-member" style="opacity:0.55;">
+        <span class="crew-strip-flag">🇺🇸</span>
+        <span class="crew-strip-name">ANDRE DOUGLAS</span>
+        <span class="crew-strip-role">NASA</span>
+      </div>
+      <div class="crew-strip-sep"></div>
+      <div class="crew-strip-member" style="opacity:0.55;">
+        <span class="crew-strip-flag">🇨🇦</span>
+        <span class="crew-strip-name">JENNI GIBBONS</span>
+        <span class="crew-strip-role">CSA</span>
+      </div>
+    </div>
   </div>
 
 </div><!-- #dashboard -->
@@ -846,6 +959,105 @@
 <div id="watermark">ARTEMIS II MISSION DASHBOARD · LIVE</div>
 
 <script>
+  // ══════════════════════════════════════════════════════════════════════
+  // MISSION OBJECTIVES — Edit status: 'complete' | 'progress' | 'pending'
+  // Click any item in the dashboard to toggle. States saved in localStorage.
+  // ══════════════════════════════════════════════════════════════════════
+  const OBJECTIVES = [
+    { id: 'obj-launch',    label: 'Launch & ascent',            status: 'complete' },
+    { id: 'obj-arrays',    label: 'Solar array deployment',      status: 'complete' },
+    { id: 'obj-perigee',   label: 'Perigee raise maneuver',      status: 'pending'  },
+    { id: 'obj-prox',      label: 'Proximity ops demo',          status: 'pending'  },
+    { id: 'obj-tli',       label: 'Trans-lunar injection burn',   status: 'pending'  },
+    { id: 'obj-ls',        label: 'Life support validation',      status: 'progress' },
+    { id: 'obj-o2o',       label: 'O2O laser comms test',         status: 'pending'  },
+    { id: 'obj-manual',    label: 'Manual flight control demo',   status: 'pending'  },
+    { id: 'obj-flyby',     label: 'Lunar flyby (far side pass)',  status: 'pending'  },
+    { id: 'obj-record',    label: 'Distance record (Apollo 13+)', status: 'pending'  },
+    { id: 'obj-reentry',   label: 'Re-entry & heat shield test',  status: 'pending'  },
+    { id: 'obj-splash',    label: 'Splashdown & recovery',        status: 'pending'  },
+  ];
+  // ══════════════════════════════════════════════════════════════════════
+
+  // ── MISSION OBJECTIVES RENDERER ─────────────────────────────────────
+  const OBJ_STORAGE_KEY = 'artemis2-objectives';
+  const STATUS_CYCLE    = ['pending', 'progress', 'complete'];
+  const OBJ_SYMBOLS     = { complete: '✓', progress: '▶', pending: '' };
+
+  function loadObjStates() {
+    try { return JSON.parse(localStorage.getItem(OBJ_STORAGE_KEY)) || {}; }
+    catch (_) { return {}; }
+  }
+
+  function saveObjStates(states) {
+    localStorage.setItem(OBJ_STORAGE_KEY, JSON.stringify(states));
+  }
+
+  function renderObjectives() {
+    const saved  = loadObjStates();
+    const grid   = document.getElementById('obj-grid');
+    const counter = document.getElementById('obj-counter');
+    grid.innerHTML = '';
+    let doneCount = 0;
+
+    OBJECTIVES.forEach(obj => {
+      const status = saved[obj.id] || obj.status;
+      if (status === 'complete') doneCount++;
+
+      const el = document.createElement('div');
+      el.className = `obj-item ${status}`;
+      el.dataset.id = obj.id;
+      el.innerHTML = `
+        <div class="obj-box">${OBJ_SYMBOLS[status]}</div>
+        <span class="obj-label">${obj.label}</span>
+      `;
+      el.addEventListener('click', () => {
+        const s      = loadObjStates();
+        const cur    = s[obj.id] || obj.status;
+        const next   = STATUS_CYCLE[(STATUS_CYCLE.indexOf(cur) + 1) % STATUS_CYCLE.length];
+        s[obj.id]    = next;
+        saveObjStates(s);
+        renderObjectives();
+      });
+      grid.appendChild(el);
+    });
+
+    counter.textContent = `${doneCount} / ${OBJECTIVES.length}`;
+  }
+
+  renderObjectives();
+
+  // ── NASA APOD ────────────────────────────────────────────────────────
+  async function fetchAPOD() {
+    try {
+      const r    = await fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY');
+      const data = await r.json();
+      const wrap = document.getElementById('apod-img-wrap');
+      const img  = document.getElementById('apod-img');
+      const titleEl = document.getElementById('apod-title-text');
+
+      if (data.media_type === 'image' && (data.url || data.hdurl)) {
+        img.src = data.url || data.hdurl;
+        img.style.opacity = '1';
+        wrap.dataset.url  = data.hdurl || data.url;
+      } else if (data.media_type === 'video') {
+        // video APOD — show thumbnail from URL if available
+        img.src = data.thumbnail_url || '';
+        img.style.opacity = data.thumbnail_url ? '1' : '0';
+        wrap.dataset.url = data.url || 'https://apod.nasa.gov';
+      }
+      titleEl.textContent = data.title || 'NASA APOD';
+    } catch (e) {
+      document.getElementById('apod-title-text').textContent = '↗ apod.nasa.gov';
+      document.getElementById('apod-img-wrap').dataset.url = 'https://apod.nasa.gov';
+      console.warn('APOD fetch:', e);
+    }
+  }
+
+  fetchAPOD();
+  // Refresh APOD once daily (86400s) — only if tab stays open
+  setInterval(fetchAPOD, 86400 * 1000);
+
   // ══════════════════════════════════════════════════════════════════════
   // MISSION LOG — Edit this array to add manual updates.
   // Paste new entries at the TOP. Format: { ts, title, text }
