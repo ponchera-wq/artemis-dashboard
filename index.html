@@ -3580,70 +3580,79 @@
     const N_PTS = 500;
     const allPts = curve.getPoints(N_PTS);
 
-    // ── Gradient trajectory line (1) — segmented with color interpolation ──
-    // Upcoming: dim gradient segments
-    const C_EARTH = new THREE.Color(0x00ffaa);
-    const C_MOON  = new THREE.Color(0xffd700);
+    // ── Trajectory line: grey upcoming, green completed, yellow active leading edge ──
+    const C_GREY    = new THREE.Color(0x2a3a4a);  // dim grey for upcoming
+    const C_GREEN   = new THREE.Color(0x00e676);  // bright green for completed
+    const C_YELLOW  = new THREE.Color(0xffd700);  // yellow for active leading edge
     const trajColors = new Float32Array(allPts.length * 3);
     allPts.forEach((_, i) => {
-      const t = i / allPts.length;
-      const c = C_EARTH.clone().lerp(C_MOON, t);
-      trajColors[i*3] = c.r; trajColors[i*3+1] = c.g; trajColors[i*3+2] = c.b;
+      // All upcoming points start as grey; gets overwritten for completed slice
+      trajColors[i*3] = C_GREY.r; trajColors[i*3+1] = C_GREY.g; trajColors[i*3+2] = C_GREY.b;
     });
-    // Upcoming path — dim gradient
+    // Upcoming path — dim grey
     const upGeo = new THREE.BufferGeometry().setFromPoints(allPts);
     upGeo.setAttribute('color', new THREE.BufferAttribute(trajColors.slice(), 3));
-    const upMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.18 });
+    const upMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.22 });
     scene.add(new THREE.Line(upGeo, upMat));
-    // Glow line behind (1) — additive blending
-    const glowLineGeo = new THREE.BufferGeometry().setFromPoints(allPts);
-    glowLineGeo.setAttribute('color', new THREE.BufferAttribute(trajColors.slice(), 3));
-    const glowLineMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending });
-    scene.add(new THREE.Line(glowLineGeo, glowLineMat));
 
-    // Completed path — bright gradient
+    // Completed path — bright green
     const completedGeo = new THREE.BufferGeometry();
-    const completedMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85 });
+    const completedMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 });
     const completedLine = new THREE.Line(completedGeo, completedMat);
     scene.add(completedLine);
     // Completed glow
     const compGlowGeo = new THREE.BufferGeometry();
-    const compGlowMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending });
+    const compGlowMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending });
     scene.add(new THREE.Line(compGlowGeo, compGlowMat));
+    // Active leading-edge segment — short yellow section at current position
+    const activeSegGeo = new THREE.BufferGeometry();
+    const activeSegMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.85 });
+    scene.add(new THREE.Line(activeSegGeo, activeSegMat));
 
     // ── Waypoints ──
     // Waypoints: key HIGH and CRITICAL events from mission schedule
     // t values mapped to 22-point curve (0-8=orbits, 8-12=outbound, 13-15=flyby, 16-21=return)
+    // status: 'nominal' | 'anomaly' — set manually to flag known issues
+    // activeWin: seconds the event stays "active" after metSec (default 900 = 15 min)
     const WAYPOINTS = [
       // ── DAY 1: LAUNCH & ASCENT (CRITICAL) ──
-      { t:0.000, label:'LAUNCH',            met:'T+00:00:00', metSec:0,      desc:'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.', crit:'CRITICAL' },
-      { t:0.015, label:'SRB SEP',           met:'T+00:02:12', metSec:132,    desc:'Solid Rocket Boosters separate after burning 5.5 million pounds of propellant.', crit:'CRITICAL' },
-      { t:0.030, label:'CORE MECO',         met:'T+00:08:06', metSec:486,    desc:'Core stage main engine cutoff. Core stage separates from ICPS upper stage.', crit:'HIGH' },
-      { t:0.060, label:'SOLAR ARRAYS',      met:'T+00:18:00', metSec:1080,   desc:'Orion solar arrays deploy, providing electrical power to the spacecraft.', crit:'HIGH' },
-      { t:0.095, label:'PERIGEE RAISE',     met:'T+00:49:00', metSec:2940,   desc:'ICPS fires to raise perigee altitude, setting up for apogee raise.', crit:'HIGH' },
-      { t:0.140, label:'APOGEE RAISE',      met:'T+01:30:00', metSec:5400,   desc:'ICPS second burn raises apogee to high elliptical orbit.', crit:'HIGH' },
-      { t:0.190, label:'ICPS SEP',          met:'T+02:00:00', metSec:7200,   desc:'ICPS upper stage separates. Orion is now free-flying.', crit:'CRITICAL' },
+      { t:0.000, label:'LAUNCH',            met:'T+00:00:00', metSec:0,      desc:'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+      { t:0.015, label:'SRB SEP',           met:'T+00:02:12', metSec:132,    desc:'Solid Rocket Boosters separate after burning 5.5 million pounds of propellant.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+      { t:0.030, label:'CORE MECO',         met:'T+00:08:06', metSec:486,    desc:'Core stage main engine cutoff. Core stage separates from ICPS upper stage.', crit:'HIGH', status:'nominal', activeWin:600 },
+      { t:0.060, label:'SOLAR ARRAYS',      met:'T+00:18:00', metSec:1080,   desc:'Orion solar arrays deploy, providing electrical power to the spacecraft.', crit:'HIGH', status:'nominal', activeWin:900 },
+      { t:0.095, label:'PERIGEE RAISE',     met:'T+00:49:00', metSec:2940,   desc:'ICPS fires to raise perigee altitude, setting up for apogee raise.', crit:'HIGH', status:'nominal', activeWin:900 },
+      { t:0.140, label:'APOGEE RAISE',      met:'T+01:30:00', metSec:5400,   desc:'ICPS second burn raises apogee to high elliptical orbit.', crit:'HIGH', status:'nominal', activeWin:900 },
+      { t:0.190, label:'ICPS SEP',          met:'T+02:00:00', metSec:7200,   desc:'ICPS upper stage separates. Orion is now free-flying.', crit:'CRITICAL', status:'nominal', activeWin:600 },
       // ── DAY 1-2: EARTH ORBIT ──
-      { t:0.280, label:'PROX OPS',          met:'T+02:30:00', metSec:9000,   desc:'Proximity operations demo \u2014 Orion maneuvers near separated ICPS.', crit:'HIGH' },
+      { t:0.280, label:'PROX OPS',          met:'T+02:30:00', metSec:9000,   desc:'Proximity operations demo \u2014 Orion maneuvers near separated ICPS.', crit:'HIGH', status:'nominal', activeWin:7200 },
       // ── DAY 2: TLI ──
-      { t:0.381, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.', crit:'CRITICAL' },
+      { t:0.381, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
       // ── DAY 3-4: OUTBOUND COAST ──
-      { t:0.440, label:'TCB-1',             met:'T+52:00:00', metSec:187200, desc:'Outbound trajectory correction burn 1 \u2014 fine-tunes course toward the Moon.', crit:'HIGH' },
-      { t:0.476, label:'O2O LASER',         met:'T+80:00:00', metSec:288000, desc:'Optical to Orion laser comms test \u2014 4K video downlink via laser from deep space.', crit:'HIGH' },
+      { t:0.440, label:'TCB-1',             met:'T+52:00:00', metSec:187200, desc:'Outbound trajectory correction burn 1 \u2014 fine-tunes course toward the Moon.', crit:'HIGH', status:'nominal', activeWin:900 },
+      { t:0.476, label:'O2O LASER',         met:'T+80:00:00', metSec:288000, desc:'Optical to Orion laser comms test \u2014 4K video downlink via laser from deep space.', crit:'HIGH', status:'nominal', activeWin:7200 },
       // ── DAY 5-6: LUNAR FLYBY ──
-      { t:0.548, label:'LUNAR SOI',         met:'T+100:00:00',metSec:360000, desc:'Orion enters the Moon\u2019s gravitational sphere of influence.', crit:'HIGH' },
-      { t:0.619, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Breaks Apollo 13\u2019s distance record of 400,171 km.', crit:'CRITICAL' },
-      { t:0.667, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.', crit:'CRITICAL' },
-      { t:0.690, label:'SIGNAL ACQ',        met:'T+129:11:00',metSec:465060, desc:'Signal reacquired after far-side pass. Crew reports status.', crit:'HIGH' },
+      { t:0.548, label:'LUNAR SOI',         met:'T+100:00:00',metSec:360000, desc:'Orion enters the Moon\u2019s gravitational sphere of influence.', crit:'HIGH', status:'nominal', activeWin:7200 },
+      { t:0.619, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Breaks Apollo 13\u2019s distance record of 400,171 km.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
+      { t:0.667, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
+      { t:0.690, label:'SIGNAL ACQ',        met:'T+129:11:00',metSec:465060, desc:'Signal reacquired after far-side pass. Crew reports status.', crit:'HIGH', status:'nominal', activeWin:1800 },
       // ── DAY 7-9: RETURN ──
-      { t:0.762, label:'RETURN TCB',        met:'T+150:00:00',metSec:540000, desc:'Return trajectory correction burn \u2014 targets Pacific Ocean splashdown zone.', crit:'HIGH' },
+      { t:0.762, label:'RETURN TCB',        met:'T+150:00:00',metSec:540000, desc:'Return trajectory correction burn \u2014 targets Pacific Ocean splashdown zone.', crit:'HIGH', status:'nominal', activeWin:900 },
       // ── DAY 10: ENTRY & SPLASHDOWN ──
-      { t:0.905, label:'SM SEP',            met:'T+228:00:00',metSec:820800, desc:'Service module separates. Only crew module continues to re-entry.', crit:'CRITICAL' },
-      { t:0.930, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Atmospheric entry at 40,000 km/h. Heat shield reaches 2,800\u00b0C during skip re-entry.', crit:'CRITICAL' },
-      { t:0.960, label:'PEAK HEATING',      met:'T+228:45:00',metSec:823500, desc:'Peak heating \u2014 heat shield surface reaches 2,800\u00b0C.', crit:'CRITICAL' },
-      { t:0.980, label:'CHUTES',            met:'T+229:05:00',metSec:824700, desc:'Main parachutes deploy at ~7,600m altitude, slowing Orion to ~30 km/h.', crit:'CRITICAL' },
-      { t:0.999, label:'SPLASHDOWN',        met:'T+229:10:00',metSec:825000, desc:'Orion splashes down in the Pacific Ocean. Recovery by USS Portland.', crit:'CRITICAL' },
+      { t:0.905, label:'SM SEP',            met:'T+228:00:00',metSec:820800, desc:'Service module separates. Only crew module continues to re-entry.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+      { t:0.930, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Atmospheric entry at 40,000 km/h. Heat shield reaches 2,800\u00b0C during skip re-entry.', crit:'CRITICAL', status:'nominal', activeWin:1800 },
+      { t:0.960, label:'PEAK HEATING',      met:'T+228:45:00',metSec:823500, desc:'Peak heating \u2014 heat shield surface reaches 2,800\u00b0C.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+      { t:0.980, label:'CHUTES',            met:'T+229:05:00',metSec:824700, desc:'Main parachutes deploy at ~7,600m altitude, slowing Orion to ~30 km/h.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+      { t:0.999, label:'SPLASHDOWN',        met:'T+229:10:00',metSec:825000, desc:'Orion splashes down in the Pacific Ocean. Recovery by USS Portland.', crit:'CRITICAL', status:'nominal', activeWin:600 },
     ];
+
+    // Returns: 'upcoming' | 'active' | 'done' | 'anomaly' | 'anomaly-done'
+    function wpGetState(wp, nowMet) {
+      const win = wp.activeWin || 900;
+      const isAnomaly = wp.status === 'anomaly';
+      if (nowMet > wp.metSec + win)           return isAnomaly ? 'anomaly-done' : 'done';
+      if (nowMet >= wp.metSec - 600)          return isAnomaly ? 'anomaly'      : 'active';
+      return 'upcoming';
+    }
     const wpMeshes = [], wpMats = [];
     WAYPOINTS.forEach(wp => {
       const mat = new THREE.MeshBasicMaterial({ color: 0x334455 });
@@ -3997,15 +4006,26 @@
       arrow.setLength(0.35+Math.max(0.2,Math.min(1.0,rawSpd/40000))*0.85, 0.18, 0.09);
 
       // ── Completed path with gradient colors (1) ──
+      const nowMet = elapsed / 1000; // mission elapsed seconds
       const splitIdx = Math.min(Math.floor(gt * N_PTS), N_PTS - 1);
       if (splitIdx > 0) {
+        // Completed path: all solid green
         const slice = allPts.slice(0, splitIdx + 2);
         const sliceColors = new Float32Array((splitIdx + 2) * 3);
-        for (let i = 0; i < splitIdx + 2; i++) { sliceColors[i*3] = trajColors[i*3]; sliceColors[i*3+1] = trajColors[i*3+1]; sliceColors[i*3+2] = trajColors[i*3+2]; }
+        for (let i = 0; i < splitIdx + 2; i++) {
+          const frac = i / (splitIdx + 1); // fade green brighter toward current pos
+          sliceColors[i*3]   = C_GREEN.r;
+          sliceColors[i*3+1] = C_GREEN.g;
+          sliceColors[i*3+2] = C_GREEN.b;
+        }
         completedGeo.setFromPoints(slice);
         completedGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors, 3));
         compGlowGeo.setFromPoints(slice);
         compGlowGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors.slice(), 3));
+        // Active leading edge: short yellow segment right at current position
+        const aStart = Math.max(0, splitIdx - 12);
+        const aEnd   = Math.min(N_PTS, splitIdx + 4);
+        activeSegGeo.setFromPoints(allPts.slice(aStart, aEnd + 1));
       }
 
       // ── Reference lines ──
@@ -4019,8 +4039,18 @@
       mdBuf[3]=moon.position.x; mdBuf[4]=moon.position.y; mdBuf[5]=moon.position.z;
       mdGeo.attributes.position.needsUpdate=true; mdLine.computeLineDistances();
 
-      // Waypoint states
-      WAYPOINTS.forEach((wp, i) => { const done=gt>wp.t+0.015; const cur=!done&&gt>=wp.t-0.005&&gt<wp.t+0.015; wpMats[i].color.setHex(done?0x00ffaa:cur?0xffd700:0x334455); wpMeshes[i].scale.setScalar(cur?1.0+pulse*0.45:1.0); });
+      // Waypoint states — color-coded by status
+      WAYPOINTS.forEach((wp, i) => {
+        const state = wpGetState(wp, nowMet);
+        const hexCol = state === 'done'         ? 0x00e676
+                     : state === 'active'       ? 0xffd700
+                     : state === 'anomaly'      ? 0xff6600
+                     : state === 'anomaly-done' ? 0xff8c00
+                     :                           0x2a3a4a;  // upcoming: dim grey
+        wpMats[i].color.setHex(hexCol);
+        const pulse2 = state === 'active' || state === 'anomaly';
+        wpMeshes[i].scale.setScalar(pulse2 ? 1.0 + pulse * 0.55 : 1.0);
+      });
 
       earth.rotation.y += 0.00175; moon.rotation.y += 0.0003;
 
@@ -4095,14 +4125,19 @@
 
       // Waypoint labels
       WAYPOINTS.forEach((wp, i) => {
-        const done = gt > wp.t + 0.015; const cur = !done && gt >= wp.t-0.005 && gt < wp.t+0.015;
-        if (!done && !cur) return;
+        const state = wpGetState(wp, nowMet);
         const s = proj(wpMeshes[i].position); if (!s.vis) return;
+        const color = state==='done'         ? 'rgba(0,230,118,0.55)'
+                    : state==='active'       ? '#ffd700'
+                    : state==='anomaly'      ? '#ff6600'
+                    : state==='anomaly-done' ? 'rgba(255,140,0,0.45)'
+                    :                         'rgba(100,130,160,0.28)';
+        const bold = state === 'active' || state === 'anomaly';
         lctx.save();
-        lctx.font = '9px "Share Tech Mono",monospace';
-        lctx.fillStyle = cur ? '#ffd700' : 'rgba(0,255,170,0.5)';
+        lctx.font = (bold ? 'bold ' : '') + '9px "Share Tech Mono",monospace';
+        lctx.fillStyle = color;
         lctx.textAlign = 'left'; lctx.textBaseline = 'middle';
-        lctx.shadowColor = lctx.fillStyle; lctx.shadowBlur = 6;
+        lctx.shadowColor = color; lctx.shadowBlur = bold ? 8 : 4;
         lctx.fillText(wp.label, s.x + 10, s.y - 8);
         lctx.restore();
       });
