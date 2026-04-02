@@ -830,6 +830,119 @@
       pointer-events: none;
       z-index: 100;
     }
+
+    /* ══════════════════════════════════════════════════════════════════
+       RESPONSIVE — TABLET  768 px – 1199 px
+    ══════════════════════════════════════════════════════════════════ */
+    @media (min-width: 768px) and (max-width: 1199px) {
+      #dashboard {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto 320px auto 380px 44px;
+        height: auto; min-height: 100vh;
+      }
+      #top-bar         { grid-row: 1; grid-column: 1 / -1; }
+      #feed-youtube    { grid-row: 2; grid-column: 1; min-height: 260px; }
+      #feed-dsn        { grid-row: 2; grid-column: 2; min-height: 260px; }
+      #feed-arow       { grid-row: 3; grid-column: 1 / -1; }
+      #feed-weather    { grid-row: 4; grid-column: 1; min-height: 240px; }
+      #mission-updates { grid-row: 4; grid-column: 2; min-height: 240px; }
+      #feed-blog       { grid-row: 5; grid-column: 1 / -1; }
+      #crew-strip      { grid-row: 6; grid-column: 1 / -1; }
+
+      .yt-frame { aspect-ratio: 16 / 9; flex: none; width: 100%; height: auto !important; }
+      .news-tab { min-height: 44px; padding: 8px 12px; }
+      .tl-event { min-height: 44px; }
+    }
+
+    /* ══════════════════════════════════════════════════════════════════
+       RESPONSIVE — MOBILE  < 768 px
+    ══════════════════════════════════════════════════════════════════ */
+    @media (max-width: 767px) {
+      #dashboard {
+        display: flex; flex-direction: column;
+        height: auto; min-height: 100vh;
+        gap: 4px; padding: 4px;
+        width: 100%;
+      }
+
+      /* Top bar: 2-col grid — MET full-width → Phase full-width → Earth|Moon → Speed */
+      #top-bar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "met   met"
+          "phase phase"
+          "earth moon"
+          "speed speed";
+        height: auto; flex-shrink: 0;
+      }
+      #top-bar > * + * { border-left: none; }
+      #tb-met      { grid-area: met;   border-bottom: 1px solid var(--border); padding: 8px 12px; flex: none; width: auto; }
+      #tb-phase    { grid-area: phase; border-bottom: 1px solid var(--border); padding: 6px 12px; flex: none; }
+      #telem-earth { grid-area: earth; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
+      #telem-moon  { grid-area: moon;  border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
+      #telem-speed { grid-area: speed; flex: none; padding: 8px; }
+
+      #met-display { font-size: clamp(1rem, 7vw, 1.5rem); }
+      .telem-value { font-size: clamp(1.1rem, 7vw, 1.8rem); }
+      .telem-label { font-size: 0.4rem; }
+
+      /* Panels */
+      .panel        { border-radius: 2px; }
+      .panel-header { font-size: 0.52rem; padding: 5px 10px 4px; }
+
+      /* YouTube: 16:9 */
+      #feed-youtube { flex-shrink: 0; height: auto; }
+      .yt-frame     { aspect-ratio: 16 / 9; width: 100%; height: auto !important; flex: none; display: none; }
+      .yt-frame.active { display: block; }
+
+      /* Trajectory: fixed height */
+      #feed-arow { height: 290px; flex-shrink: 0; }
+
+      /* DSN: 16:9 */
+      #feed-dsn { flex-shrink: 0; }
+      #feed-dsn iframe { aspect-ratio: 16 / 9; width: 100%; height: auto; flex: none; }
+
+      /* Space weather */
+      #feed-weather { min-height: 280px; flex-shrink: 0; }
+
+      /* News */
+      #mission-updates { min-height: 340px; flex-shrink: 0; }
+
+      /* News tabs: scrollable row */
+      .news-tabs { overflow-x: auto; scrollbar-width: none; }
+      .news-tabs::-webkit-scrollbar { display: none; }
+      .news-tab { flex: 0 0 auto; min-width: 60px; min-height: 44px; padding: 10px 16px; font-size: 0.58rem; }
+
+      /* Timeline */
+      #feed-blog { min-height: 360px; flex-shrink: 0; }
+      .tl-event  { min-height: 44px; align-items: center; }
+
+      /* APOD hidden on mobile */
+      #apod-strip { display: none; }
+
+      /* Crew strip: 2 across */
+      #crew-strip {
+        height: auto; flex-wrap: wrap;
+        padding: 6px 8px; gap: 4px;
+      }
+      .crew-strip-label  { width: 100%; margin-right: 0; margin-bottom: 4px; }
+      .crew-strip-members { flex-wrap: wrap; gap: 6px; width: 100%; }
+      .crew-strip-sep    { display: none; }
+      .crew-strip-member {
+        flex: 0 0 calc(50% - 3px);
+        min-height: 44px;
+        padding: 4px 8px;
+      }
+      .crew-strip-photo  { width: 28px; height: 28px; }
+
+      /* Crew modal: full-screen */
+      #crew-modal-overlay { align-items: flex-start; }
+      #crew-modal {
+        width: 100vw; height: 100dvh; max-height: 100dvh;
+        border-radius: 0; margin: 0;
+      }
+    }
   </style>
 </head>
 <body>
