@@ -1379,7 +1379,14 @@
         if (isActive) activeEl = el;
       });
 
-      if (activeEl) setTimeout(() => activeEl.scrollIntoView({ block: 'center', behavior: 'smooth' }), 80);
+      if (activeEl) setTimeout(() => {
+        const container = document.getElementById('timeline-scroll');
+        if (container) {
+          const elTop = activeEl.offsetTop;
+          const center = elTop - container.clientHeight / 2 + activeEl.offsetHeight / 2;
+          container.scrollTo({ top: Math.max(0, center), behavior: 'smooth' });
+        }
+      }, 80);
     }
 
     renderTimeline();
