@@ -828,27 +828,27 @@
       50%       { box-shadow: none; opacity: 0.35; }
     }
     .tl-met {
-      font-family: var(--font-mono); font-size: 0.58rem;
-      white-space: nowrap; flex-shrink: 0; min-width: 80px;
+      font-family: var(--font-mono); font-size: 0.72rem;
+      white-space: nowrap; flex-shrink: 0; min-width: 92px;
       letter-spacing: 0.04em; padding-top: 1px;
     }
     .tl-event.tl-complete .tl-met { color: var(--green); }
     .tl-event.tl-active   .tl-met { color: var(--amber); }
     .tl-event.tl-upcoming .tl-met { color: rgba(74,144,217,0.4); }
     .tl-name {
-      font-family: var(--font-mono); font-size: 0.66rem; line-height: 1.35;
+      font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.35;
     }
     .tl-event.tl-complete .tl-name { color: var(--text-dim); }
     .tl-event.tl-active   .tl-name { color: var(--amber); font-weight: 700; }
     .tl-event.tl-upcoming .tl-name { color: var(--text-dim); }
-    .tl-check { color: var(--green); font-size: 0.58rem; margin-left: 3px; }
+    .tl-check { color: var(--green); font-size: 0.72rem; margin-left: 3px; }
     /* Local time lines inside .tl-met */
     .tl-localtime {
-      font-family: var(--font-mono); font-size: 0.48rem; line-height: 1.4;
+      font-family: var(--font-mono); font-size: 0.60rem; line-height: 1.4;
       color: rgba(74,144,217,0.62); margin-top: 2px; white-space: nowrap;
     }
     .tl-eta {
-      font-family: var(--font-mono); font-size: 0.48rem; letter-spacing: 0.06em;
+      font-family: var(--font-mono); font-size: 0.60rem; letter-spacing: 0.06em;
       margin-top: 2px; line-height: 1.3;
     }
     .tl-upcoming .tl-eta { color: rgba(74,144,217,0.55); }
@@ -966,29 +966,6 @@
     /* Local clock in top bar */
     #local-time-display { font-size: 0.36rem; color: rgba(74,144,217,0.5); letter-spacing: 0.06em; margin-top: 1px; }
 
-    /* APOD thumbnail strip */
-    #apod-strip {
-      flex-shrink: 0; height: 54px;
-      border-top: 1px solid var(--border);
-      display: flex; align-items: center; gap: 8px;
-      padding: 0 8px; cursor: pointer; transition: background 0.2s;
-    }
-    #apod-strip:hover { background: rgba(74,144,217,0.06); }
-    #apod-thumb {
-      width: 68px; height: 42px; object-fit: cover;
-      border-radius: 2px; flex-shrink: 0; opacity: 0; transition: opacity 0.3s;
-    }
-    #apod-strip-info { flex: 1; overflow: hidden; }
-    .apod-strip-label {
-      font-family: var(--font-mono); font-size: 0.38rem;
-      color: var(--blue-light); letter-spacing: 0.12em; margin-bottom: 2px;
-    }
-    .apod-strip-title {
-      font-family: var(--font-mono); font-size: 0.5rem;
-      color: var(--text); line-height: 1.3;
-      overflow: hidden; display: -webkit-box;
-      -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-    }
 
     /* ── YouTube tab switcher ── */
     .yt-tabs {
@@ -1611,9 +1588,6 @@
       /* News */
       #mission-updates { height: 360px; max-height: 360px; }
 
-      /* APOD collapsed on mobile — tap to expand */
-      #apod-strip { max-height: 32px; overflow: hidden; cursor: pointer; transition: max-height 0.35s ease; }
-      #apod-strip.apod-expanded { max-height: 80px; }
 
       /* Crew strip: 2 across */
       #crew-strip {

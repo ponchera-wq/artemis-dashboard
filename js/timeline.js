@@ -213,30 +213,4 @@
     });
   });
 
-  // ── NASA APOD ──────────────────────────────────────────────────────
-  (async function() {
-    try {
-      const r    = await fetch('https://api.nasa.gov/planetary/apod?api_key=' + NASA_API_KEY);
-      const data = await r.json();
-      const thumb   = document.getElementById('apod-thumb');
-      const titleEl = document.getElementById('apod-strip-title');
-      const strip   = document.getElementById('apod-strip');
-
-      const imgUrl = data.media_type === 'video'
-        ? (data.thumbnail_url || '') : (data.url || data.hdurl || '');
-
-      if (strip)   strip.onclick = () => window.open(data.hdurl || data.url || 'https://apod.nasa.gov', '_blank');
-      if (titleEl) titleEl.textContent = data.title || 'NASA APOD';
-      if (thumb && imgUrl) {
-        thumb.src     = imgUrl;
-        thumb.onerror = () => { thumb.style.display = 'none'; };
-        thumb.onload  = () => { thumb.style.opacity = '1'; };
-      }
-    } catch (_) {
-      const titleEl = document.getElementById('apod-strip-title');
-      const strip   = document.getElementById('apod-strip');
-      if (titleEl) titleEl.textContent = '↗ apod.nasa.gov';
-      if (strip)   strip.onclick = () => window.open('https://apod.nasa.gov', '_blank');
-    }
-  })();
 })();

@@ -462,16 +462,6 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
   window.addEventListener('resize', () => { if (!_layoutFiring) applyLayout(); });
 })();
 
-// ── APOD STRIP MOBILE TOGGLE ─────────────────────────────────────────
-(function() {
-  var strip = document.getElementById('apod-strip');
-  if (!strip) return;
-  strip.addEventListener('click', function(e) {
-    if (window.innerWidth >= 768) return;
-    e.stopPropagation();
-    strip.classList.toggle('apod-expanded');
-  });
-})();
 
 // ── FOOTER LAST MODIFIED
   (function() {
