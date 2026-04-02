@@ -353,103 +353,74 @@
     ════════════════════════════════ */
     #mission-updates {
       grid-row: 3; grid-column: 2;
+      display: flex; flex-direction: column; overflow: hidden;
     }
 
-    #mission-updates .panel-body {
-      flex-direction: column;
-      padding: 0;
-      overflow: hidden;
-      align-items: stretch;
-      justify-content: flex-start;
+    .news-live-badge {
+      margin-left: auto;
+      font-family: var(--font-mono); font-size: 0.48rem;
+      color: var(--green); letter-spacing: 0.1em;
+      animation: blink-green 2.4s ease-in-out infinite;
+    }
+    @keyframes blink-green {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.35; }
     }
 
-    #log-meta {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 5px 10px;
+    .news-tabs {
+      display: flex; flex-shrink: 0;
       border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
     }
-
-    #log-last-updated {
-      font-family: var(--font-mono);
-      font-size: 0.52rem;
-      color: var(--text-dim);
-      letter-spacing: 0.08em;
-    }
-
-    #log-source-badge {
-      font-family: var(--font-mono);
-      font-size: 0.48rem;
-      letter-spacing: 0.1em;
-      padding: 1px 6px;
-      border-radius: 2px;
-    }
-
-    #log-source-badge.live {
-      color: var(--green);
-      border: 1px solid rgba(0,230,118,0.4);
-      background: rgba(0,230,118,0.06);
-    }
-
-    #log-source-badge.fallback {
-      color: var(--amber);
-      border: 1px solid rgba(255,167,38,0.4);
-      background: rgba(255,167,38,0.06);
-    }
-
-    #log-entries {
+    .news-tab {
       flex: 1;
-      overflow-y: auto;
-      padding: 6px 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      scrollbar-width: thin;
-      scrollbar-color: rgba(74,144,217,0.3) transparent;
+      font-family: var(--font-mono); font-size: 0.52rem; letter-spacing: 0.1em;
+      color: var(--text-dim); background: transparent;
+      border: none; border-bottom: 2px solid transparent;
+      padding: 6px 4px; cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
     }
+    .news-tab:hover  { color: var(--text); }
+    .news-tab.active { color: var(--accent-light); border-bottom-color: var(--accent-light); }
 
-    .log-entry {
-      border-left: 3px solid var(--border);
-      padding: 6px 10px;
-      background: rgba(74,144,217,0.04);
-      border-radius: 0 3px 3px 0;
-      transition: background 0.2s;
-      cursor: default;
+    .news-feed {
+      flex: 1; overflow-y: auto;
+      padding: 2px 0; display: flex; flex-direction: column;
+      scrollbar-width: thin; scrollbar-color: rgba(74,144,217,0.3) transparent;
     }
-
-    .log-entry:hover { background: rgba(74,144,217,0.09); }
-
-    .log-entry.recent   { border-left-color: var(--green); }
-    .log-entry.today    { border-left-color: var(--blue-light); }
-    .log-entry.older    { border-left-color: rgba(74,144,217,0.35); }
-
-    .log-entry-ts {
-      font-family: var(--font-mono);
-      font-size: 0.5rem;
-      letter-spacing: 0.08em;
-      margin-bottom: 3px;
+    .news-item {
+      padding: 7px 10px;
+      border-bottom: 1px solid rgba(74,144,217,0.09);
     }
+    .news-item:last-child { border-bottom: none; }
 
-    .log-entry.recent .log-entry-ts { color: var(--green); }
-    .log-entry.today  .log-entry-ts { color: var(--blue-light); }
-    .log-entry.older  .log-entry-ts { color: var(--text-dim); }
-
-    .log-entry-title {
-      font-family: var(--font-mono);
-      font-size: 0.62rem;
-      color: var(--text);
-      letter-spacing: 0.04em;
-      line-height: 1.35;
-      margin-bottom: 3px;
+    .news-source {
+      display: flex; align-items: center; gap: 5px;
+      font-family: var(--font-mono); font-size: 0.44rem;
+      letter-spacing: 0.12em; color: var(--text-dim); margin-bottom: 3px;
     }
-
-    .log-entry-excerpt {
-      font-family: var(--font-mono);
-      font-size: 0.52rem;
-      color: var(--text-dim);
-      line-height: 1.4;
+    .news-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #ef5350; flex-shrink: 0;
+    }
+    .news-title {
+      display: block;
+      font-family: var(--font-mono); font-size: 0.6rem;
+      color: var(--accent-light); letter-spacing: 0.03em;
+      line-height: 1.35; text-decoration: none; margin-bottom: 4px;
+      transition: color 0.15s;
+    }
+    .news-title:hover { color: #fff; text-decoration: underline; }
+    .news-desc {
+      font-family: var(--font-mono); font-size: 0.5rem;
+      color: var(--text-dim); line-height: 1.4; margin-bottom: 3px;
+    }
+    .news-time {
+      font-family: var(--font-mono); font-size: 0.44rem;
+      color: rgba(74,144,217,0.6); letter-spacing: 0.06em;
+    }
+    .news-empty {
+      font-family: var(--font-mono); font-size: 0.55rem;
+      color: var(--text-dim); text-align: center;
+      padding: 20px; letter-spacing: 0.1em;
     }
 
     /* ════════════════════════════════
@@ -1058,20 +1029,20 @@
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
-  <!-- MISSION UPDATES FEED -->
+  <!-- NEWS FEED — TABBED MULTI-SOURCE -->
   <div class="panel" id="mission-updates">
     <div class="panel-header">
-      <span class="dot"></span>MISSION UPDATES
-      <span id="log-source-badge" class="fallback">STATIC</span>
+      <span class="dot"></span>NEWS FEED
+      <span class="news-live-badge">● LIVE</span>
     </div>
-    <div class="panel-body">
-      <div id="log-meta">
-        <span id="log-last-updated">LAST UPDATED: —</span>
-        <span style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.08em;">AUTO-REFRESH 5m</span>
-      </div>
-      <div id="log-entries">
-        <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-dim);padding:20px;text-align:center;">LOADING MISSION LOG…</div>
-      </div>
+    <div class="news-tabs">
+      <button class="news-tab active" data-tab="all">ALL</button>
+      <button class="news-tab" data-tab="nasa">NASA</button>
+      <button class="news-tab" data-tab="media">MEDIA</button>
+      <button class="news-tab" data-tab="space">SPACE</button>
+    </div>
+    <div class="news-feed" id="news-feed">
+      <div class="news-empty">FETCHING FEEDS…</div>
     </div>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
@@ -1651,89 +1622,135 @@
     applySignalState();
   });
 
-  // ── MISSION UPDATES FEED ────────────────────────────────────────────
-  const RSS_FEEDS = [
-    'https://www.nasa.gov/missions/artemis/artemis-2/feed/',
-    'https://blogs.nasa.gov/artemis/feed/',
-    'https://www.nasa.gov/feeds/iotd-feed',
-  ];
-  const RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+  // ── NEWS FEED — MULTI-SOURCE TABBED ────────────────────────────────
+  (function() {
+    const R2J = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
-  const logEntries   = document.getElementById('log-entries');
-  const logUpdated   = document.getElementById('log-last-updated');
-  const logBadge     = document.getElementById('log-source-badge');
+    const SOURCES = {
+      nasa: [
+        { url: 'https://www.nasa.gov/feed/',             name: 'NASA' },
+        { url: 'https://blogs.nasa.gov/artemis/feed/',   name: 'NASA ARTEMIS' },
+      ],
+      space: [
+        { url: 'https://www.space.com/feeds/all',         name: 'SPACE.COM' },
+        { url: 'https://spacenews.com/feed/',             name: 'SPACENEWS' },
+        { url: 'https://arstechnica.com/space/feed/',     name: 'ARS TECHNICA' },
+      ],
+      media: [
+        { url: 'https://rss.cnn.com/rss/edition_space.rss',                        name: 'CNN SPACE' },
+        { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',    name: 'BBC SCI' },
+      ],
+    };
 
-  function stripHtml(str) {
-    return str.replace(/<[^>]*>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/&#\d+;/g,'').trim();
-  }
+    const FILTERS = {
+      nasa:  ['artemis', 'orion', 'moon'],
+      space: ['artemis', 'orion', 'moon', 'sls'],
+      media: ['artemis', 'moon', 'nasa'],
+    };
 
-  function ageClass(dateStr) {
-    const now = Date.now();
-    const age = now - new Date(dateStr).getTime();
-    if (age < 3 * 3600000)  return 'recent';  // < 3h
-    if (age < 24 * 3600000) return 'today';   // < 24h
-    return 'older';
-  }
+    const cache = { nasa: [], space: [], media: [] };
+    let activeTab = 'all';
 
-  function formatTs(dateStr) {
-    const d = new Date(dateStr);
-    if (isNaN(d)) return dateStr;
-    return d.toUTCString().replace(' GMT','').slice(5);  // "02 Apr 2026 10:00:00"
-  }
-
-  function renderEntries(items) {
-    logEntries.innerHTML = '';
-    items.slice(0, 8).forEach(item => {
-      const raw    = item.description || item.content || '';
-      const excerpt = stripHtml(raw).slice(0, 150) + (stripHtml(raw).length > 150 ? '…' : '');
-      const ts     = item.pubDate || item.ts || '';
-      const cls    = ageClass(ts);
-      const el     = document.createElement('div');
-      el.className = `log-entry ${cls}`;
-      el.innerHTML = `
-        <div class="log-entry-ts">${formatTs(ts)}</div>
-        <div class="log-entry-title">${stripHtml(item.title || 'UPDATE')}</div>
-        ${excerpt ? `<div class="log-entry-excerpt">${excerpt}</div>` : ''}
-      `;
-      logEntries.appendChild(el);
-    });
-  }
-
-  function renderFallback() {
-    logBadge.className = 'fallback';
-    logBadge.textContent = 'STATIC';
-    const items = MISSION_LOG.map(e => ({
-      pubDate: e.ts, title: e.title, description: e.text
-    }));
-    renderEntries(items);
-    logUpdated.textContent = 'LAST UPDATED: ' + formatTs(new Date().toISOString()) + ' UTC  ·  MANUAL LOG';
-  }
-
-  async function tryFeed(url) {
-    const res = await fetch(RSS2JSON + encodeURIComponent(url));
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const data = await res.json();
-    if (data.status !== 'ok' || !data.items || data.items.length === 0) throw new Error('No items');
-    return data.items;
-  }
-
-  async function loadMissionUpdates() {
-    logUpdated.textContent = 'LAST UPDATED: FETCHING…';
-    for (const feed of RSS_FEEDS) {
-      try {
-        const items = await tryFeed(feed);
-        logBadge.className = 'live';
-        logBadge.textContent = 'LIVE';
-        renderEntries(items);
-        logUpdated.textContent = 'LAST UPDATED: ' + formatTs(new Date().toISOString()) + ' UTC';
-        return;
-      } catch (_) { /* try next */ }
+    function stripHtml(s) {
+      return (s || '').replace(/<[^>]*>/g, '')
+        .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+        .replace(/&nbsp;/g,' ').replace(/&#\d+;/g,'').trim();
     }
-    renderFallback();
-  }
 
-  loadMissionUpdates();
-  setInterval(loadMissionUpdates, 5 * 60 * 1000);
+    function timeAgo(dateStr) {
+      const ms = Date.now() - new Date(dateStr).getTime();
+      if (isNaN(ms) || ms < 0) return '';
+      const min = Math.floor(ms / 60000);
+      if (min < 60)  return min + 'm ago';
+      const h = Math.floor(min / 60);
+      if (h < 24) return h + 'h ago';
+      return Math.floor(h / 24) + 'd ago';
+    }
+
+    function matches(item, keys) {
+      const txt = ((item.title || '') + ' ' + (item.description || '')).toLowerCase();
+      return keys.some(k => txt.includes(k));
+    }
+
+    async function fetchSource(src, filterKeys) {
+      try {
+        const res = await fetch(R2J + encodeURIComponent(src.url));
+        if (!res.ok) return [];
+        const data = await res.json();
+        if (data.status !== 'ok' || !Array.isArray(data.items)) return [];
+        return data.items
+          .filter(item => matches(item, filterKeys))
+          .map(item => ({ ...item, _src: src.name }));
+      } catch (_) { return []; }
+    }
+
+    function byDate(arr) {
+      return arr.slice().sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+    }
+
+    function dedup(items) {
+      const seen = new Set();
+      return items.filter(item => {
+        const key = (item.title || '').toLowerCase().replace(/\s+/g,' ').slice(0, 50);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }
+
+    function getItems(tab) {
+      if (tab === 'all') return dedup(byDate([...cache.nasa, ...cache.space, ...cache.media]));
+      return cache[tab] || [];
+    }
+
+    function renderTab(tab) {
+      activeTab = tab;
+      const feed = document.getElementById('news-feed');
+      const items = getItems(tab).slice(0, 6);
+      if (items.length === 0) {
+        feed.innerHTML = '<div class="news-empty">NO MATCHING ARTICLES</div>';
+        return;
+      }
+      feed.innerHTML = '';
+      items.forEach(item => {
+        const raw     = stripHtml(item.description || item.content || '');
+        const excerpt = raw.slice(0, 120) + (raw.length > 120 ? '…' : '');
+        const el      = document.createElement('div');
+        el.className  = 'news-item';
+        const link    = item.link || '#';
+        el.innerHTML  = `
+          <div class="news-source"><span class="news-dot"></span>${item._src || 'RSS'}</div>
+          <a class="news-title" href="${link}" target="_blank" rel="noopener noreferrer">${stripHtml(item.title || '')}</a>
+          ${excerpt ? `<div class="news-desc">${excerpt}</div>` : ''}
+          <div class="news-time">${timeAgo(item.pubDate)}</div>
+        `;
+        feed.appendChild(el);
+      });
+    }
+
+    async function refreshAll() {
+      const [n, s, m] = await Promise.all([
+        Promise.all(SOURCES.nasa.map(src  => fetchSource(src, FILTERS.nasa))).then(r => r.flat()),
+        Promise.all(SOURCES.space.map(src => fetchSource(src, FILTERS.space))).then(r => r.flat()),
+        Promise.all(SOURCES.media.map(src => fetchSource(src, FILTERS.media))).then(r => r.flat()),
+      ]);
+      cache.nasa  = byDate(n);
+      cache.space = byDate(s);
+      cache.media = byDate(m);
+      renderTab(activeTab);
+    }
+
+    document.querySelectorAll('.news-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.news-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        renderTab(btn.dataset.tab);
+      });
+    });
+
+    refreshAll();
+    setInterval(refreshAll, 15 * 60 * 1000);
+  })();
 
   // ── SPACE WEATHER — NOAA JSON FETCHES (5m) ─────────────────────────
 
