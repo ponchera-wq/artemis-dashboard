@@ -836,6 +836,8 @@
        RESPONSIVE — TABLET  768 px – 1199 px
     ══════════════════════════════════════════════════════════════════ */
     @media (min-width: 768px) and (max-width: 1199px) {
+      html { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; }
+      body { height: auto; overflow: visible; }
       #dashboard {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: auto auto 320px auto 380px 44px;
@@ -859,6 +861,8 @@
        RESPONSIVE — MOBILE  < 768 px
     ══════════════════════════════════════════════════════════════════ */
     @media (max-width: 767px) {
+      html { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; }
+      body { height: auto; overflow: visible; }
       #dashboard {
         display: flex; flex-direction: column;
         height: auto; min-height: 100vh;
