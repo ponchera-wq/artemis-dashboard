@@ -232,6 +232,16 @@
       50%       { box-shadow: 0 0 14px rgba(0,230,118,0.7); }
     }
 
+    #unit-toggle {
+      position: absolute; bottom: 5px; right: 7px;
+      font-family: var(--font-mono); font-size: 0.48rem;
+      color: var(--fg-dim); background: transparent;
+      border: 1px solid rgba(74,144,217,0.3); border-radius: 3px;
+      padding: 1px 6px; cursor: pointer; letter-spacing: 0.06em;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    #unit-toggle:hover { color: var(--accent-light); border-color: rgba(74,144,217,0.7); }
+
     /* Mission Phase */
     #tb-phase {
       flex: 0 0 250px;
@@ -890,22 +900,23 @@
     <div class="tb-telem" id="telem-earth">
       <div class="telem-label">🌍 DISTANCE FROM EARTH</div>
       <div class="telem-value" id="tv-earth">—</div>
-      <div class="telem-unit">KM</div>
+      <div class="telem-unit" id="tu-earth">KM</div>
     </div>
 
     <!-- Distance from Moon -->
     <div class="tb-telem" id="telem-moon">
       <div class="telem-label">🌕 DISTANCE FROM MOON</div>
       <div class="telem-value" id="tv-moon">—</div>
-      <div class="telem-unit">KM</div>
+      <div class="telem-unit" id="tu-moon">KM</div>
     </div>
 
     <!-- Orion Speed -->
     <div class="tb-telem" id="telem-speed">
       <div class="telem-label">🚀 ORION SPEED</div>
       <div class="telem-value" id="tv-speed">—</div>
-      <div class="telem-unit">KM/H</div>
+      <div class="telem-unit" id="tu-speed">KM/H</div>
       <div id="telem-badge" class="telem-badge-est">EST</div>
+      <button id="unit-toggle" title="Switch units">KM · MI</button>
     </div>
   </div>
 
@@ -1418,38 +1429,51 @@
   // Not GPS-accurate — ballpark estimates for the right feel.
   const H = 60, D = 24 * 60; // shorthand: H = 1hr in min, D = 1day in min
   const TELEM = {
-    earthDist: [   // km from Earth surface
-      [0,           400],
-      [25*H,        420],       // end of orbit
-      [25.5*H,      3000],      // TLI burn complete, climbing fast
-      [2*D,         185000],    // ~halfway to Moon
-      [4*D,         365000],    // approaching Moon
-      [4.5*D,       405000],    // maximum distance (behind Moon)
-      [5*D,         390000],    // exiting lunar region
-      [7*D,         210000],    // halfway home
-      [9*D,         40000],     // closing on Earth
+    earthDist: [   // km from Earth center
+      [0,           400],       // Launch, LEO
+      [3.5*H,       400],       // Pre-TLI, still in orbit
+      [3.75*H,      2500],      // TLI ignition, climbing
+      [4*H,         7000],      // Post-TLI
+      [6*H,         16000],
+      [12*H,        36000],
+      [18*H,        50000],
+      [1*D,         82000],
+      [2*D,         190000],
+      [3*D,         292000],
+      [4*D,         372000],    // approaching Moon
+      [4.5*D,       406000],    // max distance, past Moon
+      [5*D,         382000],    // return coast begins
+      [7*D,         196000],    // halfway home
+      [9*D,         36000],     // closing on Earth
       [9*D+12*H,    120],       // re-entry interface
     ],
-    moonDist: [    // km from Moon surface
+    moonDist: [    // km from Moon center
       [0,           384400],
-      [2*D,         295000],
-      [4*D,         14000],
+      [2*D,         290000],
+      [3*D,         196000],
+      [4*D,         20000],     // approaching Moon
       [4*D+8*H,     8900],      // closest approach
-      [5*D,         55000],
-      [6*D,         165000],
-      [8*D,         310000],
+      [5*D,         62000],
+      [6*D,         180000],
+      [8*D,         320000],
       [9.5*D,       384400],
     ],
     speed: [       // km/h relative to Earth
-      [0,           28000],
-      [25*H,        28000],     // orbital
-      [25.5*H,      39500],     // post-TLI
-      [3*D,         6400],      // coasting up, slowing
-      [4*D,         3700],      // near Moon
-      [4*D+8*H,     5200],      // lunar flyby slingshot
-      [5.5*D,       3100],      // outbound, slowing
-      [8*D,         14000],     // gravity accelerating homeward
-      [9.5*D,       40000],     // re-entry
+      [0,           28000],     // orbital
+      [3.5*H,       28000],     // pre-TLI
+      [3.75*H,      39500],     // TLI peak
+      [6*H,         24000],     // decelerating as it climbs
+      [12*H,        17000],
+      [18*H,        11500],
+      [1*D,         9800],
+      [2*D,         6800],
+      [3*D,         4600],
+      [4*D,         3100],      // near Moon, slowest
+      [4.5*D,       5300],      // lunar flyby slingshot
+      [6*D,         3500],
+      [8*D,         13000],     // gravity accelerating homeward
+      [9*D,         26000],
+      [9*D+12*H,    40000],     // re-entry
     ],
   };
 
@@ -1530,6 +1554,12 @@
   const tvEarth = document.getElementById('tv-earth');
   const tvMoon  = document.getElementById('tv-moon');
   const tvSpeed = document.getElementById('tv-speed');
+  const tuEarth = document.getElementById('tu-earth');
+  const tuMoon  = document.getElementById('tu-moon');
+  const tuSpeed = document.getElementById('tu-speed');
+
+  let useImperial = false;
+  const KM_TO_MI = 0.621371;
 
   function flashEl(el) {
     el.classList.remove('tick');
@@ -1561,14 +1591,40 @@
       speedKmh = lerpSec(TELEM.speed);
     }
 
-    const eStr = fmt.format(Math.round(Math.max(0, earthKm)));
-    const mStr = fmt.format(Math.round(Math.max(0, moonKm)));
-    const sStr = fmt.format(Math.round(Math.max(0, speedKmh)));
+    let earthVal = Math.round(Math.max(0, earthKm));
+    let moonVal  = Math.round(Math.max(0, moonKm));
+    let speedVal = Math.round(Math.max(0, speedKmh));
+
+    if (useImperial) {
+      earthVal = Math.round(earthVal * KM_TO_MI);
+      moonVal  = Math.round(moonVal  * KM_TO_MI);
+      speedVal = Math.round(speedVal * KM_TO_MI);
+      tuEarth.textContent = 'MI';
+      tuMoon.textContent  = 'MI';
+      tuSpeed.textContent = 'MPH';
+    } else {
+      tuEarth.textContent = 'KM';
+      tuMoon.textContent  = 'KM';
+      tuSpeed.textContent = 'KM/H';
+    }
+
+    const eStr = fmt.format(earthVal);
+    const mStr = fmt.format(moonVal);
+    const sStr = fmt.format(speedVal);
 
     if (tvEarth.textContent !== eStr) { tvEarth.textContent = eStr; flashEl(tvEarth); }
     if (tvMoon.textContent  !== mStr) { tvMoon.textContent  = mStr; flashEl(tvMoon);  }
     if (tvSpeed.textContent !== sStr) { tvSpeed.textContent = sStr; flashEl(tvSpeed); }
   }
+
+  document.getElementById('unit-toggle').addEventListener('click', () => {
+    useImperial = !useImperial;
+    const btn = document.getElementById('unit-toggle');
+    btn.textContent  = useImperial ? 'MI · KM' : 'KM · MI';
+    btn.style.color  = useImperial ? 'var(--amber)' : '';
+    btn.style.borderColor = useImperial ? 'rgba(255,167,38,0.5)' : '';
+    tickTelem();
+  });
 
   tickTelem();
   setInterval(tickTelem, 1000);
