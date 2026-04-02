@@ -769,6 +769,184 @@
     .corner-tl { top: 4px; left: 4px; border-width: 1px 0 0 1px; }
     .corner-br { bottom: 4px; right: 4px; border-width: 0 1px 1px 0; }
 
+    /* ════════════════════════════════
+       CREW MODALS
+    ════════════════════════════════ */
+    .crew-strip-member {
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 2px 6px;
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .crew-strip-member:hover {
+      background: rgba(74,144,217,0.12);
+      box-shadow: 0 0 8px rgba(74,144,217,0.3);
+    }
+
+    #crew-modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    #crew-modal-overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    #crew-modal {
+      background: var(--bg-panel);
+      border: 1px solid var(--blue-light);
+      border-radius: 6px;
+      box-shadow: 0 0 40px rgba(74,144,217,0.3), 0 0 80px rgba(74,144,217,0.1);
+      width: min(560px, 90vw);
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+      transform: translateY(16px);
+      transition: transform 0.25s ease;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(74,144,217,0.3) transparent;
+    }
+
+    #crew-modal-overlay.open #crew-modal {
+      transform: translateY(0);
+    }
+
+    #crew-modal-close {
+      position: absolute;
+      top: 10px; right: 12px;
+      background: transparent;
+      border: 1px solid rgba(74,144,217,0.3);
+      border-radius: 3px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      width: 24px; height: 24px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+      z-index: 1;
+    }
+    #crew-modal-close:hover { border-color: var(--blue-light); color: var(--blue-light); }
+
+    #crew-modal-header {
+      display: flex;
+      gap: 16px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+
+    #crew-modal-photo {
+      width: 110px;
+      height: 130px;
+      object-fit: cover;
+      object-position: top center;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+      background: var(--bg-card);
+    }
+
+    #crew-modal-photo-placeholder {
+      width: 110px;
+      height: 130px;
+      flex-shrink: 0;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      opacity: 0.4;
+    }
+
+    .crew-modal-name {
+      font-family: var(--font-ui);
+      font-size: 1.1rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .crew-modal-role-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .crew-modal-role-badge {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      color: var(--blue-light);
+      border: 1px solid rgba(74,144,217,0.4);
+      background: rgba(74,144,217,0.1);
+      padding: 2px 8px;
+      border-radius: 2px;
+    }
+
+    .crew-modal-flag { font-size: 1.1rem; }
+
+    .crew-modal-agency {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    .crew-modal-section {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .crew-modal-section:last-child { border-bottom: none; }
+
+    .crew-modal-section-label {
+      font-family: var(--font-ui);
+      font-size: 0.42rem;
+      letter-spacing: 0.18em;
+      color: var(--blue-light);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .crew-modal-section-body {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+      letter-spacing: 0.02em;
+    }
+
+    .crew-modal-first {
+      font-family: var(--font-ui);
+      font-size: 0.55rem;
+      letter-spacing: 0.06em;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .crew-modal-quote {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      color: var(--text);
+      line-height: 1.5;
+      font-style: italic;
+      border-left: 3px solid var(--blue-light);
+      padding-left: 10px;
+    }
+
     /* ── Watermark ── */
     #watermark {
       position: fixed;
@@ -1038,25 +1216,25 @@
   <div id="crew-strip">
     <span class="crew-strip-label">PRIMARY CREW</span>
     <div class="crew-strip-members">
-      <div class="crew-strip-member">
+      <div class="crew-strip-member" data-crew="wiseman" title="Click for bio">
         <span class="crew-strip-flag">🇺🇸</span>
         <span class="crew-strip-name">REID WISEMAN</span>
         <span class="crew-strip-role">CDR</span>
       </div>
       <div class="crew-strip-sep"></div>
-      <div class="crew-strip-member">
+      <div class="crew-strip-member" data-crew="glover" title="Click for bio">
         <span class="crew-strip-flag">🇺🇸</span>
         <span class="crew-strip-name">VICTOR GLOVER</span>
         <span class="crew-strip-role">PLT</span>
       </div>
       <div class="crew-strip-sep"></div>
-      <div class="crew-strip-member">
+      <div class="crew-strip-member" data-crew="koch" title="Click for bio">
         <span class="crew-strip-flag">🇺🇸</span>
         <span class="crew-strip-name">CHRISTINA KOCH</span>
         <span class="crew-strip-role">MS</span>
       </div>
       <div class="crew-strip-sep"></div>
-      <div class="crew-strip-member">
+      <div class="crew-strip-member" data-crew="hansen" title="Click for bio">
         <span class="crew-strip-flag">🇨🇦</span>
         <span class="crew-strip-name">JEREMY HANSEN</span>
         <span class="crew-strip-role">MS · CSA</span>
@@ -1079,6 +1257,36 @@
   </div>
 
 </div><!-- #dashboard -->
+
+<!-- CREW PROFILE MODAL -->
+<div id="crew-modal-overlay">
+  <div id="crew-modal">
+    <button id="crew-modal-close" aria-label="Close">✕</button>
+    <div id="crew-modal-header">
+      <img id="crew-modal-photo" src="" alt="Crew portrait">
+      <div>
+        <div class="crew-modal-name" id="cm-name"></div>
+        <div class="crew-modal-role-line">
+          <span class="crew-modal-role-badge" id="cm-role"></span>
+          <span class="crew-modal-flag" id="cm-flag"></span>
+          <span class="crew-modal-agency" id="cm-agency"></span>
+        </div>
+      </div>
+    </div>
+    <div class="crew-modal-section">
+      <div class="crew-modal-section-label">Previous Missions</div>
+      <div class="crew-modal-section-body" id="cm-missions"></div>
+    </div>
+    <div class="crew-modal-section">
+      <div class="crew-modal-section-label">Notable Firsts &amp; Records</div>
+      <div id="cm-firsts"></div>
+    </div>
+    <div class="crew-modal-section">
+      <div class="crew-modal-section-label">Quote</div>
+      <div class="crew-modal-quote" id="cm-quote"></div>
+    </div>
+  </div>
+</div>
 
 <div id="watermark">ARTEMIS II MISSION DASHBOARD · LIVE</div>
 
@@ -1601,6 +1809,133 @@
 
   fetchSpaceWeather();
   setInterval(fetchSpaceWeather, 5 * 60 * 1000);
+
+  // ── CREW PROFILE MODALS ─────────────────────────────────────────────
+  const CREW_DATA = {
+    wiseman: {
+      name:    'REID WISEMAN',
+      role:    'CDR — COMMANDER',
+      agency:  'NASA',
+      flag:    '🇺🇸',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2024/03/jsc2023e072375-wiseman-portrait.png',
+      missions: [
+        'ISS Expedition 40/41 (2014) — 165 days in space',
+        'Two spacewalks totalling 13h 5m',
+        'Chief of the NASA Astronaut Office, 2020–2024',
+      ],
+      firsts: [
+        'Most experienced commander on a NASA lunar-distance mission',
+      ],
+      quote: '"We\'re not just going back to the Moon — we\'re going for all of us."',
+      bio:   'U.S. Navy Captain and former F/A-18 test pilot. Selected by NASA in 2009. Commanded ISS Expedition 41 before becoming Chief of the Astronaut Office.',
+    },
+    glover: {
+      name:    'VICTOR GLOVER',
+      role:    'PLT — PILOT',
+      agency:  'NASA',
+      flag:    '🇺🇸',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2023/10/jsc2021e020826.jpg',
+      missions: [
+        'SpaceX Crew-1 (Nov 2020 – May 2021) — 168 days aboard ISS',
+        '4 spacewalks totalling 23h 37m',
+        'First operational Crew Dragon long-duration mission',
+      ],
+      firsts: [
+        '★ FIRST person of colour to travel beyond low Earth orbit',
+        'First Black pilot on a long-duration ISS mission',
+      ],
+      quote: '"The sky is not the limit — it never was."',
+      bio:   'U.S. Navy Commander and naval aviator. Flew F/A-18 and F-35 jets. Selected by NASA in 2013. Crew-1 pilot, setting a precedent for Commercial Crew operations.',
+    },
+    koch: {
+      name:    'CHRISTINA KOCH',
+      role:    'MS — MISSION SPECIALIST',
+      agency:  'NASA',
+      flag:    '🇺🇸',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2023/10/jsc2021e020765.jpg',
+      missions: [
+        'ISS Expedition 59/60/61 (2019–2020) — 328 consecutive days',
+        'Then-record for longest single spaceflight by a woman',
+        'First all-female spacewalk with Jessica Meir (Oct 2019)',
+      ],
+      firsts: [
+        '★ FIRST woman to travel beyond low Earth orbit',
+        '★ Holds women\'s record: 328 consecutive days in space',
+        '★ First all-female spacewalk (with Jessica Meir)',
+      ],
+      quote: '"Exploration is not a choice, it\'s an imperative."',
+      bio:   'Electrical engineer and NASA astronaut selected in 2013. Spent nearly a year on the ISS, conducting research on human health in microgravity. Holds multiple records for women in spaceflight.',
+    },
+    hansen: {
+      name:    'JEREMY HANSEN',
+      role:    'MS — MISSION SPECIALIST',
+      agency:  'CSA',
+      flag:    '🇨🇦',
+      photo:   'https://www.nasa.gov/wp-content/uploads/2023/10/jsc2021e020794.jpg',
+      missions: [
+        'Artemis II — First spaceflight',
+        'Over 2,000 flight hours on CF-18 Hornet jets',
+        'CSA Director of Operations at JSC (2018–2021)',
+      ],
+      firsts: [
+        '★ FIRST Canadian to travel beyond low Earth orbit',
+        '★ FIRST non-American to fly on a lunar mission',
+        '★ One of only two Canadians active in deep-space programmes',
+      ],
+      quote: '"Canada has always been an explorer nation. Now we go to the Moon."',
+      bio:   'Canadian Armed Forces Colonel and CF-18 fighter pilot. Selected as a CSA astronaut in 2009. Has supported ISS missions from Mission Control and served as astronaut liaison in Russia.',
+    },
+  };
+
+  const SILHOUETTE = '👤';
+  const overlay    = document.getElementById('crew-modal-overlay');
+  const modal      = document.getElementById('crew-modal');
+
+  function openCrewModal(key) {
+    const d = CREW_DATA[key];
+    if (!d) return;
+
+    // Photo with fallback
+    const photo = document.getElementById('crew-modal-photo');
+    photo.src   = d.photo;
+    photo.style.display = 'block';
+    photo.onerror = () => {
+      photo.style.display = 'none';
+    };
+
+    document.getElementById('cm-name').textContent   = d.name;
+    document.getElementById('cm-role').textContent   = d.role;
+    document.getElementById('cm-flag').textContent   = d.flag;
+    document.getElementById('cm-agency').textContent = d.agency;
+
+    document.getElementById('cm-missions').innerHTML =
+      d.missions.map(m => `<div style="margin-bottom:3px;">· ${m}</div>`).join('');
+
+    document.getElementById('cm-firsts').innerHTML =
+      d.firsts.map(f => `<div class="crew-modal-first">${f}</div>`).join('');
+
+    document.getElementById('cm-quote').textContent = d.quote;
+
+    overlay.classList.add('open');
+    overlay.style.opacity = '1';
+    overlay.style.pointerEvents = 'all';
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCrewModal() {
+    overlay.style.opacity = '0';
+    overlay.style.pointerEvents = 'none';
+    setTimeout(() => overlay.classList.remove('open'), 260);
+    document.body.style.overflow = '';
+  }
+
+  document.getElementById('crew-modal-close').addEventListener('click', closeCrewModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeCrewModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCrewModal(); });
+
+  document.querySelectorAll('.crew-strip-member[data-crew]').forEach(el => {
+    el.addEventListener('click', () => openCrewModal(el.dataset.crew));
+  });
 
   // ── YOUTUBE TAB SWITCHER ─────────────────────────────────────────────
   document.querySelectorAll('.yt-tab').forEach(tab => {
