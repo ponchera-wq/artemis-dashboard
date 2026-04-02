@@ -1753,22 +1753,19 @@
 
     function timeAgo(dateStr) {
       if (!dateStr) return '';
-      // RSS pubDate strings include timezone ("GMT", "+0000", etc.) so Date() parses them
-      // correctly as UTC. For feeds that omit timezone, treat as UTC by appending Z.
-      let parsed = new Date(dateStr);
-      if (isNaN(parsed.getTime())) {
-        // Try appending Z to treat bare datetime strings as UTC
-        parsed = new Date(dateStr.trim() + 'Z');
-      }
+      // rss2json returns dates as "YYYY-MM-DD HH:MM:SS" — no timezone, but always UTC.
+      // Standard RSS dates include "GMT" / "+0000" / "Z".
+      // If no timezone indicator is present, treat the string as UTC explicitly,
+      // because new Date("2026-04-01 13:37:00") parses as LOCAL time in most engines.
+      const hasZone = /Z$|[+-]\d{2}:?\d{2}$|GMT|UTC/i.test(dateStr.trim());
+      const normalized = hasZone ? dateStr : dateStr.trim().replace(' ', 'T') + 'Z';
+      const parsed = new Date(normalized);
       if (isNaN(parsed.getTime())) return '';
       const ms = Date.now() - parsed.getTime();
-      // Sanity: future dates or articles older than 48h → show date instead
       if (ms < 0) return 'just now';
-      if (ms > 48 * 3600000) {
-        return parsed.toUTCString().slice(5, 16); // "02 Apr 2026"
-      }
+      if (ms > 48 * 3600000) return parsed.toUTCString().slice(5, 16); // "02 Apr 2026"
       const min = Math.floor(ms / 60000);
-      if (min < 60)  return min + 'm ago';
+      if (min < 60) return min + 'm ago';
       return Math.floor(min / 60) + 'h ago';
     }
 
