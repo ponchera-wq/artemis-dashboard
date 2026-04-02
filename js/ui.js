@@ -413,7 +413,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
       return;
     }
 
-    let row = 2, col = 1, maxRow = 2;
+    let row = 3, col = 1, maxRow = 3;
 
     state.order.forEach(id => {
       const el = document.getElementById(id);
@@ -434,9 +434,9 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
 
     // Expand dashboard grid rows to fit all panel rows
     const dashboard = document.getElementById('dashboard');
-    const panelRowCount = maxRow - 1; // rows 2..maxRow
+    const panelRowCount = maxRow - 2; // rows 3..maxRow (row 2 = ref-nav)
     dashboard.style.gridTemplateRows =
-      `112px ${Array(panelRowCount).fill('1fr').join(' ')} 36px 38px`;
+      `112px 32px ${Array(panelRowCount).fill('1fr').join(' ')} 36px 38px`;
 
     // Move crew-strip and footer to correct last rows
     const crewStrip = document.getElementById('crew-strip');
