@@ -1160,6 +1160,184 @@
       overflow: auto;
     }
 
+    /* ══ TELEMETRY CINEMATIC OVERLAY ══════════════════════════════════════ */
+    #telem-overlay {
+      position: fixed; inset: 0; z-index: 950;
+      background: rgba(0,0,0,0.93);
+      backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    #telem-overlay.open { opacity: 1; pointer-events: all; }
+
+    #telem-overlay-inner {
+      width: min(96vw, 1520px);
+      max-height: 96vh; overflow-y: auto;
+      position: relative;
+      display: flex; flex-direction: column; gap: 32px;
+      padding: 32px 44px 36px;
+    }
+    #telem-overlay-close {
+      position: absolute; top: 0; right: 0;
+      width: 36px; height: 36px;
+      background: transparent; border: 1px solid rgba(74,144,217,0.4);
+      border-radius: 4px; color: var(--text-dim);
+      font-size: 1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    #telem-overlay-close:hover { border-color: #00e5ff; color: #00e5ff; }
+
+    /* Rows */
+    .to-row { display: flex; gap: 28px; }
+    .to-row1 { align-items: flex-start; }
+    .to-row2 { align-items: flex-start; border-top: 1px solid rgba(74,144,217,0.1); padding-top: 28px; }
+    .to-row3 { align-items: center; flex-wrap: wrap; gap: 24px 40px; border-top: 1px solid rgba(74,144,217,0.1); padding-top: 20px; }
+
+    /* Blocks (row 1) */
+    .to-block { flex: 1; min-width: 0; }
+    .to-sect-label {
+      font-family: var(--font-ui); font-size: 0.52rem; letter-spacing: 0.22em;
+      color: rgba(74,144,217,0.55); margin-bottom: 12px;
+    }
+
+    /* MET clock — cinematic large */
+    @keyframes toGlowGreen {
+      0%,100% { text-shadow: 0 0 30px rgba(0,230,118,0.45), 0 0 60px rgba(0,230,118,0.15); }
+      50%      { text-shadow: 0 0 55px rgba(0,230,118,0.7),  0 0 110px rgba(0,230,118,0.28); }
+    }
+    @keyframes toGlowCyan {
+      0%,100% { text-shadow: 0 0 25px rgba(0,229,255,0.4),  0 0 50px rgba(0,229,255,0.12); }
+      50%      { text-shadow: 0 0 50px rgba(0,229,255,0.65), 0 0 100px rgba(0,229,255,0.22); }
+    }
+    .to-met-clock {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(3.2rem, 9vw, 7.5rem);
+      font-weight: 700; color: var(--green);
+      line-height: 1; letter-spacing: 0.04em;
+      animation: toGlowGreen 2.4s ease-in-out infinite;
+    }
+    .to-met-sub {
+      font-family: var(--font-mono);
+      font-size: clamp(0.65rem, 1.4vw, 1rem);
+      color: rgba(74,144,217,0.65); margin-top: 10px;
+      display: flex; gap: 18px; flex-wrap: wrap;
+    }
+    .to-launch-label {
+      font-family: var(--font-mono); font-size: 0.46rem;
+      color: var(--text-dim); margin-top: 6px; letter-spacing: 0.06em;
+    }
+    #to-signal {
+      margin-top: 12px; font-family: var(--font-mono);
+      font-size: clamp(0.55rem, 1.1vw, 0.75rem); letter-spacing: 0.1em;
+    }
+    #to-signal.acquired { color: var(--green); }
+    #to-signal.los { color: var(--amber); }
+
+    /* Phase block */
+    .to-phase-name {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(1.8rem, 4.5vw, 3.8rem);
+      font-weight: 700; letter-spacing: 0.07em; color: #00e5ff;
+      animation: toGlowCyan 2.8s ease-in-out infinite;
+    }
+    .to-current-event {
+      font-family: var(--font-mono);
+      font-size: clamp(0.58rem, 1.1vw, 0.82rem);
+      color: var(--amber); margin-top: 10px; letter-spacing: 0.05em;
+    }
+    .to-next-event {
+      font-family: var(--font-mono);
+      font-size: clamp(0.52rem, 1vw, 0.75rem);
+      color: rgba(74,144,217,0.65); margin-top: 7px; letter-spacing: 0.04em;
+    }
+    .to-next-event::before { content: '▸ '; color: #00e5ff; }
+
+    /* Phase pips */
+    .to-phase-pip-row {
+      display: flex; align-items: center; gap: 5px;
+      margin-top: 18px; flex-wrap: wrap;
+    }
+    .to-phase-pip {
+      width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+      background: rgba(74,144,217,0.12); border: 1px solid rgba(74,144,217,0.28);
+      transition: all 0.3s;
+    }
+    .to-phase-pip.done { background: rgba(0,230,118,0.25); border-color: var(--green); }
+    .to-phase-pip.active {
+      background: #00e5ff; border-color: #00e5ff;
+      box-shadow: 0 0 10px rgba(0,229,255,0.6);
+      width: 13px; height: 13px;
+    }
+    .to-phase-sep { color: rgba(74,144,217,0.25); font-size: 0.5rem; }
+    .to-phase-pip-label {
+      font-family: var(--font-ui); font-size: 0.35rem;
+      color: rgba(74,144,217,0.4); letter-spacing: 0.08em;
+      margin: 0 2px; white-space: nowrap;
+    }
+
+    /* Gauges (row 2) */
+    .to-gauge { flex: 1; min-width: 0; padding: 0 22px; border-left: 1px solid rgba(74,144,217,0.1); }
+    .to-gauge:first-child { border-left: none; padding-left: 0; }
+    .to-gauge-label {
+      font-family: var(--font-ui); font-size: clamp(0.48rem, 1vw, 0.68rem);
+      letter-spacing: 0.16em; color: rgba(74,144,217,0.55); margin-bottom: 10px;
+    }
+    .to-gauge-value {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: clamp(2.4rem, 6vw, 5.5rem);
+      line-height: 1; letter-spacing: 0.02em;
+    }
+    .to-gauge-earth .to-gauge-value { color: #4ab3ff; text-shadow: 0 0 28px rgba(74,179,255,0.35); }
+    .to-gauge-moon  .to-gauge-value { color: #ffd740; text-shadow: 0 0 28px rgba(255,215,64,0.35); }
+    .to-gauge-speed .to-gauge-value { color: #ff8c42; text-shadow: 0 0 28px rgba(255,140,66,0.35); }
+    .to-gauge-unit {
+      font-family: var(--font-ui); font-size: clamp(0.52rem, 1.1vw, 0.78rem);
+      letter-spacing: 0.2em; color: var(--text-dim); margin-top: 5px;
+    }
+    .to-gauge-annotation {
+      font-family: var(--font-mono); font-size: 0.46rem;
+      color: var(--text-dim); margin-top: 6px; letter-spacing: 0.04em;
+    }
+    .to-gauge-trend {
+      font-family: var(--font-mono); font-size: 0.58rem;
+      margin-top: 5px; letter-spacing: 0.04em;
+    }
+    .to-gauge-trend.up   { color: var(--green); }
+    .to-gauge-trend.down { color: #ff5252; }
+
+    /* Extra row (row 3) */
+    .to-extra-item { display: flex; flex-direction: column; gap: 5px; }
+    .to-extra-label {
+      font-family: var(--font-ui); font-size: 0.38rem; letter-spacing: 0.16em;
+      color: rgba(74,144,217,0.4); text-transform: uppercase;
+    }
+    .to-extra-val {
+      font-family: var(--font-mono); font-size: clamp(0.7rem, 1.5vw, 1rem);
+      color: var(--text); letter-spacing: 0.04em;
+    }
+    .to-extra-val.live { color: var(--green); }
+    .to-extra-val.est  { color: var(--amber); }
+    #to-unit-toggle {
+      font-family: var(--font-mono); font-size: 0.65rem;
+      background: transparent; border: 1px solid rgba(255,167,38,0.4);
+      border-radius: 3px; color: var(--amber); padding: 7px 18px;
+      cursor: pointer; letter-spacing: 0.1em; transition: all 0.15s;
+    }
+    #to-unit-toggle:hover { border-color: var(--amber); background: rgba(255,167,38,0.06); }
+
+    /* Mobile */
+    @media (max-width: 767px) {
+      #telem-overlay-inner { padding: 14px 14px 24px; gap: 20px; }
+      .to-row, .to-row2 { flex-direction: column; gap: 16px; }
+      .to-gauge { border-left: none; padding: 12px 0 0; border-top: 1px solid rgba(74,144,217,0.1); }
+      .to-gauge:first-child { border-top: none; padding-top: 0; }
+      .to-met-clock { font-size: clamp(2.4rem, 13vw, 5rem); }
+      .to-phase-name { font-size: clamp(1.5rem, 9vw, 2.8rem); }
+      .to-gauge-value { font-size: clamp(2rem, 11vw, 3.5rem); }
+    }
+
     /* ── Placeholder grid positions ── */
     #feed-youtube  { grid-row: 2; grid-column: 1; }
     #feed-arow     { grid-row: 2; grid-column: 2; }
@@ -1828,9 +2006,82 @@
       <div id="telem-update-time" style="position:absolute;bottom:20px;right:7px;font-family:var(--font-mono);font-size:0.30rem;color:rgba(74,144,217,0.45);letter-spacing:0.05em;pointer-events:none;"></div>
       <button id="unit-toggle" title="Switch units" style="color:var(--amber);border-color:rgba(255,167,38,0.5);">MI · KM</button>
     </div>
-    <!-- Top-bar expand button (absolute, top-right corner) -->
-    <button class="yt-expand-btn panel-expand" data-panel="top-bar"
-      style="position:absolute;top:5px;right:7px;z-index:2;" title="Expand telemetry">&#x26F6;</button>
+    <!-- Top-bar expand button (dedicated telem overlay, not panel-move system) -->
+    <button class="yt-expand-btn" id="telem-expand-btn"
+      style="position:absolute;top:5px;right:7px;z-index:2;" title="Expand telemetry (⛶)">&#x26F6;</button>
+  </div>
+
+  <!-- ══ TELEMETRY CINEMATIC OVERLAY ════════════════════════════════════ -->
+  <div id="telem-overlay" role="dialog" aria-modal="true" aria-label="Mission Telemetry">
+    <div id="telem-overlay-inner">
+      <button id="telem-overlay-close" title="Close (Esc)">&#x2715;</button>
+
+      <!-- Row 1: MET + Phase -->
+      <div class="to-row to-row1">
+        <div class="to-block to-met-block">
+          <div class="to-sect-label">MISSION ELAPSED TIME</div>
+          <div class="to-met-clock" id="to-met">D+000 00:00:00</div>
+          <div class="to-met-sub">
+            <span id="to-utc">UTC --:--:--</span>
+            <span id="to-local"></span>
+          </div>
+          <div class="to-launch-label">LAUNCH: 2026-04-01 · 22:35 UTC</div>
+          <div id="to-signal"></div>
+        </div>
+        <div class="to-block to-phase-block">
+          <div class="to-sect-label">MISSION PHASE</div>
+          <div class="to-phase-name" id="to-phase">—</div>
+          <div class="to-current-event" id="to-current-event"></div>
+          <div class="to-next-event" id="to-next-event"></div>
+          <div class="to-phase-pip-row" id="to-phase-pips"></div>
+        </div>
+      </div>
+
+      <!-- Row 2: Large gauges -->
+      <div class="to-row to-row2">
+        <div class="to-gauge to-gauge-earth">
+          <div class="to-gauge-label">🌍 DISTANCE FROM EARTH</div>
+          <div class="to-gauge-value" id="to-v-earth">—</div>
+          <div class="to-gauge-unit" id="to-u-earth">MI</div>
+          <div class="to-gauge-annotation" id="to-a-earth"></div>
+          <div class="to-gauge-trend" id="to-t-earth"></div>
+        </div>
+        <div class="to-gauge to-gauge-moon">
+          <div class="to-gauge-label">🌕 DISTANCE FROM MOON</div>
+          <div class="to-gauge-value" id="to-v-moon">—</div>
+          <div class="to-gauge-unit" id="to-u-moon">MI</div>
+          <div class="to-gauge-annotation" id="to-a-moon"></div>
+          <div class="to-gauge-trend" id="to-t-moon"></div>
+        </div>
+        <div class="to-gauge to-gauge-speed">
+          <div class="to-gauge-label">🚀 ORION SPEED</div>
+          <div class="to-gauge-value" id="to-v-speed">—</div>
+          <div class="to-gauge-unit" id="to-u-speed">MPH</div>
+          <div class="to-gauge-annotation" id="to-a-speed"></div>
+          <div class="to-gauge-trend" id="to-t-speed"></div>
+        </div>
+      </div>
+
+      <!-- Row 3: Extra detail -->
+      <div class="to-row to-row3">
+        <div class="to-extra-item">
+          <div class="to-extra-label">DATA SOURCE</div>
+          <div class="to-extra-val" id="to-source">EST</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">ORBITAL SPEED</div>
+          <div class="to-extra-val" id="to-speed-kms">— km/s</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">ORBIT / TRAJECTORY</div>
+          <div class="to-extra-val" id="to-phase-detail">—</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">UNITS</div>
+          <button id="to-unit-toggle">MI · KM</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- ══ ROW 2: MAIN FEEDS ══════════════════════════════════════════════ -->
@@ -3862,6 +4113,169 @@
       }
     }
     animate();
+  })();
+
+  // ── TELEMETRY CINEMATIC OVERLAY ──────────────────────────────────────
+  (function() {
+    const overlay   = document.getElementById('telem-overlay');
+    const closeBtn  = document.getElementById('telem-overlay-close');
+    const expandBtn = document.getElementById('telem-expand-btn');
+    const pipsEl    = document.getElementById('to-phase-pips');
+    if (!overlay || !expandBtn) return;
+
+    let updateInterval = null;
+    let prevEarth = null, prevMoon = null, prevSpeed = null;
+    let pipsBuilt = false;
+
+    function open() {
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      overlay.setAttribute('aria-hidden','false');
+      syncData();
+      updateInterval = setInterval(syncData, 1000);
+    }
+    function close() {
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+      overlay.setAttribute('aria-hidden','true');
+      clearInterval(updateInterval);
+    }
+
+    function set(id, text) { const el = document.getElementById(id); if (el) el.textContent = text || ''; }
+    function mirror(id, srcId) { set(id, document.getElementById(srcId)?.textContent || ''); }
+
+    function trend(elId, cur, prev) {
+      const el = document.getElementById(elId);
+      if (!el || prev === null || cur === null) return;
+      const diff = cur - prev;
+      if (Math.abs(diff) < 0.5) { el.textContent = ''; el.className = 'to-gauge-trend'; return; }
+      const dir = diff > 0;
+      el.textContent = (dir ? '↑' : '↓') + ' ' + (dir ? 'increasing' : 'decreasing');
+      el.className   = 'to-gauge-trend ' + (dir ? 'up' : 'down');
+    }
+
+    function buildPips() {
+      if (pipsBuilt) return;
+      const srcNodes = document.querySelectorAll('#phase-bar .phase-node');
+      if (!srcNodes.length) return;
+      srcNodes.forEach(node => {
+        const pip = document.createElement('span');
+        pip.className = 'to-phase-pip';
+        pip.dataset.nodeId = node.id;
+        const lbl = node.querySelector('.phase-node-label');
+        if (lbl) {
+          const ltxt = document.createElement('span');
+          ltxt.className = 'to-phase-pip-label';
+          ltxt.textContent = lbl.textContent.slice(0,4);
+          pip.appendChild(ltxt);
+        }
+        pipsEl.appendChild(pip);
+      });
+      pipsBuilt = true;
+    }
+
+    function updatePips() {
+      buildPips();
+      const srcNodes = document.querySelectorAll('#phase-bar .phase-node');
+      const pips = pipsEl.children;
+      srcNodes.forEach((node, i) => {
+        if (!pips[i]) return;
+        pips[i].className = 'to-phase-pip' +
+          (node.classList.contains('active') ? ' active' :
+           node.classList.contains('done')   ? ' done'   : '');
+      });
+    }
+
+    function syncData() {
+      // MET / time
+      mirror('to-met',   'met-display');
+      mirror('to-utc',   'utc-display');
+      mirror('to-local', 'local-time-display');
+
+      // Signal
+      const sp = document.getElementById('signal-pill');
+      const sg = document.getElementById('to-signal');
+      if (sp && sg) { sg.textContent = sp.textContent; sg.className = sp.className; }
+
+      // Phase
+      mirror('to-phase', 'current-phase-name');
+      mirror('to-current-event', 'current-event-name');
+      updatePips();
+
+      // Next event — extract text from timeline element
+      const nextEl = document.getElementById('tl-next-event');
+      if (nextEl) {
+        const namePart = nextEl.querySelector('div:first-child')?.textContent?.replace(/^NEXT:\s*/,'') || '';
+        const whenPart = nextEl.querySelector('.tl-next-when')?.textContent || '';
+        set('to-next-event', namePart ? namePart + (whenPart ? ' — ' + whenPart : '') : '');
+      }
+
+      // Gauges — read from live source elements
+      const eStr = document.getElementById('tv-earth')?.textContent || '—';
+      const mStr = document.getElementById('tv-moon')?.textContent  || '—';
+      const sStr = document.getElementById('tv-speed')?.textContent || '—';
+      set('to-v-earth', eStr);
+      set('to-v-moon',  mStr);
+      set('to-v-speed', sStr);
+      mirror('to-u-earth', 'tu-earth');
+      mirror('to-u-moon',  'tu-moon');
+      mirror('to-u-speed', 'tu-speed');
+      mirror('to-a-earth', 'earth-annotation');
+      mirror('to-a-moon',  'moon-annotation');
+
+      // Trend arrows
+      const eNum = parseFloat(eStr.replace(/,/g,'')) || null;
+      const mNum = parseFloat(mStr.replace(/,/g,'')) || null;
+      const sNum = parseFloat(sStr.replace(/,/g,'')) || null;
+      trend('to-t-earth', eNum, prevEarth);
+      trend('to-t-moon',  mNum, prevMoon);
+      trend('to-t-speed', sNum, prevSpeed);
+      prevEarth = eNum; prevMoon = mNum; prevSpeed = sNum;
+
+      // Speed in km/s
+      const unit = document.getElementById('tu-speed')?.textContent || '';
+      const speedKmh = unit === 'KM/H' ? (sNum || 0) : (sNum || 0) / 0.621371;
+      set('to-speed-kms', (speedKmh / 3600).toFixed(2) + ' km/s');
+
+      // Data source
+      const badge = document.getElementById('telem-badge');
+      const srcEl = document.getElementById('to-source');
+      if (badge && srcEl) {
+        srcEl.textContent = badge.textContent;
+        srcEl.className = 'to-extra-val ' + (badge.classList.contains('telem-badge-live') ? 'live' : 'est');
+      }
+
+      // Phase detail
+      const phase = document.getElementById('current-phase-name')?.textContent || '';
+      const DETAILS = {
+        'LAUNCH':       '~185 km × ~70,400 km INITIAL ORBIT',
+        'EARTH ORBIT':  'HIGHLY ELLIPTICAL · ~185 km × ~70,400 km',
+        'TLI BURN':     'TRANS-LUNAR INJECTION · BURNING FOR THE MOON',
+        'OUTBOUND COAST':'OUTBOUND FREE-RETURN TRAJECTORY',
+        'LUNAR FLYBY':  'LUNAR FLYBY · DISTANT RETROGRADE APPROACH',
+        'RETURN COAST': 'RETURN COAST · INBOUND FREE RETURN',
+        'ENTRY':        'ATMOSPHERIC ENTRY · SKIP REENTRY CORRIDOR',
+        'SPLASHDOWN':   'RECOVERY OPERATIONS',
+      };
+      set('to-phase-detail', DETAILS[phase] || phase || '—');
+
+      // Unit toggle button label
+      const utBtn = document.getElementById('to-unit-toggle');
+      const srcBtn = document.getElementById('unit-toggle');
+      if (utBtn && srcBtn) utBtn.textContent = srcBtn.textContent;
+    }
+
+    // Open / close handlers
+    expandBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.classList.contains('open')) close(); });
+
+    // Unit toggle in overlay mirrors main toggle
+    document.getElementById('to-unit-toggle')?.addEventListener('click', () => {
+      document.getElementById('unit-toggle')?.click();
+      syncData();
+    });
   })();
 
   // ── DSN ARTEMIS II PANEL ─────────────────────────────────────────────
