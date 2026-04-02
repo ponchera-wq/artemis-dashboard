@@ -546,6 +546,17 @@
       margin: 0 4px;
     }
 
+    /* ════════════════════════════════
+       SPACE WEATHER WIDGET STYLES
+    ════════════════════════════════ */
+    .sw-label {
+      font-family: var(--font-ui);
+      font-size: 0.42rem;
+      letter-spacing: 0.16em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
     /* ── Placeholder grid positions ── */
     #feed-youtube  { grid-row: 2; grid-column: 1; }
     #feed-arow     { grid-row: 2; grid-column: 2; }
@@ -665,24 +676,101 @@
   <!-- ══ ROW 3: SECONDARY ═══════════════════════════════════════════════ -->
 
   <div class="panel" id="feed-weather">
-    <div class="panel-header"><span class="dot"></span>SPACE WEATHER — NOAA SWPC <span style="margin-left:auto;font-size:0.5rem;color:var(--text-dim);letter-spacing:0.08em;">AUTO-REFRESH 60s</span></div>
-    <div class="panel-body" style="flex-direction:column; gap:8px; padding:10px; overflow:hidden;">
-      <div style="font-family:var(--font-ui);font-size:0.48rem;letter-spacing:0.14em;color:var(--text-dim);text-align:center;">SPACE WEATHER OVERVIEW</div>
-      <a href="https://www.swpc.noaa.gov" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
-        <img id="img-swx-overview"
-          src="https://services.swpc.noaa.gov/images/swx-overview-large.gif"
-          alt="Space Weather Overview"
-          style="max-width:100%;max-height:100%;object-fit:contain;border:1px solid var(--border);border-radius:2px;"
-        >
-      </a>
-      <div style="font-family:var(--font-ui);font-size:0.48rem;letter-spacing:0.14em;color:var(--text-dim);text-align:center;">SOLAR WIND — ACE 24H</div>
-      <a href="https://www.swpc.noaa.gov/products/real-time-solar-wind" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
-        <img id="img-swx-wind"
-          src="https://services.swpc.noaa.gov/images/ace-mag-swepam-24-hour.gif"
-          alt="ACE Solar Wind 24h"
-          style="max-width:100%;max-height:100%;object-fit:contain;border:1px solid var(--border);border-radius:2px;"
-        >
-      </a>
+    <div class="panel-header">
+      <span class="dot"></span>SPACE WEATHER — NOAA SWPC
+      <span style="margin-left:auto;font-size:0.5rem;color:var(--text-dim);letter-spacing:0.08em;">AUTO-REFRESH 5m</span>
+    </div>
+    <div class="panel-body" style="flex-direction:column;gap:8px;padding:10px 12px;overflow:hidden;justify-content:flex-start;">
+
+      <!-- Row 1: Kp arc gauge + X-ray + solar wind -->
+      <div style="display:flex;gap:10px;flex:1;min-height:0;align-items:center;">
+
+        <!-- Kp arc gauge -->
+        <div style="flex:1.1;display:flex;flex-direction:column;align-items:center;gap:0;">
+          <div class="sw-label">GEOMAGNETIC Kp INDEX</div>
+          <!-- Arc: center (100,100) r=70, 7→5 o'clock CW = 300° sweep -->
+          <!-- M 65 161 A 70 70 0 1 1 135 161 ; arc-len ≈ 366.5 -->
+          <svg id="kp-svg" viewBox="0 0 200 170" style="width:100%;max-width:170px;overflow:visible;">
+            <!-- bg arc (full 300°, dim) -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161"
+              fill="none" stroke="rgba(74,144,217,0.13)" stroke-width="15" stroke-linecap="round"/>
+            <!-- color zones overlay (decorative segments behind fill) -->
+            <!-- G0-G1 green: 0–5/9 = 0–203.6 -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
+              stroke="rgba(0,230,118,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="203.6 366.5"/>
+            <!-- G2 yellow: 5–6/9 = 203.6–244.3 -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
+              stroke="rgba(255,215,64,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="40.7 366.5" stroke-dashoffset="-203.6"/>
+            <!-- G3 orange: 6–7/9 = 244.3–285.1 -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
+              stroke="rgba(255,167,38,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="40.7 366.5" stroke-dashoffset="-244.3"/>
+            <!-- G4-G5 red: 7–9/9 = 285.1–366.5 -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
+              stroke="rgba(239,83,80,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="81.4 366.5" stroke-dashoffset="-285.1"/>
+            <!-- active fill arc (updated by JS) -->
+            <path id="kp-fill" d="M 65 161 A 70 70 0 1 1 135 161"
+              fill="none" stroke="#00e676" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="0 366.5" stroke-dashoffset="0"/>
+            <!-- scale labels -->
+            <text x="42" y="168" text-anchor="middle"
+              font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(74,144,217,0.4)">0</text>
+            <text x="158" y="168" text-anchor="middle"
+              font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(74,144,217,0.4)">9</text>
+            <!-- Kp number (center) -->
+            <text id="kp-val" x="100" y="100" text-anchor="middle" dominant-baseline="middle"
+              font-family="Share Tech Mono,monospace" font-size="30" fill="#4A90D9">—</text>
+            <!-- G label -->
+            <text id="kp-g" x="100" y="128" text-anchor="middle"
+              font-family="Orbitron,sans-serif" font-size="9" fill="#7986a8" letter-spacing="2">G0</text>
+          </svg>
+        </div>
+
+        <!-- Right column: X-ray + wind -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;justify-content:center;">
+
+          <!-- X-ray flare badge -->
+          <div>
+            <div class="sw-label" style="margin-bottom:4px;">SOLAR X-RAY FLUX</div>
+            <div id="xray-badge" style="font-family:'Share Tech Mono',monospace;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:700;color:#00e676;text-shadow:0 0 12px rgba(0,230,118,0.5);line-height:1;">—</div>
+            <div id="xray-label" style="font-family:'Orbitron',sans-serif;font-size:0.42rem;letter-spacing:0.1em;color:var(--text-dim);margin-top:3px;">LOADING</div>
+          </div>
+
+          <!-- Solar wind speed -->
+          <div style="border-top:1px solid var(--border);padding-top:6px;">
+            <div class="sw-label" style="margin-bottom:4px;">SOLAR WIND SPEED</div>
+            <div style="display:flex;align-items:baseline;gap:4px;">
+              <span id="wind-speed" style="font-family:'Share Tech Mono',monospace;font-size:clamp(1rem,1.8vw,1.5rem);color:var(--blue-light);text-shadow:var(--glow-blue);">—</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:var(--text-dim);">km/s</span>
+              <span id="wind-trend" style="font-family:'Share Tech Mono',monospace;font-size:1rem;margin-left:2px;"></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Radiation risk bar -->
+      <div style="border-top:1px solid var(--border);padding-top:7px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <span class="sw-label" style="white-space:nowrap;">CREW RADIATION RISK</span>
+        <span id="rad-label" style="font-family:'Orbitron',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:#00e676;text-shadow:0 0 10px rgba(0,230,118,0.4);">NOMINAL</span>
+      </div>
+
+      <!-- NOAA thumbnail -->
+      <div style="border-top:1px solid var(--border);padding-top:6px;flex-shrink:0;">
+        <a href="https://www.swpc.noaa.gov" target="_blank" rel="noopener"
+          style="display:flex;align-items:center;gap:8px;text-decoration:none;opacity:0.7;transition:opacity 0.2s;"
+          onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+          <img id="img-swx-overview"
+            src="https://services.swpc.noaa.gov/images/swx-overview-large.gif"
+            alt="Space Weather Overview"
+            style="height:34px;width:auto;border:1px solid var(--border);border-radius:2px;">
+          <span style="font-family:'Share Tech Mono',monospace;font-size:0.48rem;color:var(--blue-light);letter-spacing:0.08em;">↗ NOAA FULL OVERVIEW</span>
+        </a>
+      </div>
+
     </div>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
@@ -987,19 +1075,128 @@
   loadMissionUpdates();
   setInterval(loadMissionUpdates, 5 * 60 * 1000);
 
-  // ── NOAA IMAGE AUTO-REFRESH (60s) ───────────────────────────────────
-  const noaaImages = [
-    { id: 'img-swx-overview', base: 'https://services.swpc.noaa.gov/images/swx-overview-large.gif' },
-    { id: 'img-swx-wind',     base: 'https://services.swpc.noaa.gov/images/ace-mag-swepam-24-hour.gif' },
-  ];
+  // ── SPACE WEATHER — NOAA JSON FETCHES (5m) ─────────────────────────
 
-  setInterval(() => {
-    const bust = '?t=' + Date.now();
-    noaaImages.forEach(({ id, base }) => {
-      const el = document.getElementById(id);
-      if (el) el.src = base + bust;
-    });
-  }, 60000);
+  // Kp → G-storm level
+  function kpToG(kp) {
+    if (kp >= 9) return 5;
+    if (kp >= 8) return 4;
+    if (kp >= 7) return 3;
+    if (kp >= 6) return 2;
+    if (kp >= 5) return 1;
+    return 0;
+  }
+
+  const G_COLORS = ['#00e676','#00e676','#ffd740','#ffa726','#ef5350','#ef5350'];
+  const G_NAMES  = ['QUIET','MINOR STORM','MODERATE STORM','STRONG STORM','SEVERE STORM','EXTREME STORM'];
+  const G_RAD    = ['NOMINAL','NOMINAL','ELEVATED','ELEVATED','HIGH','HIGH'];
+  const KP_ARC   = 366.5; // arc length for 300° sweep, r=70
+
+  function updateKpGauge(kp) {
+    const g       = kpToG(kp);
+    const color   = G_COLORS[g];
+    const filled  = Math.min(kp / 9, 1) * KP_ARC;
+
+    const fillEl  = document.getElementById('kp-fill');
+    const valEl   = document.getElementById('kp-val');
+    const gEl     = document.getElementById('kp-g');
+    const radEl   = document.getElementById('rad-label');
+
+    fillEl.setAttribute('stroke', color);
+    fillEl.setAttribute('stroke-dasharray', `${filled} ${KP_ARC}`);
+    fillEl.style.filter = g >= 2 ? `drop-shadow(0 0 5px ${color})` : 'none';
+
+    valEl.textContent = kp.toFixed(1);
+    valEl.setAttribute('fill', color);
+
+    gEl.textContent = `G${g} · ${G_NAMES[g]}`;
+    gEl.setAttribute('fill', color);
+
+    radEl.textContent = G_RAD[g];
+    radEl.style.color = color;
+    radEl.style.textShadow = `0 0 10px ${color}66`;
+  }
+
+  // X-ray flare class → color & label
+  function xrayColor(cls) {
+    if (!cls) return '#7986a8';
+    const c = cls[0].toUpperCase();
+    if (c === 'X') return '#ef5350';
+    if (c === 'M') return '#ffa726';
+    if (c === 'C') return '#ffd740';
+    return '#00e676';
+  }
+
+  function xrayDesc(cls) {
+    if (!cls) return 'NO ACTIVE FLARES';
+    const c = cls[0].toUpperCase();
+    if (c === 'X') return 'X-CLASS · SEVERE';
+    if (c === 'M') return 'M-CLASS · MODERATE';
+    if (c === 'C') return 'C-CLASS · MINOR';
+    if (c === 'B') return 'B-CLASS · BACKGROUND';
+    return 'A-CLASS · QUIET';
+  }
+
+  async function fetchSpaceWeather() {
+    // 1. Kp index
+    try {
+      const r    = await fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json');
+      const data = await r.json();
+      const last = data[data.length - 1];
+      const kp   = typeof last === 'object' && last.Kp !== undefined
+        ? last.Kp
+        : parseFloat(last[1]);
+      updateKpGauge(kp);
+    } catch (e) { console.warn('Kp fetch:', e); }
+
+    // 2. X-ray flares
+    try {
+      const r    = await fetch('https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json');
+      const data = await r.json();
+      const badgeEl = document.getElementById('xray-badge');
+      const labelEl = document.getElementById('xray-label');
+      if (data && data.length > 0) {
+        const cls   = data[0].current_class || '';
+        const color = xrayColor(cls);
+        badgeEl.textContent  = cls || 'QUIET';
+        badgeEl.style.color  = color;
+        badgeEl.style.textShadow = `0 0 14px ${color}88`;
+        labelEl.textContent  = xrayDesc(cls);
+        labelEl.style.color  = color;
+      } else {
+        badgeEl.textContent  = 'QUIET';
+        badgeEl.style.color  = '#00e676';
+        labelEl.textContent  = 'NO ACTIVE FLARES';
+        labelEl.style.color  = '#00e676';
+      }
+    } catch (e) { console.warn('X-ray fetch:', e); }
+
+    // 3. Solar wind speed (plasma-1-day: [time, density, speed, temp])
+    try {
+      const r    = await fetch('https://services.swpc.noaa.gov/products/solar-wind/plasma-1-day.json');
+      const rows = await r.json();
+      const data = rows.slice(1).filter(r => r[2] && parseFloat(r[2]) > 0);
+      if (data.length > 0) {
+        const latest  = parseFloat(data[data.length - 1][2]);
+        const hourAgo = parseFloat(data[Math.max(0, data.length - 61)][2]);
+        const delta   = latest - hourAgo;
+        const trend   = delta > 10 ? '↑' : delta < -10 ? '↓' : '→';
+        const tColor  = delta > 10 ? '#ffa726' : delta < -10 ? '#4A90D9' : '#7986a8';
+        const speedEl = document.getElementById('wind-speed');
+        const trendEl = document.getElementById('wind-trend');
+        speedEl.textContent = Math.round(latest);
+        trendEl.textContent = trend;
+        trendEl.style.color = tColor;
+      }
+    } catch (e) { console.warn('Wind fetch:', e); }
+
+    // 4. Refresh thumbnail (cache-bust)
+    const thumb = document.getElementById('img-swx-overview');
+    if (thumb) thumb.src = 'https://services.swpc.noaa.gov/images/swx-overview-large.gif?t=' + Date.now();
+  }
+
+  fetchSpaceWeather();
+  setInterval(fetchSpaceWeather, 5 * 60 * 1000);
 </script>
 </body>
 </html>
