@@ -2471,31 +2471,40 @@
     const emLine = new THREE.Line(emGeo, emMat);
     scene.add(emLine);
 
-    // ── Free-return trajectory ──
-    // Moon at (8.2, 0, 0) radius 0.46. Path must arc AROUND far side, never intersect.
-    // Approach from above, swing behind Moon (x > 8.2), exit below.
+    // ── Free-return trajectory (matched to NASA official animation) ──
+    // Moon at (8.2, 0, 0) r=0.46. Trajectory: Earth orbits → TLI → direct outbound
+    // (slightly above) → tight flyby behind Moon → return (below) → re-entry.
+    // More planar than before, matching NASA's reference animation.
     const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3( 0,     0,     0    ),  // 0: LAUNCH (Earth)
-      new THREE.Vector3( 0.3,   0.9,   0.6  ),  // 1: APOGEE (~53k km, T+6h)
-      new THREE.Vector3(-0.05,  0.05,  0    ),  // 2: PERIGEE (T+18h)
-      new THREE.Vector3( 0.7,   1.8,   1.4  ),  // 3: TLI (T+25h)
-      new THREE.Vector3( 3.2,   2.6,   1.6  ),  // 4: OUTBOUND (T+48h)
-      new THREE.Vector3( 5.8,   2.4,   0.6  ),  // 5: LUNAR SOI (T+96h)
-      new THREE.Vector3( 7.6,   1.4,   0.0  ),  // 6: APPROACH — above Moon (T+120h)
-      new THREE.Vector3( 8.7,   0.4,  -0.35 ),  // 7: CLOSEST APPROACH — far side (T+128h)
-      new THREE.Vector3( 9.0,  -0.3,  -0.65 ),  // 8: FAR SIDE LOS — behind Moon (T+130h)
-      new THREE.Vector3( 8.4,  -1.2,  -0.2  ),  // 9: EXIT — below Moon (T+140h)
-      new THREE.Vector3( 6.4,  -2.4,   0.4  ),  // 10: RETURN (T+168h)
-      new THREE.Vector3( 3.8,  -2.6,   1.0  ),  // 11: MID-RETURN (T+192h)
-      new THREE.Vector3( 1.2,  -1.8,   0.0  ),  // 12: APPROACH EARTH (T+210h)
-      new THREE.Vector3( 0.1,  -0.5,   0.0  ),  // 13: ENTRY (T+228h)
-      new THREE.Vector3( 0,     0,     0    ),  // 14: SPLASHDOWN (T+229h)
-    ], false, 'catmullrom', 0.5);
-    const N_PTS  = 320;
+      // ── Earth orbits (elliptical parking orbit, ~2 loops) ──
+      new THREE.Vector3( 0.0,   0.0,   0.0  ),  //  0: LAUNCH
+      new THREE.Vector3(-0.6,   1.0,   0.5  ),  //  1: Orbit 1 — apogee high
+      new THREE.Vector3(-1.1,   0.0,  -0.4  ),  //  2: Orbit 1 — far side
+      new THREE.Vector3(-0.5,  -0.9,   0.3  ),  //  3: Orbit 1 — bottom
+      new THREE.Vector3( 0.1,   0.0,   0.0  ),  //  4: Orbit 1 — perigee return
+      new THREE.Vector3(-0.4,   1.2,   0.6  ),  //  5: Orbit 2 — apogee (higher)
+      new THREE.Vector3(-1.3,   0.1,  -0.5  ),  //  6: Orbit 2 — far side
+      new THREE.Vector3(-0.4,  -1.0,   0.4  ),  //  7: Orbit 2 — bottom
+      new THREE.Vector3( 0.15,  0.0,   0.0  ),  //  8: Orbit 2 — perigee (TLI point)
+      // ── Outbound (direct, slightly above plane) ──
+      new THREE.Vector3( 1.5,   0.7,   0.3  ),  //  9: Early outbound
+      new THREE.Vector3( 3.5,   1.1,   0.3  ),  // 10: Outbound coast
+      new THREE.Vector3( 5.5,   1.0,   0.15 ),  // 11: Lunar SOI
+      new THREE.Vector3( 7.2,   0.8,   0.0  ),  // 12: Approach Moon (above)
+      // ── Lunar flyby (tight loop behind/below Moon) ──
+      new THREE.Vector3( 8.85,  0.45, -0.25 ),  // 13: Closest approach (far side)
+      new THREE.Vector3( 9.0,  -0.4,  -0.4  ),  // 14: Behind Moon (LOS)
+      new THREE.Vector3( 8.35, -1.0,  -0.15 ),  // 15: Exit below Moon
+      // ── Return (below outbound path) ──
+      new THREE.Vector3( 6.8,  -1.2,   0.0  ),  // 16: Early return
+      new THREE.Vector3( 5.0,  -1.3,   0.1  ),  // 17: Mid-return
+      new THREE.Vector3( 3.0,  -1.2,   0.15 ),  // 18: Return coast
+      new THREE.Vector3( 1.2,  -0.8,   0.1  ),  // 19: Approaching Earth
+      new THREE.Vector3( 0.1,  -0.3,   0.0  ),  // 20: Entry interface
+      new THREE.Vector3( 0.0,   0.0,   0.0  ),  // 21: SPLASHDOWN
+    ], false, 'catmullrom', 0.4);
+    const N_PTS  = 500;
     const allPts = curve.getPoints(N_PTS);
-
-    console.log('[Trajectory] First 3 pts:', allPts.slice(0,3).map(p => `(${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)})`).join(' '));
-    console.log('[Trajectory] Last 3 pts:', allPts.slice(-3).map(p => `(${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)})`).join(' '));
 
     // Full dashed path
     const upcomingMat = new THREE.LineDashedMaterial({ color: 0x2a3d5a, dashSize: 0.14, gapSize: 0.11 });
@@ -2509,24 +2518,25 @@
     scene.add(new THREE.Line(completedGeo, completedMat));
 
     // ── Waypoints with descriptions (4e) ──
+    // Waypoints mapped to 22-point curve: t = controlPointIndex / 21
     const WAYPOINTS = [
       { t: 0.000, label: 'LAUNCH', met: 'T+00:00:00', metSec: 0,
         desc: 'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.' },
-      { t: 0.071, label: 'LEO', met: 'T+06:00:00', metSec: 21600,
+      { t: 0.190, label: 'LEO', met: 'T+06:00:00', metSec: 21600,   // pt 4: perigee after 1st orbit
         desc: 'Orion enters low Earth orbit at ~200km altitude for initial systems checkout.' },
-      { t: 0.214, label: 'TLI BURN', met: 'T+25:00:00', metSec: 90000,
+      { t: 0.381, label: 'TLI BURN', met: 'T+25:00:00', metSec: 90000,  // pt 8: 2nd perigee → TLI
         desc: 'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.' },
-      { t: 0.357, label: 'OUTBOUND', met: 'T+72:00:00', metSec: 259200,
+      { t: 0.476, label: 'OUTBOUND', met: 'T+72:00:00', metSec: 259200, // pt 10: outbound coast
         desc: 'Orion coasts toward the Moon for 3\u20134 days. Crew performs systems tests and trajectory correction burns.' },
-      { t: 0.500, label: 'CLOSEST APPROACH', met: 'T+128:00:00', metSec: 460800,
+      { t: 0.619, label: 'CLOSEST APPROACH', met: 'T+128:00:00', metSec: 460800, // pt 13
         desc: 'Orion passes ~6,500 km above the lunar far side. Potentially breaks Apollo 13\u2019s distance record.' },
-      { t: 0.571, label: 'FAR SIDE LOS', met: 'T+128:30:00', metSec: 462600,
+      { t: 0.667, label: 'FAR SIDE LOS', met: 'T+128:30:00', metSec: 462600,    // pt 14
         desc: 'Orion passes behind the Moon. ~41 minutes of planned communications blackout.' },
-      { t: 0.714, label: 'RETURN COAST', met: 'T+150:00:00', metSec: 540000,
+      { t: 0.762, label: 'RETURN COAST', met: 'T+150:00:00', metSec: 540000,     // pt 16
         desc: 'Orion coasts back toward Earth. Crew reviews re-entry procedures.' },
-      { t: 0.929, label: 'ENTRY', met: 'T+228:30:00', metSec: 822600,
+      { t: 0.952, label: 'ENTRY', met: 'T+228:30:00', metSec: 822600,            // pt 20
         desc: 'Orion hits atmosphere at 40,000 km/h. Heat shield reaches 2,800\u00b0C.' },
-      { t: 0.999, label: 'SPLASHDOWN', met: 'T+229:10:00', metSec: 825000,
+      { t: 0.999, label: 'SPLASHDOWN', met: 'T+229:10:00', metSec: 825000,       // pt 21
         desc: 'Parachutes deploy. Orion splashes down in the Pacific Ocean.' },
     ];
     const wpMeshes = [], wpMats = [];
