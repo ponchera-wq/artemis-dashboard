@@ -651,6 +651,44 @@
     .obj-item.progress .obj-label { color: var(--amber); }
     .obj-item.pending  .obj-label { color: var(--text-dim); }
 
+    /* ── YouTube tab switcher ── */
+    .yt-tabs {
+      display: flex;
+      flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .yt-tab {
+      font-family: var(--font-ui);
+      font-size: 0.5rem;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-transform: uppercase;
+      margin-bottom: -1px;
+    }
+
+    .yt-tab:hover { color: var(--blue-light); }
+
+    .yt-tab.active {
+      color: var(--blue-light);
+      border-bottom-color: var(--blue-light);
+    }
+
+    .yt-frame {
+      flex: 1;
+      width: 100%;
+      border: none;
+      display: none;
+    }
+
+    .yt-frame.active { display: block; }
+
     /* ── Placeholder grid positions ── */
     #feed-youtube  { grid-row: 2; grid-column: 1; }
     #feed-arow     { grid-row: 2; grid-column: 2; }
@@ -733,15 +771,19 @@
   <!-- ══ ROW 2: MAIN FEEDS ══════════════════════════════════════════════ -->
 
   <div class="panel" id="feed-youtube">
-    <div class="panel-header"><span class="dot"></span>NASA LIVE — ARTEMIS II VIEWS FROM ORION</div>
-    <iframe
+    <div class="panel-header"><span class="dot"></span>NASA LIVE</div>
+    <div class="yt-tabs">
+      <button class="yt-tab active" data-target="yt-orion">ORION VIEWS</button>
+      <button class="yt-tab"        data-target="yt-coverage">MISSION COVERAGE</button>
+    </div>
+    <iframe id="yt-orion"    class="yt-frame active"
       src="https://www.youtube.com/embed/6RwfNBtepa4?autoplay=1&mute=1"
-      style="flex:1; width:100%; border:none; display:block;"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowfullscreen
-      loading="lazy"
-      title="NASA Artemis II Live Stream"
-    ></iframe>
+      allowfullscreen loading="lazy" title="Artemis II — Orion Views"></iframe>
+    <iframe id="yt-coverage" class="yt-frame"
+      src="https://www.youtube.com/embed/m3kR2KK8TEs?autoplay=1&mute=1"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen loading="lazy" title="Artemis II — Mission Coverage"></iframe>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
@@ -1409,6 +1451,16 @@
 
   fetchSpaceWeather();
   setInterval(fetchSpaceWeather, 5 * 60 * 1000);
+
+  // ── YOUTUBE TAB SWITCHER ─────────────────────────────────────────────
+  document.querySelectorAll('.yt-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.yt-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.yt-frame').forEach(f => f.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.target).classList.add('active');
+    });
+  });
 </script>
 </body>
 </html>
