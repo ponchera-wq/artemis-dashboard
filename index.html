@@ -57,7 +57,7 @@
     /* ── Root grid ── */
     #dashboard {
       display: grid;
-      grid-template-rows: 160px 65px 1fr 1fr 36px;
+      grid-template-rows: 160px 82px 1fr 1fr 36px;
       grid-template-columns: 1fr 2fr 1fr;
       gap: 6px;
       padding: 6px;
@@ -201,7 +201,7 @@
        WIDGET 2 — MISSION PHASE
     ════════════════════════════════ */
     #mission-phase {
-      grid-row: 1; grid-column: 2;
+      grid-row: 1; grid-column: 2 / -1;
     }
 
     #mission-phase .panel-body {
@@ -734,10 +734,47 @@
 
     .telem-value {
       font-family: var(--font-mono);
-      font-size: clamp(1rem, 1.6vw, 1.5rem);
+      font-size: clamp(1.5rem, 2.2vw, 2.4rem);
       font-weight: 700;
       line-height: 1;
       letter-spacing: 0.04em;
+    }
+
+    @keyframes digit-flip {
+      0%   { opacity: 1;   transform: translateY(0);    }
+      20%  { opacity: 0.6; transform: translateY(-3px); }
+      60%  { opacity: 1;   transform: translateY(0);    }
+    }
+    .telem-value.tick { animation: digit-flip 0.28s ease-out; }
+
+    /* ── Signal pill (bottom-left of MET clock) ── */
+    #signal-pill {
+      position: absolute;
+      bottom: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-mono);
+      font-size: 0.44rem;
+      letter-spacing: 0.1em;
+      padding: 2px 10px;
+      border-radius: 20px;
+      border: 1px solid;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      transition: background 0.4s, color 0.4s;
+    }
+    #signal-pill.acquired {
+      color: var(--green);
+      border-color: rgba(0,230,118,0.45);
+      background: rgba(0,230,118,0.07);
+      animation: pulse-green 2.5s ease-in-out infinite;
+    }
+    #signal-pill.los {
+      color: var(--amber);
+      border-color: rgba(255,167,38,0.45);
+      background: rgba(255,167,38,0.07);
+      animation: none;
     }
 
     .telem-unit {
@@ -976,6 +1013,7 @@
       <div class="met-sub">LAUNCH: 2026-04-01 T 22:35 UTC</div>
       <div id="utc-display">UTC --:--:--</div>
     </div>
+    <div id="signal-pill" class="acquired">▶ SIGNAL ACQUIRED</div>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
@@ -992,21 +1030,6 @@
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
-  <!-- SIGNAL STATUS -->
-  <div class="panel" id="signal-status">
-    <div class="panel-header"><span class="dot"></span>COMM / SIGNAL</div>
-    <div class="panel-body">
-      <div id="signal-badge" class="acquired">▶ SIGNAL ACQUIRED</div>
-      <div class="signal-sub" id="signal-sub-text">DSN LINK ACTIVE</div>
-      <div class="dsn-row">
-        <span class="dsn-dot"><span class="dsn-dot-pip" id="dot-canberra"></span>CNB</span>
-        <span class="dsn-dot"><span class="dsn-dot-pip" id="dot-madrid"></span>MAD</span>
-        <span class="dsn-dot"><span class="dsn-dot-pip" id="dot-goldstone"></span>GDS</span>
-      </div>
-      <button id="signal-toggle">TOGGLE SIGNAL STATE</button>
-    </div>
-    <div class="corner-tl"></div><div class="corner-br"></div>
-  </div>
 
   <!-- ══ ROW 2: TELEMETRY BAR ══════════════════════════════════════════ -->
 
@@ -1560,45 +1583,58 @@
     return wps[wps.length - 1][1];
   }
 
-  function fmtNum(n) {
-    return Math.round(n).toLocaleString('en-US');
+  const fmt = new Intl.NumberFormat('en-US');
+
+  const tvEarth = document.getElementById('tv-earth');
+  const tvMoon  = document.getElementById('tv-moon');
+  const tvSpeed = document.getElementById('tv-speed');
+
+  function flashEl(el) {
+    el.classList.remove('tick');
+    void el.offsetWidth; // force reflow to restart animation
+    el.classList.add('tick');
   }
 
   function tickTelem() {
-    const elapsedMin = (Date.now() - LAUNCH_UTC) / 60000;
-    document.getElementById('tv-earth').textContent = fmtNum(lerp(TELEM.earthDist, elapsedMin));
-    document.getElementById('tv-moon').textContent  = fmtNum(lerp(TELEM.moonDist,  elapsedMin));
-    document.getElementById('tv-speed').textContent = fmtNum(lerp(TELEM.speed,     elapsedMin));
+    const elapsedSec = (Date.now() - LAUNCH_UTC) / 1000;
+    const floorMin   = Math.floor(elapsedSec / 60);
+    const frac       = (elapsedSec % 60) / 60;
+
+    // Sub-minute lerp: interpolate between minute N and N+1 for per-second ticking
+    function lerpSec(wps) {
+      const a = lerp(wps, floorMin);
+      const b = lerp(wps, floorMin + 1);
+      return a + (b - a) * frac;
+    }
+
+    const eStr = fmt.format(Math.round(lerpSec(TELEM.earthDist)));
+    const mStr = fmt.format(Math.round(lerpSec(TELEM.moonDist)));
+    const sStr = fmt.format(Math.round(lerpSec(TELEM.speed)));
+
+    if (tvEarth.textContent !== eStr) { tvEarth.textContent = eStr; flashEl(tvEarth); }
+    if (tvMoon.textContent  !== mStr) { tvMoon.textContent  = mStr; flashEl(tvMoon);  }
+    if (tvSpeed.textContent !== sStr) { tvSpeed.textContent = sStr; flashEl(tvSpeed); }
   }
 
   tickTelem();
-  setInterval(tickTelem, 5000); // update every 5s — smooth enough for linear interpolation
+  setInterval(tickTelem, 1000);
 
-  // ── SIGNAL TOGGLE ───────────────────────────────────────────────────
+  // ── SIGNAL PILL (inside MET clock) ──────────────────────────────────
   let signalAcquired = true;
-
-  const badge       = document.getElementById('signal-badge');
-  const subText     = document.getElementById('signal-sub-text');
-  const dotCan      = document.getElementById('dot-canberra');
-  const toggleBtn   = document.getElementById('signal-toggle');
+  const signalPill = document.getElementById('signal-pill');
 
   function applySignalState() {
     if (signalAcquired) {
-      badge.className = 'acquired';
-      badge.textContent = '▶ SIGNAL ACQUIRED';
-      subText.textContent = 'DSN LINK ACTIVE';
-      dotCan.classList.add('active');
+      signalPill.className = 'acquired';
+      signalPill.textContent = '▶ SIGNAL ACQUIRED';
     } else {
-      badge.className = 'los';
-      badge.textContent = '✕ LOS — FAR SIDE PASS';
-      subText.textContent = 'NO SIGNAL — OCCULTATION';
-      dotCan.classList.remove('active');
+      signalPill.className = 'los';
+      signalPill.textContent = '⊘ LOS · FAR SIDE';
     }
   }
 
   applySignalState();
-
-  toggleBtn.addEventListener('click', () => {
+  signalPill.addEventListener('click', () => {
     signalAcquired = !signalAcquired;
     applySignalState();
   });
