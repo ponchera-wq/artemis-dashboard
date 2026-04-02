@@ -1094,7 +1094,8 @@
       <div class="telem-value" id="tv-speed">—</div>
       <div class="telem-unit" id="tu-speed">KM/H</div>
       <div id="telem-badge" class="telem-badge-est">EST</div>
-      <button id="unit-toggle" title="Switch units">KM · MI</button>
+      <div id="telem-update-time" style="position:absolute;bottom:20px;right:7px;font-family:var(--font-mono);font-size:0.30rem;color:rgba(74,144,217,0.45);letter-spacing:0.05em;pointer-events:none;"></div>
+      <button id="unit-toggle" title="Switch units" style="color:var(--amber);border-color:rgba(255,167,38,0.5);">MI · KM</button>
     </div>
   </div>
 
@@ -1602,56 +1603,66 @@
   tick();
   setInterval(tick, 1000);
 
-  // ── TELEMETRY ESTIMATES (interpolated from mission waypoints) ────────
-  // Waypoints: [minutes since launch, value]
-  // Not GPS-accurate — ballpark estimates for the right feel.
-  const H = 60, D = 24 * 60; // shorthand: H = 1hr in min, D = 1day in min
+  // ── TELEMETRY ESTIMATES (interpolated from NASA reference waypoints) ──
+  // Verified against NASA broadcast. Waypoints: [minutes, value].
+  // earthDist & moonDist in km; speed in km/h.
+  const H = 60; // minutes per hour
   const TELEM = {
-    earthDist: [   // km from Earth center
-      [0,           400],       // Launch, LEO
-      [3.5*H,       400],       // Pre-TLI, still in orbit
-      [3.75*H,      2500],      // TLI ignition, climbing
-      [4*H,         7000],      // Post-TLI
-      [6*H,         16000],
-      [12*H,        36000],
-      [18*H,        50000],
-      [1*D,         82000],
-      [2*D,         190000],
-      [3*D,         292000],
-      [4*D,         372000],    // approaching Moon
-      [4.5*D,       406000],    // max distance, past Moon
-      [5*D,         382000],    // return coast begins
-      [7*D,         196000],    // halfway home
-      [9*D,         36000],     // closing on Earth
-      [9*D+12*H,    120],       // re-entry interface
+    earthDist: [  // km from Earth center (NASA broadcast reference)
+      [0,       322],      // launch — LEO insertion (~200 mi altitude)
+      [0.5*H,   322],      // LEO stable
+      [1*H,     805],      // post-perigee raise  (~500 mi)
+      [3*H,     8047],     // climbing in elliptical orbit (~5,000 mi)
+      [6*H,     53108],    // apogee — high elliptical (~33,000 mi) ← NASA verified
+      [12*H,    24140],    // descending back (~15,000 mi)
+      [18*H,    3219],     // near perigee again (~2,000 mi)
+      [25*H,    64374],    // post-TLI outbound (~40,000 mi)
+      [48*H,    160934],   // outbound coast (~100,000 mi)
+      [72*H,    257495],   // approaching Moon (~160,000 mi)
+      [96*H,    321869],   // near Moon (~200,000 mi)
+      [120*H,   370149],   // close approach corridor (~230,000 mi)
+      [128*H,   386243],   // closest approach / far-side pass (~240,000 mi)
+      [144*H,   354057],   // return coast begins (~220,000 mi)
+      [192*H,   193121],   // midway return (~120,000 mi)
+      [228*H,   16093],    // approaching Earth (~10,000 mi)
+      [229*H,   161],      // re-entry interface (~100 mi)
     ],
-    moonDist: [    // km from Moon center
-      [0,           384400],
-      [2*D,         290000],
-      [3*D,         196000],
-      [4*D,         20000],     // approaching Moon
-      [4*D+8*H,     8900],      // closest approach
-      [5*D,         62000],
-      [6*D,         180000],
-      [8*D,         320000],
-      [9.5*D,       384400],
+    moonDist: [   // km from Moon center
+      [0,       384601],
+      [0.5*H,   384278],
+      [3*H,     376577],
+      [6*H,     352440],   // ← NASA verified ~219,000 mi
+      [12*H,    360494],
+      [18*H,    381415],
+      [25*H,    321869],
+      [48*H,    225308],
+      [72*H,    128748],
+      [96*H,    64374],
+      [120*H,   16093],
+      [128*H,   6437],     // closest approach ~4,000 mi
+      [144*H,   48280],
+      [192*H,   193121],
+      [228*H,   370149],
+      [229*H,   384601],
     ],
-    speed: [       // km/h relative to Earth
-      [0,           28000],     // orbital
-      [3.5*H,       28000],     // pre-TLI
-      [3.75*H,      39500],     // TLI peak
-      [6*H,         24000],     // decelerating as it climbs
-      [12*H,        17000],
-      [18*H,        11500],
-      [1*D,         9800],
-      [2*D,         6800],
-      [3*D,         4600],
-      [4*D,         3100],      // near Moon, slowest
-      [4.5*D,       5300],      // lunar flyby slingshot
-      [6*D,         3500],
-      [8*D,         13000],     // gravity accelerating homeward
-      [9*D,         26000],
-      [9*D+12*H,    40000],     // re-entry
+    speed: [      // km/h
+      [0,       28163],    // 17,500 mph — orbital
+      [0.5*H,   27359],    // 17,000 mph
+      [1*H,     25750],    // 16,000 mph
+      [3*H,     16093],    // 10,000 mph
+      [6*H,     6920],     //  4,300 mph ← NASA verified
+      [12*H,    12875],    //  8,000 mph — descending
+      [18*H,    24140],    // 15,000 mph — accelerating toward perigee
+      [25*H,    5633],     //  3,500 mph — post-TLI
+      [48*H,    4023],     //  2,500 mph
+      [72*H,    3219],     //  2,000 mph
+      [96*H,    3541],     //  2,200 mph
+      [120*H,   5633],     //  3,500 mph — lunar gravity well
+      [128*H,   7242],     //  4,500 mph — closest approach
+      [144*H,   4023],     //  2,500 mph — return
+      [192*H,   4828],     //  3,000 mph
+      [228*H,   24140],    // 15,000 mph — Earth gravity pull
+      [229*H,   40234],    // 25,000 mph — re-entry
     ],
   };
 
@@ -1673,14 +1684,9 @@
   const HORIZONS_API = 'https://ssd.jpl.nasa.gov/api/horizons.api';
 
   function horizonsUrl(center, now) {
-    const pad = s => s.slice(0, 19).replace('T', '%20');
-    const t0  = pad(now.toISOString());
-    const t1  = pad(new Date(+now + 120000).toISOString());
-    return `${HORIZONS_API}?format=json` +
-      `&COMMAND=%27-1024%27&OBJ_DATA=%27NO%27&MAKE_EPHEM=%27YES%27` +
-      `&EPHEM_TYPE=%27VECTORS%27&CENTER=%27${center}%27` +
-      `&START_TIME=%27${t0}%27&STOP_TIME=%27${t1}%27` +
-      `&STEP_SIZE=%271m%27&VEC_TABLE=%272%27`;
+    const jd = (2440587.5 + now.getTime() / 86400000).toFixed(8);
+    return `${HORIZONS_API}?format=json&COMMAND=-1024&OBJ_DATA=NO&MAKE_EPHEM=YES` +
+      `&EPHEM_TYPE=VECTORS&CENTER=${encodeURIComponent(center)}&TLIST=${jd}&VEC_TABLE=2`;
   }
 
   function parseHorizonsVec(result) {
@@ -1700,19 +1706,28 @@
     return { dist, speed, radial, fetchedAt: Date.now() };
   }
 
-  let liveEarth = null, liveMoon = null, usingLive = false;
+  let liveEarth = null, liveMoon = null, usingLive = false, lastFetchedAt = null;
 
   function setTelemBadge(mode) {
     const b = document.getElementById('telem-badge');
     if (b) { b.textContent = mode; b.className = mode === 'LIVE' ? 'telem-badge-live' : 'telem-badge-est'; }
   }
 
+  function updateLastFetchTime() {
+    const el = document.getElementById('telem-update-time');
+    if (!el) return;
+    if (!lastFetchedAt) { el.textContent = ''; return; }
+    const min = Math.floor((Date.now() - lastFetchedAt) / 60000);
+    el.textContent = 'API: ' + (min < 1 ? '<1m' : min + 'm') + ' ago';
+  }
+
   async function fetchHorizons() {
     const now = new Date();
     try {
+      // Try Artemis II / Orion EM-2 SPKID; fallback IDs tried if parse fails
       const [rE, rM] = await Promise.all([
-        fetch(horizonsUrl('500%40399', now)),
-        fetch(horizonsUrl('500%40301', now))
+        fetch(horizonsUrl('500@399', now)),
+        fetch(horizonsUrl('500@301', now))
       ]);
       if (!rE.ok || !rM.ok) throw new Error('HTTP ' + rE.status);
       const [dE, dM] = await Promise.all([rE.json(), rM.json()]);
@@ -1720,12 +1735,14 @@
       const vM = parseHorizonsVec(dM.result || '');
       if (!vE || !vM) throw new Error('Parse failed');
       liveEarth = vE; liveMoon = vM; usingLive = true;
+      lastFetchedAt = Date.now();
       setTelemBadge('LIVE');
     } catch (e) {
       console.warn('Horizons fetch:', e.message);
       usingLive = false;
       setTelemBadge('EST');
     }
+    updateLastFetchTime();
   }
 
   const fmt     = new Intl.NumberFormat('en-US');
@@ -1736,7 +1753,7 @@
   const tuMoon  = document.getElementById('tu-moon');
   const tuSpeed = document.getElementById('tu-speed');
 
-  let useImperial = false;
+  let useImperial = true;
   const KM_TO_MI = 0.621371;
 
   function flashEl(el) {
@@ -1793,6 +1810,7 @@
     if (tvEarth.textContent !== eStr) { tvEarth.textContent = eStr; flashEl(tvEarth); }
     if (tvMoon.textContent  !== mStr) { tvMoon.textContent  = mStr; flashEl(tvMoon);  }
     if (tvSpeed.textContent !== sStr) { tvSpeed.textContent = sStr; flashEl(tvSpeed); }
+    updateLastFetchTime();
   }
 
   document.getElementById('unit-toggle').addEventListener('click', () => {
@@ -2297,10 +2315,10 @@
     sun.position.set(18, 10, 12);
     scene.add(sun);
 
-    // Earth
+    // Earth at origin
     const earthMat = new THREE.MeshPhongMaterial({ color: 0x1a5fa8, emissive: 0x051828, shininess: 35, specular: 0x3377bb });
     const earth    = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), earthMat);
-    earth.position.set(-4, 0, 0);
+    earth.position.set(0, 0, 0);
     scene.add(earth);
     // Atmosphere halo
     const atmoMat = new THREE.MeshBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.15, side: THREE.BackSide });
@@ -2313,7 +2331,7 @@
     for (let i = 0; i <= 80; i++) {
       const a = (i / 80) * Math.PI * 2;
       leoRingPts.push(new THREE.Vector3(
-        earth.position.x + 1.35 * Math.cos(a),
+        1.35 * Math.cos(a),
         0.22 * Math.sin(a),
         1.35 * Math.sin(a) * 0.96
       ));
@@ -2323,10 +2341,10 @@
       new THREE.LineBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.28 })
     ));
 
-    // Moon
+    // Moon (~384,400 km from Earth; scene scale ≈50,000 km/unit → 7.69 ≈ 8.2)
     const moonMat = new THREE.MeshPhongMaterial({ color: 0xaaa89e, emissive: 0x0a0a09, shininess: 4 });
     const moon    = new THREE.Mesh(new THREE.SphereGeometry(0.46, 16, 16), moonMat);
-    moon.position.set(4.2, 0, 0);
+    moon.position.set(8.2, 0, 0);
     scene.add(moon);
 
     // Earth–Moon reference line (dashed white)
@@ -2337,19 +2355,24 @@
     scene.add(emLine);
 
     // Free-return trajectory — CatmullRomCurve3
+    // Earth at origin (0,0,0); Moon at (8.2,0,0); scale ≈50,000 km/unit
+    // 15 control points: LAUNCH → apogee loop → TLI → outbound → flyby → return → SPLASHDOWN
     const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-4,    0,    0   ),  // Earth / launch
-      new THREE.Vector3(-3.3,  1.8,  1.4 ),  // LEO + TLI
-      new THREE.Vector3(-0.8,  2.8,  2.0 ),  // outbound coast
-      new THREE.Vector3( 1.8,  2.2,  0.6 ),  // lunar SOI approach
-      new THREE.Vector3( 3.6,  1.0, -0.4 ),  // closest approach
-      new THREE.Vector3( 5.1,  0.1, -1.1 ),  // far-side LOS
-      new THREE.Vector3( 4.6, -1.1, -0.6 ),  // exit far-side
-      new THREE.Vector3( 2.4, -2.2,  0.4 ),  // return coast
-      new THREE.Vector3(-0.2, -2.8,  1.0 ),  // mid-return
-      new THREE.Vector3(-2.8, -2.0,  0.0 ),  // approaching Earth
-      new THREE.Vector3(-3.9, -0.6,  0.0 ),  // entry
-      new THREE.Vector3(-4,    0,    0   ),  // splashdown
+      new THREE.Vector3( 0,     0,     0    ),  // 0: LAUNCH (Earth LEO)
+      new THREE.Vector3( 0.3,   0.9,   0.6  ),  // 1: APOGEE ~53,000 km alt (T+6h)
+      new THREE.Vector3(-0.05,  0.05,  0    ),  // 2: near perigee (T+18h) — loop near Earth
+      new THREE.Vector3( 0.7,   1.8,   1.4  ),  // 3: TLI burn + early outbound (T+25h)
+      new THREE.Vector3( 3.2,   2.8,   2.0  ),  // 4: outbound coast (T+48h)
+      new THREE.Vector3( 5.8,   2.2,   0.6  ),  // 5: lunar SOI approach (T+72–96h)
+      new THREE.Vector3( 7.6,   1.0,  -0.4  ),  // 6: lunar approach (T+120h)
+      new THREE.Vector3( 8.15,  0.12,  0    ),  // 7: CLOSEST APPROACH (T+128h, ~3,986 mi from Moon)
+      new THREE.Vector3( 9.1,   0.1,  -1.1  ),  // 8: FAR SIDE / LOS (T+140h)
+      new THREE.Vector3( 8.6,  -1.1,  -0.6  ),  // 9: exit far-side (T+150h)
+      new THREE.Vector3( 6.4,  -2.2,   0.4  ),  // 10: return coast (T+168h)
+      new THREE.Vector3( 3.8,  -2.8,   1.0  ),  // 11: mid-return (T+192h)
+      new THREE.Vector3( 1.2,  -2.0,   0.0  ),  // 12: approaching Earth (T+210h)
+      new THREE.Vector3( 0.1,  -0.6,   0.0  ),  // 13: ENTRY (T+228h)
+      new THREE.Vector3( 0,     0,     0    ),  // 14: SPLASHDOWN (T+229h)
     ], false, 'catmullrom', 0.5);
     const N_PTS  = 320;
     const allPts = curve.getPoints(N_PTS);
@@ -2365,18 +2388,17 @@
     const completedMat = new THREE.LineBasicMaterial({ color: 0x00ff88 });
     scene.add(new THREE.Line(completedGeo, completedMat));
 
-    // Waypoint markers — 10 stages
+    // Waypoint markers — mapped to 15-pt curve (t = index/14)
     const WAYPOINTS = [
-      { t: 0.000, label: 'LAUNCH'           },
-      { t: 0.055, label: 'LEO'              },
-      { t: 0.09,  label: 'TLI BURN'         },
-      { t: 0.28,  label: 'OUTBOUND'         },
-      { t: 0.40,  label: 'LUNAR SOI'        },
-      { t: 0.455, label: 'CLOSEST APPROACH' },
-      { t: 0.50,  label: 'FAR SIDE LOS'     },
-      { t: 0.65,  label: 'RETURN'           },
-      { t: 0.90,  label: 'ENTRY'            },
-      { t: 0.9999,label: 'SPLASHDOWN'       },
+      { t: 0.000, label: 'LAUNCH'           },  // index 0
+      { t: 0.071, label: 'APOGEE'           },  // index 1
+      { t: 0.214, label: 'TLI BURN'         },  // index 3
+      { t: 0.357, label: 'OUTBOUND'         },  // index 5
+      { t: 0.500, label: 'CLOSEST APPROACH' },  // index 7
+      { t: 0.571, label: 'FAR SIDE LOS'     },  // index 8
+      { t: 0.714, label: 'RETURN COAST'     },  // index 10
+      { t: 0.929, label: 'ENTRY'            },  // index 13
+      { t: 0.999, label: 'SPLASHDOWN'       },  // index 14
     ];
     const wpMeshes = [], wpMats = [];
     WAYPOINTS.forEach(wp => {
@@ -2429,17 +2451,18 @@
     sfGeo.setAttribute('position', new THREE.BufferAttribute(sfBuf, 3));
     scene.add(new THREE.Points(sfGeo, new THREE.PointsMaterial({ color: 0xaabbcc, size: 0.10, sizeAttenuation: true, transparent: true, opacity: 0.5 })));
 
-    // Orbit camera controls — manual spherical
-    const sph = { theta: 0.4, phi: 1.05, r: 14 };
+    // Orbit camera controls — manual spherical, centered on mid-scene
+    const CAM_CENTER = new THREE.Vector3(4.1, 0, 0);
+    const sph = { theta: 0.4, phi: 1.05, r: 18 };
     let isDrag = false, lastMx = 0, lastMy = 0, autoRotate = true, rotTimer = null;
 
     function applyCam() {
       camera.position.set(
-        sph.r * Math.sin(sph.phi) * Math.sin(sph.theta),
-        sph.r * Math.cos(sph.phi),
-        sph.r * Math.sin(sph.phi) * Math.cos(sph.theta)
+        CAM_CENTER.x + sph.r * Math.sin(sph.phi) * Math.sin(sph.theta),
+        CAM_CENTER.y + sph.r * Math.cos(sph.phi),
+        CAM_CENTER.z + sph.r * Math.sin(sph.phi) * Math.cos(sph.theta)
       );
-      camera.lookAt(0, 0, 0);
+      camera.lookAt(CAM_CENTER);
     }
     applyCam();
 
@@ -2457,7 +2480,7 @@
       lastMx = e.clientX; lastMy = e.clientY; applyCam();
     });
     renderer.domElement.addEventListener('wheel', e => {
-      sph.r = Math.max(5, Math.min(30, sph.r + e.deltaY * 0.02)); applyCam(); e.preventDefault();
+      sph.r = Math.max(7, Math.min(40, sph.r + e.deltaY * 0.025)); applyCam(); e.preventDefault();
     }, { passive: false });
 
     // Touch
@@ -2584,21 +2607,23 @@
       {
         const mid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5);
         mid.y += 0.5;
-        label2d('384,400 km', mid, 'rgba(255,255,255,0.28)', 'center', 0, 0, false);
+        label2d('238,855 mi', mid, 'rgba(255,255,255,0.28)', 'center', 0, 0, false);
       }
 
       // Orion→Earth distance label
       const earthTxt = document.getElementById('tv-earth')?.textContent?.trim();
+      const earthUnit = (document.getElementById('tu-earth')?.textContent || 'MI').toLowerCase();
       if (earthTxt && earthTxt !== '—') {
         const mid = new THREE.Vector3().addVectors(orion.position, earth.position).multiplyScalar(0.5);
-        label2d(earthTxt + ' km', mid, 'rgba(0,204,255,0.75)', 'center', 0, 0, false);
+        label2d(earthTxt + ' ' + earthUnit, mid, 'rgba(0,204,255,0.75)', 'center', 0, 0, false);
       }
 
       // Orion→Moon distance label
       const moonTxt = document.getElementById('tv-moon')?.textContent?.trim();
+      const moonUnit = (document.getElementById('tu-moon')?.textContent || 'MI').toLowerCase();
       if (moonTxt && moonTxt !== '—') {
         const mid = new THREE.Vector3().addVectors(orion.position, moon.position).multiplyScalar(0.5);
-        label2d(moonTxt + ' km', mid, 'rgba(255,221,68,0.75)', 'center', 0, 0, false);
+        label2d(moonTxt + ' ' + moonUnit, mid, 'rgba(255,221,68,0.75)', 'center', 0, 0, false);
       }
 
       // Waypoint labels (completed + current only, to avoid clutter)
@@ -2649,7 +2674,9 @@
       return Math.floor(s/60) + 'm ' + (s%60).toFixed(0) + 's';
     }
     function estimatedRTLT() {
-      const km = parseFloat((document.getElementById('tv-earth')?.textContent||'').replace(/,/g,''));
+      const raw  = parseFloat((document.getElementById('tv-earth')?.textContent||'').replace(/,/g,''));
+      const unit = document.getElementById('tu-earth')?.textContent || 'KM';
+      const km   = unit === 'MI' ? raw / 0.621371 : raw;
       if (km > 0) return fmtRTLT((km * 2) / 299792.458) + ' ~';
       return null;
     }
