@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARTEMIS II — LIVE MISSION DASHBOARD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #08080e;
+      --bg-panel:    #0d0d18;
+      --bg-card:     #10101e;
+      --blue:        #0B3D91;
+      --blue-light:  #4A90D9;
+      --blue-dim:    rgba(74,144,217,0.12);
+      --green:       #00e676;
+      --amber:       #ffa726;
+      --red:         #ef5350;
+      --text:        #e8eaf6;
+      --text-dim:    #7986a8;
+      --border:      rgba(74,144,217,0.22);
+      --glow-blue:   0 0 12px rgba(74,144,217,0.5);
+      --glow-green:  0 0 14px rgba(0,230,118,0.55);
+      --font-mono:   'Share Tech Mono', monospace;
+      --font-ui:     'Orbitron', sans-serif;
+      --font-body:   'Rajdhani', sans-serif;
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      overflow: hidden;
+    }
+
+    /* ── Scanline overlay ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.08) 3px,
+        rgba(0,0,0,0.08) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ── Root grid ── */
+    #dashboard {
+      display: grid;
+      grid-template-rows: 160px 1fr 1fr;
+      grid-template-columns: 1fr 2fr 1fr;
+      gap: 6px;
+      padding: 6px;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* ── Panel base ── */
+    .panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .panel-header {
+      font-family: var(--font-ui);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      color: var(--blue-light);
+      padding: 6px 12px 4px;
+      border-bottom: 1px solid var(--border);
+      text-transform: uppercase;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .panel-header .dot {
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: var(--blue-light);
+      box-shadow: var(--glow-blue);
+    }
+
+    .panel-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    /* ── Placeholder panels ── */
+    .placeholder {
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 20px,
+        rgba(74,144,217,0.025) 20px,
+        rgba(74,144,217,0.025) 21px
+      );
+    }
+
+    .placeholder .panel-body {
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .placeholder-icon {
+      font-size: 2.4rem;
+      opacity: 0.3;
+    }
+
+    .placeholder-title {
+      font-family: var(--font-ui);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      color: var(--blue-light);
+      opacity: 0.6;
+      text-align: center;
+    }
+
+    .placeholder-sub {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      opacity: 0.5;
+      text-align: center;
+    }
+
+    .placeholder-badge {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      letter-spacing: 0.1em;
+      color: var(--amber);
+      border: 1px solid rgba(255,167,38,0.3);
+      padding: 2px 8px;
+      border-radius: 2px;
+    }
+
+    /* ════════════════════════════════
+       WIDGET 1 — MET CLOCK
+    ════════════════════════════════ */
+    #met-clock {
+      grid-row: 1; grid-column: 1;
+    }
+
+    .met-label {
+      font-family: var(--font-ui);
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      text-align: center;
+    }
+
+    #met-display {
+      font-family: var(--font-mono);
+      font-size: clamp(1.6rem, 2.8vw, 3rem);
+      color: var(--blue-light);
+      text-shadow: var(--glow-blue);
+      letter-spacing: 0.06em;
+      line-height: 1;
+      text-align: center;
+    }
+
+    .met-sub {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+
+    #utc-display {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+      text-align: center;
+    }
+
+    /* ════════════════════════════════
+       WIDGET 2 — MISSION PHASE
+    ════════════════════════════════ */
+    #mission-phase {
+      grid-row: 1; grid-column: 2;
+    }
+
+    #mission-phase .panel-body {
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px 16px;
+    }
+
+    .phase-current-label {
+      font-family: var(--font-ui);
+      font-size: 0.55rem;
+      letter-spacing: 0.2em;
+      color: var(--text-dim);
+      text-align: center;
+    }
+
+    #current-phase-name {
+      font-family: var(--font-ui);
+      font-size: clamp(1rem, 1.8vw, 1.8rem);
+      font-weight: 900;
+      color: var(--green);
+      text-shadow: var(--glow-green);
+      text-align: center;
+      letter-spacing: 0.1em;
+    }
+
+    .phase-bar {
+      display: flex;
+      width: 100%;
+      gap: 3px;
+      align-items: stretch;
+    }
+
+    .phase-node {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .phase-pip {
+      width: 100%;
+      height: 6px;
+      border-radius: 2px;
+      background: rgba(74,144,217,0.18);
+      border: 1px solid rgba(74,144,217,0.25);
+      transition: all 0.4s ease;
+    }
+
+    .phase-node.active .phase-pip {
+      background: var(--green);
+      box-shadow: 0 0 8px rgba(0,230,118,0.7);
+      border-color: var(--green);
+    }
+
+    .phase-node.done .phase-pip {
+      background: rgba(74,144,217,0.5);
+      border-color: rgba(74,144,217,0.5);
+    }
+
+    .phase-node-label {
+      font-family: var(--font-ui);
+      font-size: clamp(0.3rem, 0.5vw, 0.48rem);
+      color: var(--text-dim);
+      text-align: center;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+    }
+
+    .phase-node.active .phase-node-label {
+      color: var(--green);
+    }
+
+    /* ════════════════════════════════
+       WIDGET 3 — SIGNAL STATUS
+    ════════════════════════════════ */
+    #signal-status {
+      grid-row: 1; grid-column: 3;
+    }
+
+    #signal-status .panel-body {
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #signal-badge {
+      font-family: var(--font-ui);
+      font-size: clamp(0.55rem, 1vw, 0.9rem);
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-align: center;
+      padding: 10px 14px;
+      border-radius: 4px;
+      border: 1px solid;
+      width: 100%;
+      transition: all 0.5s ease;
+    }
+
+    #signal-badge.acquired {
+      color: var(--green);
+      border-color: rgba(0,230,118,0.5);
+      background: rgba(0,230,118,0.06);
+      box-shadow: var(--glow-green), inset 0 0 12px rgba(0,230,118,0.04);
+      animation: pulse-green 2.5s ease-in-out infinite;
+    }
+
+    #signal-badge.los {
+      color: var(--amber);
+      border-color: rgba(255,167,38,0.5);
+      background: rgba(255,167,38,0.06);
+      box-shadow: 0 0 12px rgba(255,167,38,0.3);
+      animation: none;
+    }
+
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: var(--glow-green), inset 0 0 12px rgba(0,230,118,0.04); }
+      50%       { box-shadow: 0 0 24px rgba(0,230,118,0.7), inset 0 0 16px rgba(0,230,118,0.06); }
+    }
+
+    .signal-sub {
+      font-family: var(--font-mono);
+      font-size: 0.58rem;
+      color: var(--text-dim);
+      text-align: center;
+      letter-spacing: 0.08em;
+    }
+
+    #signal-toggle {
+      font-family: var(--font-ui);
+      font-size: 0.5rem;
+      letter-spacing: 0.12em;
+      color: var(--text-dim);
+      background: transparent;
+      border: 1px solid rgba(74,144,217,0.3);
+      border-radius: 3px;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    #signal-toggle:hover {
+      border-color: var(--blue-light);
+      color: var(--blue-light);
+    }
+
+    /* DSN indicator dots */
+    .dsn-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dsn-dot {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.52rem;
+      color: var(--text-dim);
+    }
+
+    .dsn-dot-pip {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: rgba(74,144,217,0.3);
+    }
+
+    .dsn-dot-pip.active {
+      background: var(--green);
+      box-shadow: 0 0 6px rgba(0,230,118,0.8);
+    }
+
+    /* ════════════════════════════════
+       WIDGET 4 — CREW PANEL
+    ════════════════════════════════ */
+    #crew-panel {
+      grid-row: 3; grid-column: 2;
+    }
+
+    #crew-panel .panel-body {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 12px;
+      align-items: stretch;
+    }
+
+    .crew-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 8px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .crew-card:hover {
+      border-color: var(--blue-light);
+    }
+
+    .crew-flag {
+      font-size: clamp(1.4rem, 2.2vw, 2.2rem);
+      line-height: 1;
+    }
+
+    .crew-name {
+      font-family: var(--font-ui);
+      font-size: clamp(0.45rem, 0.75vw, 0.75rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-align: center;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .crew-role {
+      font-family: var(--font-mono);
+      font-size: 0.55rem;
+      color: var(--blue-light);
+      letter-spacing: 0.1em;
+      background: rgba(74,144,217,0.12);
+      border: 1px solid rgba(74,144,217,0.3);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+
+    .crew-agency {
+      font-family: var(--font-mono);
+      font-size: 0.48rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Placeholder grid positions ── */
+    #feed-youtube  { grid-row: 2; grid-column: 1; }
+    #feed-arow     { grid-row: 2; grid-column: 2; }
+    #feed-dsn      { grid-row: 2; grid-column: 3; }
+    #feed-weather  { grid-row: 3; grid-column: 1; }
+    #feed-blog     { grid-row: 3; grid-column: 3; }
+
+    /* ── Corner accent ── */
+    .corner-tl, .corner-br {
+      position: absolute;
+      width: 12px; height: 12px;
+      border-color: var(--blue-light);
+      border-style: solid;
+      opacity: 0.5;
+    }
+    .corner-tl { top: 4px; left: 4px; border-width: 1px 0 0 1px; }
+    .corner-br { bottom: 4px; right: 4px; border-width: 0 1px 1px 0; }
+
+    /* ── Watermark ── */
+    #watermark {
+      position: fixed;
+      bottom: 8px;
+      right: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.48rem;
+      color: rgba(74,144,217,0.25);
+      letter-spacing: 0.14em;
+      pointer-events: none;
+      z-index: 100;
+    }
+  </style>
+</head>
+<body>
+
+<div id="dashboard">
+
+  <!-- ══ ROW 1: STATUS BAR ══════════════════════════════════════════════ -->
+
+  <!-- MET CLOCK -->
+  <div class="panel" id="met-clock">
+    <div class="panel-header"><span class="dot"></span>MISSION ELAPSED TIME</div>
+    <div class="panel-body" style="flex-direction:column; gap:4px;">
+      <div class="met-label">MET</div>
+      <div id="met-display">D+000 00:00:00</div>
+      <div class="met-sub">LAUNCH: 2026-04-01 T 22:35 UTC</div>
+      <div id="utc-display">UTC --:--:--</div>
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <!-- MISSION PHASE -->
+  <div class="panel" id="mission-phase">
+    <div class="panel-header"><span class="dot"></span>MISSION PHASE</div>
+    <div class="panel-body">
+      <div class="phase-current-label">CURRENT PHASE</div>
+      <div id="current-phase-name">—</div>
+      <div class="phase-bar" id="phase-bar">
+        <!-- injected by JS -->
+      </div>
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <!-- SIGNAL STATUS -->
+  <div class="panel" id="signal-status">
+    <div class="panel-header"><span class="dot"></span>COMM / SIGNAL</div>
+    <div class="panel-body">
+      <div id="signal-badge" class="acquired">▶ SIGNAL ACQUIRED</div>
+      <div class="signal-sub" id="signal-sub-text">DSN LINK ACTIVE</div>
+      <div class="dsn-row">
+        <span class="dsn-dot"><span class="dsn-dot-pip" id="dot-canberra"></span>CNB</span>
+        <span class="dsn-dot"><span class="dsn-dot-pip" id="dot-madrid"></span>MAD</span>
+        <span class="dsn-dot"><span class="dsn-dot-pip" id="dot-goldstone"></span>GDS</span>
+      </div>
+      <button id="signal-toggle">TOGGLE SIGNAL STATE</button>
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <!-- ══ ROW 2: MAIN FEEDS ══════════════════════════════════════════════ -->
+
+  <div class="panel" id="feed-youtube">
+    <div class="panel-header"><span class="dot"></span>NASA LIVE — ARTEMIS II VIEWS FROM ORION</div>
+    <iframe
+      src="https://www.youtube.com/embed/6RwfNBtepa4?autoplay=1&mute=1"
+      style="flex:1; width:100%; border:none; display:block;"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen
+      loading="lazy"
+      title="NASA Artemis II Live Stream"
+    ></iframe>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <div class="panel" id="feed-arow">
+    <div class="panel-header"><span class="dot"></span>AROW / 3D TRACKER — ORION POSITION</div>
+    <iframe
+      src="https://artemislive.org/"
+      style="flex:1; width:100%; border:none; display:block;"
+      loading="lazy"
+      title="ArtemisLive 3D Tracker"
+    ></iframe>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <div class="panel" id="feed-dsn">
+    <div class="panel-header"><span class="dot"></span>DSN NOW — DEEP SPACE NETWORK</div>
+    <iframe
+      src="https://eyes.nasa.gov/apps/dsn-now/"
+      style="flex:1; width:100%; border:none; display:block;"
+      loading="lazy"
+      title="DSN Now"
+    ></iframe>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <!-- ══ ROW 3: SECONDARY ═══════════════════════════════════════════════ -->
+
+  <div class="panel" id="feed-weather">
+    <div class="panel-header"><span class="dot"></span>SPACE WEATHER — NOAA SWPC <span style="margin-left:auto;font-size:0.5rem;color:var(--text-dim);letter-spacing:0.08em;">AUTO-REFRESH 60s</span></div>
+    <div class="panel-body" style="flex-direction:column; gap:8px; padding:10px; overflow:hidden;">
+      <div style="font-family:var(--font-ui);font-size:0.48rem;letter-spacing:0.14em;color:var(--text-dim);text-align:center;">SPACE WEATHER OVERVIEW</div>
+      <a href="https://www.swpc.noaa.gov" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
+        <img id="img-swx-overview"
+          src="https://services.swpc.noaa.gov/images/swx-overview-large.gif"
+          alt="Space Weather Overview"
+          style="max-width:100%;max-height:100%;object-fit:contain;border:1px solid var(--border);border-radius:2px;"
+        >
+      </a>
+      <div style="font-family:var(--font-ui);font-size:0.48rem;letter-spacing:0.14em;color:var(--text-dim);text-align:center;">SOLAR WIND — ACE 24H</div>
+      <a href="https://www.swpc.noaa.gov/products/real-time-solar-wind" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;min-height:0;">
+        <img id="img-swx-wind"
+          src="https://services.swpc.noaa.gov/images/ace-mag-swepam-24-hour.gif"
+          alt="ACE Solar Wind 24h"
+          style="max-width:100%;max-height:100%;object-fit:contain;border:1px solid var(--border);border-radius:2px;"
+        >
+      </a>
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <!-- CREW PANEL -->
+  <div class="panel" id="crew-panel">
+    <div class="panel-header"><span class="dot"></span>ARTEMIS II CREW</div>
+    <div class="panel-body">
+
+      <div class="crew-card">
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="crew-flag">🇺🇸</div>
+        <div class="crew-name">REID WISEMAN</div>
+        <div class="crew-role">CDR</div>
+        <div class="crew-agency">NASA</div>
+      </div>
+
+      <div class="crew-card">
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="crew-flag">🇺🇸</div>
+        <div class="crew-name">VICTOR GLOVER</div>
+        <div class="crew-role">PLT</div>
+        <div class="crew-agency">NASA</div>
+      </div>
+
+      <div class="crew-card">
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="crew-flag">🇺🇸</div>
+        <div class="crew-name">CHRISTINA KOCH</div>
+        <div class="crew-role">MS</div>
+        <div class="crew-agency">NASA</div>
+      </div>
+
+      <div class="crew-card">
+        <div class="corner-tl"></div><div class="corner-br"></div>
+        <div class="crew-flag">🇨🇦</div>
+        <div class="crew-name">JEREMY HANSEN</div>
+        <div class="crew-role">MS</div>
+        <div class="crew-agency">CSA</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="panel placeholder" id="feed-blog">
+    <div class="panel-header"><span class="dot"></span>MISSION BLOG — LATEST UPDATES</div>
+    <div class="panel-body" style="flex-direction:column; gap:14px; padding:20px;">
+      <div class="placeholder-icon">📝</div>
+      <div class="placeholder-title">MISSION BLOG FEEDS</div>
+      <div class="placeholder-sub" style="opacity:0.6;">Embedding blocked — open in new tab</div>
+      <a href="https://www.nasa.gov/blogs/missions/" target="_blank" rel="noopener" style="width:100%;display:flex;flex-direction:column;gap:4px;text-decoration:none;background:rgba(74,144,217,0.07);border:1px solid rgba(74,144,217,0.3);border-radius:4px;padding:10px 14px;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--blue-light)'" onmouseout="this.style.borderColor='rgba(74,144,217,0.3)'">
+        <span style="font-family:var(--font-ui);font-size:0.6rem;letter-spacing:0.12em;color:var(--blue-light);">↗ NASA MISSIONS BLOG</span>
+        <span style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-dim);">nasa.gov/blogs/missions</span>
+      </a>
+      <a href="https://blogs.esa.int/orion/" target="_blank" rel="noopener" style="width:100%;display:flex;flex-direction:column;gap:4px;text-decoration:none;background:rgba(74,144,217,0.07);border:1px solid rgba(74,144,217,0.3);border-radius:4px;padding:10px 14px;transition:border-color 0.2s;" onmouseover="this.style.borderColor='var(--blue-light)'" onmouseout="this.style.borderColor='rgba(74,144,217,0.3)'">
+        <span style="font-family:var(--font-ui);font-size:0.6rem;letter-spacing:0.12em;color:var(--blue-light);">↗ ESA ORION BLOG</span>
+        <span style="font-family:var(--font-mono);font-size:0.52rem;color:var(--text-dim);">blogs.esa.int/orion</span>
+      </a>
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+</div><!-- #dashboard -->
+
+<div id="watermark">ARTEMIS II MISSION DASHBOARD · LIVE</div>
+
+<script>
+  // ── CONFIG ──────────────────────────────────────────────────────────
+  const LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
+
+  const PHASES = [
+    { name: 'LAUNCH',         label: 'LAUNCH',    startMin:  0,              endMin:  12 },
+    { name: 'EARTH ORBIT',    label: 'ORBIT',     startMin:  12,             endMin:  25 * 60 },
+    { name: 'TLI BURN',       label: 'TLI',       startMin:  25 * 60,        endMin:  25 * 60 + 30 },
+    { name: 'OUTBOUND COAST', label: 'OUTBOUND',  startMin:  25 * 60 + 30,   endMin:  4 * 24 * 60 },
+    { name: 'LUNAR FLYBY',    label: 'LUNAR FLY', startMin:  4 * 24 * 60,    endMin:  5 * 24 * 60 },
+    { name: 'RETURN COAST',   label: 'RETURN',    startMin:  5 * 24 * 60,    endMin:  (9 * 24 + 12) * 60 },
+    { name: 'ENTRY',          label: 'ENTRY',     startMin:  (9 * 24 + 12) * 60, endMin: 10 * 24 * 60 },
+    { name: 'SPLASHDOWN',     label: 'SPLASHDOWN',startMin:  10 * 24 * 60,   endMin:  Infinity },
+  ];
+
+  // ── MET CLOCK ───────────────────────────────────────────────────────
+  function formatMET(ms) {
+    if (ms < 0) {
+      const abs = Math.abs(ms);
+      const s = Math.floor(abs / 1000) % 60;
+      const m = Math.floor(abs / 60000) % 60;
+      const h = Math.floor(abs / 3600000) % 24;
+      const d = Math.floor(abs / 86400000);
+      return `T-${String(d).padStart(3,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+    const s = Math.floor(ms / 1000) % 60;
+    const m = Math.floor(ms / 60000) % 60;
+    const h = Math.floor(ms / 3600000) % 24;
+    const d = Math.floor(ms / 86400000);
+    return `D+${String(d).padStart(3,'0')} ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function getCurrentPhaseIndex(elapsedMin) {
+    for (let i = PHASES.length - 1; i >= 0; i--) {
+      if (elapsedMin >= PHASES[i].startMin) return i;
+    }
+    return 0;
+  }
+
+  const metDisplay    = document.getElementById('met-display');
+  const utcDisplay    = document.getElementById('utc-display');
+  const currentPhaseEl = document.getElementById('current-phase-name');
+
+  // Build phase bar once
+  const phaseBar = document.getElementById('phase-bar');
+  PHASES.forEach((p, i) => {
+    const node = document.createElement('div');
+    node.className = 'phase-node';
+    node.id = `phase-node-${i}`;
+    node.innerHTML = `<div class="phase-pip"></div><div class="phase-node-label">${p.label}</div>`;
+    phaseBar.appendChild(node);
+  });
+
+  let lastPhaseIdx = -1;
+
+  function tick() {
+    const now     = new Date();
+    const elapsed = now - LAUNCH_UTC;
+    const elapsedMin = elapsed / 60000;
+
+    // MET
+    metDisplay.textContent = formatMET(elapsed);
+
+    // UTC
+    utcDisplay.textContent = 'UTC ' + now.toUTCString().slice(17, 25);
+
+    // Phase
+    const phaseIdx = getCurrentPhaseIndex(elapsedMin);
+    if (phaseIdx !== lastPhaseIdx) {
+      lastPhaseIdx = phaseIdx;
+      currentPhaseEl.textContent = PHASES[phaseIdx].name;
+      PHASES.forEach((_, i) => {
+        const node = document.getElementById(`phase-node-${i}`);
+        node.classList.remove('active', 'done');
+        if (i === phaseIdx) node.classList.add('active');
+        else if (i < phaseIdx) node.classList.add('done');
+      });
+    }
+  }
+
+  tick();
+  setInterval(tick, 1000);
+
+  // ── SIGNAL TOGGLE ───────────────────────────────────────────────────
+  let signalAcquired = true;
+
+  const badge       = document.getElementById('signal-badge');
+  const subText     = document.getElementById('signal-sub-text');
+  const dotCan      = document.getElementById('dot-canberra');
+  const toggleBtn   = document.getElementById('signal-toggle');
+
+  function applySignalState() {
+    if (signalAcquired) {
+      badge.className = 'acquired';
+      badge.textContent = '▶ SIGNAL ACQUIRED';
+      subText.textContent = 'DSN LINK ACTIVE';
+      dotCan.classList.add('active');
+    } else {
+      badge.className = 'los';
+      badge.textContent = '✕ LOS — FAR SIDE PASS';
+      subText.textContent = 'NO SIGNAL — OCCULTATION';
+      dotCan.classList.remove('active');
+    }
+  }
+
+  applySignalState();
+
+  toggleBtn.addEventListener('click', () => {
+    signalAcquired = !signalAcquired;
+    applySignalState();
+  });
+
+  // ── NOAA IMAGE AUTO-REFRESH (60s) ───────────────────────────────────
+  const noaaImages = [
+    { id: 'img-swx-overview', base: 'https://services.swpc.noaa.gov/images/swx-overview-large.gif' },
+    { id: 'img-swx-wind',     base: 'https://services.swpc.noaa.gov/images/ace-mag-swepam-24-hour.gif' },
+  ];
+
+  setInterval(() => {
+    const bust = '?t=' + Date.now();
+    noaaImages.forEach(({ id, base }) => {
+      const el = document.getElementById(id);
+      if (el) el.src = base + bust;
+    });
+  }, 60000);
+</script>
+</body>
+</html>
