@@ -88,22 +88,6 @@ function visVivaSpeedKmh(earthAltKm) {
   return Math.sqrt(v2) * 3600; // km/s → km/h
 }
 
-// ── VIS-VIVA ORBITAL MECHANICS ────────────────────────────────────────
-// v = sqrt(GM * (2/r - 1/a))
-// GM = 398600 km³/s²  (Earth gravitational parameter)
-// r  = distance from Earth centre in km
-// a  = semi-major axis km: perigee r_p=8785, apogee r_a=80401 → a=(8785+80401)/2=44593
-const GM_KM3S2     = 398600;
-const PRE_TLI_A_KM = 44593;
-const TLI_MIN      = 25.8 * 60; // TLI burn at T+25h48m in minutes
-
-function visVivaSpeedKmh(earthAltKm) {
-  const r  = earthAltKm + 6371;                      // km from Earth centre
-  const v2 = GM_KM3S2 * (2 / r - 1 / PRE_TLI_A_KM);
-  if (v2 <= 0) return 0;
-  return Math.sqrt(v2) * 3600;                       // km/s → km/h
-}
-
 function lerp(waypoints, t) {
   const wps = waypoints;
   if (t <= wps[0][0]) return wps[0][1];

@@ -51,7 +51,18 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <link rel="stylesheet" href="css/styles.css?v=20260403">
+  <script>
+    (function() {
+      var v = Date.now();
+      var css = ['css/styles.css'];
+      css.forEach(function(href) {
+        var l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = href + '?v=' + v;
+        document.head.appendChild(l);
+      });
+      window._cbv = v;
+    })();
+  </script>
 </head>
 <body>
 
@@ -563,17 +574,21 @@
   }
 </script>
 
-<script defer src="js/shared.js?v=20260403"></script>
-<script defer src="js/clock.js?v=20260403"></script>
-<script defer src="js/stats.js?v=20260403"></script>
-<script defer src="js/timeline.js?v=20260403"></script>
-<script defer src="js/news.js?v=20260403"></script>
-<script defer src="js/crew.js?v=20260403"></script>
-<script defer src="js/weather.js?v=20260403"></script>
-<script defer src="js/trajectory.js?v=20260403"></script>
-<script defer src="js/dsn.js?v=20260403"></script>
-<script defer src="js/ui.js?v=20260403"></script>
-<script defer src="js/reference.js?v=20260403"></script>
+<script>
+  (function() {
+    var v = window._cbv || Date.now();
+    var scripts = [
+      'js/shared.js','js/clock.js','js/stats.js','js/timeline.js',
+      'js/news.js','js/crew.js','js/weather.js','js/trajectory.js',
+      'js/dsn.js','js/ui.js','js/reference.js'
+    ];
+    scripts.forEach(function(src) {
+      var s = document.createElement('script');
+      s.defer = true; s.src = src + '?v=' + v;
+      document.head.appendChild(s);
+    });
+  })();
+</script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', function() {
