@@ -828,27 +828,27 @@
       50%       { box-shadow: none; opacity: 0.35; }
     }
     .tl-met {
-      font-family: var(--font-mono); font-size: 0.46rem;
-      white-space: nowrap; flex-shrink: 0; min-width: 72px;
+      font-family: var(--font-mono); font-size: 0.58rem;
+      white-space: nowrap; flex-shrink: 0; min-width: 80px;
       letter-spacing: 0.04em; padding-top: 1px;
     }
     .tl-event.tl-complete .tl-met { color: var(--green); }
     .tl-event.tl-active   .tl-met { color: var(--amber); }
     .tl-event.tl-upcoming .tl-met { color: rgba(74,144,217,0.4); }
     .tl-name {
-      font-family: var(--font-mono); font-size: 0.52rem; line-height: 1.35;
+      font-family: var(--font-mono); font-size: 0.66rem; line-height: 1.35;
     }
     .tl-event.tl-complete .tl-name { color: var(--text-dim); }
     .tl-event.tl-active   .tl-name { color: var(--amber); font-weight: 700; }
     .tl-event.tl-upcoming .tl-name { color: var(--text-dim); }
-    .tl-check { color: var(--green); font-size: 0.46rem; margin-left: 3px; }
+    .tl-check { color: var(--green); font-size: 0.58rem; margin-left: 3px; }
     /* Local time lines inside .tl-met */
     .tl-localtime {
-      font-family: var(--font-mono); font-size: 0.37rem; line-height: 1.4;
+      font-family: var(--font-mono); font-size: 0.48rem; line-height: 1.4;
       color: rgba(74,144,217,0.62); margin-top: 2px; white-space: nowrap;
     }
     .tl-eta {
-      font-family: var(--font-mono); font-size: 0.37rem; letter-spacing: 0.06em;
+      font-family: var(--font-mono); font-size: 0.48rem; letter-spacing: 0.06em;
       margin-top: 2px; line-height: 1.3;
     }
     .tl-upcoming .tl-eta { color: rgba(74,144,217,0.55); }
