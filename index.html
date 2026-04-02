@@ -1379,6 +1379,7 @@
 
 <script>
   // ── GLOBAL CONFIG (used by all sections below) ───────────────────────
+  const NASA_API_KEY = 'NkWaGNE5rQyjA2k7cwhJhPzzSblE9MILSMEBP6yD';
   const LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
 
   // ── TIMEZONE HELPERS ─────────────────────────────────────────────────
@@ -1566,7 +1567,7 @@
     // ── NASA APOD ──────────────────────────────────────────────────────
     (async function() {
       try {
-        const r    = await fetch('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY');
+        const r    = await fetch('https://api.nasa.gov/planetary/apod?api_key=' + NASA_API_KEY);
         const data = await r.json();
         const thumb   = document.getElementById('apod-thumb');
         const titleEl = document.getElementById('apod-strip-title');
@@ -1679,62 +1680,67 @@
   // Verified against NASA broadcast. Waypoints: [minutes, value].
   // earthDist & moonDist in km; speed in km/h.
   const H = 60; // minutes per hour
+  // Fallback waypoints from NASA broadcast reference values (miles × 1.60934 = km, mph × 1.60934 = km/h)
   const TELEM = {
-    earthDist: [  // km from Earth center (NASA broadcast reference)
-      [0,       322],      // launch — LEO insertion (~200 mi altitude)
-      [0.5*H,   322],      // LEO stable
-      [1*H,     805],      // post-perigee raise  (~500 mi)
-      [3*H,     8047],     // climbing in elliptical orbit (~5,000 mi)
-      [6*H,     53108],    // apogee — high elliptical (~33,000 mi) ← NASA verified
-      [12*H,    24140],    // descending back (~15,000 mi)
-      [18*H,    3219],     // near perigee again (~2,000 mi)
-      [25*H,    64374],    // post-TLI outbound (~40,000 mi)
-      [48*H,    160934],   // outbound coast (~100,000 mi)
-      [72*H,    257495],   // approaching Moon (~160,000 mi)
-      [96*H,    321869],   // near Moon (~200,000 mi)
-      [120*H,   370149],   // close approach corridor (~230,000 mi)
-      [128*H,   386243],   // closest approach / far-side pass (~240,000 mi)
-      [144*H,   354057],   // return coast begins (~220,000 mi)
-      [192*H,   193121],   // midway return (~120,000 mi)
-      [228*H,   16093],    // approaching Earth (~10,000 mi)
-      [229*H,   161],      // re-entry interface (~100 mi)
+    earthDist: [  // km from Earth (NASA broadcast reference, mi → km)
+      [0,           0],       //  T+0h:   0 mi
+      [1*H,       805],       //  T+1h:   500 mi
+      [3*H,      8047],       //  T+3h:   5,000 mi
+      [6*H,     53108],       //  T+6h:   33,000 mi (apogee)
+      [8*H,     64374],       //  T+8h:   40,000 mi
+      [12*H,    24140],       //  T+12h:  15,000 mi (descending)
+      [18*H,     3219],       //  T+18h:  2,000 mi (near perigee)
+      [24*H,    56327],       //  T+24h:  35,000 mi
+      [25*H,    64374],       //  T+25h:  40,000 mi (post-TLI)
+      [48*H,   160934],       //  T+48h:  100,000 mi
+      [72*H,   257495],       //  T+72h:  160,000 mi
+      [96*H,   321869],       //  T+96h:  200,000 mi
+      [120*H,  370149],       //  T+120h: 230,000 mi
+      [128*H,  386243],       //  T+128h: 240,000 mi (closest approach)
+      [144*H,  354057],       //  T+144h: 220,000 mi
+      [192*H,  193121],       //  T+192h: 120,000 mi
+      [228*H,   16093],       //  T+228h: 10,000 mi
+      [229*H,     161],       //  T+229h: 100 mi (re-entry)
     ],
-    moonDist: [   // km from Moon center
-      [0,       384601],
-      [0.5*H,   384278],
-      [3*H,     376577],
-      [6*H,     352440],   // ← NASA verified ~219,000 mi
-      [12*H,    360494],
-      [18*H,    381415],
-      [25*H,    321869],
-      [48*H,    225308],
-      [72*H,    128748],
-      [96*H,    64374],
-      [120*H,   16093],
-      [128*H,   6437],     // closest approach ~4,000 mi
-      [144*H,   48280],
-      [192*H,   193121],
-      [228*H,   370149],
-      [229*H,   384601],
+    moonDist: [   // km from Moon (NASA broadcast reference, mi → km)
+      [0,      384601],       //  T+0h:   239,000 mi
+      [1*H,    383795],       //  T+1h:   238,500 mi
+      [3*H,    376554],       //  T+3h:   234,000 mi
+      [6*H,    352440],       //  T+6h:   219,000 mi
+      [8*H,    337961],       //  T+8h:   210,000 mi
+      [12*H,   360494],       //  T+12h:  224,000 mi
+      [18*H,   381415],       //  T+18h:  237,000 mi
+      [24*H,   329931],       //  T+24h:  205,000 mi
+      [25*H,   321869],       //  T+25h:  200,000 mi
+      [48*H,   225308],       //  T+48h:  140,000 mi
+      [72*H,   128748],       //  T+72h:  80,000 mi
+      [96*H,    64374],       //  T+96h:  40,000 mi
+      [120*H,   16093],       //  T+120h: 10,000 mi
+      [128*H,    6437],       //  T+128h: 4,000 mi (closest approach)
+      [144*H,   48280],       //  T+144h: 30,000 mi
+      [192*H,  193121],       //  T+192h: 120,000 mi
+      [228*H,  370149],       //  T+228h: 230,000 mi
+      [229*H,  384601],       //  T+229h: 239,000 mi
     ],
-    speed: [      // km/h
-      [0,       28163],    // 17,500 mph — orbital
-      [0.5*H,   27359],    // 17,000 mph
-      [1*H,     25750],    // 16,000 mph
-      [3*H,     16093],    // 10,000 mph
-      [6*H,     6920],     //  4,300 mph ← NASA verified
-      [12*H,    12875],    //  8,000 mph — descending
-      [18*H,    24140],    // 15,000 mph — accelerating toward perigee
-      [25*H,    5633],     //  3,500 mph — post-TLI
-      [48*H,    4023],     //  2,500 mph
-      [72*H,    3219],     //  2,000 mph
-      [96*H,    3541],     //  2,200 mph
-      [120*H,   5633],     //  3,500 mph — lunar gravity well
-      [128*H,   7242],     //  4,500 mph — closest approach
-      [144*H,   4023],     //  2,500 mph — return
-      [192*H,   4828],     //  3,000 mph
-      [228*H,   24140],    // 15,000 mph — Earth gravity pull
-      [229*H,   40234],    // 25,000 mph — re-entry
+    speed: [      // km/h (NASA broadcast reference, mph × 1.60934)
+      [0,       28163],       //  T+0h:   17,500 mph — orbital
+      [1*H,     25750],       //  T+1h:   16,000 mph
+      [3*H,     16093],       //  T+3h:   10,000 mph
+      [6*H,      6920],       //  T+6h:   4,300 mph
+      [8*H,      5633],       //  T+8h:   3,500 mph
+      [12*H,    12875],       //  T+12h:  8,000 mph (descending)
+      [18*H,    24140],       //  T+18h:  15,000 mph (perigee)
+      [24*H,     6437],       //  T+24h:  4,000 mph
+      [25*H,     5633],       //  T+25h:  3,500 mph (post-TLI)
+      [48*H,     4023],       //  T+48h:  2,500 mph
+      [72*H,     3219],       //  T+72h:  2,000 mph
+      [96*H,     3541],       //  T+96h:  2,200 mph
+      [120*H,    5633],       //  T+120h: 3,500 mph (lunar gravity)
+      [128*H,    7242],       //  T+128h: 4,500 mph (closest approach)
+      [144*H,    4023],       //  T+144h: 2,500 mph
+      [192*H,    4828],       //  T+192h: 3,000 mph
+      [228*H,   24140],       //  T+228h: 15,000 mph (Earth pull)
+      [229*H,   40234],       //  T+229h: 25,000 mph (re-entry)
     ],
   };
 
@@ -1806,6 +1812,11 @@
       const vE = parseHorizonsVec(dE.result || '');
       const vM = parseHorizonsVec(dM.result || '');
       if (!vE || !vM) throw new Error('Parse failed');
+      const elMin = (Date.now() - LAUNCH_UTC) / 60000;
+      const fbEarth = lerp(TELEM.earthDist, elMin), fbMoon = lerp(TELEM.moonDist, elMin), fbSpeed = lerp(TELEM.speed, elMin);
+      console.log('[Horizons] LIVE  → Earth:', (vE.dist * 0.621371).toFixed(0), 'mi | Moon:', (vM.dist * 0.621371).toFixed(0), 'mi | Speed:', (vE.speed * 3600 * 0.621371).toFixed(0), 'mph');
+      console.log('[Horizons] EST   → Earth:', (fbEarth * 0.621371).toFixed(0), 'mi | Moon:', (fbMoon * 0.621371).toFixed(0), 'mi | Speed:', (fbSpeed * 0.621371).toFixed(0), 'mph');
+      console.log('[Horizons] MET:', (elMin / 60).toFixed(1), 'hours');
       liveEarth = vE; liveMoon = vM; usingLive = true;
       lastFetchedAt = Date.now();
       setTelemBadge('LIVE');
@@ -1934,7 +1945,6 @@
         { url: 'https://arstechnica.com/space/feed/',     name: 'ARS TECHNICA' },
       ],
       media: [
-        { url: 'https://rss.cnn.com/rss/edition_space.rss',                        name: 'CNN SPACE' },
         { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',    name: 'BBC SCI' },
       ],
     };
