@@ -55,7 +55,7 @@
     /* ── Root grid ── */
     #dashboard {
       display: grid;
-      grid-template-rows: 160px 1fr 1fr;
+      grid-template-rows: 160px 1fr 1fr 36px;
       grid-template-columns: 1fr 2fr 1fr;
       gap: 6px;
       padding: 6px;
@@ -376,69 +376,174 @@
     }
 
     /* ════════════════════════════════
-       WIDGET 4 — CREW PANEL
+       WIDGET 4 — MISSION UPDATES
     ════════════════════════════════ */
-    #crew-panel {
+    #mission-updates {
       grid-row: 3; grid-column: 2;
     }
 
-    #crew-panel .panel-body {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      padding: 12px;
-      align-items: stretch;
-    }
-
-    .crew-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      display: flex;
+    #mission-updates .panel-body {
       flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+      align-items: stretch;
+      justify-content: flex-start;
+    }
+
+    #log-meta {
+      display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      padding: 12px 8px;
-      position: relative;
-      transition: border-color 0.2s;
+      justify-content: space-between;
+      padding: 5px 10px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
     }
 
-    .crew-card:hover {
-      border-color: var(--blue-light);
-    }
-
-    .crew-flag {
-      font-size: clamp(1.4rem, 2.2vw, 2.2rem);
-      line-height: 1;
-    }
-
-    .crew-name {
-      font-family: var(--font-ui);
-      font-size: clamp(0.45rem, 0.75vw, 0.75rem);
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-align: center;
-      color: var(--text);
-      line-height: 1.3;
-    }
-
-    .crew-role {
+    #log-last-updated {
       font-family: var(--font-mono);
-      font-size: 0.55rem;
-      color: var(--blue-light);
+      font-size: 0.52rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+    }
+
+    #log-source-badge {
+      font-family: var(--font-mono);
+      font-size: 0.48rem;
       letter-spacing: 0.1em;
-      background: rgba(74,144,217,0.12);
-      border: 1px solid rgba(74,144,217,0.3);
-      padding: 2px 6px;
+      padding: 1px 6px;
       border-radius: 2px;
     }
 
-    .crew-agency {
+    #log-source-badge.live {
+      color: var(--green);
+      border: 1px solid rgba(0,230,118,0.4);
+      background: rgba(0,230,118,0.06);
+    }
+
+    #log-source-badge.fallback {
+      color: var(--amber);
+      border: 1px solid rgba(255,167,38,0.4);
+      background: rgba(255,167,38,0.06);
+    }
+
+    #log-entries {
+      flex: 1;
+      overflow-y: auto;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(74,144,217,0.3) transparent;
+    }
+
+    .log-entry {
+      border-left: 3px solid var(--border);
+      padding: 6px 10px;
+      background: rgba(74,144,217,0.04);
+      border-radius: 0 3px 3px 0;
+      transition: background 0.2s;
+      cursor: default;
+    }
+
+    .log-entry:hover { background: rgba(74,144,217,0.09); }
+
+    .log-entry.recent   { border-left-color: var(--green); }
+    .log-entry.today    { border-left-color: var(--blue-light); }
+    .log-entry.older    { border-left-color: rgba(74,144,217,0.35); }
+
+    .log-entry-ts {
       font-family: var(--font-mono);
-      font-size: 0.48rem;
-      color: var(--text-dim);
+      font-size: 0.5rem;
       letter-spacing: 0.08em;
+      margin-bottom: 3px;
+    }
+
+    .log-entry.recent .log-entry-ts { color: var(--green); }
+    .log-entry.today  .log-entry-ts { color: var(--blue-light); }
+    .log-entry.older  .log-entry-ts { color: var(--text-dim); }
+
+    .log-entry-title {
+      font-family: var(--font-mono);
+      font-size: 0.62rem;
+      color: var(--text);
+      letter-spacing: 0.04em;
+      line-height: 1.35;
+      margin-bottom: 3px;
+    }
+
+    .log-entry-excerpt {
+      font-family: var(--font-mono);
+      font-size: 0.52rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    /* ════════════════════════════════
+       CREW STRIP — bottom row
+    ════════════════════════════════ */
+    #crew-strip {
+      grid-row: 4; grid-column: 1 / -1;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 0;
+    }
+
+    .crew-strip-label {
+      font-family: var(--font-ui);
+      font-size: 0.42rem;
+      letter-spacing: 0.18em;
+      color: var(--text-dim);
+      margin-right: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .crew-strip-members {
+      display: flex;
+      gap: 24px;
+      align-items: center;
+      flex: 1;
+    }
+
+    .crew-strip-member {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .crew-strip-flag { font-size: 0.75rem; line-height: 1; }
+
+    .crew-strip-name {
+      font-family: var(--font-ui);
+      font-size: 0.48rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--text);
+    }
+
+    .crew-strip-role {
+      font-family: var(--font-mono);
+      font-size: 0.42rem;
+      color: var(--blue-light);
+      letter-spacing: 0.1em;
+      background: rgba(74,144,217,0.12);
+      border: 1px solid rgba(74,144,217,0.25);
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+
+    .crew-strip-sep {
+      width: 1px;
+      height: 16px;
+      background: var(--border);
+      flex-shrink: 0;
+      margin: 0 4px;
     }
 
     /* ── Placeholder grid positions ── */
@@ -582,44 +687,22 @@
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
-  <!-- CREW PANEL -->
-  <div class="panel" id="crew-panel">
-    <div class="panel-header"><span class="dot"></span>ARTEMIS II CREW</div>
-    <div class="panel-body">
-
-      <div class="crew-card">
-        <div class="corner-tl"></div><div class="corner-br"></div>
-        <div class="crew-flag">🇺🇸</div>
-        <div class="crew-name">REID WISEMAN</div>
-        <div class="crew-role">CDR</div>
-        <div class="crew-agency">NASA</div>
-      </div>
-
-      <div class="crew-card">
-        <div class="corner-tl"></div><div class="corner-br"></div>
-        <div class="crew-flag">🇺🇸</div>
-        <div class="crew-name">VICTOR GLOVER</div>
-        <div class="crew-role">PLT</div>
-        <div class="crew-agency">NASA</div>
-      </div>
-
-      <div class="crew-card">
-        <div class="corner-tl"></div><div class="corner-br"></div>
-        <div class="crew-flag">🇺🇸</div>
-        <div class="crew-name">CHRISTINA KOCH</div>
-        <div class="crew-role">MS</div>
-        <div class="crew-agency">NASA</div>
-      </div>
-
-      <div class="crew-card">
-        <div class="corner-tl"></div><div class="corner-br"></div>
-        <div class="crew-flag">🇨🇦</div>
-        <div class="crew-name">JEREMY HANSEN</div>
-        <div class="crew-role">MS</div>
-        <div class="crew-agency">CSA</div>
-      </div>
-
+  <!-- MISSION UPDATES FEED -->
+  <div class="panel" id="mission-updates">
+    <div class="panel-header">
+      <span class="dot"></span>MISSION UPDATES
+      <span id="log-source-badge" class="fallback">STATIC</span>
     </div>
+    <div class="panel-body">
+      <div id="log-meta">
+        <span id="log-last-updated">LAST UPDATED: —</span>
+        <span style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.08em;">AUTO-REFRESH 5m</span>
+      </div>
+      <div id="log-entries">
+        <div style="font-family:var(--font-mono);font-size:0.58rem;color:var(--text-dim);padding:20px;text-align:center;">LOADING MISSION LOG…</div>
+      </div>
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
   <div class="panel placeholder" id="feed-blog">
@@ -640,11 +723,75 @@
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
+  <!-- CREW STRIP -->
+  <div id="crew-strip">
+    <span class="crew-strip-label">ARTEMIS II CREW</span>
+    <div class="crew-strip-members">
+      <div class="crew-strip-member">
+        <span class="crew-strip-flag">🇺🇸</span>
+        <span class="crew-strip-name">REID WISEMAN</span>
+        <span class="crew-strip-role">CDR</span>
+      </div>
+      <div class="crew-strip-sep"></div>
+      <div class="crew-strip-member">
+        <span class="crew-strip-flag">🇺🇸</span>
+        <span class="crew-strip-name">VICTOR GLOVER</span>
+        <span class="crew-strip-role">PLT</span>
+      </div>
+      <div class="crew-strip-sep"></div>
+      <div class="crew-strip-member">
+        <span class="crew-strip-flag">🇺🇸</span>
+        <span class="crew-strip-name">CHRISTINA KOCH</span>
+        <span class="crew-strip-role">MS</span>
+      </div>
+      <div class="crew-strip-sep"></div>
+      <div class="crew-strip-member">
+        <span class="crew-strip-flag">🇨🇦</span>
+        <span class="crew-strip-name">JEREMY HANSEN</span>
+        <span class="crew-strip-role">MS · CSA</span>
+      </div>
+    </div>
+  </div>
+
 </div><!-- #dashboard -->
 
 <div id="watermark">ARTEMIS II MISSION DASHBOARD · LIVE</div>
 
 <script>
+  // ══════════════════════════════════════════════════════════════════════
+  // MISSION LOG — Edit this array to add manual updates.
+  // Paste new entries at the TOP. Format: { ts, title, text }
+  // ts: ISO 8601 UTC string  |  title: short headline  |  text: ~150 chars
+  // ══════════════════════════════════════════════════════════════════════
+  const MISSION_LOG = [
+    {
+      ts:    '2026-04-02T10:00:00Z',
+      title: 'Orion performing as expected in Earth orbit',
+      text:  'Flight controllers confirm all Orion systems nominal following launch. Crew completing post-insertion checklist. Life support, power, and propulsion systems all in green.',
+    },
+    {
+      ts:    '2026-04-02T04:30:00Z',
+      title: 'TLI burn window confirmed for ~T+25h',
+      text:  'Mission control confirms trans-lunar injection burn on track. Orion\'s main engine will fire for approximately 20 minutes to set trajectory toward the Moon.',
+    },
+    {
+      ts:    '2026-04-02T01:10:00Z',
+      title: 'Crew completes first post-launch health checks',
+      text:  'All four crew members Wiseman, Glover, Koch, and Hansen report feeling well. Suits stowed, cabin configured for orbital operations. First sleep period scheduled.',
+    },
+    {
+      ts:    '2026-04-01T23:05:00Z',
+      title: 'Orion separates from SLS upper stage',
+      text:  'Orion spacecraft successfully separated from the Interim Cryogenic Propulsion Stage at T+30min. Solar arrays deployed and charging. Signal acquired by DSN Canberra.',
+    },
+    {
+      ts:    '2026-04-01T22:47:00Z',
+      title: 'SLS clears the tower — Artemis II is GO',
+      text:  'Space Launch System lifts off from LC-39B at Kennedy Space Center at 22:35 UTC. All engines nominal through Max-Q. First stage separation confirmed.',
+    },
+  ];
+  // ══════════════════════════════════════════════════════════════════════
+
   // ── CONFIG ──────────────────────────────────────────────────────────
   const LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
 
@@ -755,6 +902,90 @@
     signalAcquired = !signalAcquired;
     applySignalState();
   });
+
+  // ── MISSION UPDATES FEED ────────────────────────────────────────────
+  const RSS_FEEDS = [
+    'https://www.nasa.gov/missions/artemis/artemis-2/feed/',
+    'https://blogs.nasa.gov/artemis/feed/',
+    'https://www.nasa.gov/feeds/iotd-feed',
+  ];
+  const RSS2JSON = 'https://api.rss2json.com/v1/api.json?rss_url=';
+
+  const logEntries   = document.getElementById('log-entries');
+  const logUpdated   = document.getElementById('log-last-updated');
+  const logBadge     = document.getElementById('log-source-badge');
+
+  function stripHtml(str) {
+    return str.replace(/<[^>]*>/g, '').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&nbsp;/g,' ').replace(/&#\d+;/g,'').trim();
+  }
+
+  function ageClass(dateStr) {
+    const now = Date.now();
+    const age = now - new Date(dateStr).getTime();
+    if (age < 3 * 3600000)  return 'recent';  // < 3h
+    if (age < 24 * 3600000) return 'today';   // < 24h
+    return 'older';
+  }
+
+  function formatTs(dateStr) {
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    return d.toUTCString().replace(' GMT','').slice(5);  // "02 Apr 2026 10:00:00"
+  }
+
+  function renderEntries(items) {
+    logEntries.innerHTML = '';
+    items.slice(0, 8).forEach(item => {
+      const raw    = item.description || item.content || '';
+      const excerpt = stripHtml(raw).slice(0, 150) + (stripHtml(raw).length > 150 ? '…' : '');
+      const ts     = item.pubDate || item.ts || '';
+      const cls    = ageClass(ts);
+      const el     = document.createElement('div');
+      el.className = `log-entry ${cls}`;
+      el.innerHTML = `
+        <div class="log-entry-ts">${formatTs(ts)}</div>
+        <div class="log-entry-title">${stripHtml(item.title || 'UPDATE')}</div>
+        ${excerpt ? `<div class="log-entry-excerpt">${excerpt}</div>` : ''}
+      `;
+      logEntries.appendChild(el);
+    });
+  }
+
+  function renderFallback() {
+    logBadge.className = 'fallback';
+    logBadge.textContent = 'STATIC';
+    const items = MISSION_LOG.map(e => ({
+      pubDate: e.ts, title: e.title, description: e.text
+    }));
+    renderEntries(items);
+    logUpdated.textContent = 'LAST UPDATED: ' + formatTs(new Date().toISOString()) + ' UTC  ·  MANUAL LOG';
+  }
+
+  async function tryFeed(url) {
+    const res = await fetch(RSS2JSON + encodeURIComponent(url));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.status !== 'ok' || !data.items || data.items.length === 0) throw new Error('No items');
+    return data.items;
+  }
+
+  async function loadMissionUpdates() {
+    logUpdated.textContent = 'LAST UPDATED: FETCHING…';
+    for (const feed of RSS_FEEDS) {
+      try {
+        const items = await tryFeed(feed);
+        logBadge.className = 'live';
+        logBadge.textContent = 'LIVE';
+        renderEntries(items);
+        logUpdated.textContent = 'LAST UPDATED: ' + formatTs(new Date().toISOString()) + ' UTC';
+        return;
+      } catch (_) { /* try next */ }
+    }
+    renderFallback();
+  }
+
+  loadMissionUpdates();
+  setInterval(loadMissionUpdates, 5 * 60 * 1000);
 
   // ── NOAA IMAGE AUTO-REFRESH (60s) ───────────────────────────────────
   const noaaImages = [
