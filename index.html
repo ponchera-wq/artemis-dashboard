@@ -639,12 +639,68 @@
 
     .yt-frame.active { display: block; }
 
+    /* ── Video fullscreen overlay ── */
+    .yt-expand-btn {
+      margin-left: auto;
+      font-family: var(--font-mono); font-size: 0.48rem;
+      color: var(--text-dim); background: transparent;
+      border: 1px solid rgba(74,144,217,0.3); border-radius: 3px;
+      padding: 2px 8px; cursor: pointer; letter-spacing: 0.08em;
+      transition: all 0.2s;
+    }
+    .yt-expand-btn:hover { color: var(--blue-light); border-color: var(--blue-light); }
+
+    #yt-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.88);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    #yt-overlay.open { opacity: 1; pointer-events: all; }
+
+    #yt-overlay-header {
+      display: flex; align-items: center; gap: 12px;
+      width: min(90vw, 1200px); margin-bottom: 8px;
+    }
+    #yt-overlay-header .yt-tab {
+      font-family: var(--font-ui); font-size: 0.6rem;
+      letter-spacing: 0.12em; color: var(--text-dim);
+      background: transparent; border: none;
+      border-bottom: 2px solid transparent;
+      padding: 6px 16px; cursor: pointer; text-transform: uppercase;
+    }
+    #yt-overlay-header .yt-tab:hover { color: var(--blue-light); }
+    #yt-overlay-header .yt-tab.active { color: var(--blue-light); border-bottom-color: var(--blue-light); }
+
+    #yt-overlay-close {
+      margin-left: auto;
+      background: transparent; border: 1px solid rgba(74,144,217,0.4);
+      border-radius: 3px; color: var(--text-dim);
+      font-family: var(--font-mono); font-size: 0.8rem;
+      width: 28px; height: 28px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.15s;
+    }
+    #yt-overlay-close:hover { border-color: var(--blue-light); color: var(--blue-light); }
+
+    #yt-overlay-frame {
+      width: min(90vw, 1200px);
+      aspect-ratio: 16 / 9;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: #000;
+    }
+
     /* ── Placeholder grid positions ── */
     #feed-youtube  { grid-row: 2; grid-column: 1; }
     #feed-arow     { grid-row: 2; grid-column: 2; }
-    #feed-dsn      { grid-row: 2; grid-column: 3; }
+    #feed-blog     { grid-row: 2; grid-column: 3; }
     #feed-weather  { grid-row: 3; grid-column: 1; }
-    #feed-blog     { grid-row: 3; grid-column: 3; }
+    #feed-dsn      { grid-row: 3; grid-column: 3; }
 
     /* ── Corner accent ── */
     .corner-tl, .corner-br {
@@ -861,11 +917,11 @@
       }
       #top-bar         { grid-row: 1; grid-column: 1 / -1; }
       #feed-youtube    { grid-row: 2; grid-column: 1; min-height: 260px; }
-      #feed-dsn        { grid-row: 2; grid-column: 2; min-height: 260px; }
+      #feed-blog       { grid-row: 2; grid-column: 2; min-height: 260px; }
       #feed-arow       { grid-row: 3; grid-column: 1 / -1; }
       #feed-weather    { grid-row: 4; grid-column: 1; min-height: 240px; }
       #mission-updates { grid-row: 4; grid-column: 2; min-height: 240px; }
-      #feed-blog       { grid-row: 5; grid-column: 1 / -1; }
+      #feed-dsn        { grid-row: 5; grid-column: 1 / -1; }
       #crew-strip      { grid-row: 6; grid-column: 1 / -1; }
 
       .yt-frame { aspect-ratio: 16 / 9; flex: none; width: 100%; height: auto !important; }
@@ -1119,7 +1175,7 @@
   <!-- ══ ROW 2: MAIN FEEDS ══════════════════════════════════════════════ -->
 
   <div class="panel" id="feed-youtube">
-    <div class="panel-header"><span class="dot"></span>NASA LIVE</div>
+    <div class="panel-header"><span class="dot"></span>NASA LIVE<button class="yt-expand-btn" id="yt-expand" title="Expand video">&#x26F6; EXPAND</button></div>
     <div class="yt-tabs">
       <button class="yt-tab"        data-target="yt-orion">ORION VIEWS</button>
       <button class="yt-tab active" data-target="yt-coverage">MISSION COVERAGE</button>
@@ -1136,7 +1192,7 @@
   </div>
 
   <div class="panel" id="feed-arow">
-    <div class="panel-header"><span class="dot"></span>MISSION TRAJECTORY — LIVE POSITION</div>
+    <div class="panel-header" style="letter-spacing:2px"><span class="dot"></span>MISSION TRAJECTORY — LIVE POSITION</div>
     <div id="trajectory-3d" style="flex:1;width:100%;min-height:0;position:relative;overflow:hidden;">
       <div id="traj-progress" style="position:absolute;bottom:7px;left:9px;font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(74,144,217,0.9);pointer-events:none;z-index:2;letter-spacing:0.05em;"></div>
       <div id="traj-tooltip" style="position:absolute;top:0;left:0;background:rgba(8,12,26,0.88);border:1px solid rgba(74,144,217,0.55);padding:3px 9px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#a8d4ff;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:3;white-space:nowrap;border-radius:2px;"></div>
@@ -1373,6 +1429,16 @@
       <div class="crew-modal-quote" id="cm-quote"></div>
     </div>
   </div>
+</div>
+
+<!-- VIDEO FULLSCREEN OVERLAY -->
+<div id="yt-overlay">
+  <div id="yt-overlay-header">
+    <button class="yt-tab active" data-yt-src="https://www.youtube.com/embed/m3kR2KK8TEs?autoplay=1&mute=0&cc_load_policy=1&cc_lang_pref=en">MISSION COVERAGE</button>
+    <button class="yt-tab" data-yt-src="https://www.youtube.com/embed/6RwfNBtepa4?autoplay=1&mute=0&cc_load_policy=1&cc_lang_pref=en">ORION VIEWS</button>
+    <button id="yt-overlay-close" aria-label="Close">&#x2715;</button>
+  </div>
+  <iframe id="yt-overlay-frame" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 </div>
 
 <div id="watermark">ARTEMIS II MISSION DASHBOARD · LIVE</div>
@@ -2374,7 +2440,7 @@
     el.addEventListener('click', () => openCrewModal(el.dataset.crew));
   });
 
-  // ── TRAJECTORY 3D (Three.js r128) — OVERHAULED ──────────────────────
+  // ── TRAJECTORY 3D — CINEMATIC SCI-FI ─────────────────────────────────
   (function() {
     const container = document.getElementById('trajectory-3d');
     if (!container || typeof THREE === 'undefined') return;
@@ -2383,9 +2449,8 @@
     const loader = new THREE.TextureLoader();
     loader.crossOrigin = 'anonymous';
 
-    // Scene + renderer
     const scene = new THREE.Scene();
-    let W = container.clientWidth  || 400;
+    let W = container.clientWidth || 400;
     let H = container.clientHeight || 300;
     const camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 500);
 
@@ -2393,160 +2458,163 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
     renderer.setClearColor(0x000000, 0);
-    Object.assign(renderer.domElement.style, {
-      position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-    });
+    Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
     container.appendChild(renderer.domElement);
 
-    // 2D label overlay canvas
+    // 2D overlay canvas for holographic callouts
     const lc = document.createElement('canvas');
     lc.width = W; lc.height = H;
-    Object.assign(lc.style, {
-      position: 'absolute', top: '0', left: '0', width: '100%', height: '100%',
-      pointerEvents: 'none', zIndex: '1',
-    });
+    Object.assign(lc.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%',pointerEvents:'none',zIndex:'1' });
     container.appendChild(lc);
     const lctx = lc.getContext('2d');
 
-    // ── Lighting: directional Sun + reduced ambient ──
-    scene.add(new THREE.AmbientLight(0x1a2a4a, 0.7));
-    const sunLight = new THREE.DirectionalLight(0xfff5e0, 1.8);
+    // ── Lighting (6) ──
+    scene.add(new THREE.AmbientLight(0x1a2a6a, 0.2));
+    const sunLight = new THREE.DirectionalLight(0xfff5e0, 1.2);
     sunLight.position.set(20, 8, 14);
     scene.add(sunLight);
-    const fillLight = new THREE.PointLight(0x4466aa, 0.5, 80);
+    const fillLight = new THREE.PointLight(0x2244aa, 0.3, 80);
     fillLight.position.set(-10, -5, -8);
     scene.add(fillLight);
+    // Green point light on Orion (will move with it)
+    const orionLight = new THREE.PointLight(0x00ffaa, 0.5, 2);
+    scene.add(orionLight);
 
-    // ── Earth at origin — textured, 32-segment sphere ──
+    // ── Texture loader helper ──
+    function loadTex(urls, cb) {
+      let i = 0;
+      (function tryNext() { if (i >= urls.length) return; loader.load(urls[i], cb, undefined, () => { i++; tryNext(); }); })();
+    }
+
+    // ── Earth (4: atmosphere enhancement) ──
     const earthMat = new THREE.MeshPhongMaterial({ color: 0x1a5fa8, emissive: 0x051828, shininess: 35, specular: 0x3377bb });
     const earth = new THREE.Mesh(new THREE.SphereGeometry(0.9, 32, 32), earthMat);
-    earth.position.set(0, 0, 0);
     scene.add(earth);
-
-    // Load Earth texture with fallbacks
-    function loadTexture(urls, onLoad) {
-      let idx = 0;
-      function tryNext() {
-        if (idx >= urls.length) return;
-        loader.load(urls[idx], onLoad, undefined, () => { idx++; tryNext(); });
-      }
-      tryNext();
-    }
-    loadTexture([
+    loadTex([
       'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
       'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
     ], tex => { earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; });
-
-    // Atmosphere halo
-    const atmoMat = new THREE.MeshBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.12, side: THREE.BackSide });
-    scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08, 32, 32), atmoMat));
+    // Atmosphere halo (4)
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(0.95, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.15, side: THREE.BackSide })));
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.08, side: THREE.BackSide })));
 
     // LEO orbit ring
-    const leoRingPts = [];
-    for (let i = 0; i <= 80; i++) {
-      const a = (i / 80) * Math.PI * 2;
-      leoRingPts.push(new THREE.Vector3(1.35 * Math.cos(a), 0.22 * Math.sin(a), 1.35 * Math.sin(a) * 0.96));
-    }
-    scene.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(leoRingPts),
-      new THREE.LineBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.25 })
-    ));
+    const leoPts = [];
+    for (let i = 0; i <= 80; i++) { const a = (i/80)*Math.PI*2; leoPts.push(new THREE.Vector3(1.35*Math.cos(a), 0.22*Math.sin(a), 1.35*Math.sin(a)*0.96)); }
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leoPts), new THREE.LineBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.2 })));
 
-    // ── Moon — textured, 32-segment sphere ──
+    // ── Moon ──
     const moonMat = new THREE.MeshPhongMaterial({ color: 0xaaa89e, emissive: 0x0a0a09, shininess: 4 });
     const moon = new THREE.Mesh(new THREE.SphereGeometry(0.46, 32, 32), moonMat);
     moon.position.set(8.2, 0, 0);
     scene.add(moon);
+    loadTex(['https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg'],
+      tex => { moonMat.map = tex; moonMat.color.set(0xdddddd); moonMat.needsUpdate = true; });
+    const moonGlow = new THREE.Mesh(new THREE.SphereGeometry(0.56, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xccccbb, transparent: true, opacity: 0.08, side: THREE.BackSide }));
+    moonGlow.position.copy(moon.position); scene.add(moonGlow);
 
-    loadTexture([
-      'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg',
-    ], tex => { moonMat.map = tex; moonMat.color.set(0xdddddd); moonMat.needsUpdate = true; });
+    // ── Starfield (2) — 600 stars with varying sizes ──
+    const STAR_COUNT = 600;
+    const starPos = new Float32Array(STAR_COUNT * 3);
+    const starSizes = new Float32Array(STAR_COUNT);
+    const starAlphas = new Float32Array(STAR_COUNT); // for twinkle
+    for (let i = 0; i < STAR_COUNT; i++) {
+      const th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1), r = 50 + Math.random()*30;
+      starPos[i*3] = r*Math.sin(ph)*Math.cos(th); starPos[i*3+1] = r*Math.sin(ph)*Math.sin(th); starPos[i*3+2] = r*Math.cos(ph);
+      starSizes[i] = 0.05 + Math.random() * 0.15;
+      starAlphas[i] = Math.random() * Math.PI * 2; // phase offset for twinkle
+    }
+    const starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xccddee, size: 0.10, sizeAttenuation: true, transparent: true, opacity: 0.6 })));
+    // Nebula tint sphere (2)
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(48, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0x1a0a3a, transparent: true, opacity: 0.12, side: THREE.BackSide })));
 
-    // Moon glow
-    const moonGlowMat = new THREE.MeshBasicMaterial({ color: 0xccccbb, transparent: true, opacity: 0.08, side: THREE.BackSide });
-    const moonGlow = new THREE.Mesh(new THREE.SphereGeometry(0.56, 32, 32), moonGlowMat);
-    moonGlow.position.copy(moon.position);
-    scene.add(moonGlow);
-
-    // Earth–Moon reference line
+    // ── Earth–Moon reference line (7) ──
     const emBuf = new Float32Array(6);
     const emGeo = new THREE.BufferGeometry();
     emGeo.setAttribute('position', new THREE.BufferAttribute(emBuf, 3));
-    const emMat = new THREE.LineDashedMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, dashSize: 0.25, gapSize: 0.18 });
-    const emLine = new THREE.Line(emGeo, emMat);
+    const emLine = new THREE.Line(emGeo, new THREE.LineDashedMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, dashSize: 0.25, gapSize: 0.18 }));
     scene.add(emLine);
 
-    // ── Free-return trajectory (matched to NASA official animation) ──
-    // Moon at (8.2, 0, 0) r=0.46. Trajectory: Earth orbits → TLI → direct outbound
-    // (slightly above) → tight flyby behind Moon → return (below) → re-entry.
-    // More planar than before, matching NASA's reference animation.
+    // ── Trajectory curve (NASA-matched) ──
     const curve = new THREE.CatmullRomCurve3([
-      // ── Earth orbits (elliptical parking orbit, ~2 loops) ──
-      new THREE.Vector3( 0.0,   0.0,   0.0  ),  //  0: LAUNCH
-      new THREE.Vector3(-0.6,   1.0,   0.5  ),  //  1: Orbit 1 — apogee high
-      new THREE.Vector3(-1.1,   0.0,  -0.4  ),  //  2: Orbit 1 — far side
-      new THREE.Vector3(-0.5,  -0.9,   0.3  ),  //  3: Orbit 1 — bottom
-      new THREE.Vector3( 0.1,   0.0,   0.0  ),  //  4: Orbit 1 — perigee return
-      new THREE.Vector3(-0.4,   1.2,   0.6  ),  //  5: Orbit 2 — apogee (higher)
-      new THREE.Vector3(-1.3,   0.1,  -0.5  ),  //  6: Orbit 2 — far side
-      new THREE.Vector3(-0.4,  -1.0,   0.4  ),  //  7: Orbit 2 — bottom
-      new THREE.Vector3( 0.15,  0.0,   0.0  ),  //  8: Orbit 2 — perigee (TLI point)
-      // ── Outbound (direct, slightly above plane) ──
-      new THREE.Vector3( 1.5,   0.7,   0.3  ),  //  9: Early outbound
-      new THREE.Vector3( 3.5,   1.1,   0.3  ),  // 10: Outbound coast
-      new THREE.Vector3( 5.5,   1.0,   0.15 ),  // 11: Lunar SOI
-      new THREE.Vector3( 7.2,   0.8,   0.0  ),  // 12: Approach Moon (above)
-      // ── Lunar flyby (tight loop behind/below Moon) ──
-      new THREE.Vector3( 8.85,  0.45, -0.25 ),  // 13: Closest approach (far side)
-      new THREE.Vector3( 9.0,  -0.4,  -0.4  ),  // 14: Behind Moon (LOS)
-      new THREE.Vector3( 8.35, -1.0,  -0.15 ),  // 15: Exit below Moon
-      // ── Return (below outbound path) ──
-      new THREE.Vector3( 6.8,  -1.2,   0.0  ),  // 16: Early return
-      new THREE.Vector3( 5.0,  -1.3,   0.1  ),  // 17: Mid-return
-      new THREE.Vector3( 3.0,  -1.2,   0.15 ),  // 18: Return coast
-      new THREE.Vector3( 1.2,  -0.8,   0.1  ),  // 19: Approaching Earth
-      new THREE.Vector3( 0.1,  -0.3,   0.0  ),  // 20: Entry interface
-      new THREE.Vector3( 0.0,   0.0,   0.0  ),  // 21: SPLASHDOWN
+      new THREE.Vector3( 0.0,   0.0,   0.0  ),
+      new THREE.Vector3(-0.6,   1.0,   0.5  ),
+      new THREE.Vector3(-1.1,   0.0,  -0.4  ),
+      new THREE.Vector3(-0.5,  -0.9,   0.3  ),
+      new THREE.Vector3( 0.1,   0.0,   0.0  ),
+      new THREE.Vector3(-0.4,   1.2,   0.6  ),
+      new THREE.Vector3(-1.3,   0.1,  -0.5  ),
+      new THREE.Vector3(-0.4,  -1.0,   0.4  ),
+      new THREE.Vector3( 0.15,  0.0,   0.0  ),
+      new THREE.Vector3( 1.5,   0.7,   0.3  ),
+      new THREE.Vector3( 3.5,   1.1,   0.3  ),
+      new THREE.Vector3( 5.5,   1.0,   0.15 ),
+      new THREE.Vector3( 7.2,   0.8,   0.0  ),
+      new THREE.Vector3( 8.85,  0.45, -0.25 ),
+      new THREE.Vector3( 9.0,  -0.4,  -0.4  ),
+      new THREE.Vector3( 8.35, -1.0,  -0.15 ),
+      new THREE.Vector3( 6.8,  -1.2,   0.0  ),
+      new THREE.Vector3( 5.0,  -1.3,   0.1  ),
+      new THREE.Vector3( 3.0,  -1.2,   0.15 ),
+      new THREE.Vector3( 1.2,  -0.8,   0.1  ),
+      new THREE.Vector3( 0.1,  -0.3,   0.0  ),
+      new THREE.Vector3( 0.0,   0.0,   0.0  ),
     ], false, 'catmullrom', 0.4);
-    const N_PTS  = 500;
+    const N_PTS = 500;
     const allPts = curve.getPoints(N_PTS);
 
-    // Full dashed path
-    const upcomingMat = new THREE.LineDashedMaterial({ color: 0x2a3d5a, dashSize: 0.14, gapSize: 0.11 });
-    const upcomingLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(allPts), upcomingMat);
-    upcomingLine.computeLineDistances();
-    scene.add(upcomingLine);
+    // ── Gradient trajectory line (1) — segmented with color interpolation ──
+    // Upcoming: dim gradient segments
+    const C_EARTH = new THREE.Color(0x00ffaa);
+    const C_MOON  = new THREE.Color(0xffd700);
+    const trajColors = new Float32Array(allPts.length * 3);
+    allPts.forEach((_, i) => {
+      const t = i / allPts.length;
+      const c = C_EARTH.clone().lerp(C_MOON, t);
+      trajColors[i*3] = c.r; trajColors[i*3+1] = c.g; trajColors[i*3+2] = c.b;
+    });
+    // Upcoming path — dim gradient
+    const upGeo = new THREE.BufferGeometry().setFromPoints(allPts);
+    upGeo.setAttribute('color', new THREE.BufferAttribute(trajColors.slice(), 3));
+    const upMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.18 });
+    scene.add(new THREE.Line(upGeo, upMat));
+    // Glow line behind (1) — additive blending
+    const glowLineGeo = new THREE.BufferGeometry().setFromPoints(allPts);
+    glowLineGeo.setAttribute('color', new THREE.BufferAttribute(trajColors.slice(), 3));
+    const glowLineMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending });
+    scene.add(new THREE.Line(glowLineGeo, glowLineMat));
 
-    // Completed path — solid green
+    // Completed path — bright gradient
     const completedGeo = new THREE.BufferGeometry();
-    const completedMat = new THREE.LineBasicMaterial({ color: 0x00ff88 });
-    scene.add(new THREE.Line(completedGeo, completedMat));
+    const completedMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.85 });
+    const completedLine = new THREE.Line(completedGeo, completedMat);
+    scene.add(completedLine);
+    // Completed glow
+    const compGlowGeo = new THREE.BufferGeometry();
+    const compGlowMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending });
+    scene.add(new THREE.Line(compGlowGeo, compGlowMat));
 
-    // ── Waypoints with descriptions (4e) ──
-    // Waypoints mapped to 22-point curve: t = controlPointIndex / 21
+    // ── Waypoints ──
     const WAYPOINTS = [
-      { t: 0.000, label: 'LAUNCH', met: 'T+00:00:00', metSec: 0,
-        desc: 'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.' },
-      { t: 0.190, label: 'LEO', met: 'T+06:00:00', metSec: 21600,   // pt 4: perigee after 1st orbit
-        desc: 'Orion enters low Earth orbit at ~200km altitude for initial systems checkout.' },
-      { t: 0.381, label: 'TLI BURN', met: 'T+25:00:00', metSec: 90000,  // pt 8: 2nd perigee → TLI
-        desc: 'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.' },
-      { t: 0.476, label: 'OUTBOUND', met: 'T+72:00:00', metSec: 259200, // pt 10: outbound coast
-        desc: 'Orion coasts toward the Moon for 3\u20134 days. Crew performs systems tests and trajectory correction burns.' },
-      { t: 0.619, label: 'CLOSEST APPROACH', met: 'T+128:00:00', metSec: 460800, // pt 13
-        desc: 'Orion passes ~6,500 km above the lunar far side. Potentially breaks Apollo 13\u2019s distance record.' },
-      { t: 0.667, label: 'FAR SIDE LOS', met: 'T+128:30:00', metSec: 462600,    // pt 14
-        desc: 'Orion passes behind the Moon. ~41 minutes of planned communications blackout.' },
-      { t: 0.762, label: 'RETURN COAST', met: 'T+150:00:00', metSec: 540000,     // pt 16
-        desc: 'Orion coasts back toward Earth. Crew reviews re-entry procedures.' },
-      { t: 0.952, label: 'ENTRY', met: 'T+228:30:00', metSec: 822600,            // pt 20
-        desc: 'Orion hits atmosphere at 40,000 km/h. Heat shield reaches 2,800\u00b0C.' },
-      { t: 0.999, label: 'SPLASHDOWN', met: 'T+229:10:00', metSec: 825000,       // pt 21
-        desc: 'Parachutes deploy. Orion splashes down in the Pacific Ocean.' },
+      { t:0.000, label:'LAUNCH',            met:'T+00:00:00', metSec:0,      desc:'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.' },
+      { t:0.190, label:'LEO',               met:'T+06:00:00', metSec:21600,  desc:'Orion enters low Earth orbit at ~200km altitude for initial systems checkout.' },
+      { t:0.381, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.' },
+      { t:0.476, label:'OUTBOUND',          met:'T+72:00:00', metSec:259200, desc:'Orion coasts toward the Moon for 3\u20134 days. Crew performs systems tests and trajectory correction burns.' },
+      { t:0.619, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Potentially breaks Apollo 13\u2019s distance record.' },
+      { t:0.667, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.' },
+      { t:0.762, label:'RETURN COAST',      met:'T+150:00:00',metSec:540000, desc:'Orion coasts back toward Earth. Crew reviews re-entry procedures.' },
+      { t:0.952, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Orion hits atmosphere at 40,000 km/h. Heat shield reaches 2,800\u00b0C.' },
+      { t:0.999, label:'SPLASHDOWN',        met:'T+229:10:00',metSec:825000, desc:'Parachutes deploy. Orion splashes down in the Pacific Ocean.' },
     ];
     const wpMeshes = [], wpMats = [];
     WAYPOINTS.forEach(wp => {
-      const mat  = new THREE.MeshBasicMaterial({ color: 0x334455 });
+      const mat = new THREE.MeshBasicMaterial({ color: 0x334455 });
       const mesh = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), mat);
       mesh.position.copy(curve.getPoint(wp.t));
       mesh.userData = wp;
@@ -2554,228 +2622,148 @@
       scene.add(mesh);
     });
 
-    // ── Orion — 3x waypoint size, pulsing glow (4f) ──
-    const orionMat = new THREE.MeshPhongMaterial({
-      color: 0x00ff88, emissive: 0x00ff88, emissiveIntensity: 1.0, shininess: 60,
-    });
+    // ── Orion (enhanced with green point light) ──
+    const orionMat = new THREE.MeshPhongMaterial({ color: 0x00ff88, emissive: 0x00ff88, emissiveIntensity: 1.0, shininess: 60 });
     const orion = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), orionMat);
     orion.userData = { label: 'ORION' };
     scene.add(orion);
     const glowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.2, side: THREE.BackSide });
     orion.add(new THREE.Mesh(new THREE.SphereGeometry(0.44, 16, 16), glowMat));
 
-    // Trail particles behind Orion
-    const TRAIL_LEN = 20;
+    // ── Trail particles (5) — 30 fading dots behind Orion ──
+    const TRAIL_LEN = 30;
     const trailBuf = new Float32Array(TRAIL_LEN * 3);
+    const trailSizeBuf = new Float32Array(TRAIL_LEN);
+    for (let i = 0; i < TRAIL_LEN; i++) trailSizeBuf[i] = 0.04 + (1 - i/TRAIL_LEN) * 0.06;
     const trailGeo = new THREE.BufferGeometry();
     trailGeo.setAttribute('position', new THREE.BufferAttribute(trailBuf, 3));
-    scene.add(new THREE.Points(trailGeo, new THREE.PointsMaterial({ color: 0x00ff88, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.5 })));
+    scene.add(new THREE.Points(trailGeo, new THREE.PointsMaterial({ color: 0x00ffaa, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.4 })));
     let trailIdx = 0, trailFrame = 0;
 
-    // Speed vector arrow
+    // Speed arrow
     const arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), orion.position, 0.8, 0xff8800, 0.2, 0.1);
     scene.add(arrow);
 
     // Distance lines
-    const edBuf = new Float32Array(6);
-    const edGeo = new THREE.BufferGeometry();
-    edGeo.setAttribute('position', new THREE.BufferAttribute(edBuf, 3));
-    const edLine = new THREE.Line(edGeo, new THREE.LineDashedMaterial({ color: 0x00ccff, transparent: true, opacity: 0.4, dashSize: 0.08, gapSize: 0.06 }));
+    const edBuf = new Float32Array(6), mdBuf = new Float32Array(6);
+    const edGeo = new THREE.BufferGeometry(); edGeo.setAttribute('position', new THREE.BufferAttribute(edBuf, 3));
+    const edLine = new THREE.Line(edGeo, new THREE.LineDashedMaterial({ color: 0x00ccff, transparent: true, opacity: 0.3, dashSize: 0.08, gapSize: 0.06 }));
     scene.add(edLine);
-
-    const mdBuf = new Float32Array(6);
-    const mdGeo = new THREE.BufferGeometry();
-    mdGeo.setAttribute('position', new THREE.BufferAttribute(mdBuf, 3));
-    const mdLine = new THREE.Line(mdGeo, new THREE.LineDashedMaterial({ color: 0xffdd44, transparent: true, opacity: 0.4, dashSize: 0.08, gapSize: 0.06 }));
+    const mdGeo = new THREE.BufferGeometry(); mdGeo.setAttribute('position', new THREE.BufferAttribute(mdBuf, 3));
+    const mdLine = new THREE.Line(mdGeo, new THREE.LineDashedMaterial({ color: 0xffdd44, transparent: true, opacity: 0.3, dashSize: 0.08, gapSize: 0.06 }));
     scene.add(mdLine);
 
-    // Starfield
-    const sfBuf = new Float32Array(200 * 3);
-    for (let i = 0; i < 200; i++) {
-      const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), r = 45 + Math.random() * 20;
-      sfBuf[i*3] = r*Math.sin(ph)*Math.cos(th); sfBuf[i*3+1] = r*Math.sin(ph)*Math.sin(th); sfBuf[i*3+2] = r*Math.cos(ph);
-    }
-    const sfGeo = new THREE.BufferGeometry();
-    sfGeo.setAttribute('position', new THREE.BufferAttribute(sfBuf, 3));
-    scene.add(new THREE.Points(sfGeo, new THREE.PointsMaterial({ color: 0xaabbcc, size: 0.10, sizeAttenuation: true, transparent: true, opacity: 0.5 })));
-
-    // ── Camera controls ──
+    // ── Camera ──
     const CAM_CENTER = new THREE.Vector3(4.1, 0, 0);
     const sph = { theta: 0.4, phi: 1.05, r: 18 };
     const SPH_DEFAULT = { theta: 0.4, phi: 1.05, r: 18 };
     let isDrag = false, lastMx = 0, lastMy = 0, autoRotate = true, rotTimer = null;
-
     function applyCam() {
-      camera.position.set(
-        CAM_CENTER.x + sph.r * Math.sin(sph.phi) * Math.sin(sph.theta),
-        CAM_CENTER.y + sph.r * Math.cos(sph.phi),
-        CAM_CENTER.z + sph.r * Math.sin(sph.phi) * Math.cos(sph.theta)
-      );
+      camera.position.set(CAM_CENTER.x+sph.r*Math.sin(sph.phi)*Math.sin(sph.theta), CAM_CENTER.y+sph.r*Math.cos(sph.phi), CAM_CENTER.z+sph.r*Math.sin(sph.phi)*Math.cos(sph.theta));
       camera.lookAt(CAM_CENTER);
     }
     applyCam();
-
-    function stopAuto() {
-      autoRotate = false; clearTimeout(rotTimer);
-      rotTimer = setTimeout(() => { autoRotate = true; }, 3500);
-    }
+    function stopAuto() { autoRotate = false; clearTimeout(rotTimer); rotTimer = setTimeout(() => { autoRotate = true; }, 3500); }
 
     renderer.domElement.addEventListener('mousedown', e => { isDrag = true; stopAuto(); lastMx = e.clientX; lastMy = e.clientY; });
     window.addEventListener('mouseup', () => { isDrag = false; });
-    window.addEventListener('mousemove', e => {
-      if (!isDrag) return;
-      sph.theta -= (e.clientX - lastMx) * 0.005;
-      sph.phi = Math.max(0.1, Math.min(Math.PI - 0.1, sph.phi - (e.clientY - lastMy) * 0.005));
-      lastMx = e.clientX; lastMy = e.clientY; applyCam();
-    });
-    renderer.domElement.addEventListener('wheel', e => {
-      sph.r = Math.max(7, Math.min(40, sph.r + e.deltaY * 0.025)); applyCam(); e.preventDefault();
-    }, { passive: false });
-
-    // Touch
-    let lastTx = 0, lastTy = 0;
-    renderer.domElement.addEventListener('touchstart', e => { stopAuto(); lastTx = e.touches[0].clientX; lastTy = e.touches[0].clientY; });
+    window.addEventListener('mousemove', e => { if (!isDrag) return; sph.theta -= (e.clientX-lastMx)*0.005; sph.phi = Math.max(0.1,Math.min(Math.PI-0.1, sph.phi-(e.clientY-lastMy)*0.005)); lastMx=e.clientX; lastMy=e.clientY; applyCam(); });
+    renderer.domElement.addEventListener('wheel', e => { sph.r = Math.max(7,Math.min(40, sph.r+e.deltaY*0.025)); applyCam(); e.preventDefault(); }, { passive: false });
+    let lastTx=0, lastTy=0;
+    renderer.domElement.addEventListener('touchstart', e => { stopAuto(); lastTx=e.touches[0].clientX; lastTy=e.touches[0].clientY; });
     renderer.domElement.addEventListener('touchend', () => { rotTimer = setTimeout(() => { autoRotate = true; }, 3500); });
-    renderer.domElement.addEventListener('touchmove', e => {
-      sph.theta -= (e.touches[0].clientX - lastTx) * 0.005;
-      sph.phi = Math.max(0.1, Math.min(Math.PI - 0.1, sph.phi - (e.touches[0].clientY - lastTy) * 0.005));
-      lastTx = e.touches[0].clientX; lastTy = e.touches[0].clientY; applyCam(); e.preventDefault();
-    }, { passive: false });
+    renderer.domElement.addEventListener('touchmove', e => { sph.theta -= (e.touches[0].clientX-lastTx)*0.005; sph.phi = Math.max(0.1,Math.min(Math.PI-0.1, sph.phi-(e.touches[0].clientY-lastTy)*0.005)); lastTx=e.touches[0].clientX; lastTy=e.touches[0].clientY; applyCam(); e.preventDefault(); }, { passive: false });
 
-    // ── Zoom controls (4d) ──
+    // ── Zoom controls ──
     const ctrlDiv = document.createElement('div');
-    Object.assign(ctrlDiv.style, {
-      position: 'absolute', bottom: '8px', right: '8px', display: 'flex',
-      flexDirection: 'column', gap: '3px', zIndex: '3',
-    });
-    [{ text: '+', fn: () => { sph.r = Math.max(7, sph.r * 0.8); applyCam(); stopAuto(); } },
-     { text: '\u2212', fn: () => { sph.r = Math.min(40, sph.r * 1.2); applyCam(); stopAuto(); } },
-     { text: '\u27f2', fn: () => { Object.assign(sph, {...SPH_DEFAULT}); applyCam(); autoRotate = true; } }
-    ].forEach(b => {
-      const btn = document.createElement('button');
-      btn.textContent = b.text;
-      Object.assign(btn.style, {
-        width: '26px', height: '26px', background: 'rgba(8,12,26,0.85)',
-        border: '1px solid rgba(74,144,217,0.45)', borderRadius: '3px',
-        color: '#4A90D9', fontSize: '14px', fontFamily: "'Share Tech Mono',monospace",
-        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        lineHeight: '1', padding: '0',
-      });
-      btn.addEventListener('mouseenter', () => { btn.style.borderColor = '#4A90D9'; btn.style.color = '#fff'; });
-      btn.addEventListener('mouseleave', () => { btn.style.borderColor = 'rgba(74,144,217,0.45)'; btn.style.color = '#4A90D9'; });
-      btn.addEventListener('click', b.fn);
-      ctrlDiv.appendChild(btn);
+    Object.assign(ctrlDiv.style, { position:'absolute',bottom:'8px',right:'8px',display:'flex',flexDirection:'column',gap:'3px',zIndex:'3' });
+    [{text:'+',fn:()=>{sph.r=Math.max(7,sph.r*0.8);applyCam();stopAuto();}},{text:'\u2212',fn:()=>{sph.r=Math.min(40,sph.r*1.2);applyCam();stopAuto();}},{text:'\u27f2',fn:()=>{Object.assign(sph,{...SPH_DEFAULT});applyCam();autoRotate=true;}}].forEach(b => {
+      const btn = document.createElement('button'); btn.textContent = b.text;
+      Object.assign(btn.style, { width:'26px',height:'26px',background:'rgba(8,12,26,0.85)',border:'1px solid rgba(74,144,217,0.45)',borderRadius:'3px',color:'#4A90D9',fontSize:'14px',fontFamily:"'Share Tech Mono',monospace",cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:'1',padding:'0' });
+      btn.addEventListener('mouseenter', () => { btn.style.borderColor='#4A90D9'; btn.style.color='#fff'; });
+      btn.addEventListener('mouseleave', () => { btn.style.borderColor='rgba(74,144,217,0.45)'; btn.style.color='#4A90D9'; });
+      btn.addEventListener('click', b.fn); ctrlDiv.appendChild(btn);
     });
     container.appendChild(ctrlDiv);
 
-    // ── Waypoint popup (4e) ──
+    // ── Waypoint popup ──
     const popupEl = document.createElement('div');
-    Object.assign(popupEl.style, {
-      position: 'absolute', display: 'none', background: 'rgba(8,12,26,0.92)',
-      border: '1px solid rgba(74,144,217,0.55)', borderRadius: '4px',
-      padding: '10px 14px', zIndex: '5', maxWidth: '280px', minWidth: '200px',
-      fontFamily: "'Share Tech Mono',monospace", pointerEvents: 'auto',
-    });
+    Object.assign(popupEl.style, { position:'absolute',display:'none',background:'rgba(0,10,20,0.88)',border:'1px solid rgba(0,255,170,0.4)',borderRadius:'4px',padding:'10px 14px',zIndex:'5',maxWidth:'280px',minWidth:'200px',fontFamily:"'Share Tech Mono',monospace",pointerEvents:'auto',boxShadow:'0 0 12px rgba(0,255,170,0.25)' });
     container.appendChild(popupEl);
     let popupOpen = false;
-
     function closePopup() { popupEl.style.display = 'none'; popupOpen = false; }
-
-    function openPopup(wp, screenX, screenY) {
-      const nowMet = (Date.now() - LAUNCH_UTC) / 1000;
-      const evDate = new Date(LAUNCH_UTC.getTime() + wp.metSec * 1000);
-      const localStr = fmtLocal(evDate, true) + ' ' + tzAbbr(evDate);
-      let status, statusColor;
-      if (nowMet > wp.metSec + 900) { status = '\u2713 COMPLETED'; statusColor = '#00e676'; }
-      else if (nowMet >= wp.metSec - 600) { status = '\u25b6 IN PROGRESS'; statusColor = '#ffd740'; }
-      else { status = '\u25cb UPCOMING'; statusColor = '#7986a8'; }
-
-      popupEl.innerHTML = `
-        <div style="font-size:0.6rem;font-weight:bold;color:#4A90D9;letter-spacing:0.12em;margin-bottom:6px;">${wp.label}</div>
-        <div style="font-size:0.48rem;color:#7986a8;margin-bottom:3px;">${wp.met}</div>
-        <div style="font-size:0.44rem;color:rgba(74,144,217,0.6);margin-bottom:6px;">${localStr}</div>
-        <div style="font-size:0.48rem;color:${statusColor};margin-bottom:8px;letter-spacing:0.08em;">${status}</div>
-        <div style="font-size:0.48rem;color:#c8d0e0;line-height:1.5;">${wp.desc}</div>
-      `;
-
-      // Position: try right of click, fallback left
-      let left = screenX + 14;
-      if (left + 280 > W) left = screenX - 290;
-      let top = screenY - 20;
-      if (top + 180 > H) top = H - 190;
-      if (top < 4) top = 4;
-
-      popupEl.style.left = left + 'px';
-      popupEl.style.top = top + 'px';
-      popupEl.style.display = 'block';
-      popupOpen = true;
+    function openPopup(wp, sx, sy) {
+      const nowMet = (Date.now()-LAUNCH_UTC)/1000;
+      const evDate = new Date(LAUNCH_UTC.getTime()+wp.metSec*1000);
+      const localStr = fmtLocal(evDate,true)+' '+tzAbbr(evDate);
+      let status, sColor;
+      if (nowMet > wp.metSec+900) { status='\u2713 COMPLETED'; sColor='#00e676'; }
+      else if (nowMet >= wp.metSec-600) { status='\u25b6 IN PROGRESS'; sColor='#ffd740'; }
+      else { status='\u25cb UPCOMING'; sColor='#7986a8'; }
+      popupEl.innerHTML = `<div style="font-size:0.6rem;font-weight:bold;color:#00ffaa;letter-spacing:0.12em;margin-bottom:6px;text-shadow:0 0 8px rgba(0,255,170,0.5)">${wp.label}</div><div style="font-size:0.48rem;color:#7986a8;margin-bottom:3px;">${wp.met}</div><div style="font-size:0.44rem;color:rgba(74,144,217,0.6);margin-bottom:6px;">${localStr}</div><div style="font-size:0.48rem;color:${sColor};margin-bottom:8px;letter-spacing:0.08em;">${status}</div><div style="font-size:0.48rem;color:#c8d0e0;line-height:1.5;">${wp.desc}</div>`;
+      let left = sx+14; if (left+280 > W) left = sx-290;
+      let top = sy-20; if (top+180 > H) top = H-190; if (top < 4) top = 4;
+      popupEl.style.left = left+'px'; popupEl.style.top = top+'px'; popupEl.style.display = 'block'; popupOpen = true;
     }
 
-    // Raycaster for hover tooltips + click popups
+    // Raycaster
     const raycaster = new THREE.Raycaster();
     const mouse3 = new THREE.Vector2();
     const tooltipEl = document.getElementById('traj-tooltip');
-
     renderer.domElement.addEventListener('mousemove', e => {
       if (!tooltipEl) return;
       const rect = renderer.domElement.getBoundingClientRect();
-      mouse3.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse3.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      mouse3.x = ((e.clientX-rect.left)/rect.width)*2-1; mouse3.y = -((e.clientY-rect.top)/rect.height)*2+1;
       raycaster.setFromCamera(mouse3, camera);
-      const hits = raycaster.intersectObjects([orion, ...wpMeshes]);
-      if (hits.length) {
-        const label = hits[0].object.userData.label || '';
-        tooltipEl.textContent = label;
-        tooltipEl.style.left = (e.clientX - rect.left + 12) + 'px';
-        tooltipEl.style.top = (e.clientY - rect.top - 8) + 'px';
-        tooltipEl.style.opacity = '1';
-        renderer.domElement.style.cursor = 'pointer';
-      } else {
-        tooltipEl.style.opacity = '0';
-        renderer.domElement.style.cursor = 'grab';
-      }
+      const hits = raycaster.intersectObjects([orion,...wpMeshes]);
+      if (hits.length) { tooltipEl.textContent = hits[0].object.userData.label||''; tooltipEl.style.left=(e.clientX-rect.left+12)+'px'; tooltipEl.style.top=(e.clientY-rect.top-8)+'px'; tooltipEl.style.opacity='1'; renderer.domElement.style.cursor='pointer'; }
+      else { tooltipEl.style.opacity='0'; renderer.domElement.style.cursor='grab'; }
     });
-    renderer.domElement.addEventListener('mouseleave', () => { if (tooltipEl) tooltipEl.style.opacity = '0'; });
-
-    // Click to open waypoint popup (4e)
+    renderer.domElement.addEventListener('mouseleave', () => { if (tooltipEl) tooltipEl.style.opacity='0'; });
     renderer.domElement.addEventListener('click', e => {
       if (popupOpen) { closePopup(); return; }
       const rect = renderer.domElement.getBoundingClientRect();
-      mouse3.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse3.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      mouse3.x = ((e.clientX-rect.left)/rect.width)*2-1; mouse3.y = -((e.clientY-rect.top)/rect.height)*2+1;
       raycaster.setFromCamera(mouse3, camera);
       const hits = raycaster.intersectObjects([...wpMeshes]);
-      if (hits.length && hits[0].object.userData.desc) {
-        openPopup(hits[0].object.userData, e.clientX - rect.left, e.clientY - rect.top);
-      }
+      if (hits.length && hits[0].object.userData.desc) openPopup(hits[0].object.userData, e.clientX-rect.left, e.clientY-rect.top);
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && popupOpen) closePopup(); });
+    document.addEventListener('keydown', e => { if (e.key==='Escape' && popupOpen) closePopup(); });
 
-    // ResizeObserver
-    new ResizeObserver(() => {
-      W = container.clientWidth || 400;
-      H = container.clientHeight || 300;
-      renderer.setSize(W, H);
-      lc.width = W; lc.height = H;
-      camera.aspect = W / H;
-      camera.updateProjectionMatrix();
-    }).observe(container);
+    new ResizeObserver(() => { W=container.clientWidth||400; H=container.clientHeight||300; renderer.setSize(W,H); lc.width=W; lc.height=H; camera.aspect=W/H; camera.updateProjectionMatrix(); }).observe(container);
 
     const progressEl = document.getElementById('traj-progress');
     const _pv = new THREE.Vector3();
+    function proj(v3) { _pv.copy(v3).project(camera); return { x:(_pv.x*0.5+0.5)*W, y:(_pv.y*-0.5+0.5)*H, vis: _pv.z < 1.0 }; }
 
-    function proj(v3) {
-      _pv.copy(v3).project(camera);
-      return { x: (_pv.x * 0.5 + 0.5) * W, y: (_pv.y * -0.5 + 0.5) * H, vis: _pv.z < 1.0 };
-    }
-
-    function label2d(text, v3, color, align, ox, oy, bold) {
+    // ── Holographic callout drawing (3) ──
+    function drawCallout(text, v3, color, ox, oy, bold, lineToV3) {
       const s = proj(v3); if (!s.vis) return;
+      const x = s.x + (ox||0), y = s.y + (oy||0);
       lctx.save();
+      // Connecting line from callout to object
+      if (lineToV3) {
+        const s2 = proj(lineToV3);
+        if (s2.vis) {
+          lctx.beginPath(); lctx.moveTo(s2.x, s2.y); lctx.lineTo(x, y);
+          lctx.strokeStyle = color.replace(')', ',0.3)').replace('rgb','rgba').replace('rgba(','rgba(') || 'rgba(0,255,170,0.3)';
+          lctx.setLineDash([3, 3]); lctx.lineWidth = 0.5; lctx.stroke(); lctx.setLineDash([]);
+        }
+      }
       lctx.font = (bold ? 'bold ' : '') + '10px "Share Tech Mono",monospace';
-      lctx.fillStyle = color; lctx.textAlign = align || 'left'; lctx.textBaseline = 'middle';
-      if (bold) { lctx.shadowColor = color; lctx.shadowBlur = 7; }
-      lctx.fillText(text, s.x + (ox || 0), s.y + (oy || 0));
+      lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
+      // Background box
+      const m = lctx.measureText(text);
+      const bw = m.width + 12, bh = 16;
+      lctx.fillStyle = 'rgba(0,10,20,0.7)';
+      lctx.fillRect(x - bw/2, y - bh/2, bw, bh);
+      lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = 0.6;
+      lctx.strokeRect(x - bw/2, y - bh/2, bw, bh);
+      lctx.globalAlpha = 1.0;
+      // Text with glow
+      lctx.fillStyle = color;
+      if (bold) { lctx.shadowColor = color; lctx.shadowBlur = 8; }
+      lctx.fillText(text, x, y);
       lctx.restore();
     }
 
@@ -2786,12 +2774,13 @@
       const gt = Math.max(0, Math.min(1, elapsed / MISSION_MS));
       const pulse = 0.5 + 0.5 * Math.sin(now / 430);
 
-      // ── Orion position ──
+      // ── Orion ──
       orion.position.copy(curve.getPoint(gt));
       orionMat.emissiveIntensity = 0.7 + pulse * 0.6;
       glowMat.opacity = 0.12 + pulse * 0.22;
+      orionLight.position.copy(orion.position);
 
-      // Trail (4f) — deposit breadcrumbs every 3 frames
+      // Trail (5)
       trailFrame++;
       if (trailFrame % 3 === 0) {
         const ti = (trailIdx % TRAIL_LEN) * 3;
@@ -2800,106 +2789,87 @@
         trailIdx++;
       }
 
-      // Speed vector arrow
-      const tgt = curve.getTangent(Math.min(gt + 0.0002, 0.9999)).normalize();
-      arrow.position.copy(orion.position);
-      arrow.setDirection(tgt);
-      const rawSpeed = parseFloat((document.getElementById('tv-speed')?.textContent || '').replace(/,/g, '')) || 7800;
-      const sScale = Math.max(0.2, Math.min(1.0, rawSpeed / 40000));
-      arrow.setLength(0.35 + sScale * 0.85, 0.18, 0.09);
+      // Speed arrow
+      const tgt = curve.getTangent(Math.min(gt+0.0002, 0.9999)).normalize();
+      arrow.position.copy(orion.position); arrow.setDirection(tgt);
+      const rawSpd = parseFloat((document.getElementById('tv-speed')?.textContent||'').replace(/,/g,''))||7800;
+      arrow.setLength(0.35+Math.max(0.2,Math.min(1.0,rawSpd/40000))*0.85, 0.18, 0.09);
 
-      // ── Completed path ──
+      // ── Completed path with gradient colors (1) ──
       const splitIdx = Math.min(Math.floor(gt * N_PTS), N_PTS - 1);
-      const slice = allPts.slice(0, splitIdx + 2);
-      completedGeo.setFromPoints(slice.length > 1 ? slice : [allPts[0], allPts[1]]);
-
-      // ── Earth–Moon reference line (update for dynamic moon position) ──
-      emBuf[0] = earth.position.x; emBuf[1] = earth.position.y; emBuf[2] = earth.position.z;
-      emBuf[3] = moon.position.x; emBuf[4] = moon.position.y; emBuf[5] = moon.position.z;
-      emGeo.attributes.position.needsUpdate = true; emLine.computeLineDistances();
-
-      // ── Distance lines ──
-      edBuf[0] = orion.position.x; edBuf[1] = orion.position.y; edBuf[2] = orion.position.z;
-      edBuf[3] = earth.position.x; edBuf[4] = earth.position.y; edBuf[5] = earth.position.z;
-      edGeo.attributes.position.needsUpdate = true; edLine.computeLineDistances();
-
-      mdBuf[0] = orion.position.x; mdBuf[1] = orion.position.y; mdBuf[2] = orion.position.z;
-      mdBuf[3] = moon.position.x; mdBuf[4] = moon.position.y; mdBuf[5] = moon.position.z;
-      mdGeo.attributes.position.needsUpdate = true; mdLine.computeLineDistances();
-
-      // ── Waypoint visual states ──
-      WAYPOINTS.forEach((wp, i) => {
-        const done = gt > wp.t + 0.015;
-        const cur = !done && gt >= wp.t - 0.005 && gt < wp.t + 0.015;
-        wpMats[i].color.setHex(done ? 0x00ff88 : cur ? 0xffdd00 : 0x334455);
-        wpMeshes[i].scale.setScalar(cur ? 1.0 + pulse * 0.45 : 1.0);
-      });
-
-      // ── Planet rotation (4b) — Earth ~60s/revolution, Moon slower ──
-      earth.rotation.y += 0.00175;
-      moon.rotation.y += 0.0003;
-
-      // ── Auto-rotate ──
-      if (autoRotate) { sph.theta += 0.0008; applyCam(); }
-
-      // ── WebGL render ──
-      renderer.render(scene, camera);
-
-      // ── 2D labels (4c: offsets to avoid overlap) ──
-      lctx.clearRect(0, 0, W, H);
-
-      // Orion label — offset up-left, more if near Earth
-      const orionEarthDist = orion.position.distanceTo(earth.position);
-      const orionLabelOY = orionEarthDist < 1.8 ? -1.5 : -0.6;
-      label2d('ORION', new THREE.Vector3(orion.position.x, orion.position.y + orionLabelOY, orion.position.z), '#00ff88', 'center', 0, -14, true);
-
-      // Earth + Moon labels — below spheres
-      label2d('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.3, earth.position.z), 'rgba(100,170,255,0.85)', 'center', 0, 0, false);
-      label2d('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 0.75, moon.position.z), 'rgba(200,195,180,0.85)', 'center', 0, 0, false);
-
-      // Earth–Moon distance label — above midpoint line
-      {
-        const mid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5);
-        mid.y += 0.6;
-        label2d('238,855 mi', mid, 'rgba(255,255,255,0.22)', 'center', 0, 0, false);
+      if (splitIdx > 0) {
+        const slice = allPts.slice(0, splitIdx + 2);
+        const sliceColors = new Float32Array((splitIdx + 2) * 3);
+        for (let i = 0; i < splitIdx + 2; i++) { sliceColors[i*3] = trajColors[i*3]; sliceColors[i*3+1] = trajColors[i*3+1]; sliceColors[i*3+2] = trajColors[i*3+2]; }
+        completedGeo.setFromPoints(slice);
+        completedGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors, 3));
+        compGlowGeo.setFromPoints(slice);
+        compGlowGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors.slice(), 3));
       }
 
-      // Orion→Earth distance — at 1/3 point (closer to Orion)
+      // ── Reference lines ──
+      emBuf[0]=earth.position.x; emBuf[1]=earth.position.y; emBuf[2]=earth.position.z;
+      emBuf[3]=moon.position.x; emBuf[4]=moon.position.y; emBuf[5]=moon.position.z;
+      emGeo.attributes.position.needsUpdate=true; emLine.computeLineDistances();
+      edBuf[0]=orion.position.x; edBuf[1]=orion.position.y; edBuf[2]=orion.position.z;
+      edBuf[3]=earth.position.x; edBuf[4]=earth.position.y; edBuf[5]=earth.position.z;
+      edGeo.attributes.position.needsUpdate=true; edLine.computeLineDistances();
+      mdBuf[0]=orion.position.x; mdBuf[1]=orion.position.y; mdBuf[2]=orion.position.z;
+      mdBuf[3]=moon.position.x; mdBuf[4]=moon.position.y; mdBuf[5]=moon.position.z;
+      mdGeo.attributes.position.needsUpdate=true; mdLine.computeLineDistances();
+
+      // Waypoint states
+      WAYPOINTS.forEach((wp, i) => { const done=gt>wp.t+0.015; const cur=!done&&gt>=wp.t-0.005&&gt<wp.t+0.015; wpMats[i].color.setHex(done?0x00ffaa:cur?0xffd700:0x334455); wpMeshes[i].scale.setScalar(cur?1.0+pulse*0.45:1.0); });
+
+      earth.rotation.y += 0.00175; moon.rotation.y += 0.0003;
+      if (autoRotate) { sph.theta += 0.0008; applyCam(); }
+
+      renderer.render(scene, camera);
+
+      // ── 2D Holographic callouts (3) ──
+      lctx.clearRect(0, 0, W, H);
+
+      // Orion callout (3) — most prominent, shows Moon distance
+      const orionEarthDist = orion.position.distanceTo(earth.position);
+      const moonDistTxt = document.getElementById('tv-moon')?.textContent?.trim() || '';
+      const moonDistUnit = (document.getElementById('tu-moon')?.textContent || 'MI').toLowerCase();
+      const orionLabel = moonDistTxt && moonDistTxt !== '\u2014' ? 'ORION \u00b7 ' + moonDistTxt + ' ' + moonDistUnit + ' to Moon' : 'ORION CREW CAPSULE';
+      const oLabelY = orionEarthDist < 1.8 ? -1.5 : -0.6;
+      drawCallout(orionLabel, new THREE.Vector3(orion.position.x, orion.position.y + oLabelY, orion.position.z), '#00ffaa', 0, -16, true, orion.position);
+
+      // Earth + Moon callouts
+      drawCallout('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.4, earth.position.z), 'rgba(100,170,255,0.85)', 0, 0, false, earth.position);
+      drawCallout('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 0.8, moon.position.z), 'rgba(200,195,180,0.85)', 0, 0, false, moon.position);
+
+      // Earth-Moon distance (7)
+      { const mid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5); mid.y += 0.7;
+        drawCallout('EARTH\u2013MOON: 238,855 MI', mid, 'rgba(255,255,255,0.35)', 0, 0, false, null); }
+
+      // Altitude callout (7) — from Earth surface toward Orion
       const earthTxt = document.getElementById('tv-earth')?.textContent?.trim();
       const earthUnit = (document.getElementById('tu-earth')?.textContent || 'MI').toLowerCase();
       if (earthTxt && earthTxt !== '\u2014') {
-        const pt = new THREE.Vector3().lerpVectors(orion.position, earth.position, 0.35);
-        pt.y += 0.3;
-        label2d(earthTxt + ' ' + earthUnit, pt, 'rgba(0,204,255,0.65)', 'center', 0, 0, false);
+        const pt = new THREE.Vector3().lerpVectors(orion.position, earth.position, 0.4); pt.y += 0.35;
+        drawCallout('ALT: ' + earthTxt + ' ' + earthUnit, pt, 'rgba(0,204,255,0.7)', 0, 0, false, null);
       }
 
-      // Orion→Moon distance — at 1/3 point (closer to Orion)
-      const moonTxt = document.getElementById('tv-moon')?.textContent?.trim();
-      const moonUnit = (document.getElementById('tu-moon')?.textContent || 'MI').toLowerCase();
-      if (moonTxt && moonTxt !== '\u2014') {
-        const pt = new THREE.Vector3().lerpVectors(orion.position, moon.position, 0.35);
-        pt.y -= 0.3;
-        label2d(moonTxt + ' ' + moonUnit, pt, 'rgba(255,221,68,0.65)', 'center', 0, 0, false);
-      }
-
-      // Waypoint labels — completed + current, offset right+up
+      // Waypoint labels
       WAYPOINTS.forEach((wp, i) => {
-        const done = gt > wp.t + 0.015;
-        const cur = !done && gt >= wp.t - 0.005 && gt < wp.t + 0.015;
+        const done = gt > wp.t + 0.015; const cur = !done && gt >= wp.t-0.005 && gt < wp.t+0.015;
         if (!done && !cur) return;
         const s = proj(wpMeshes[i].position); if (!s.vis) return;
         lctx.save();
         lctx.font = '9px "Share Tech Mono",monospace';
-        lctx.fillStyle = cur ? '#ffdd00' : 'rgba(0,255,136,0.55)';
+        lctx.fillStyle = cur ? '#ffd700' : 'rgba(0,255,170,0.5)';
         lctx.textAlign = 'left'; lctx.textBaseline = 'middle';
+        lctx.shadowColor = lctx.fillStyle; lctx.shadowBlur = 6;
         lctx.fillText(wp.label, s.x + 10, s.y - 8);
         lctx.restore();
       });
 
-      // Progress footer
       if (progressEl) {
-        const fd = Math.max(1, Math.floor(elapsed / (24 * 3600 * 1000)) + 1);
-        progressEl.textContent = 'MISSION PROGRESS: ' + (gt * 100).toFixed(1) + '%  \u00b7  FLIGHT DAY ' + fd;
+        const fd = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1);
+        progressEl.textContent = 'MISSION PROGRESS: ' + (gt*100).toFixed(1) + '%  \u00b7  FLIGHT DAY ' + fd;
       }
     }
     animate();
@@ -3087,14 +3057,50 @@
   })();
 
   // ── YOUTUBE TAB SWITCHER ─────────────────────────────────────────────
-  document.querySelectorAll('.yt-tab').forEach(tab => {
+  document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-      document.querySelectorAll('.yt-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('#feed-youtube .yt-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.yt-frame').forEach(f => f.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById(tab.dataset.target).classList.add('active');
     });
   });
+
+  // ── VIDEO FULLSCREEN OVERLAY ──────────────────────────────────────────
+  (function() {
+    const overlay = document.getElementById('yt-overlay');
+    const frame   = document.getElementById('yt-overlay-frame');
+    const closeBtn = document.getElementById('yt-overlay-close');
+    const expandBtn = document.getElementById('yt-expand');
+
+    function openOverlay() {
+      // Default to mission coverage
+      const activeTab = overlay.querySelector('.yt-tab.active');
+      frame.src = activeTab?.dataset.ytSrc || '';
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeOverlay() {
+      overlay.classList.remove('open');
+      frame.src = '';
+      document.body.style.overflow = '';
+    }
+
+    expandBtn.addEventListener('click', openOverlay);
+    closeBtn.addEventListener('click', closeOverlay);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeOverlay(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && overlay.classList.contains('open')) closeOverlay(); });
+
+    // Overlay tab switcher
+    overlay.querySelectorAll('.yt-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        overlay.querySelectorAll('.yt-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        frame.src = tab.dataset.ytSrc || '';
+      });
+    });
+  })();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
