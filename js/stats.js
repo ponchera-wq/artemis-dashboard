@@ -70,6 +70,24 @@ const TELEM = {
   ],
 };
 
+// ── VIS-VIVA ORBITAL MECHANICS ────────────────────────────────────────
+// v = sqrt(GM * (2/r - 1/a))
+// GM = 398600 km³/s²  (Earth gravitational parameter)
+// r  = distance from Earth centre in km
+// a  = semi-major axis in km
+// Orbit: perigee 2414 km alt (r_p=8785 km), apogee 74030 km alt (r_a=80401 km)
+// a = (8785 + 80401) / 2 = 44593 km
+const GM_KM3S2      = 398600;
+const PRE_TLI_A_KM  = 44593;
+const TLI_MIN       = 25.8 * 60; // TLI burn at T+25h48m in minutes from launch
+
+function visVivaSpeedKmh(earthAltKm) {
+  const r  = earthAltKm + 6371; // distance from Earth centre
+  const v2 = GM_KM3S2 * (2 / r - 1 / PRE_TLI_A_KM);
+  if (v2 <= 0) return 0;
+  return Math.sqrt(v2) * 3600; // km/s → km/h
+}
+
 function lerp(waypoints, t) {
   const wps = waypoints;
   if (t <= wps[0][0]) return wps[0][1];
@@ -213,7 +231,13 @@ function tickTelem() {
       return a + (b - a) * frac;
     }
     earthKm  = lerpSec(TELEM.earthDist);
-    speedKmh = lerpSec(TELEM.speed);
+    // Pre-TLI: derive speed from Earth distance via vis-viva (physically consistent).
+    // Post-TLI (hyperbolic escape + lunar swingby): fall back to table interpolation.
+    if (elapsedSec / 60 < TLI_MIN) {
+      speedKmh = visVivaSpeedKmh(earthKm);
+    } else {
+      speedKmh = lerpSec(TELEM.speed);
+    }
 
     // True 3D Moon distance via astronomy-engine
     // Orion's geocentric position approximated from Earth distance along Earth-Moon line
