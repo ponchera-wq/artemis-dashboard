@@ -31,7 +31,9 @@
 
     html, body {
       width: 100%; height: 100%;
-      background: var(--bg);
+      background:
+        linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85)),
+        url('dashbg2.jpg') center / cover fixed;
       color: var(--text);
       font-family: var(--font-body);
       overflow: hidden;
@@ -55,7 +57,7 @@
     /* ── Root grid ── */
     #dashboard {
       display: grid;
-      grid-template-rows: 160px 1fr 1fr 36px;
+      grid-template-rows: 160px 65px 1fr 1fr 36px;
       grid-template-columns: 1fr 2fr 1fr;
       gap: 6px;
       padding: 6px;
@@ -379,7 +381,7 @@
        WIDGET 4 — MISSION UPDATES
     ════════════════════════════════ */
     #mission-updates {
-      grid-row: 3; grid-column: 2;
+      grid-row: 4; grid-column: 2;
     }
 
     #mission-updates .panel-body {
@@ -483,7 +485,7 @@
        CREW STRIP — bottom row
     ════════════════════════════════ */
     #crew-strip {
-      grid-row: 4; grid-column: 1 / -1;
+      grid-row: 5; grid-column: 1 / -1;
       background: var(--bg-panel);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -689,12 +691,72 @@
 
     .yt-frame.active { display: block; }
 
+    /* ════════════════════════════════
+       TELEMETRY BAR
+    ════════════════════════════════ */
+    #telem-bar {
+      grid-row: 2; grid-column: 1 / -1;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: flex;
+      align-items: stretch;
+      padding: 0 8px;
+      gap: 0;
+    }
+
+    .telem-card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 12px;
+      gap: 1px;
+      position: relative;
+    }
+
+    .telem-card + .telem-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 12px; bottom: 12px;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .telem-label {
+      font-family: var(--font-ui);
+      font-size: 0.38rem;
+      letter-spacing: 0.18em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .telem-value {
+      font-family: var(--font-mono);
+      font-size: clamp(1rem, 1.6vw, 1.5rem);
+      font-weight: 700;
+      line-height: 1;
+      letter-spacing: 0.04em;
+    }
+
+    .telem-unit {
+      font-family: var(--font-mono);
+      font-size: 0.45rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+    }
+
+    #telem-earth  .telem-value { color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+    #telem-moon   .telem-value { color: #ffd740; text-shadow: 0 0 10px rgba(255,215,64,0.4); }
+    #telem-speed  .telem-value { color: #ffa726; text-shadow: 0 0 10px rgba(255,167,38,0.45); }
+
     /* ── Placeholder grid positions ── */
-    #feed-youtube  { grid-row: 2; grid-column: 1; }
-    #feed-arow     { grid-row: 2; grid-column: 2; }
-    #feed-dsn      { grid-row: 2; grid-column: 3; }
-    #feed-weather  { grid-row: 3; grid-column: 1; }
-    #feed-blog     { grid-row: 3; grid-column: 3; }
+    #feed-youtube  { grid-row: 3; grid-column: 1; }
+    #feed-arow     { grid-row: 3; grid-column: 2; }
+    #feed-dsn      { grid-row: 3; grid-column: 3; }
+    #feed-weather  { grid-row: 4; grid-column: 1; }
+    #feed-blog     { grid-row: 4; grid-column: 3; }
 
     /* ── Corner accent ── */
     .corner-tl, .corner-br {
@@ -768,7 +830,27 @@
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
-  <!-- ══ ROW 2: MAIN FEEDS ══════════════════════════════════════════════ -->
+  <!-- ══ ROW 2: TELEMETRY BAR ══════════════════════════════════════════ -->
+
+  <div id="telem-bar">
+    <div class="telem-card" id="telem-earth">
+      <div class="telem-label">DISTANCE FROM EARTH</div>
+      <div class="telem-value" id="tv-earth">—</div>
+      <div class="telem-unit">KM</div>
+    </div>
+    <div class="telem-card" id="telem-moon">
+      <div class="telem-label">DISTANCE FROM MOON</div>
+      <div class="telem-value" id="tv-moon">—</div>
+      <div class="telem-unit">KM</div>
+    </div>
+    <div class="telem-card" id="telem-speed">
+      <div class="telem-label">ORION SPEED</div>
+      <div class="telem-value" id="tv-speed">—</div>
+      <div class="telem-unit">KM/H</div>
+    </div>
+  </div>
+
+  <!-- ══ ROW 3: MAIN FEEDS ══════════════════════════════════════════════ -->
 
   <div class="panel" id="feed-youtube">
     <div class="panel-header"><span class="dot"></span>NASA LIVE</div>
@@ -1215,6 +1297,74 @@
 
   tick();
   setInterval(tick, 1000);
+
+  // ── TELEMETRY ESTIMATES (interpolated from mission waypoints) ────────
+  // Waypoints: [minutes since launch, value]
+  // Not GPS-accurate — ballpark estimates for the right feel.
+  const H = 60, D = 24 * 60; // shorthand: H = 1hr in min, D = 1day in min
+  const TELEM = {
+    earthDist: [   // km from Earth surface
+      [0,           400],
+      [25*H,        420],       // end of orbit
+      [25.5*H,      3000],      // TLI burn complete, climbing fast
+      [2*D,         185000],    // ~halfway to Moon
+      [4*D,         365000],    // approaching Moon
+      [4.5*D,       405000],    // maximum distance (behind Moon)
+      [5*D,         390000],    // exiting lunar region
+      [7*D,         210000],    // halfway home
+      [9*D,         40000],     // closing on Earth
+      [9*D+12*H,    120],       // re-entry interface
+    ],
+    moonDist: [    // km from Moon surface
+      [0,           384400],
+      [2*D,         295000],
+      [4*D,         14000],
+      [4*D+8*H,     8900],      // closest approach
+      [5*D,         55000],
+      [6*D,         165000],
+      [8*D,         310000],
+      [9.5*D,       384400],
+    ],
+    speed: [       // km/h relative to Earth
+      [0,           28000],
+      [25*H,        28000],     // orbital
+      [25.5*H,      39500],     // post-TLI
+      [3*D,         6400],      // coasting up, slowing
+      [4*D,         3700],      // near Moon
+      [4*D+8*H,     5200],      // lunar flyby slingshot
+      [5.5*D,       3100],      // outbound, slowing
+      [8*D,         14000],     // gravity accelerating homeward
+      [9.5*D,       40000],     // re-entry
+    ],
+  };
+
+  function lerp(waypoints, t) {
+    const wps = waypoints;
+    if (t <= wps[0][0]) return wps[0][1];
+    if (t >= wps[wps.length - 1][0]) return wps[wps.length - 1][1];
+    for (let i = 1; i < wps.length; i++) {
+      if (t <= wps[i][0]) {
+        const [t0, v0] = wps[i - 1];
+        const [t1, v1] = wps[i];
+        return v0 + (v1 - v0) * (t - t0) / (t1 - t0);
+      }
+    }
+    return wps[wps.length - 1][1];
+  }
+
+  function fmtNum(n) {
+    return Math.round(n).toLocaleString('en-US');
+  }
+
+  function tickTelem() {
+    const elapsedMin = (Date.now() - LAUNCH_UTC) / 60000;
+    document.getElementById('tv-earth').textContent = fmtNum(lerp(TELEM.earthDist, elapsedMin));
+    document.getElementById('tv-moon').textContent  = fmtNum(lerp(TELEM.moonDist,  elapsedMin));
+    document.getElementById('tv-speed').textContent = fmtNum(lerp(TELEM.speed,     elapsedMin));
+  }
+
+  tickTelem();
+  setInterval(tickTelem, 5000); // update every 5s — smooth enough for linear interpolation
 
   // ── SIGNAL TOGGLE ───────────────────────────────────────────────────
   let signalAcquired = true;
