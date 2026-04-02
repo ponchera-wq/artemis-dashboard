@@ -6,10 +6,38 @@
   <title>Artemis II — Live Mission Dashboard</title>
   <link rel="icon" href="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png" type="image/png">
   <link rel="apple-touch-icon" href="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png">
+  <!-- SEO -->
+  <meta name="description" content="Real-time Artemis II mission dashboard with live JPL telemetry, 3D trajectory map, space weather monitoring, crew profiles, and NASA news feeds. Track Orion's journey to the Moon.">
+  <meta name="keywords" content="Artemis II, Artemis 2, NASA, Moon mission, Orion spacecraft, live tracker, mission dashboard, JPL Horizons, space weather, SLS rocket, lunar flyby, 2026">
+  <meta name="author" content="Caz">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://artemis-live-dashboard.vercel.app/">
+  <!-- Open Graph -->
   <meta property="og:title" content="Artemis II — Live Mission Dashboard">
-  <meta property="og:description" content="Real-time mission tracking for NASA's Artemis II crewed lunar flyby. Live telemetry, trajectory, space weather, news, and crew profiles.">
-  <meta property="og:image" content="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png">
+  <meta property="og:description" content="Real-time mission tracking for NASA's Artemis II crewed lunar flyby. Live telemetry, 3D trajectory, space weather, crew profiles, and news feeds.">
+  <meta property="og:url" content="https://artemis-live-dashboard.vercel.app/">
   <meta property="og:type" content="website">
+  <meta property="og:image" content="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Artemis II — Live Mission Dashboard">
+  <meta name="twitter:description" content="Real-time Artemis II mission tracking with live JPL telemetry, 3D trajectory map, and space weather monitoring.">
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Artemis II Live Mission Dashboard",
+    "description": "Real-time mission dashboard tracking NASA's Artemis II crewed lunar flyby with live telemetry, 3D trajectory visualization, and space weather monitoring.",
+    "url": "https://artemis-live-dashboard.vercel.app/",
+    "applicationCategory": "Space Tracking",
+    "operatingSystem": "Web Browser",
+    "author": {
+      "@type": "Person",
+      "name": "Caz"
+    }
+  }
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -64,12 +92,68 @@
     /* ── Root grid ── */
     #dashboard {
       display: grid;
-      grid-template-rows: 112px 1fr 1fr 36px;
+      grid-template-rows: 112px 1fr 1fr 36px 38px;
       grid-template-columns: 1fr 2fr 1fr;
       gap: 6px;
       padding: 6px;
       width: 100vw;
       height: 100vh;
+    }
+
+    /* ── Site footer ── */
+    #site-footer {
+      grid-row: 5; grid-column: 1 / -1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 0 14px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+    .footer-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      gap: 8px;
+    }
+    .footer-left, .footer-center, .footer-right {
+      font-family: var(--font-mono);
+      font-size: 0.36rem;
+      color: rgba(74,144,217,0.38);
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+    .footer-center { flex: 1; text-align: center; }
+    .footer-right  { text-align: right; }
+    .footer-link {
+      color: rgba(74,144,217,0.45);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-link:hover { color: rgba(0,229,255,0.8); }
+    .footer-disclaimer {
+      font-family: var(--font-mono);
+      font-size: 0.3rem;
+      color: rgba(74,144,217,0.22);
+      letter-spacing: 0.04em;
+      text-align: center;
+      line-height: 1.3;
+    }
+    @media (max-width: 767px) {
+      #site-footer {
+        gap: 3px;
+        padding: 4px 10px;
+      }
+      .footer-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+      }
+      .footer-center, .footer-right { text-align: center; }
     }
 
     /* ── Panel base ── */
@@ -1820,6 +1904,18 @@
       </div>
     </div>
     <button id="reset-layout-btn" title="Reset panel layout to default">↺ RESET LAYOUT</button>
+  </div>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->
+  <div id="site-footer">
+    <div class="footer-row">
+      <span class="footer-left">🚀 Built on launch day by EZ &middot; Melbourne, Australia</span>
+      <span class="footer-center" id="footer-modified"></span>
+      <span class="footer-right">
+        <a class="footer-link" href="https://form.jotform.com/260912668955066" target="_blank" rel="noopener">💬 Feedback &amp; Contact</a>
+      </span>
+    </div>
+    <div class="footer-disclaimer">Not affiliated with NASA. Data: JPL Horizons · NOAA SWPC · NASA APIs · DSN. NASA content used under NASA media usage guidelines.</div>
   </div>
 
 </div><!-- #dashboard -->
@@ -3842,11 +3938,13 @@
       const dashboard = document.getElementById('dashboard');
       const panelRowCount = maxRow - 1; // rows 2..maxRow
       dashboard.style.gridTemplateRows =
-        `112px ${Array(panelRowCount).fill('1fr').join(' ')} 36px`;
+        `112px ${Array(panelRowCount).fill('1fr').join(' ')} 36px 38px`;
 
-      // Move crew-strip to last grid row
+      // Move crew-strip and footer to correct last rows
       const crewStrip = document.getElementById('crew-strip');
       if (crewStrip) crewStrip.style.gridRow = String(maxRow + 1);
+      const siteFooter = document.getElementById('site-footer');
+      if (siteFooter) siteFooter.style.gridRow = String(maxRow + 2);
 
       // Persist
       try { localStorage.setItem('artemis-layout-v2', JSON.stringify(state)); } catch(e) {}
@@ -4043,6 +4141,17 @@
 })();
 </script>
 
+<script>
+  (function() {
+    var el = document.getElementById('footer-modified');
+    if (!el) return;
+    try {
+      var d = new Date(document.lastModified);
+      if (isNaN(d)) throw 0;
+      el.textContent = 'Page last modified: ' + d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+    } catch(e) { el.textContent = ''; }
+  })();
+</script>
 <script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>
