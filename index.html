@@ -1814,9 +1814,7 @@
       if (!vE || !vM) throw new Error('Parse failed');
       const elMin = (Date.now() - LAUNCH_UTC) / 60000;
       const fbEarth = lerp(TELEM.earthDist, elMin), fbMoon = lerp(TELEM.moonDist, elMin), fbSpeed = lerp(TELEM.speed, elMin);
-      console.log('[Horizons] LIVE  → Earth:', (vE.dist * 0.621371).toFixed(0), 'mi | Moon:', (vM.dist * 0.621371).toFixed(0), 'mi | Speed:', (vE.speed * 3600 * 0.621371).toFixed(0), 'mph');
-      console.log('[Horizons] EST   → Earth:', (fbEarth * 0.621371).toFixed(0), 'mi | Moon:', (fbMoon * 0.621371).toFixed(0), 'mi | Speed:', (fbSpeed * 0.621371).toFixed(0), 'mph');
-      console.log('[Horizons] MET:', (elMin / 60).toFixed(1), 'hours');
+      console.log('[Horizons] MET ' + (elMin / 60).toFixed(1) + 'h | LIVE Earth:' + (vE.dist * 0.621371).toFixed(0) + 'mi Moon:' + (vM.dist * 0.621371).toFixed(0) + 'mi Spd:' + (vE.speed * 3600 * 0.621371).toFixed(0) + 'mph | EST Earth:' + (fbEarth * 0.621371).toFixed(0) + 'mi Moon:' + (fbMoon * 0.621371).toFixed(0) + 'mi');
       liveEarth = vE; liveMoon = vM; usingLive = true;
       lastFetchedAt = Date.now();
       setTelemBadge('LIVE');
@@ -2371,12 +2369,14 @@
     el.addEventListener('click', () => openCrewModal(el.dataset.crew));
   });
 
-  // ── TRAJECTORY 3D (Three.js r128) ───────────────────────────────────
+  // ── TRAJECTORY 3D (Three.js r128) — OVERHAULED ──────────────────────
   (function() {
     const container = document.getElementById('trajectory-3d');
     if (!container || typeof THREE === 'undefined') return;
 
     const MISSION_MS = 10 * 24 * 3600 * 1000;
+    const loader = new THREE.TextureLoader();
+    loader.crossOrigin = 'anonymous';
 
     // Scene + renderer
     const scene = new THREE.Scene();
@@ -2393,7 +2393,7 @@
     });
     container.appendChild(renderer.domElement);
 
-    // 2D label overlay canvas (drawn after each WebGL frame)
+    // 2D label overlay canvas
     const lc = document.createElement('canvas');
     lc.width = W; lc.height = H;
     Object.assign(lc.style, {
@@ -2403,96 +2403,132 @@
     container.appendChild(lc);
     const lctx = lc.getContext('2d');
 
-    // Lighting
-    scene.add(new THREE.AmbientLight(0x1a2a4a, 1.2));
-    const sun = new THREE.PointLight(0xfff0d0, 2.2, 200);
-    sun.position.set(18, 10, 12);
-    scene.add(sun);
+    // ── Lighting: directional Sun + reduced ambient ──
+    scene.add(new THREE.AmbientLight(0x1a2a4a, 0.7));
+    const sunLight = new THREE.DirectionalLight(0xfff5e0, 1.8);
+    sunLight.position.set(20, 8, 14);
+    scene.add(sunLight);
+    const fillLight = new THREE.PointLight(0x4466aa, 0.5, 80);
+    fillLight.position.set(-10, -5, -8);
+    scene.add(fillLight);
 
-    // Earth at origin
+    // ── Earth at origin — textured, 32-segment sphere ──
     const earthMat = new THREE.MeshPhongMaterial({ color: 0x1a5fa8, emissive: 0x051828, shininess: 35, specular: 0x3377bb });
-    const earth    = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), earthMat);
+    const earth = new THREE.Mesh(new THREE.SphereGeometry(0.9, 32, 32), earthMat);
     earth.position.set(0, 0, 0);
     scene.add(earth);
-    // Atmosphere halo
-    const atmoMat = new THREE.MeshBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.15, side: THREE.BackSide });
-    const atmo = new THREE.Mesh(new THREE.SphereGeometry(1.07, 16, 16), atmoMat);
-    atmo.position.copy(earth.position);
-    scene.add(atmo);
 
-    // LEO orbit ring (tilted slightly around Earth)
+    // Load Earth texture with fallbacks
+    function loadTexture(urls, onLoad) {
+      let idx = 0;
+      function tryNext() {
+        if (idx >= urls.length) return;
+        loader.load(urls[idx], onLoad, undefined, () => { idx++; tryNext(); });
+      }
+      tryNext();
+    }
+    loadTexture([
+      'https://unpkg.com/three-globe@2.41.12/example/img/earth-blue-marble.jpg',
+      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Earth_Western_Hemisphere.jpg/1024px-Earth_Western_Hemisphere.jpg'
+    ], tex => { earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; });
+
+    // Atmosphere halo
+    const atmoMat = new THREE.MeshBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.12, side: THREE.BackSide });
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08, 32, 32), atmoMat));
+
+    // LEO orbit ring
     const leoRingPts = [];
     for (let i = 0; i <= 80; i++) {
       const a = (i / 80) * Math.PI * 2;
-      leoRingPts.push(new THREE.Vector3(
-        1.35 * Math.cos(a),
-        0.22 * Math.sin(a),
-        1.35 * Math.sin(a) * 0.96
-      ));
+      leoRingPts.push(new THREE.Vector3(1.35 * Math.cos(a), 0.22 * Math.sin(a), 1.35 * Math.sin(a) * 0.96));
     }
     scene.add(new THREE.Line(
       new THREE.BufferGeometry().setFromPoints(leoRingPts),
-      new THREE.LineBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.28 })
+      new THREE.LineBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.25 })
     ));
 
-    // Moon (~384,400 km from Earth; scene scale ≈50,000 km/unit → 7.69 ≈ 8.2)
+    // ── Moon — textured, 32-segment sphere ──
     const moonMat = new THREE.MeshPhongMaterial({ color: 0xaaa89e, emissive: 0x0a0a09, shininess: 4 });
-    const moon    = new THREE.Mesh(new THREE.SphereGeometry(0.46, 16, 16), moonMat);
+    const moon = new THREE.Mesh(new THREE.SphereGeometry(0.46, 32, 32), moonMat);
     moon.position.set(8.2, 0, 0);
     scene.add(moon);
 
-    // Earth–Moon reference line (dashed white)
-    const emGeo = new THREE.BufferGeometry().setFromPoints([earth.position.clone(), moon.position.clone()]);
-    const emMat = new THREE.LineDashedMaterial({ color: 0xffffff, transparent: true, opacity: 0.18, dashSize: 0.25, gapSize: 0.18 });
+    loadTexture([
+      'https://unpkg.com/three-globe@2.41.12/example/img/lunar-surface.jpg',
+      'https://cdn.jsdelivr.net/npm/three-globe/example/img/lunar-surface.jpg',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/1024px-FullMoon2010.jpg'
+    ], tex => { moonMat.map = tex; moonMat.color.set(0xdddddd); moonMat.needsUpdate = true; });
+
+    // Moon glow
+    const moonGlowMat = new THREE.MeshBasicMaterial({ color: 0xccccbb, transparent: true, opacity: 0.08, side: THREE.BackSide });
+    const moonGlow = new THREE.Mesh(new THREE.SphereGeometry(0.56, 32, 32), moonGlowMat);
+    moonGlow.position.copy(moon.position);
+    scene.add(moonGlow);
+
+    // Earth–Moon reference line
+    const emBuf = new Float32Array(6);
+    const emGeo = new THREE.BufferGeometry();
+    emGeo.setAttribute('position', new THREE.BufferAttribute(emBuf, 3));
+    const emMat = new THREE.LineDashedMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, dashSize: 0.25, gapSize: 0.18 });
     const emLine = new THREE.Line(emGeo, emMat);
-    emLine.computeLineDistances();
     scene.add(emLine);
 
-    // Free-return trajectory — CatmullRomCurve3
-    // Earth at origin (0,0,0); Moon at (8.2,0,0); scale ≈50,000 km/unit
-    // 15 control points: LAUNCH → apogee loop → TLI → outbound → flyby → return → SPLASHDOWN
+    // ── Free-return trajectory ──
     const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3( 0,     0,     0    ),  // 0: LAUNCH (Earth LEO)
-      new THREE.Vector3( 0.3,   0.9,   0.6  ),  // 1: APOGEE ~53,000 km alt (T+6h)
-      new THREE.Vector3(-0.05,  0.05,  0    ),  // 2: near perigee (T+18h) — loop near Earth
-      new THREE.Vector3( 0.7,   1.8,   1.4  ),  // 3: TLI burn + early outbound (T+25h)
-      new THREE.Vector3( 3.2,   2.8,   2.0  ),  // 4: outbound coast (T+48h)
-      new THREE.Vector3( 5.8,   2.2,   0.6  ),  // 5: lunar SOI approach (T+72–96h)
-      new THREE.Vector3( 7.6,   1.0,  -0.4  ),  // 6: lunar approach (T+120h)
-      new THREE.Vector3( 8.15,  0.12,  0    ),  // 7: CLOSEST APPROACH (T+128h, ~3,986 mi from Moon)
-      new THREE.Vector3( 9.1,   0.1,  -1.1  ),  // 8: FAR SIDE / LOS (T+140h)
-      new THREE.Vector3( 8.6,  -1.1,  -0.6  ),  // 9: exit far-side (T+150h)
-      new THREE.Vector3( 6.4,  -2.2,   0.4  ),  // 10: return coast (T+168h)
-      new THREE.Vector3( 3.8,  -2.8,   1.0  ),  // 11: mid-return (T+192h)
-      new THREE.Vector3( 1.2,  -2.0,   0.0  ),  // 12: approaching Earth (T+210h)
-      new THREE.Vector3( 0.1,  -0.6,   0.0  ),  // 13: ENTRY (T+228h)
-      new THREE.Vector3( 0,     0,     0    ),  // 14: SPLASHDOWN (T+229h)
+      new THREE.Vector3( 0,     0,     0    ),  // 0: LAUNCH
+      new THREE.Vector3( 0.3,   0.9,   0.6  ),  // 1: APOGEE
+      new THREE.Vector3(-0.05,  0.05,  0    ),  // 2: PERIGEE
+      new THREE.Vector3( 0.7,   1.8,   1.4  ),  // 3: TLI
+      new THREE.Vector3( 3.2,   2.8,   2.0  ),  // 4: OUTBOUND
+      new THREE.Vector3( 5.8,   2.2,   0.6  ),  // 5: LUNAR SOI
+      new THREE.Vector3( 7.6,   1.0,  -0.4  ),  // 6: APPROACH
+      new THREE.Vector3( 8.15,  0.12,  0    ),  // 7: CLOSEST APPROACH
+      new THREE.Vector3( 9.1,   0.1,  -1.1  ),  // 8: FAR SIDE LOS
+      new THREE.Vector3( 8.6,  -1.1,  -0.6  ),  // 9: EXIT FAR SIDE
+      new THREE.Vector3( 6.4,  -2.2,   0.4  ),  // 10: RETURN
+      new THREE.Vector3( 3.8,  -2.8,   1.0  ),  // 11: MID-RETURN
+      new THREE.Vector3( 1.2,  -2.0,   0.0  ),  // 12: APPROACH EARTH
+      new THREE.Vector3( 0.1,  -0.6,   0.0  ),  // 13: ENTRY
+      new THREE.Vector3( 0,     0,     0    ),  // 14: SPLASHDOWN
     ], false, 'catmullrom', 0.5);
     const N_PTS  = 320;
     const allPts = curve.getPoints(N_PTS);
 
-    // Full dashed grey path (always visible)
+    console.log('[Trajectory] First 3 pts:', allPts.slice(0,3).map(p => `(${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)})`).join(' '));
+    console.log('[Trajectory] Last 3 pts:', allPts.slice(-3).map(p => `(${p.x.toFixed(2)},${p.y.toFixed(2)},${p.z.toFixed(2)})`).join(' '));
+
+    // Full dashed path
     const upcomingMat = new THREE.LineDashedMaterial({ color: 0x2a3d5a, dashSize: 0.14, gapSize: 0.11 });
     const upcomingLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(allPts), upcomingMat);
     upcomingLine.computeLineDistances();
     scene.add(upcomingLine);
 
-    // Completed path — solid green (geometry rebuilt each frame)
+    // Completed path — solid green
     const completedGeo = new THREE.BufferGeometry();
     const completedMat = new THREE.LineBasicMaterial({ color: 0x00ff88 });
     scene.add(new THREE.Line(completedGeo, completedMat));
 
-    // Waypoint markers — mapped to 15-pt curve (t = index/14)
+    // ── Waypoints with descriptions (4e) ──
     const WAYPOINTS = [
-      { t: 0.000, label: 'LAUNCH'           },  // index 0
-      { t: 0.071, label: 'APOGEE'           },  // index 1
-      { t: 0.214, label: 'TLI BURN'         },  // index 3
-      { t: 0.357, label: 'OUTBOUND'         },  // index 5
-      { t: 0.500, label: 'CLOSEST APPROACH' },  // index 7
-      { t: 0.571, label: 'FAR SIDE LOS'     },  // index 8
-      { t: 0.714, label: 'RETURN COAST'     },  // index 10
-      { t: 0.929, label: 'ENTRY'            },  // index 13
-      { t: 0.999, label: 'SPLASHDOWN'       },  // index 14
+      { t: 0.000, label: 'LAUNCH', met: 'T+00:00:00', metSec: 0,
+        desc: 'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.' },
+      { t: 0.071, label: 'LEO', met: 'T+06:00:00', metSec: 21600,
+        desc: 'Orion enters low Earth orbit at ~200km altitude for initial systems checkout.' },
+      { t: 0.214, label: 'TLI BURN', met: 'T+25:00:00', metSec: 90000,
+        desc: 'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.' },
+      { t: 0.357, label: 'OUTBOUND', met: 'T+72:00:00', metSec: 259200,
+        desc: 'Orion coasts toward the Moon for 3\u20134 days. Crew performs systems tests and trajectory correction burns.' },
+      { t: 0.500, label: 'CLOSEST APPROACH', met: 'T+128:00:00', metSec: 460800,
+        desc: 'Orion passes ~6,500 km above the lunar far side. Potentially breaks Apollo 13\u2019s distance record.' },
+      { t: 0.571, label: 'FAR SIDE LOS', met: 'T+128:30:00', metSec: 462600,
+        desc: 'Orion passes behind the Moon. ~41 minutes of planned communications blackout.' },
+      { t: 0.714, label: 'RETURN COAST', met: 'T+150:00:00', metSec: 540000,
+        desc: 'Orion coasts back toward Earth. Crew reviews re-entry procedures.' },
+      { t: 0.929, label: 'ENTRY', met: 'T+228:30:00', metSec: 822600,
+        desc: 'Orion hits atmosphere at 40,000 km/h. Heat shield reaches 2,800\u00b0C.' },
+      { t: 0.999, label: 'SPLASHDOWN', met: 'T+229:10:00', metSec: 825000,
+        desc: 'Parachutes deploy. Orion splashes down in the Pacific Ocean.' },
     ];
     const wpMeshes = [], wpMats = [];
     WAYPOINTS.forEach(wp => {
@@ -2504,38 +2540,42 @@
       scene.add(mesh);
     });
 
-    // Orion — bright green, 3× waypoint size (r=0.21), pulsing emissive
+    // ── Orion — 3x waypoint size, pulsing glow (4f) ──
     const orionMat = new THREE.MeshPhongMaterial({
       color: 0x00ff88, emissive: 0x00ff88, emissiveIntensity: 1.0, shininess: 60,
     });
     const orion = new THREE.Mesh(new THREE.SphereGeometry(0.21, 16, 16), orionMat);
     orion.userData = { label: 'ORION' };
     scene.add(orion);
-    // Glow halo
     const glowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.2, side: THREE.BackSide });
-    const glowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.44, 16, 16), glowMat);
-    orion.add(glowMesh);
+    orion.add(new THREE.Mesh(new THREE.SphereGeometry(0.44, 16, 16), glowMat));
 
-    // Speed vector arrow (orange)
-    const arrow = new THREE.ArrowHelper(
-      new THREE.Vector3(1, 0, 0), orion.position, 0.8, 0xff8800, 0.2, 0.1
-    );
+    // Trail particles behind Orion
+    const TRAIL_LEN = 20;
+    const trailBuf = new Float32Array(TRAIL_LEN * 3);
+    const trailGeo = new THREE.BufferGeometry();
+    trailGeo.setAttribute('position', new THREE.BufferAttribute(trailBuf, 3));
+    scene.add(new THREE.Points(trailGeo, new THREE.PointsMaterial({ color: 0x00ff88, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.5 })));
+    let trailIdx = 0, trailFrame = 0;
+
+    // Speed vector arrow
+    const arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), orion.position, 0.8, 0xff8800, 0.2, 0.1);
     scene.add(arrow);
 
-    // Distance lines: Orion → Earth (cyan), Orion → Moon (yellow)
+    // Distance lines
     const edBuf = new Float32Array(6);
     const edGeo = new THREE.BufferGeometry();
     edGeo.setAttribute('position', new THREE.BufferAttribute(edBuf, 3));
-    const edLine = new THREE.Line(edGeo, new THREE.LineDashedMaterial({ color: 0x00ccff, transparent: true, opacity: 0.5, dashSize: 0.08, gapSize: 0.06 }));
+    const edLine = new THREE.Line(edGeo, new THREE.LineDashedMaterial({ color: 0x00ccff, transparent: true, opacity: 0.4, dashSize: 0.08, gapSize: 0.06 }));
     scene.add(edLine);
 
     const mdBuf = new Float32Array(6);
     const mdGeo = new THREE.BufferGeometry();
     mdGeo.setAttribute('position', new THREE.BufferAttribute(mdBuf, 3));
-    const mdLine = new THREE.Line(mdGeo, new THREE.LineDashedMaterial({ color: 0xffdd44, transparent: true, opacity: 0.5, dashSize: 0.08, gapSize: 0.06 }));
+    const mdLine = new THREE.Line(mdGeo, new THREE.LineDashedMaterial({ color: 0xffdd44, transparent: true, opacity: 0.4, dashSize: 0.08, gapSize: 0.06 }));
     scene.add(mdLine);
 
-    // Starfield — 200 subtle dots
+    // Starfield
     const sfBuf = new Float32Array(200 * 3);
     for (let i = 0; i < 200; i++) {
       const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1), r = 45 + Math.random() * 20;
@@ -2545,9 +2585,10 @@
     sfGeo.setAttribute('position', new THREE.BufferAttribute(sfBuf, 3));
     scene.add(new THREE.Points(sfGeo, new THREE.PointsMaterial({ color: 0xaabbcc, size: 0.10, sizeAttenuation: true, transparent: true, opacity: 0.5 })));
 
-    // Orbit camera controls — manual spherical, centered on mid-scene
+    // ── Camera controls ──
     const CAM_CENTER = new THREE.Vector3(4.1, 0, 0);
     const sph = { theta: 0.4, phi: 1.05, r: 18 };
+    const SPH_DEFAULT = { theta: 0.4, phi: 1.05, r: 18 };
     let isDrag = false, lastMx = 0, lastMy = 0, autoRotate = true, rotTimer = null;
 
     function applyCam() {
@@ -2566,11 +2607,11 @@
     }
 
     renderer.domElement.addEventListener('mousedown', e => { isDrag = true; stopAuto(); lastMx = e.clientX; lastMy = e.clientY; });
-    window.addEventListener('mouseup',   () => { isDrag = false; });
+    window.addEventListener('mouseup', () => { isDrag = false; });
     window.addEventListener('mousemove', e => {
       if (!isDrag) return;
       sph.theta -= (e.clientX - lastMx) * 0.005;
-      sph.phi    = Math.max(0.1, Math.min(Math.PI - 0.1, sph.phi - (e.clientY - lastMy) * 0.005));
+      sph.phi = Math.max(0.1, Math.min(Math.PI - 0.1, sph.phi - (e.clientY - lastMy) * 0.005));
       lastMx = e.clientX; lastMy = e.clientY; applyCam();
     });
     renderer.domElement.addEventListener('wheel', e => {
@@ -2580,36 +2621,125 @@
     // Touch
     let lastTx = 0, lastTy = 0;
     renderer.domElement.addEventListener('touchstart', e => { stopAuto(); lastTx = e.touches[0].clientX; lastTy = e.touches[0].clientY; });
-    renderer.domElement.addEventListener('touchend',   () => { rotTimer = setTimeout(() => { autoRotate = true; }, 3500); });
-    renderer.domElement.addEventListener('touchmove',  e => {
+    renderer.domElement.addEventListener('touchend', () => { rotTimer = setTimeout(() => { autoRotate = true; }, 3500); });
+    renderer.domElement.addEventListener('touchmove', e => {
       sph.theta -= (e.touches[0].clientX - lastTx) * 0.005;
-      sph.phi    = Math.max(0.1, Math.min(Math.PI - 0.1, sph.phi - (e.touches[0].clientY - lastTy) * 0.005));
+      sph.phi = Math.max(0.1, Math.min(Math.PI - 0.1, sph.phi - (e.touches[0].clientY - lastTy) * 0.005));
       lastTx = e.touches[0].clientX; lastTy = e.touches[0].clientY; applyCam(); e.preventDefault();
     }, { passive: false });
 
-    // Raycaster tooltip
+    // ── Zoom controls (4d) ──
+    const ctrlDiv = document.createElement('div');
+    Object.assign(ctrlDiv.style, {
+      position: 'absolute', bottom: '8px', right: '8px', display: 'flex',
+      flexDirection: 'column', gap: '3px', zIndex: '3',
+    });
+    [{ text: '+', fn: () => { sph.r = Math.max(7, sph.r * 0.8); applyCam(); stopAuto(); } },
+     { text: '\u2212', fn: () => { sph.r = Math.min(40, sph.r * 1.2); applyCam(); stopAuto(); } },
+     { text: '\u27f2', fn: () => { Object.assign(sph, {...SPH_DEFAULT}); applyCam(); autoRotate = true; } }
+    ].forEach(b => {
+      const btn = document.createElement('button');
+      btn.textContent = b.text;
+      Object.assign(btn.style, {
+        width: '26px', height: '26px', background: 'rgba(8,12,26,0.85)',
+        border: '1px solid rgba(74,144,217,0.45)', borderRadius: '3px',
+        color: '#4A90D9', fontSize: '14px', fontFamily: "'Share Tech Mono',monospace",
+        cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        lineHeight: '1', padding: '0',
+      });
+      btn.addEventListener('mouseenter', () => { btn.style.borderColor = '#4A90D9'; btn.style.color = '#fff'; });
+      btn.addEventListener('mouseleave', () => { btn.style.borderColor = 'rgba(74,144,217,0.45)'; btn.style.color = '#4A90D9'; });
+      btn.addEventListener('click', b.fn);
+      ctrlDiv.appendChild(btn);
+    });
+    container.appendChild(ctrlDiv);
+
+    // ── Waypoint popup (4e) ──
+    const popupEl = document.createElement('div');
+    Object.assign(popupEl.style, {
+      position: 'absolute', display: 'none', background: 'rgba(8,12,26,0.92)',
+      border: '1px solid rgba(74,144,217,0.55)', borderRadius: '4px',
+      padding: '10px 14px', zIndex: '5', maxWidth: '280px', minWidth: '200px',
+      fontFamily: "'Share Tech Mono',monospace", pointerEvents: 'auto',
+    });
+    container.appendChild(popupEl);
+    let popupOpen = false;
+
+    function closePopup() { popupEl.style.display = 'none'; popupOpen = false; }
+
+    function openPopup(wp, screenX, screenY) {
+      const nowMet = (Date.now() - LAUNCH_UTC) / 1000;
+      const evDate = new Date(LAUNCH_UTC.getTime() + wp.metSec * 1000);
+      const localStr = fmtLocal(evDate, true) + ' ' + tzAbbr(evDate);
+      let status, statusColor;
+      if (nowMet > wp.metSec + 900) { status = '\u2713 COMPLETED'; statusColor = '#00e676'; }
+      else if (nowMet >= wp.metSec - 600) { status = '\u25b6 IN PROGRESS'; statusColor = '#ffd740'; }
+      else { status = '\u25cb UPCOMING'; statusColor = '#7986a8'; }
+
+      popupEl.innerHTML = `
+        <div style="font-size:0.6rem;font-weight:bold;color:#4A90D9;letter-spacing:0.12em;margin-bottom:6px;">${wp.label}</div>
+        <div style="font-size:0.48rem;color:#7986a8;margin-bottom:3px;">${wp.met}</div>
+        <div style="font-size:0.44rem;color:rgba(74,144,217,0.6);margin-bottom:6px;">${localStr}</div>
+        <div style="font-size:0.48rem;color:${statusColor};margin-bottom:8px;letter-spacing:0.08em;">${status}</div>
+        <div style="font-size:0.48rem;color:#c8d0e0;line-height:1.5;">${wp.desc}</div>
+      `;
+
+      // Position: try right of click, fallback left
+      let left = screenX + 14;
+      if (left + 280 > W) left = screenX - 290;
+      let top = screenY - 20;
+      if (top + 180 > H) top = H - 190;
+      if (top < 4) top = 4;
+
+      popupEl.style.left = left + 'px';
+      popupEl.style.top = top + 'px';
+      popupEl.style.display = 'block';
+      popupOpen = true;
+    }
+
+    // Raycaster for hover tooltips + click popups
     const raycaster = new THREE.Raycaster();
-    const mouse3    = new THREE.Vector2();
+    const mouse3 = new THREE.Vector2();
     const tooltipEl = document.getElementById('traj-tooltip');
+
     renderer.domElement.addEventListener('mousemove', e => {
       if (!tooltipEl) return;
       const rect = renderer.domElement.getBoundingClientRect();
-      mouse3.x =  ((e.clientX - rect.left) / rect.width)  * 2 - 1;
-      mouse3.y = -((e.clientY - rect.top)  / rect.height) * 2 + 1;
+      mouse3.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse3.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse3, camera);
       const hits = raycaster.intersectObjects([orion, ...wpMeshes]);
       if (hits.length) {
-        tooltipEl.textContent = hits[0].object.userData.label || '';
-        tooltipEl.style.left    = (e.clientX - rect.left + 12) + 'px';
-        tooltipEl.style.top     = (e.clientY - rect.top  -  8) + 'px';
+        const label = hits[0].object.userData.label || '';
+        tooltipEl.textContent = label;
+        tooltipEl.style.left = (e.clientX - rect.left + 12) + 'px';
+        tooltipEl.style.top = (e.clientY - rect.top - 8) + 'px';
         tooltipEl.style.opacity = '1';
-      } else { tooltipEl.style.opacity = '0'; }
+        renderer.domElement.style.cursor = 'pointer';
+      } else {
+        tooltipEl.style.opacity = '0';
+        renderer.domElement.style.cursor = 'grab';
+      }
     });
     renderer.domElement.addEventListener('mouseleave', () => { if (tooltipEl) tooltipEl.style.opacity = '0'; });
 
+    // Click to open waypoint popup (4e)
+    renderer.domElement.addEventListener('click', e => {
+      if (popupOpen) { closePopup(); return; }
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouse3.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse3.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouse3, camera);
+      const hits = raycaster.intersectObjects([...wpMeshes]);
+      if (hits.length && hits[0].object.userData.desc) {
+        openPopup(hits[0].object.userData, e.clientX - rect.left, e.clientY - rect.top);
+      }
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && popupOpen) closePopup(); });
+
     // ResizeObserver
     new ResizeObserver(() => {
-      W = container.clientWidth  || 400;
+      W = container.clientWidth || 400;
       H = container.clientHeight || 300;
       renderer.setSize(W, H);
       lc.width = W; lc.height = H;
@@ -2620,7 +2750,6 @@
     const progressEl = document.getElementById('traj-progress');
     const _pv = new THREE.Vector3();
 
-    // Project 3D world pos → 2D canvas coords (call after renderer.render)
     function proj(v3) {
       _pv.copy(v3).project(camera);
       return { x: (_pv.x * 0.5 + 0.5) * W, y: (_pv.y * -0.5 + 0.5) * H, vis: _pv.z < 1.0 };
@@ -2638,28 +2767,42 @@
 
     function animate() {
       requestAnimationFrame(animate);
-      const now     = Date.now();
+      const now = Date.now();
       const elapsed = now - LAUNCH_UTC;
-      const gt      = Math.max(0, Math.min(1, elapsed / MISSION_MS));
-      const pulse   = 0.5 + 0.5 * Math.sin(now / 430);
+      const gt = Math.max(0, Math.min(1, elapsed / MISSION_MS));
+      const pulse = 0.5 + 0.5 * Math.sin(now / 430);
 
-      // ── Orion ──
+      // ── Orion position ──
       orion.position.copy(curve.getPoint(gt));
       orionMat.emissiveIntensity = 0.7 + pulse * 0.6;
-      glowMat.opacity            = 0.12 + pulse * 0.22;
+      glowMat.opacity = 0.12 + pulse * 0.22;
+
+      // Trail (4f) — deposit breadcrumbs every 3 frames
+      trailFrame++;
+      if (trailFrame % 3 === 0) {
+        const ti = (trailIdx % TRAIL_LEN) * 3;
+        trailBuf[ti] = orion.position.x; trailBuf[ti+1] = orion.position.y; trailBuf[ti+2] = orion.position.z;
+        trailGeo.attributes.position.needsUpdate = true;
+        trailIdx++;
+      }
 
       // Speed vector arrow
       const tgt = curve.getTangent(Math.min(gt + 0.0002, 0.9999)).normalize();
       arrow.position.copy(orion.position);
       arrow.setDirection(tgt);
       const rawSpeed = parseFloat((document.getElementById('tv-speed')?.textContent || '').replace(/,/g, '')) || 7800;
-      const sScale   = Math.max(0.2, Math.min(1.0, rawSpeed / 40000));
+      const sScale = Math.max(0.2, Math.min(1.0, rawSpeed / 40000));
       arrow.setLength(0.35 + sScale * 0.85, 0.18, 0.09);
 
       // ── Completed path ──
       const splitIdx = Math.min(Math.floor(gt * N_PTS), N_PTS - 1);
-      const slice    = allPts.slice(0, splitIdx + 2);
+      const slice = allPts.slice(0, splitIdx + 2);
       completedGeo.setFromPoints(slice.length > 1 ? slice : [allPts[0], allPts[1]]);
+
+      // ── Earth–Moon reference line (update for dynamic moon position) ──
+      emBuf[0] = earth.position.x; emBuf[1] = earth.position.y; emBuf[2] = earth.position.z;
+      emBuf[3] = moon.position.x; emBuf[4] = moon.position.y; emBuf[5] = moon.position.z;
+      emGeo.attributes.position.needsUpdate = true; emLine.computeLineDistances();
 
       // ── Distance lines ──
       edBuf[0] = orion.position.x; edBuf[1] = orion.position.y; edBuf[2] = orion.position.z;
@@ -2667,77 +2810,82 @@
       edGeo.attributes.position.needsUpdate = true; edLine.computeLineDistances();
 
       mdBuf[0] = orion.position.x; mdBuf[1] = orion.position.y; mdBuf[2] = orion.position.z;
-      mdBuf[3] = moon.position.x;  mdBuf[4] = moon.position.y;  mdBuf[5] = moon.position.z;
+      mdBuf[3] = moon.position.x; mdBuf[4] = moon.position.y; mdBuf[5] = moon.position.z;
       mdGeo.attributes.position.needsUpdate = true; mdLine.computeLineDistances();
 
       // ── Waypoint visual states ──
       WAYPOINTS.forEach((wp, i) => {
         const done = gt > wp.t + 0.015;
-        const cur  = !done && gt >= wp.t - 0.005 && gt < wp.t + 0.015;
+        const cur = !done && gt >= wp.t - 0.005 && gt < wp.t + 0.015;
         wpMats[i].color.setHex(done ? 0x00ff88 : cur ? 0xffdd00 : 0x334455);
         wpMeshes[i].scale.setScalar(cur ? 1.0 + pulse * 0.45 : 1.0);
       });
 
-      // ── Planet rotation ──
-      earth.rotation.y += 0.0018; moon.rotation.y += 0.0004;
+      // ── Planet rotation (4b) — Earth ~60s/revolution, Moon slower ──
+      earth.rotation.y += 0.00175;
+      moon.rotation.y += 0.0003;
 
       // ── Auto-rotate ──
       if (autoRotate) { sph.theta += 0.0008; applyCam(); }
 
-      // ── WebGL render (must happen before proj() calls) ──
+      // ── WebGL render ──
       renderer.render(scene, camera);
 
-      // ── 2D label overlay ──
+      // ── 2D labels (4c: offsets to avoid overlap) ──
       lctx.clearRect(0, 0, W, H);
 
-      // ORION label
-      label2d('ORION', new THREE.Vector3(orion.position.x + 0.3, orion.position.y + 0.3, orion.position.z), '#00ff88', 'left', 0, 0, true);
+      // Orion label — offset up-left, more if near Earth
+      const orionEarthDist = orion.position.distanceTo(earth.position);
+      const orionLabelOY = orionEarthDist < 1.8 ? -1.5 : -0.6;
+      label2d('ORION', new THREE.Vector3(orion.position.x, orion.position.y + orionLabelOY, orion.position.z), '#00ff88', 'center', 0, -14, true);
 
-      // Earth + Moon labels
-      label2d('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.2, earth.position.z), 'rgba(100,170,255,0.85)', 'center', 0, 0, false);
-      label2d('MOON',  new THREE.Vector3(moon.position.x,  moon.position.y - 0.65, moon.position.z),  'rgba(200,195,180,0.85)', 'center', 0, 0, false);
+      // Earth + Moon labels — below spheres
+      label2d('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.3, earth.position.z), 'rgba(100,170,255,0.85)', 'center', 0, 0, false);
+      label2d('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 0.75, moon.position.z), 'rgba(200,195,180,0.85)', 'center', 0, 0, false);
 
-      // Earth–Moon distance label at midpoint
+      // Earth–Moon distance label — above midpoint line
       {
         const mid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5);
-        mid.y += 0.5;
-        label2d('238,855 mi', mid, 'rgba(255,255,255,0.28)', 'center', 0, 0, false);
+        mid.y += 0.6;
+        label2d('238,855 mi', mid, 'rgba(255,255,255,0.22)', 'center', 0, 0, false);
       }
 
-      // Orion→Earth distance label
+      // Orion→Earth distance — at 1/3 point (closer to Orion)
       const earthTxt = document.getElementById('tv-earth')?.textContent?.trim();
       const earthUnit = (document.getElementById('tu-earth')?.textContent || 'MI').toLowerCase();
-      if (earthTxt && earthTxt !== '—') {
-        const mid = new THREE.Vector3().addVectors(orion.position, earth.position).multiplyScalar(0.5);
-        label2d(earthTxt + ' ' + earthUnit, mid, 'rgba(0,204,255,0.75)', 'center', 0, 0, false);
+      if (earthTxt && earthTxt !== '\u2014') {
+        const pt = new THREE.Vector3().lerpVectors(orion.position, earth.position, 0.35);
+        pt.y += 0.3;
+        label2d(earthTxt + ' ' + earthUnit, pt, 'rgba(0,204,255,0.65)', 'center', 0, 0, false);
       }
 
-      // Orion→Moon distance label
+      // Orion→Moon distance — at 1/3 point (closer to Orion)
       const moonTxt = document.getElementById('tv-moon')?.textContent?.trim();
       const moonUnit = (document.getElementById('tu-moon')?.textContent || 'MI').toLowerCase();
-      if (moonTxt && moonTxt !== '—') {
-        const mid = new THREE.Vector3().addVectors(orion.position, moon.position).multiplyScalar(0.5);
-        label2d(moonTxt + ' ' + moonUnit, mid, 'rgba(255,221,68,0.75)', 'center', 0, 0, false);
+      if (moonTxt && moonTxt !== '\u2014') {
+        const pt = new THREE.Vector3().lerpVectors(orion.position, moon.position, 0.35);
+        pt.y -= 0.3;
+        label2d(moonTxt + ' ' + moonUnit, pt, 'rgba(255,221,68,0.65)', 'center', 0, 0, false);
       }
 
-      // Waypoint labels (completed + current only, to avoid clutter)
+      // Waypoint labels — completed + current, offset right+up
       WAYPOINTS.forEach((wp, i) => {
         const done = gt > wp.t + 0.015;
-        const cur  = !done && gt >= wp.t - 0.005 && gt < wp.t + 0.015;
+        const cur = !done && gt >= wp.t - 0.005 && gt < wp.t + 0.015;
         if (!done && !cur) return;
         const s = proj(wpMeshes[i].position); if (!s.vis) return;
         lctx.save();
         lctx.font = '9px "Share Tech Mono",monospace';
-        lctx.fillStyle   = cur ? '#ffdd00' : 'rgba(0,255,136,0.55)';
-        lctx.textAlign   = 'left'; lctx.textBaseline = 'middle';
-        lctx.fillText(wp.label, s.x + 8, s.y);
+        lctx.fillStyle = cur ? '#ffdd00' : 'rgba(0,255,136,0.55)';
+        lctx.textAlign = 'left'; lctx.textBaseline = 'middle';
+        lctx.fillText(wp.label, s.x + 10, s.y - 8);
         lctx.restore();
       });
 
-      // Progress + Flight Day footer
+      // Progress footer
       if (progressEl) {
         const fd = Math.max(1, Math.floor(elapsed / (24 * 3600 * 1000)) + 1);
-        progressEl.textContent = 'MISSION PROGRESS: ' + (gt * 100).toFixed(1) + '%  ·  FLIGHT DAY ' + fd;
+        progressEl.textContent = 'MISSION PROGRESS: ' + (gt * 100).toFixed(1) + '%  \u00b7  FLIGHT DAY ' + fd;
       }
     }
     animate();
