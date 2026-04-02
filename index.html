@@ -1660,7 +1660,11 @@
     }
 
     function byDate(arr) {
-      return arr.slice().sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+      return arr.slice().sort((a, b) => {
+        const ta = new Date(a.pubDate).getTime();
+        const tb = new Date(b.pubDate).getTime();
+        return (isNaN(tb) ? 0 : tb) - (isNaN(ta) ? 0 : ta); // descending, NaN sinks to bottom
+      });
     }
 
     function dedup(items) {
@@ -1675,7 +1679,7 @@
 
     function getItems(tab) {
       if (tab === 'all') return dedup(byDate([...cache.nasa, ...cache.space, ...cache.media]));
-      return cache[tab] || [];
+      return byDate(cache[tab] || []);
     }
 
     function renderTab(tab) {
