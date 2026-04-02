@@ -748,7 +748,17 @@
 
     // Earth-Moon distance (7)
     { const mid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5); mid.y += 0.7;
-      const emDistStr = (document.getElementById('tu-earth')?.textContent || 'MI') === 'MI' ? '238,855 MI' : '384,400 KM';
+      let emDistStr;
+      if (typeof Astronomy !== 'undefined') {
+        const mv = Astronomy.GeoVector('Moon', new Date(), true);
+        const emKm = Math.sqrt(mv.x*mv.x + mv.y*mv.y + mv.z*mv.z) * 149597870.7;
+        const isImp = (document.getElementById('tu-earth')?.textContent || 'MI') === 'MI';
+        emDistStr = isImp
+          ? Math.round(emKm * 0.621371).toLocaleString() + ' MI'
+          : Math.round(emKm).toLocaleString() + ' KM';
+      } else {
+        emDistStr = (document.getElementById('tu-earth')?.textContent || 'MI') === 'MI' ? '238,855 MI' : '384,400 KM';
+      }
       drawCallout('EARTH\u2013MOON: ' + emDistStr, mid, 'rgba(255,255,255,0.35)', 0, 0, false, null); }
 
     // Altitude callout (7) — from Earth surface toward Orion
