@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artemis-dashboard-v3';
+const CACHE_NAME = 'artemis-dashboard-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -13,7 +13,14 @@ const STATIC_ASSETS = [
   '/js/trajectory.js',
   '/js/dsn.js',
   '/js/ui.js',
+  '/js/reference.js',
   '/manifest.json',
+  '/content/mission.html',
+  '/content/science.html',
+  '/content/sls.html',
+  '/content/orion.html',
+  '/content/ground-ops.html',
+  '/content/comms.html',
 ];
 
 const API_DOMAINS = [
