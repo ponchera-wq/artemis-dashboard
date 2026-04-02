@@ -1752,13 +1752,24 @@
     }
 
     function timeAgo(dateStr) {
-      const ms = Date.now() - new Date(dateStr).getTime();
-      if (isNaN(ms) || ms < 0) return '';
+      if (!dateStr) return '';
+      // RSS pubDate strings include timezone ("GMT", "+0000", etc.) so Date() parses them
+      // correctly as UTC. For feeds that omit timezone, treat as UTC by appending Z.
+      let parsed = new Date(dateStr);
+      if (isNaN(parsed.getTime())) {
+        // Try appending Z to treat bare datetime strings as UTC
+        parsed = new Date(dateStr.trim() + 'Z');
+      }
+      if (isNaN(parsed.getTime())) return '';
+      const ms = Date.now() - parsed.getTime();
+      // Sanity: future dates or articles older than 48h → show date instead
+      if (ms < 0) return 'just now';
+      if (ms > 48 * 3600000) {
+        return parsed.toUTCString().slice(5, 16); // "02 Apr 2026"
+      }
       const min = Math.floor(ms / 60000);
       if (min < 60)  return min + 'm ago';
-      const h = Math.floor(min / 60);
-      if (h < 24) return h + 'h ago';
-      return Math.floor(h / 24) + 'd ago';
+      return Math.floor(min / 60) + 'h ago';
     }
 
     function matches(item, keys) {
