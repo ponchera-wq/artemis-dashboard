@@ -511,6 +511,35 @@
     /* ════════════════════════════════
        MISSION TIMELINE
     ════════════════════════════════ */
+    /* Timeline phase filter tabs */
+    .tl-filters {
+      display: flex; flex-shrink: 0; gap: 0;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto; scrollbar-width: none;
+    }
+    .tl-filters::-webkit-scrollbar { display: none; }
+    .tl-filter {
+      font-family: var(--font-mono); font-size: 0.44rem; letter-spacing: 0.08em;
+      color: var(--text-dim); background: transparent;
+      border: none; border-bottom: 2px solid transparent;
+      padding: 5px 10px; cursor: pointer; white-space: nowrap;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tl-filter:hover { color: var(--text); }
+    .tl-filter.active { color: var(--blue-light); border-bottom-color: var(--blue-light); }
+
+    /* Criticality badges */
+    .tl-crit {
+      font-family: var(--font-mono); font-size: 0.36rem;
+      letter-spacing: 0.06em; padding: 1px 5px;
+      border-radius: 2px; border: 1px solid; margin-left: 6px;
+      flex-shrink: 0; white-space: nowrap;
+    }
+    .tl-crit-CRITICAL { color: #ef5350; border-color: rgba(239,83,80,0.4); background: rgba(239,83,80,0.08); }
+    .tl-crit-HIGH     { color: #ffa726; border-color: rgba(255,167,38,0.4); background: rgba(255,167,38,0.08); }
+    .tl-crit-MEDIUM   { color: #ffd740; border-color: rgba(255,215,64,0.4); background: rgba(255,215,64,0.06); }
+    .tl-crit-ROUTINE  { color: #00e676; border-color: rgba(0,230,118,0.3); background: rgba(0,230,118,0.05); }
+
     #flight-day-badge {
       margin-left: auto;
       font-family: var(--font-mono); font-size: 0.52rem;
@@ -1379,6 +1408,14 @@
       <button class="yt-expand-btn panel-expand" data-panel="feed-blog" title="Expand">&#x26F6;</button>
       <span id="flight-day-badge">FLIGHT DAY —</span>
     </div>
+    <div class="tl-filters" id="tl-filters">
+      <button class="tl-filter active" data-phase="all">ALL</button>
+      <button class="tl-filter" data-phase="ascent">ASCENT</button>
+      <button class="tl-filter" data-phase="orbit">ORBIT</button>
+      <button class="tl-filter" data-phase="translunar">TLI</button>
+      <button class="tl-filter" data-phase="lunar">LUNAR</button>
+      <button class="tl-filter" data-phase="return">RETURN</button>
+    </div>
     <div id="tl-next-event"></div>
     <div class="timeline-scroll" id="timeline-scroll"></div>
     <div id="apod-strip" title="NASA Astronomy Picture of the Day">
@@ -1526,7 +1563,7 @@
   }
 
   // ══════════════════════════════════════════════════════════════════════
-  // ── MISSION TIMELINE ─────────────────────────────────────────────────
+  // ── MISSION TIMELINE — FULL NASA PRESS KIT SCHEDULE ──────────────────
   (function() {
     const DAY_LABELS = {
       1:  'DAY 1 — LAUNCH & EARTH ORBIT',
@@ -1535,61 +1572,83 @@
       4:  'DAY 4 — OUTBOUND COAST',
       5:  'DAY 5 — LUNAR APPROACH',
       6:  'DAY 6 — LUNAR FLYBY',
-      7:  'DAYS 7–9 — RETURN COAST',
+      7:  'DAYS 7\u20139 — RETURN COAST',
       10: 'DAY 10 — RE-ENTRY & SPLASHDOWN',
     };
 
-    // met = seconds since LAUNCH_UTC; day = flight day grouping from press kit
+    // met = seconds, crit = CRITICAL|HIGH|MEDIUM|ROUTINE, phase = filter category
     const EVENTS = [
-      // Day 1
-      { met:      0, name: 'Launch from Pad 39B',                        day: 1 },
-      { met:      7, name: 'Roll/pitch maneuver',                         day: 1 },
-      { met:    132, name: 'SRB separation',                              day: 1 },
-      { met:    480, name: 'Core stage MECO & separation',                day: 1 },
-      { met:   1080, name: 'Solar array deployment',                      day: 1 },
-      { met:   2940, name: 'Perigee raise maneuver (ICPS burn 1)',        day: 1 },
-      { met:   5400, name: 'Apogee raise burn (ICPS burn 2)',             day: 1 },
-      { met:   7200, name: 'ICPS separation',                             day: 1 },
-      { met:   9000, name: 'Proximity operations demo',                   day: 1 },
-      { met:  28800, name: 'Crew sleep period begins',                    day: 1 },
-      // Day 2
-      { met:  45000, name: 'Crew wake, systems checkout',                 day: 2 },
-      { met:  57600, name: 'Exercise device setup & first workouts',      day: 2 },
-      { met:  72000, name: 'Koch preps TLI burn procedures',              day: 2 },
-      { met:  90000, name: 'Trans-Lunar Injection burn (ESM main engine)',day: 2 },
-      { met:  93600, name: 'Post-TLI briefing',                           day: 2 },
-      // Day 3
-      { met: 187200, name: 'Outbound trajectory correction burn 1',       day: 3 },
-      { met: 198000, name: 'CPR procedures demo in microgravity',         day: 3 },
-      { met: 208800, name: 'Medical kit checkout',                        day: 3 },
-      { met: 216000, name: 'Deep Space Network emergency comms test',     day: 3 },
-      // Day 4
-      { met: 280800, name: 'Celestial body photography from Orion windows', day: 4 },
-      { met: 288000, name: 'O2O laser comms test (4K video downlink)',    day: 4 },
-      { met: 302400, name: 'Life support systems validation continues',   day: 4 },
-      // Day 5
-      { met: 360000, name: 'Enter lunar sphere of influence',             day: 5 },
-      { met: 374400, name: 'Spacesuit pressure test & emergency drill',   day: 5 },
-      { met: 388800, name: 'Trajectory correction burn 2',                day: 5 },
-      // Day 6
-      { met: 460800, name: 'Closest approach: ~6,500 km from lunar surface', day: 6 },
-      { met: 462600, name: 'Far side pass — LOSS OF SIGNAL (~41 min)',    day: 6 },
-      { met: 465060, name: 'Signal reacquired',                           day: 6 },
-      { met: 468000, name: 'Earthrise photography',                       day: 6 },
-      { met: 475200, name: 'Break Apollo 13 distance record (400,171 km)',day: 6 },
-      // Days 7-9
-      { met: 540000, name: 'Return trajectory correction burn',           day: 7 },
-      { met: 604800, name: 'Crew downlink / live public broadcast',       day: 7 },
-      { met: 691200, name: 'Re-entry procedures review',                  day: 7 },
-      { met: 756000, name: 'Suit up for re-entry',                        day: 7 },
-      // Day 10
-      { met: 820800, name: 'Service module separation',                   day: 10 },
-      { met: 822600, name: 'Atmospheric entry interface (40,000 km/h)',   day: 10 },
-      { met: 823500, name: 'Peak heating (2,800°C)',                      day: 10 },
-      { met: 824400, name: 'Drogue chutes deploy',                        day: 10 },
-      { met: 824700, name: 'Main chutes deploy',                          day: 10 },
-      { met: 825000, name: 'Splashdown — Pacific Ocean',                  day: 10 },
+      // ── ASCENT (all confirmed) ──
+      { met:      0, name: 'Liftoff',                                       day: 1, crit:'CRITICAL', phase:'ascent' },
+      { met:      7, name: 'SLS clears tower, roll/pitch maneuver',         day: 1, crit:'ROUTINE',  phase:'ascent' },
+      { met:     56, name: 'SLS reaches supersonic speed',                  day: 1, crit:'ROUTINE',  phase:'ascent' },
+      { met:     70, name: 'Maximum dynamic pressure (Max Q)',              day: 1, crit:'HIGH',     phase:'ascent' },
+      { met:    128, name: 'Solid Rocket Booster separation',               day: 1, crit:'CRITICAL', phase:'ascent' },
+      { met:    198, name: 'Launch Abort System (LAS) jettison',            day: 1, crit:'CRITICAL', phase:'ascent' },
+      { met:    486, name: 'Core stage main engine cutoff (MECO)',          day: 1, crit:'HIGH',     phase:'ascent' },
+      { met:    498, name: 'Core stage separates from ICPS',                day: 1, crit:'CRITICAL', phase:'ascent' },
+      { met:    508, name: 'ICPS RL10 nozzle extension',                    day: 1, crit:'MEDIUM',   phase:'ascent' },
+      { met:   1200, name: 'Orion solar arrays deploy',                     day: 1, crit:'MEDIUM',   phase:'ascent' },
+      // ── EARTH ORBIT ──
+      { met:   2940, name: 'Perigee raise maneuver (ICPS burn 1)',          day: 1, crit:'HIGH',     phase:'orbit' },
+      { met:   6477, name: 'Apogee raise burn (ICPS burn 2, ~18 min)',      day: 1, crit:'HIGH',     phase:'orbit' },
+      { met:   7560, name: 'ICPS separation',                               day: 1, crit:'CRITICAL', phase:'orbit' },
+      { met:   8100, name: 'Orion main engine first firing (~15 sec)',       day: 1, crit:'HIGH',     phase:'orbit' },
+      { met:   9000, name: 'Proximity operations demo begins',              day: 1, crit:'HIGH',     phase:'orbit' },
+      { met:  13200, name: 'Prox ops complete, Orion free-flying',           day: 1, crit:'MEDIUM',   phase:'orbit' },
+      { met:  14400, name: 'ICPS disposal burn',                             day: 1, crit:'MEDIUM',   phase:'orbit' },
+      { met:  18000, name: 'CubeSat deployments (Argentina, S.Korea, Germany, Saudi Arabia)', day: 1, crit:'MEDIUM', phase:'orbit' },
+      { met:  28800, name: 'Crew sleep period begins',                       day: 1, crit:'ROUTINE',  phase:'orbit' },
+      // ── DAY 2: ORBIT CHECKOUT & TLI ──
+      { met:  45000, name: 'Crew wake, systems checkout',                    day: 2, crit:'ROUTINE',  phase:'orbit' },
+      { met:  57600, name: 'Exercise device setup & first workouts',         day: 2, crit:'ROUTINE',  phase:'orbit' },
+      { met:  72000, name: 'Koch preps TLI burn procedures',                 day: 2, crit:'HIGH',     phase:'orbit' },
+      { met:  90000, name: 'Trans-Lunar Injection burn (ESM main engine)',   day: 2, crit:'CRITICAL', phase:'translunar' },
+      { met:  91200, name: 'TLI burn complete, on course for Moon',          day: 2, crit:'CRITICAL', phase:'translunar' },
+      { met:  93600, name: 'Post-TLI systems checkout',                      day: 2, crit:'HIGH',     phase:'translunar' },
+      // ── DAY 3: OUTBOUND COAST ──
+      { met: 172800, name: 'Flight Day 3 begins',                            day: 3, crit:'ROUTINE',  phase:'translunar' },
+      { met: 187200, name: 'Outbound trajectory correction burn 1',          day: 3, crit:'HIGH',     phase:'translunar' },
+      { met: 198000, name: 'CPR procedures demo in microgravity',            day: 3, crit:'ROUTINE',  phase:'translunar' },
+      { met: 208800, name: 'Medical kit checkout (thermometer, BP, stethoscope)', day: 3, crit:'ROUTINE', phase:'translunar' },
+      { met: 216000, name: 'Deep Space Network emergency comms test',        day: 3, crit:'HIGH',     phase:'translunar' },
+      // ── DAY 4: OUTBOUND COAST ──
+      { met: 259200, name: 'Flight Day 4 begins',                            day: 4, crit:'ROUTINE',  phase:'translunar' },
+      { met: 280800, name: 'Celestial body photography session',             day: 4, crit:'ROUTINE',  phase:'translunar' },
+      { met: 288000, name: 'O2O laser comms test (4K video at 260 Mbps)',    day: 4, crit:'HIGH',     phase:'translunar' },
+      { met: 302400, name: 'Life support validation continues',              day: 4, crit:'MEDIUM',   phase:'translunar' },
+      // ── DAY 5: LUNAR APPROACH ──
+      { met: 345600, name: 'Flight Day 5 begins',                            day: 5, crit:'ROUTINE',  phase:'lunar' },
+      { met: 360000, name: 'Enter lunar sphere of influence',                day: 5, crit:'HIGH',     phase:'lunar' },
+      { met: 374400, name: 'Spacesuit pressure test & emergency drill',      day: 5, crit:'HIGH',     phase:'lunar' },
+      { met: 388800, name: 'Trajectory correction burn 2',                   day: 5, crit:'HIGH',     phase:'lunar' },
+      // ── DAY 6: LUNAR FLYBY ──
+      { met: 432000, name: 'Flight Day 6 begins',                            day: 6, crit:'ROUTINE',  phase:'lunar' },
+      { met: 453600, name: 'Lunar far side observations begin',              day: 6, crit:'HIGH',     phase:'lunar' },
+      { met: 460800, name: 'Closest approach: ~6,500 km from lunar surface', day: 6, crit:'CRITICAL', phase:'lunar' },
+      { met: 462000, name: 'Loss of Signal \u2014 far side pass (~41 min)',  day: 6, crit:'CRITICAL', phase:'lunar' },
+      { met: 464460, name: 'Acquisition of Signal \u2014 comms restored',    day: 6, crit:'CRITICAL', phase:'lunar' },
+      { met: 468000, name: 'Earthrise photography session',                  day: 6, crit:'MEDIUM',   phase:'lunar' },
+      { met: 475200, name: 'Break Apollo 13 distance record (400,171 km)',   day: 6, crit:'HIGH',     phase:'lunar' },
+      // ── DAYS 7-9: RETURN COAST ──
+      { met: 518400, name: 'Flight Day 7',                                   day: 7, crit:'ROUTINE',  phase:'return' },
+      { met: 540000, name: 'Return trajectory correction burn',              day: 7, crit:'HIGH',     phase:'return' },
+      { met: 604800, name: 'Flight Day 8 \u2014 crew downlink / live broadcast', day: 7, crit:'ROUTINE', phase:'return' },
+      { met: 691200, name: 'Flight Day 9 \u2014 re-entry procedures review', day: 7, crit:'HIGH',     phase:'return' },
+      { met: 756000, name: 'Suit up for re-entry',                           day: 7, crit:'HIGH',     phase:'return' },
+      // ── DAY 10: ENTRY & SPLASHDOWN ──
+      { met: 777600, name: 'Flight Day 10 begins',                           day: 10, crit:'HIGH',    phase:'return' },
+      { met: 820800, name: 'European Service Module separation',             day: 10, crit:'CRITICAL', phase:'return' },
+      { met: 822600, name: 'Entry interface \u2014 40,000 km/h',            day: 10, crit:'CRITICAL', phase:'return' },
+      { met: 823200, name: 'Peak heating \u2014 2,800\u00b0C on heat shield', day: 10, crit:'CRITICAL', phase:'return' },
+      { met: 823800, name: 'Communications blackout during re-entry',        day: 10, crit:'CRITICAL', phase:'return' },
+      { met: 824400, name: 'Drogue chutes deploy',                           day: 10, crit:'CRITICAL', phase:'return' },
+      { met: 824580, name: 'Main chutes deploy',                             day: 10, crit:'CRITICAL', phase:'return' },
+      { met: 824760, name: 'Splashdown \u2014 Pacific Ocean',               day: 10, crit:'CRITICAL', phase:'return' },
+      { met: 826200, name: 'Recovery team reaches Orion',                    day: 10, crit:'MEDIUM',   phase:'return' },
     ];
+
+    let activePhaseFilter = 'all';
 
     function fmtMet(sec) {
       const h = Math.floor(sec / 3600);
@@ -1603,17 +1662,17 @@
       const scroll = document.getElementById('timeline-scroll');
       if (!scroll) return;
 
-      // Find active event: last one whose MET has passed
+      // Find active event (unfiltered)
       let activeIdx = 0;
       for (let i = 0; i < EVENTS.length; i++) {
         if (EVENTS[i].met <= nowMet) activeIdx = i;
         else break;
       }
 
-      // Flight day badge: count calendar days since launch date
-      const launchMidnight = Date.UTC(2026, 3, 1); // April 1 2026
-      const nowMidnight    = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
-      const flightDay      = Math.floor((nowMidnight - launchMidnight) / 86400000) + 1;
+      // Flight day badge
+      const launchMidnight = Date.UTC(2026, 3, 1);
+      const nowMidnight = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+      const flightDay = Math.floor((nowMidnight - launchMidnight) / 86400000) + 1;
       const badge = document.getElementById('flight-day-badge');
       if (badge) badge.textContent = `FLIGHT DAY ${Math.max(1, flightDay)}`;
 
@@ -1621,9 +1680,9 @@
       const curEvEl = document.getElementById('current-event-name');
       if (curEvEl) curEvEl.textContent = '\u25b6 ' + EVENTS[activeIdx].name;
 
-      // ── Next-event countdown ──────────────────────────────────────
-      const nextEv  = EVENTS[activeIdx + 1];
-      const tln     = document.getElementById('tl-next-event');
+      // Next-event countdown
+      const nextEv = EVENTS[activeIdx + 1];
+      const tln = document.getElementById('tl-next-event');
       if (tln) {
         if (nextEv) {
           const remaining = nextEv.met - nowMet;
@@ -1634,17 +1693,20 @@
           const localWhen = fmtLocal(eventDate, true) + ' ' + tzAbbr(eventDate);
           tln.innerHTML =
             `<div><span class="tl-next-label">NEXT: </span>${nextEv.name}</div>` +
-            `<div class="tl-next-when">in ${countStr} · ${localWhen}</div>`;
-        } else {
-          tln.textContent = '';
-        }
+            `<div class="tl-next-when">in ${countStr} \u00b7 ${localWhen}</div>`;
+        } else { tln.textContent = ''; }
       }
+
+      // Filter events by phase
+      const filtered = activePhaseFilter === 'all'
+        ? EVENTS.map((ev, i) => ({ ...ev, _i: i }))
+        : EVENTS.map((ev, i) => ({ ...ev, _i: i })).filter(ev => ev.phase === activePhaseFilter);
 
       scroll.innerHTML = '';
       let lastDay = null;
       let activeEl = null;
 
-      EVENTS.forEach((ev, idx) => {
+      filtered.forEach(ev => {
         if (ev.day !== lastDay) {
           lastDay = ev.day;
           const dh = document.createElement('div');
@@ -1653,13 +1715,13 @@
           scroll.appendChild(dh);
         }
 
-        const isComplete = idx < activeIdx;
-        const isActive   = idx === activeIdx;
+        const isComplete = ev._i < activeIdx;
+        const isActive = ev._i === activeIdx;
         const cls = isComplete ? 'tl-complete' : isActive ? 'tl-active' : 'tl-upcoming';
 
-        const evDate   = new Date(LAUNCH_UTC.getTime() + ev.met * 1000);
+        const evDate = new Date(LAUNCH_UTC.getTime() + ev.met * 1000);
         const localStr = fmtLocal(evDate, true) + ' ' + tzAbbr(evDate);
-        const utcStr   = fmtUTC(evDate);
+        const utcStr = fmtUTC(evDate);
 
         const el = document.createElement('div');
         el.className = `tl-event ${cls}`;
@@ -1668,7 +1730,7 @@
           <div class="tl-met">${fmtMet(ev.met)}
             <div class="tl-localtime">${localStr}<br>${utcStr}</div>
           </div>
-          <div class="tl-name">${ev.name}${isComplete ? '<span class="tl-check"> ✓</span>' : ''}</div>
+          <div class="tl-name">${ev.name}${isComplete ? '<span class="tl-check"> \u2713</span>' : ''}<span class="tl-crit tl-crit-${ev.crit}">${ev.crit}</span></div>
         `;
         scroll.appendChild(el);
         if (isActive) activeEl = el;
@@ -1686,6 +1748,16 @@
 
     renderTimeline();
     setInterval(renderTimeline, 30000);
+
+    // Phase filter tabs
+    document.querySelectorAll('.tl-filter').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tl-filter').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        activePhaseFilter = btn.dataset.phase;
+        renderTimeline();
+      });
+    });
 
     // ── NASA APOD ──────────────────────────────────────────────────────
     (async function() {
