@@ -473,3 +473,48 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
       el.textContent = 'Page last modified: ' + d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
     } catch(e) { el.textContent = ''; }
   })();
+
+// ── MOBILE PANEL COLLAPSE ────────────────────────────────────────────
+// Adds ▸/▾ toggle to each panel header on mobile (≤767px).
+// feed-arow + feed-blog start expanded; others collapsed by default.
+// Expand state persists in sessionStorage for the duration of the session.
+(function() {
+  if (window.innerWidth >= 768) return;
+
+  const COLLAPSIBLE     = ['feed-arow', 'feed-blog', 'feed-youtube', 'feed-dsn', 'feed-weather', 'mission-updates'];
+  const DEFAULT_CLOSED  = new Set(['feed-youtube', 'feed-dsn', 'feed-weather', 'mission-updates']);
+  const STORAGE_KEY     = 'artemis-mobile-collapse-v1';
+
+  let colState;
+  try { colState = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) { colState = null; }
+  if (!colState) {
+    colState = {};
+    COLLAPSIBLE.forEach(id => { colState[id] = DEFAULT_CLOSED.has(id); });
+  }
+
+  COLLAPSIBLE.forEach(function(id) {
+    const panel  = document.getElementById(id);
+    if (!panel) return;
+    const header = panel.querySelector('.panel-header');
+    if (!header) return;
+
+    const btn = document.createElement('button');
+    btn.className = 'mobile-toggle';
+
+    function apply(collapsed) {
+      panel.classList.toggle('mobile-collapsed', collapsed);
+      btn.textContent = collapsed ? '▸' : '▾';
+      btn.setAttribute('aria-expanded', String(!collapsed));
+    }
+
+    apply(!!colState[id]);
+    header.appendChild(btn);
+
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      colState[id] = !colState[id];
+      apply(colState[id]);
+      try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(colState)); } catch(ex) {}
+    });
+  });
+})();

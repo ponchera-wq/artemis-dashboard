@@ -145,6 +145,19 @@
       box-shadow: var(--glow-blue);
     }
 
+    /* Mobile collapse toggle — hidden on desktop, shown via mobile media query */
+    .mobile-toggle {
+      display: none;
+      background: none;
+      border: none;
+      color: rgba(120,150,185,0.7);
+      font-size: 1rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      line-height: 1;
+      padding: 0 6px;
+    }
+
     .panel-body {
       flex: 1;
       display: flex;
@@ -1625,6 +1638,32 @@
       #dsn-content { overflow-x: hidden; }
 
       /* Reset button already hidden on mobile */
+
+      /* ── Mobile panel order (flex order; no effect on desktop grid) ── */
+      #feed-arow       { order: 1; }
+      #feed-blog       { order: 2; }
+      #feed-youtube    { order: 3; }
+      #feed-dsn        { order: 4; }
+      #feed-weather    { order: 5; }
+      #mission-updates { order: 6; }
+
+      /* ── Mobile panel collapse ── */
+      .panel.mobile-collapsed {
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+      }
+      .panel.mobile-collapsed > *:not(.panel-header):not(.corner-tl):not(.corner-br) {
+        display: none !important;
+      }
+      /* Show the toggle chevron on mobile */
+      .mobile-toggle {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        padding: 0 10px;
+        font-size: 1rem;
+      }
     }
 
     /* ══════════════════════════════════════════════════════════════════
