@@ -2428,9 +2428,8 @@
       tryNext();
     }
     loadTexture([
-      'https://unpkg.com/three-globe@2.41.12/example/img/earth-blue-marble.jpg',
-      'https://cdn.jsdelivr.net/npm/three-globe/example/img/earth-blue-marble.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Earth_Western_Hemisphere.jpg/1024px-Earth_Western_Hemisphere.jpg'
+      'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
+      'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
     ], tex => { earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; });
 
     // Atmosphere halo
@@ -2455,9 +2454,7 @@
     scene.add(moon);
 
     loadTexture([
-      'https://unpkg.com/three-globe@2.41.12/example/img/lunar-surface.jpg',
-      'https://cdn.jsdelivr.net/npm/three-globe/example/img/lunar-surface.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/FullMoon2010.jpg/1024px-FullMoon2010.jpg'
+      'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg',
     ], tex => { moonMat.map = tex; moonMat.color.set(0xdddddd); moonMat.needsUpdate = true; });
 
     // Moon glow
