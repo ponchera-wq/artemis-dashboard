@@ -434,9 +434,9 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
 
     // Expand dashboard grid rows to fit all panel rows
     const dashboard = document.getElementById('dashboard');
-    const panelRowCount = maxRow - 2; // rows 3..maxRow (row 2 = ref-nav)
+    const panelRowCount = maxRow - 2; // rows 3..maxRow (row 1 = ref-nav, row 2 = top-bar)
     dashboard.style.gridTemplateRows =
-      `112px 32px ${Array(panelRowCount).fill('1fr').join(' ')} 36px 38px`;
+      `32px 112px ${Array(panelRowCount).fill('1fr').join(' ')} 36px 38px`;
 
     // Move crew-strip and footer to correct last rows
     const crewStrip = document.getElementById('crew-strip');
