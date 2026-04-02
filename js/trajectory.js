@@ -100,57 +100,134 @@
   const emLine = new THREE.Line(emGeo, new THREE.LineDashedMaterial({ color: 0xffffff, transparent: true, opacity: 0.12, dashSize: 0.25, gapSize: 0.18 }));
   scene.add(emLine);
 
-  // ── Trajectory curve (NASA-matched) ──
-  const curve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3( 0.0,   0.0,   0.0  ),
-    new THREE.Vector3(-0.6,   1.0,   0.5  ),
-    new THREE.Vector3(-1.1,   0.0,  -0.4  ),
-    new THREE.Vector3(-0.5,  -0.9,   0.3  ),
-    new THREE.Vector3( 0.1,   0.0,   0.0  ),
-    new THREE.Vector3(-0.4,   1.2,   0.6  ),
-    new THREE.Vector3(-1.3,   0.1,  -0.5  ),
-    new THREE.Vector3(-0.4,  -1.0,   0.4  ),
-    new THREE.Vector3( 0.15,  0.0,   0.0  ),
-    new THREE.Vector3( 1.5,   0.7,   0.3  ),
-    new THREE.Vector3( 3.5,   1.1,   0.3  ),
-    new THREE.Vector3( 5.5,   1.0,   0.15 ),
-    new THREE.Vector3( 7.2,   0.8,   0.0  ),
-    new THREE.Vector3( 8.85,  0.45, -0.25 ),
-    new THREE.Vector3( 9.0,  -0.4,  -0.4  ),
-    new THREE.Vector3( 8.35, -1.0,  -0.15 ),
-    new THREE.Vector3( 6.8,  -1.2,   0.0  ),
-    new THREE.Vector3( 5.0,  -1.3,   0.1  ),
-    new THREE.Vector3( 3.0,  -1.2,   0.15 ),
-    new THREE.Vector3( 1.2,  -0.8,   0.1  ),
-    new THREE.Vector3( 0.1,  -0.3,   0.0  ),
-    new THREE.Vector3( 0.0,   0.0,   0.0  ),
-  ], false, 'catmullrom', 0.4);
+  // ── Trajectory curve (physically-inspired parametric generation) ──
+  function generateTrajectory() {
+    const pts = [];
+    const V3 = (x,y,z) => new THREE.Vector3(x,y,z);
+    const MOON_X = 8.2;
+
+    // Phase A: 1.5 elliptical Earth orbits with orbit-raising
+    // Orbit tilted ~15deg to XZ plane for visual depth
+    const TILT = 0.26; // radians
+    const ORBITS = 1.5;
+    const ORB_STEPS = 55;
+    for (let i = 0; i <= ORB_STEPS; i++) {
+      const f = i / ORB_STEPS;
+      const angle = f * ORBITS * Math.PI * 2;
+      // Semi-axes expand over time (orbit-raising burns)
+      const semiA = 1.2 + f * 1.3;  // 1.2 → 2.5
+      const semiB = 1.1 + f * 0.4;  // 1.1 → 1.5
+      const x = semiB * Math.cos(angle);
+      const rawY = semiA * Math.sin(angle);
+      const y = rawY * Math.sin(TILT);
+      const z = rawY * Math.cos(TILT) * 0.6;
+      pts.push(V3(x, y, z));
+    }
+
+    // Phase B: TLI departure — tangent from last orbit blending toward Moon
+    const lastOrb = pts[pts.length - 1].clone();
+    const prevOrb = pts[pts.length - 2].clone();
+    const tangent = lastOrb.clone().sub(prevOrb).normalize();
+    const moonDir = V3(MOON_X, 0.5, 0).sub(lastOrb).normalize();
+    const TLI_STEPS = 10;
+    let tliPos = lastOrb.clone();
+    for (let i = 1; i <= TLI_STEPS; i++) {
+      const f = i / TLI_STEPS;
+      // Ease-in blend from tangent to moon direction
+      const eased = f * f;
+      const dir = tangent.clone().lerp(moonDir, eased).normalize();
+      const step = 0.25 + f * 0.45;
+      tliPos = tliPos.clone().add(dir.multiplyScalar(step));
+      pts.push(tliPos.clone());
+    }
+
+    // Phase C: Outbound transfer arc (quadratic Bezier above Earth-Moon line)
+    const outStart = pts[pts.length - 1].clone();
+    const outMid = V3(4.5, 1.4, 0.3);
+    const outEnd = V3(7.6, 0.7, -0.15);
+    const OUT_STEPS = 25;
+    for (let i = 1; i <= OUT_STEPS; i++) {
+      const t = i / OUT_STEPS;
+      const mt = 1 - t;
+      // Quadratic Bezier
+      const x = mt*mt*outStart.x + 2*mt*t*outMid.x + t*t*outEnd.x;
+      const y = mt*mt*outStart.y + 2*mt*t*outMid.y + t*t*outEnd.y;
+      const z = mt*mt*outStart.z + 2*mt*t*outMid.z + t*t*outEnd.z;
+      pts.push(V3(x, y, z));
+    }
+
+    // Phase D: Lunar flyby — hyperbolic pass behind Moon (far side = X > MOON_X)
+    const FLYBY_STEPS = 22;
+    const closest = 0.7; // closest approach distance from Moon center
+    for (let i = 0; i <= FLYBY_STEPS; i++) {
+      const f = i / FLYBY_STEPS;
+      // Sweep from approach angle to departure angle (wrapping behind Moon)
+      const angle = -0.9 + f * 2.2; // -0.9 to 1.3 radians
+      // Hyperbolic-like radius: tightest at angle=0
+      const r = closest + 0.35 * angle * angle;
+      // "Behind" Moon means going to X > MOON_X
+      const x = MOON_X + r * Math.cos(angle + Math.PI);
+      const y = r * Math.sin(angle + Math.PI) * 0.65;
+      const z = -0.2 - 0.18 * Math.sin(angle);
+      pts.push(V3(x, y, z));
+    }
+
+    // Phase E: Return arc (Bezier below Earth-Moon line — offset from outbound)
+    const retStart = pts[pts.length - 1].clone();
+    const retMid = V3(4.2, -1.5, 0.15);
+    const retEnd = V3(0.8, -0.5, 0.05);
+    const RET_STEPS = 25;
+    for (let i = 1; i <= RET_STEPS; i++) {
+      const t = i / RET_STEPS;
+      const mt = 1 - t;
+      const x = mt*mt*retStart.x + 2*mt*t*retMid.x + t*t*retEnd.x;
+      const y = mt*mt*retStart.y + 2*mt*t*retMid.y + t*t*retEnd.y;
+      const z = mt*mt*retStart.z + 2*mt*t*retMid.z + t*t*retEnd.z;
+      pts.push(V3(x, y, z));
+    }
+
+    // Phase F: Re-entry — deceleration arc spiraling to Earth surface
+    const reStart = pts[pts.length - 1].clone();
+    const RE_STEPS = 8;
+    for (let i = 1; i <= RE_STEPS; i++) {
+      const f = i / RE_STEPS;
+      const eased = f * f; // ease-in toward Earth
+      const x = reStart.x * (1 - eased);
+      const y = reStart.y * (1 - eased) - f * 0.15;
+      const z = reStart.z * (1 - eased);
+      pts.push(V3(x, y, z));
+    }
+
+    return pts;
+  }
+
+  const controlPts = generateTrajectory();
+  const curve = new THREE.CatmullRomCurve3(controlPts, false, 'catmullrom', 0.3);
   const N_PTS = 500;
   const allPts = curve.getPoints(N_PTS);
 
-  // ── Trajectory line: grey upcoming, green completed, yellow active leading edge ──
-  const C_GREY    = new THREE.Color(0x2a3a4a);  // dim grey for upcoming
-  const C_GREEN   = new THREE.Color(0x00e676);  // bright green for completed
+  // ── Trajectory line: dashed cyan upcoming, white completed, yellow active leading edge ──
+  const C_GREEN   = new THREE.Color(0xffffff);  // white for completed
   const C_YELLOW  = new THREE.Color(0xffd700);  // yellow for active leading edge
-  const trajColors = new Float32Array(allPts.length * 3);
-  allPts.forEach((_, i) => {
-    // All upcoming points start as grey; gets overwritten for completed slice
-    trajColors[i*3] = C_GREY.r; trajColors[i*3+1] = C_GREY.g; trajColors[i*3+2] = C_GREY.b;
-  });
-  // Upcoming path — dim grey
+  // Upcoming path — dashed cyan (main line)
   const upGeo = new THREE.BufferGeometry().setFromPoints(allPts);
-  upGeo.setAttribute('color', new THREE.BufferAttribute(trajColors.slice(), 3));
-  const upMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.22 });
-  scene.add(new THREE.Line(upGeo, upMat));
+  const upMat = new THREE.LineDashedMaterial({ color: 0x00ffcc, transparent: true, opacity: 1.0, linewidth: 2, dashSize: 3, gapSize: 2 });
+  const upLine = new THREE.Line(upGeo, upMat);
+  upLine.computeLineDistances();
+  scene.add(upLine);
+  // Upcoming path — glow layer behind main line
+  const upGlowGeo = new THREE.BufferGeometry().setFromPoints(allPts);
+  const upGlowMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.3, linewidth: 3, blending: THREE.AdditiveBlending });
+  scene.add(new THREE.Line(upGlowGeo, upGlowMat));
 
-  // Completed path — bright green
+  // Completed path — solid white
   const completedGeo = new THREE.BufferGeometry();
-  const completedMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 });
+  const completedMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 1.0 });
   const completedLine = new THREE.Line(completedGeo, completedMat);
   scene.add(completedLine);
-  // Completed glow
+  // Completed glow — cyan
   const compGlowGeo = new THREE.BufferGeometry();
-  const compGlowMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending });
+  const compGlowMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.3, linewidth: 3, blending: THREE.AdditiveBlending });
   scene.add(new THREE.Line(compGlowGeo, compGlowMat));
   // Active leading-edge segment — short yellow section at current position
   const activeSegGeo = new THREE.BufferGeometry();
@@ -158,39 +235,39 @@
   scene.add(new THREE.Line(activeSegGeo, activeSegMat));
 
   // ── Waypoints ──
-  // Waypoints: key HIGH and CRITICAL events from mission schedule
-  // t values mapped to 22-point curve (0-8=orbits, 8-12=outbound, 13-15=flyby, 16-21=return)
-  // status: 'nominal' | 'anomaly' — set manually to flag known issues
-  // activeWin: seconds the event stays "active" after metSec (default 900 = 15 min)
+  // t values mapped to parametric curve phases:
+  //   0.00-0.20 = Earth orbits (55 ctrl pts), 0.20-0.28 = TLI departure,
+  //   0.28-0.52 = outbound coast, 0.52-0.68 = lunar flyby,
+  //   0.68-0.92 = return arc, 0.92-1.0 = re-entry
   const WAYPOINTS = [
-    // ── DAY 1: LAUNCH & ASCENT (CRITICAL) ──
+    // ── DAY 1: LAUNCH & ASCENT ──
     { t:0.000, label:'LAUNCH',            met:'T+00:00:00', metSec:0,      desc:'SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.', crit:'CRITICAL', status:'nominal', activeWin:600 },
-    { t:0.015, label:'SRB SEP',           met:'T+00:02:12', metSec:132,    desc:'Solid Rocket Boosters separate after burning 5.5 million pounds of propellant.', crit:'CRITICAL', status:'nominal', activeWin:600 },
-    { t:0.030, label:'CORE MECO',         met:'T+00:08:06', metSec:486,    desc:'Core stage main engine cutoff. Core stage separates from ICPS upper stage.', crit:'HIGH', status:'nominal', activeWin:600 },
-    { t:0.060, label:'SOLAR ARRAYS',      met:'T+00:18:00', metSec:1080,   desc:'Orion solar arrays deploy, providing electrical power to the spacecraft.', crit:'HIGH', status:'nominal', activeWin:900 },
-    { t:0.095, label:'PERIGEE RAISE',     met:'T+00:49:00', metSec:2940,   desc:'ICPS fires to raise perigee altitude, setting up for apogee raise.', crit:'HIGH', status:'nominal', activeWin:900 },
-    { t:0.140, label:'APOGEE RAISE',      met:'T+01:30:00', metSec:5400,   desc:'ICPS second burn raises apogee to high elliptical orbit.', crit:'HIGH', status:'nominal', activeWin:900 },
-    { t:0.190, label:'ICPS SEP',          met:'T+02:00:00', metSec:7200,   desc:'ICPS upper stage separates. Orion is now free-flying.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+    { t:0.010, label:'SRB SEP',           met:'T+00:02:12', metSec:132,    desc:'Solid Rocket Boosters separate after burning 5.5 million pounds of propellant.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+    { t:0.020, label:'CORE MECO',         met:'T+00:08:06', metSec:486,    desc:'Core stage main engine cutoff. Core stage separates from ICPS upper stage.', crit:'HIGH', status:'nominal', activeWin:600 },
+    { t:0.035, label:'SOLAR ARRAYS',      met:'T+00:18:00', metSec:1080,   desc:'Orion solar arrays deploy, providing electrical power to the spacecraft.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.065, label:'PERIGEE RAISE',     met:'T+00:49:00', metSec:2940,   desc:'ICPS fires to raise perigee altitude, setting up for apogee raise.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.100, label:'APOGEE RAISE',      met:'T+01:30:00', metSec:5400,   desc:'ICPS second burn raises apogee to high elliptical orbit.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.140, label:'ICPS SEP',          met:'T+02:00:00', metSec:7200,   desc:'ICPS upper stage separates. Orion is now free-flying.', crit:'CRITICAL', status:'nominal', activeWin:600 },
     // ── DAY 1-2: EARTH ORBIT ──
-    { t:0.280, label:'PROX OPS',          met:'T+02:30:00', metSec:9000,   desc:'Proximity operations demo \u2014 Orion maneuvers near separated ICPS.', crit:'HIGH', status:'nominal', activeWin:7200 },
+    { t:0.175, label:'PROX OPS',          met:'T+02:30:00', metSec:9000,   desc:'Proximity operations demo \u2014 Orion maneuvers near separated ICPS.', crit:'HIGH', status:'nominal', activeWin:7200 },
     // ── DAY 2: TLI ──
-    { t:0.381, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
+    { t:0.230, label:'TLI BURN',          met:'T+25:00:00', metSec:90000,  desc:'European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
     // ── DAY 3-4: OUTBOUND COAST ──
-    { t:0.440, label:'TCB-1',             met:'T+52:00:00', metSec:187200, desc:'Outbound trajectory correction burn 1 \u2014 fine-tunes course toward the Moon.', crit:'HIGH', status:'nominal', activeWin:900 },
-    { t:0.476, label:'O2O LASER',         met:'T+80:00:00', metSec:288000, desc:'Optical to Orion laser comms test \u2014 4K video downlink via laser from deep space.', crit:'HIGH', status:'nominal', activeWin:7200 },
+    { t:0.350, label:'TCB-1',             met:'T+52:00:00', metSec:187200, desc:'Outbound trajectory correction burn 1 \u2014 fine-tunes course toward the Moon.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.420, label:'O2O LASER',         met:'T+80:00:00', metSec:288000, desc:'Optical to Orion laser comms test \u2014 4K video downlink via laser from deep space.', crit:'HIGH', status:'nominal', activeWin:7200 },
     // ── DAY 5-6: LUNAR FLYBY ──
-    { t:0.548, label:'LUNAR SOI',         met:'T+100:00:00',metSec:360000, desc:'Orion enters the Moon\u2019s gravitational sphere of influence.', crit:'HIGH', status:'nominal', activeWin:7200 },
-    { t:0.619, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Breaks Apollo 13\u2019s distance record of 400,171 km.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
-    { t:0.667, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
-    { t:0.690, label:'SIGNAL ACQ',        met:'T+129:11:00',metSec:465060, desc:'Signal reacquired after far-side pass. Crew reports status.', crit:'HIGH', status:'nominal', activeWin:1800 },
+    { t:0.490, label:'LUNAR SOI',         met:'T+100:00:00',metSec:360000, desc:'Orion enters the Moon\u2019s gravitational sphere of influence.', crit:'HIGH', status:'nominal', activeWin:7200 },
+    { t:0.580, label:'CLOSEST APPROACH',  met:'T+128:00:00',metSec:460800, desc:'Orion passes ~6,500 km above the lunar far side. Breaks Apollo 13\u2019s distance record of 400,171 km.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
+    { t:0.610, label:'FAR SIDE LOS',      met:'T+128:30:00',metSec:462600, desc:'Orion passes behind the Moon. ~41 minutes of planned communications blackout.', crit:'CRITICAL', status:'nominal', activeWin:3600 },
+    { t:0.640, label:'SIGNAL ACQ',        met:'T+129:11:00',metSec:465060, desc:'Signal reacquired after far-side pass. Crew reports status.', crit:'HIGH', status:'nominal', activeWin:1800 },
     // ── DAY 7-9: RETURN ──
-    { t:0.762, label:'RETURN TCB',        met:'T+150:00:00',metSec:540000, desc:'Return trajectory correction burn \u2014 targets Pacific Ocean splashdown zone.', crit:'HIGH', status:'nominal', activeWin:900 },
+    { t:0.740, label:'RETURN TCB',        met:'T+150:00:00',metSec:540000, desc:'Return trajectory correction burn \u2014 targets Pacific Ocean splashdown zone.', crit:'HIGH', status:'nominal', activeWin:900 },
     // ── DAY 10: ENTRY & SPLASHDOWN ──
-    { t:0.905, label:'SM SEP',            met:'T+228:00:00',metSec:820800, desc:'Service module separates. Only crew module continues to re-entry.', crit:'CRITICAL', status:'nominal', activeWin:600 },
-    { t:0.930, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Atmospheric entry at 40,000 km/h. Heat shield reaches 2,800\u00b0C during skip re-entry.', crit:'CRITICAL', status:'nominal', activeWin:1800 },
+    { t:0.920, label:'SM SEP',            met:'T+228:00:00',metSec:820800, desc:'Service module separates. Only crew module continues to re-entry.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+    { t:0.940, label:'ENTRY',             met:'T+228:30:00',metSec:822600, desc:'Atmospheric entry at 40,000 km/h. Heat shield reaches 2,800\u00b0C during skip re-entry.', crit:'CRITICAL', status:'nominal', activeWin:1800 },
     { t:0.960, label:'PEAK HEATING',      met:'T+228:45:00',metSec:823500, desc:'Peak heating \u2014 heat shield surface reaches 2,800\u00b0C.', crit:'CRITICAL', status:'nominal', activeWin:600 },
     { t:0.980, label:'CHUTES',            met:'T+229:05:00',metSec:824700, desc:'Main parachutes deploy at ~7,600m altitude, slowing Orion to ~30 km/h.', crit:'CRITICAL', status:'nominal', activeWin:600 },
-    { t:0.999, label:'SPLASHDOWN',        met:'T+229:10:00',metSec:825000, desc:'Orion splashes down in the Pacific Ocean. Recovery by USS Portland.', crit:'CRITICAL', status:'nominal', activeWin:600 },
+    { t:0.997, label:'SPLASHDOWN',        met:'T+229:10:00',metSec:825000, desc:'Orion splashes down in the Pacific Ocean. Recovery by USS Portland.', crit:'CRITICAL', status:'nominal', activeWin:600 },
   ];
 
   // Returns: 'upcoming' | 'active' | 'done' | 'anomaly' | 'anomaly-done'
@@ -456,9 +533,20 @@
     if (nowMet > wp.metSec+900) { status='\u2713 COMPLETED'; sColor='#00e676'; }
     else if (nowMet >= wp.metSec-600) { status='\u25b6 IN PROGRESS'; sColor='#ffd740'; }
     else { status='\u25cb UPCOMING'; sColor='#7986a8'; }
+    // ETA countdown/ago
+    let etaStr = '';
+    if (nowMet < wp.metSec - 600) {
+      const rem = wp.metSec - nowMet; const hh = Math.floor(rem/3600); const mm = Math.floor((rem%3600)/60);
+      etaStr = hh > 0 ? `in ${hh}h ${mm}m` : `in ${mm}m`;
+    } else if (nowMet <= wp.metSec + 900) {
+      etaStr = 'NOW';
+    } else {
+      const ago = nowMet - wp.metSec; const hh = Math.floor(ago/3600); const mm = Math.floor((ago%3600)/60);
+      etaStr = hh > 0 ? `${hh}h ${mm}m ago` : `${mm}m ago`;
+    }
     const critColors = { CRITICAL:'#ef5350', HIGH:'#ffa726', MEDIUM:'#ffd740' };
     const critC = critColors[wp.crit] || '#7986a8';
-    popupEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:0.6rem;font-weight:bold;color:#00ffaa;letter-spacing:0.12em;text-shadow:0 0 8px rgba(0,255,170,0.5)">${wp.label}</span>${wp.crit ? `<span style="font-size:0.36rem;color:${critC};border:1px solid ${critC}44;padding:1px 5px;border-radius:2px;letter-spacing:0.08em;">${wp.crit}</span>` : ''}</div><div style="font-size:0.48rem;color:#7986a8;margin-bottom:3px;">${wp.met}</div><div style="font-size:0.44rem;color:rgba(74,144,217,0.6);margin-bottom:6px;">${localStr}</div><div style="font-size:0.48rem;color:${sColor};margin-bottom:8px;letter-spacing:0.08em;">${status}</div><div style="font-size:0.48rem;color:#c8d0e0;line-height:1.5;">${wp.desc}</div>`;
+    popupEl.innerHTML = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><span style="font-size:0.6rem;font-weight:bold;color:#00ffaa;letter-spacing:0.12em;text-shadow:0 0 8px rgba(0,255,170,0.5)">${wp.label}</span>${wp.crit ? `<span style="font-size:0.36rem;color:${critC};border:1px solid ${critC}44;padding:1px 5px;border-radius:2px;letter-spacing:0.08em;">${wp.crit}</span>` : ''}</div><div style="font-size:0.48rem;color:#7986a8;margin-bottom:3px;">${wp.met}</div><div style="font-size:0.44rem;color:rgba(74,144,217,0.6);margin-bottom:3px;">${localStr}</div><div style="font-size:0.44rem;color:rgba(74,144,217,0.7);margin-bottom:6px;letter-spacing:0.06em;">ETA: ${etaStr}</div><div style="font-size:0.48rem;color:${sColor};margin-bottom:8px;letter-spacing:0.08em;">${status}</div><div style="font-size:0.48rem;color:#c8d0e0;line-height:1.5;">${wp.desc}</div>`;
     let left = sx+14; if (left+280 > W) left = sx-290;
     let top = sy-20; if (top+180 > H) top = H-190; if (top < 4) top = 4;
     popupEl.style.left = left+'px'; popupEl.style.top = top+'px'; popupEl.style.display = 'block'; popupOpen = true;

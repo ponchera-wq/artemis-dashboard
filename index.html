@@ -6,6 +6,12 @@
   <title>Artemis II — Live Mission Dashboard</title>
   <link rel="icon" href="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png" type="image/png">
   <link rel="apple-touch-icon" href="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png">
+  <!-- PWA -->
+  <meta name="theme-color" content="#0B3D91">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Artemis II">
+  <link rel="manifest" href="manifest.json">
   <!-- SEO -->
   <meta name="description" content="Real-time Artemis II mission dashboard with live JPL telemetry, 3D trajectory map, space weather monitoring, crew profiles, and NASA news feeds. Track Orion's journey to the Moon.">
   <meta name="keywords" content="Artemis II, Artemis 2, NASA, Moon mission, Orion spacecraft, live tracker, mission dashboard, JPL Horizons, space weather, SLS rocket, lunar flyby, 2026">
@@ -96,7 +102,7 @@
     </div>
     <!-- Top-bar expand button (dedicated telem overlay, not panel-move system) -->
     <button class="yt-expand-btn" id="telem-expand-btn"
-      style="position:absolute;top:5px;right:7px;z-index:2;" title="Expand telemetry (⛶)">&#x26F6;</button>
+      style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:2;font-size:0.42rem;padding:3px 10px;letter-spacing:0.12em;border-color:rgba(74,144,217,0.55);color:rgba(74,144,217,0.9);white-space:nowrap;" title="Expand telemetry">&#x26F6; EXPAND</button>
   </div>
 
   <!-- ══ TELEMETRY CINEMATIC OVERLAY ════════════════════════════════════ -->
@@ -519,6 +525,15 @@
 <script defer src="js/weather.js"></script>
 <script defer src="js/trajectory.js"></script>
 <script defer src="js/dsn.js"></script>
-<script defer src="js/ui.js"></script>
+<script defer src="js/ui.js?v=3"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(function(reg) { console.log('[SW] Registered:', reg.scope); })
+        .catch(function(err) { console.warn('[SW] Registration failed:', err); });
+    });
+  }
+</script>
 </body>
 </html>

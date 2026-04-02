@@ -47,24 +47,25 @@ const TELEM = {
     [229*H,  384601],       //  T+229h: 239,000 mi
   ],
   speed: [      // km/h (NASA broadcast reference, mph × 1.60934)
-    [0,       28163],       //  T+0h:   17,500 mph — orbital
-    [1*H,     25750],       //  T+1h:   16,000 mph
-    [3*H,     16093],       //  T+3h:   10,000 mph
-    [6*H,      6920],       //  T+6h:   4,300 mph
-    [8*H,      5633],       //  T+8h:   3,500 mph
-    [12*H,    12875],       //  T+12h:  8,000 mph (descending)
-    [18*H,    24140],       //  T+18h:  15,000 mph (perigee)
-    [24*H,     6437],       //  T+24h:  4,000 mph
-    [25*H,     5633],       //  T+25h:  3,500 mph (post-TLI)
-    [48*H,     4023],       //  T+48h:  2,500 mph
-    [72*H,     3219],       //  T+72h:  2,000 mph
-    [96*H,     3541],       //  T+96h:  2,200 mph
-    [120*H,    5633],       //  T+120h: 3,500 mph (lunar gravity)
-    [128*H,    7242],       //  T+128h: 4,500 mph (closest approach)
-    [144*H,    4023],       //  T+144h: 2,500 mph
-    [192*H,    4828],       //  T+192h: 3,000 mph
-    [228*H,   24140],       //  T+228h: 15,000 mph (Earth pull)
-    [229*H,   40234],       //  T+229h: 25,000 mph (re-entry)
+    [0,       28163],       //  T+0h:   17,500 mph — orbital insertion
+    [1*H,     19312],       //  T+1h:   ~12,000 mph (climbing in elliptical orbit)
+    [2*H,     11265],       //  T+2h:   ~7,000 mph (post-ICPS sep, ascending)
+    [6*H,      4023],       //  T+6h:   ~2,500 mph (approaching apogee)
+    [8*H,      3541],       //  T+8h:   ~2,200 mph (near apogee)
+    [13*H,     3265],       //  T+13h:  2,029 mph  (NASA confirmed — apogee region)
+    [18*H,     4828],       //  T+18h:  ~3,000 mph (descending from apogee)
+    [22*H,    16093],       //  T+22h:  ~10,000 mph (nearing perigee)
+    [24*H,    24140],       //  T+24h:  ~15,000 mph (near perigee, pre-TLI)
+    [25*H,    40234],       //  T+25h:  ~25,000 mph (post-TLI burn)
+    [48*H,     8047],       //  T+48h:  ~5,000 mph (decelerating, ~100,000 mi)
+    [72*H,     5150],       //  T+72h:  ~3,200 mph
+    [96*H,     3541],       //  T+96h:  ~2,200 mph
+    [120*H,    5633],       //  T+120h: ~3,500 mph (lunar gravity accelerating)
+    [128*H,    8047],       //  T+128h: ~5,000 mph (closest approach)
+    [144*H,    4023],       //  T+144h: ~2,500 mph
+    [192*H,    4828],       //  T+192h: ~3,000 mph
+    [228*H,   24140],       //  T+228h: ~15,000 mph (Earth pull)
+    [229*H,   40234],       //  T+229h: ~25,000 mph (re-entry)
   ],
 };
 

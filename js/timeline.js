@@ -160,6 +160,23 @@
       const localStr = fmtLocal(evDate, true) + ' ' + tzAbbr(evDate);
       const utcStr = fmtUTC(evDate);
 
+      // ETA countdown/ago for each event
+      let etaStr = '';
+      if (ev._i > activeIdx) {
+        const remaining = ev.met - nowMet;
+        const hh = Math.floor(remaining / 3600);
+        const mm = Math.floor((remaining % 3600) / 60);
+        etaStr = hh > 0 ? `in ${hh}h ${mm}m` : `in ${mm}m`;
+      } else if (isActive) {
+        const ago = nowMet - ev.met;
+        if (ago < 120) etaStr = 'NOW';
+        else { const hh = Math.floor(ago / 3600); const mm = Math.floor((ago % 3600) / 60); etaStr = hh > 0 ? `${hh}h ${mm}m ago` : `${mm}m ago`; }
+      } else if (ev._i >= activeIdx - 3) {
+        const ago = nowMet - ev.met;
+        const hh = Math.floor(ago / 3600); const mm = Math.floor((ago % 3600) / 60);
+        etaStr = hh > 0 ? `${hh}h ${mm}m ago` : `${mm}m ago`;
+      }
+
       const el = document.createElement('div');
       el.className = `tl-event ${cls}`;
       el.innerHTML = `
@@ -167,7 +184,7 @@
         <div class="tl-met">${fmtMet(ev.met)}
           <div class="tl-localtime">${localStr}<br>${utcStr}</div>
         </div>
-        <div class="tl-name">${ev.name}${isComplete ? '<span class="tl-check"> \u2713</span>' : ''}<span class="tl-crit tl-crit-${ev.crit}">${ev.crit}</span></div>
+        <div class="tl-name">${ev.name}${isComplete ? '<span class="tl-check"> \u2713</span>' : ''}<span class="tl-crit tl-crit-${ev.crit}">${ev.crit}</span>${etaStr ? `<div class="tl-eta">${etaStr}</div>` : ''}</div>
       `;
       scroll.appendChild(el);
       if (isActive) activeEl = el;
