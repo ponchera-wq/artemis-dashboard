@@ -1814,7 +1814,7 @@
       if (!vE || !vM) throw new Error('Parse failed');
       const elMin = (Date.now() - LAUNCH_UTC) / 60000;
       const fbEarth = lerp(TELEM.earthDist, elMin), fbMoon = lerp(TELEM.moonDist, elMin), fbSpeed = lerp(TELEM.speed, elMin);
-      console.log('[Horizons] MET ' + (elMin / 60).toFixed(1) + 'h | LIVE Earth:' + (vE.dist * 0.621371).toFixed(0) + 'mi Moon:' + (vM.dist * 0.621371).toFixed(0) + 'mi Spd:' + (vE.speed * 3600 * 0.621371).toFixed(0) + 'mph | EST Earth:' + (fbEarth * 0.621371).toFixed(0) + 'mi Moon:' + (fbMoon * 0.621371).toFixed(0) + 'mi');
+      console.log('[Horizons] MET ' + (elMin / 60).toFixed(1) + 'h | LIVE Earth:' + ((vE.dist - 6371) * 0.621371).toFixed(0) + 'mi Moon:' + ((vM.dist - 1737) * 0.621371).toFixed(0) + 'mi Spd:' + (vE.speed * 3600 * 0.621371).toFixed(0) + 'mph (surface dist)');
       liveEarth = vE; liveMoon = vM; usingLive = true;
       lastFetchedAt = Date.now();
       setTelemBadge('LIVE');
@@ -1846,12 +1846,17 @@
   function tickTelem() {
     let earthKm, moonKm, speedKmh;
 
+    // Horizons returns distance from body CENTER; NASA shows distance from SURFACE.
+    // Subtract body radii: Earth = 6371 km, Moon = 1737 km.
+    const EARTH_R_KM = 6371;
+    const MOON_R_KM  = 1737;
+
     if (usingLive && liveEarth && liveMoon) {
       // Extrapolate from last fetch using radial velocity
       const dtE = (Date.now() - liveEarth.fetchedAt) / 1000;
       const dtM = (Date.now() - liveMoon.fetchedAt)  / 1000;
-      earthKm  = liveEarth.dist + liveEarth.radial * dtE;
-      moonKm   = liveMoon.dist  + liveMoon.radial  * dtM;
+      earthKm  = (liveEarth.dist + liveEarth.radial * dtE) - EARTH_R_KM;
+      moonKm   = (liveMoon.dist  + liveMoon.radial  * dtM) - MOON_R_KM;
       speedKmh = liveEarth.speed * 3600;
     } else {
       // Fallback: sub-minute lerp interpolation
