@@ -904,9 +904,8 @@
       /* Trajectory: fixed height */
       #feed-arow { height: 290px; flex-shrink: 0; }
 
-      /* DSN: 16:9 */
-      #feed-dsn { flex-shrink: 0; }
-      #feed-dsn iframe { aspect-ratio: 16 / 9; width: 100%; height: auto; flex: none; }
+      /* DSN custom panel */
+      #feed-dsn { flex-shrink: 0; min-height: 260px; }
 
       /* Space weather */
       #feed-weather { min-height: 280px; flex-shrink: 0; }
@@ -948,6 +947,107 @@
         border-radius: 0; margin: 0;
       }
     }
+
+    /* ══════════════════════════════════════════════════════════════════
+       DSN CUSTOM PANEL
+    ══════════════════════════════════════════════════════════════════ */
+    #dsn-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
+    .dsn-links   { display: flex; flex-direction: column; padding: 8px 8px 4px; gap: 6px; }
+
+    .dsn-link-card {
+      background: rgba(0,230,118,0.04);
+      border: 1px solid rgba(0,230,118,0.2);
+      border-radius: 4px; padding: 9px 11px;
+    }
+    .dsn-link-header {
+      display: flex; align-items: center; gap: 7px;
+      font-family: var(--font-ui); font-size: 0.48rem; letter-spacing: 0.12em;
+      margin-bottom: 5px;
+    }
+    .dsn-station-name { color: var(--blue-light); flex: 1; }
+    .dsn-dir {
+      font-family: var(--font-mono); font-size: 0.52rem; font-weight: bold;
+      padding: 1px 6px; border-radius: 2px;
+    }
+    .dsn-dir-up   { color: #00e676; background: rgba(0,230,118,0.13); }
+    .dsn-dir-down { color: #4A90D9; background: rgba(74,144,217,0.13); }
+    .dsn-dir-both { color: #ffdd00; background: rgba(255,221,0,0.13); }
+
+    .dsn-status-bar {
+      display: flex; align-items: center; gap: 7px;
+      font-family: var(--font-ui); font-size: 0.46rem; letter-spacing: 0.14em;
+      color: var(--green); margin-bottom: 7px;
+    }
+    .dsn-status-bar.dsn-amber { color: var(--amber); }
+
+    .dsn-dot-pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green); flex-shrink: 0;
+      animation: dsnpulse 1.4s ease-in-out infinite;
+    }
+    .dsn-dot-pulse.amber { background: var(--amber); }
+    @keyframes dsnpulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.35; transform: scale(0.65); }
+    }
+
+    .dsn-metrics {
+      display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 5px;
+    }
+    .dsn-metric { text-align: center; }
+    .dsn-metric-val {
+      font-family: var(--font-mono); font-size: 0.88rem;
+      color: var(--text); line-height: 1.15;
+    }
+    .dsn-rtlt .dsn-metric-val {
+      font-size: 1.2rem; color: var(--green);
+      text-shadow: 0 0 10px rgba(0,230,118,0.45);
+    }
+    .dsn-metric-label {
+      font-family: var(--font-ui); font-size: 0.36rem; letter-spacing: 0.1em;
+      color: var(--text-dim); margin-top: 2px; text-transform: uppercase;
+    }
+
+    .dsn-nolink {
+      padding: 16px 12px; text-align: center;
+      font-family: var(--font-ui); font-size: 0.48rem; letter-spacing: 0.14em;
+      color: var(--amber);
+    }
+    .dsn-nolink-subs {
+      display: flex; flex-direction: column; gap: 3px; margin-top: 8px;
+      font-size: 0.4rem; color: var(--text-dim); letter-spacing: 0.08em;
+    }
+
+    .dsn-network {
+      display: flex; flex-direction: column; gap: 2px;
+      border-top: 1px solid var(--border);
+      padding: 6px 8px; margin-top: auto;
+    }
+    .dsn-complex {
+      display: flex; align-items: center; gap: 7px;
+      padding: 4px 6px; border-radius: 3px;
+      border: 1px solid transparent;
+    }
+    .dsn-complex-active {
+      background: rgba(0,230,118,0.05);
+      border-color: rgba(0,230,118,0.18);
+    }
+    .dsn-complex-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--text-dim); flex-shrink: 0;
+    }
+    .dsn-complex-dot.active {
+      background: var(--green);
+      box-shadow: 0 0 6px rgba(0,230,118,0.7);
+    }
+    .dsn-complex-flag { font-size: 0.85rem; }
+    .dsn-complex-name {
+      font-family: var(--font-ui); font-size: 0.43rem; letter-spacing: 0.1em; color: var(--text);
+    }
+    .dsn-complex-detail {
+      font-family: var(--font-mono); font-size: 0.4rem; color: var(--text-dim);
+    }
+    .dsn-badge-est { color: var(--amber) !important; }
   </style>
 </head>
 <body>
@@ -1027,13 +1127,11 @@
   </div>
 
   <div class="panel" id="feed-dsn">
-    <div class="panel-header"><span class="dot"></span>DSN NOW — DEEP SPACE NETWORK</div>
-    <iframe
-      src="https://eyes.nasa.gov/apps/dsn-now/"
-      style="flex:1; width:100%; border:none; display:block;"
-      loading="lazy"
-      title="DSN Now"
-    ></iframe>
+    <div class="panel-header">
+      <span class="dot"></span>DEEP SPACE NETWORK — ARTEMIS II LINK
+      <span id="dsn-badge" class="news-live-badge" style="margin-left:auto;">● LIVE</span>
+    </div>
+    <div id="dsn-content"><div style="padding:16px;font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:rgba(74,144,217,0.5);">CONNECTING TO DSN FEED…</div></div>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
@@ -2524,6 +2622,181 @@
       }
     }
     animate();
+  })();
+
+  // ── DSN ARTEMIS II PANEL ─────────────────────────────────────────────
+  (function() {
+    const DSN_URL  = 'https://eyes.nasa.gov/dsn/data/dsn.xml';
+    // All known spacecraft IDs that may represent Artemis II / Orion
+    const ART_IDS  = new Set(['EM2','ORION','ART2','ARTEMIS','ARTII','ORXII']);
+    const STATIONS = {
+      gdscc: { name: 'Goldstone', flag: '🇺🇸', tz: -25200000 },
+      mdscc: { name: 'Madrid',    flag: '🇪🇸', tz:  7200000  },
+      cdscc: { name: 'Canberra',  flag: '🇦🇺', tz:  39600000 },
+    };
+
+    function fmtRate(bps) {
+      bps = parseInt(bps) || 0;
+      if (bps <= 0) return '—';
+      if (bps >= 1e6) return (bps/1e6).toFixed(2) + ' Mbps';
+      if (bps >= 1e3) return (bps/1e3).toFixed(1) + ' kbps';
+      return bps + ' bps';
+    }
+    function fmtRTLT(s) {
+      s = parseFloat(s);
+      if (!s || s <= 0) return null;
+      if (s < 60) return s.toFixed(2) + 's';
+      return Math.floor(s/60) + 'm ' + (s%60).toFixed(0) + 's';
+    }
+    function estimatedRTLT() {
+      const km = parseFloat((document.getElementById('tv-earth')?.textContent||'').replace(/,/g,''));
+      if (km > 0) return fmtRTLT((km * 2) / 299792.458) + ' ~';
+      return null;
+    }
+    function stationTime(tz) {
+      const d = new Date(Date.now() + tz);
+      return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+    }
+
+    function parseDSN(xmlDoc) {
+      const links = [];
+      let curStation = null;
+      const dsn = xmlDoc.querySelector('dsn');
+      if (!dsn) return links;
+      for (const node of dsn.children) {
+        if (node.tagName === 'station') {
+          curStation = node.getAttribute('name');
+        } else if (node.tagName === 'dish' && curStation) {
+          for (const tgt of node.querySelectorAll('target')) {
+            const tName = (tgt.getAttribute('name') || '').toUpperCase();
+            if (!ART_IDS.has(tName)) continue;
+            const sigs = [...node.querySelectorAll('upSignal,downSignal')];
+            const up   = sigs.find(s => s.tagName==='upSignal'   && s.getAttribute('active')==='true');
+            const dn   = sigs.find(s => s.tagName==='downSignal' && s.getAttribute('active')==='true');
+            links.push({
+              station: curStation,
+              dish:    'DSS-' + node.getAttribute('name').replace(/\D/g,''),
+              target:  tName,
+              up:      up ? { rate: up.getAttribute('dataRate'), band: up.getAttribute('band') } : null,
+              dn:      dn ? { rate: dn.getAttribute('dataRate'), band: dn.getAttribute('band') } : null,
+              rtlt:    tgt.getAttribute('rtlt'),
+              range:   tgt.getAttribute('uplegRange'),
+            });
+          }
+        }
+      }
+      return links;
+    }
+
+    function networkHTML(links) {
+      const active = new Set(links.map(l => l.station));
+      return '<div class="dsn-network">' +
+        Object.entries(STATIONS).map(([code, si]) => {
+          const on  = active.has(code);
+          const cnt = links.filter(l => l.station === code).length;
+          return `<div class="dsn-complex ${on?'dsn-complex-active':''}">
+            <span class="dsn-complex-dot ${on?'active':''}"></span>
+            <span class="dsn-complex-flag">${si.flag}</span>
+            <div>
+              <div class="dsn-complex-name">${si.name.toUpperCase()}</div>
+              <div class="dsn-complex-detail">${on ? cnt+' DISH TRACKING ART-II' : 'NO ART-II LINK'} · ${stationTime(si.tz)} LT</div>
+            </div>
+          </div>`;
+        }).join('') +
+      '</div>';
+    }
+
+    function linkCardHTML(link, estimated) {
+      const si  = STATIONS[link.station] || { name: link.station, flag: '📡' };
+      const hasUp = !!link.up, hasDn = !!link.dn;
+      const dir = hasUp && hasDn ? '↕ BOTH' : hasUp ? '↑ UPLINK' : '↓ DOWNLINK';
+      const dirCls = hasUp && hasDn ? 'both' : hasUp ? 'up' : 'down';
+      const rtltStr = estimated ? (estimatedRTLT() || '—') : (fmtRTLT(link.rtlt) || estimatedRTLT() || '—');
+      const downStr = hasDn ? (fmtRate(link.dn.rate) + (link.dn.band ? ' ' + link.dn.band : '')) : '—';
+      const upStr   = hasUp ? (fmtRate(link.up.rate) + (link.up.band ? ' ' + link.up.band : '')) : '—';
+      return `
+        <div class="dsn-link-card">
+          <div class="dsn-link-header">
+            <span style="font-size:1rem">${si.flag}</span>
+            <span class="dsn-station-name">${si.name.toUpperCase()} · ${link.dish}</span>
+            <span class="dsn-dir dsn-dir-${dirCls}">${dir}</span>
+          </div>
+          <div class="dsn-status-bar${estimated?' dsn-amber':''}">
+            <span class="dsn-dot-pulse${estimated?' amber':''}"></span>
+            ARTEMIS II ${estimated?'ESTIMATED LINK':'LINKED'}
+          </div>
+          <div class="dsn-metrics">
+            <div class="dsn-metric dsn-rtlt">
+              <div class="dsn-metric-val">📡 ${rtltStr}</div>
+              <div class="dsn-metric-label">Round-Trip Light Time</div>
+            </div>
+            <div class="dsn-metric">
+              <div class="dsn-metric-val">${downStr}</div>
+              <div class="dsn-metric-label">↓ Downlink</div>
+            </div>
+            <div class="dsn-metric">
+              <div class="dsn-metric-val">${upStr}</div>
+              <div class="dsn-metric-label">↑ Uplink</div>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    function renderLinks(links, isLive) {
+      const el = document.getElementById('dsn-content');
+      const badge = document.getElementById('dsn-badge');
+      if (!el) return;
+
+      if (isLive) {
+        badge.textContent = '● LIVE'; badge.className = 'news-live-badge'; badge.style.marginLeft = 'auto';
+      } else {
+        badge.textContent = '● EST'; badge.className = 'news-live-badge dsn-badge-est'; badge.style.marginLeft = 'auto';
+      }
+
+      if (links.length === 0) {
+        // No Artemis dish found — show estimated fallback
+        const hour  = new Date().getUTCHours();
+        const code  = hour < 8 ? 'cdscc' : hour < 16 ? 'mdscc' : 'gdscc';
+        const si    = STATIONS[code];
+        const rtlt  = estimatedRTLT() || '—';
+        el.innerHTML = `
+          <div class="dsn-links">
+            <div class="dsn-nolink">📡 NO ACTIVE ARTEMIS II LINK<br>AWAITING NEXT PASS
+              <div class="dsn-nolink-subs">
+                <span>EST. ACTIVE COMPLEX: ${si.flag} ${si.name.toUpperCase()}</span>
+                <span>EST. ROUND-TRIP LIGHT TIME: ${rtlt}</span>
+              </div>
+            </div>
+          </div>
+          ${networkHTML([])}`;
+        return;
+      }
+
+      el.innerHTML =
+        '<div class="dsn-links">' +
+          links.map(l => linkCardHTML(l, !isLive)).join('') +
+        '</div>' +
+        networkHTML(links);
+    }
+
+    async function update() {
+      try {
+        const res  = await fetch(DSN_URL + '?_=' + Date.now());
+        const text = await res.text();
+        const doc  = new DOMParser().parseFromString(text, 'text/xml');
+        const links = parseDSN(doc);
+        renderLinks(links, true);
+      } catch (e) {
+        // CORS or network failure — show estimated data
+        const hour  = new Date().getUTCHours();
+        const code  = hour < 8 ? 'cdscc' : hour < 16 ? 'mdscc' : 'gdscc';
+        const estLink = { station: code, dish: 'DSS-EST', target: 'EM2', up: null, dn: { rate: 0, band: 'S' }, rtlt: null };
+        renderLinks([estLink], false);
+      }
+    }
+
+    update();
+    setInterval(update, 10000);
   })();
 
   // ── YOUTUBE TAB SWITCHER ─────────────────────────────────────────────
