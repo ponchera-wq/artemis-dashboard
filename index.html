@@ -560,6 +560,22 @@
     .tl-event.tl-active   .tl-name { color: var(--accent-light); }
     .tl-event.tl-upcoming .tl-name { color: var(--text-dim); }
     .tl-check { color: var(--green); font-size: 0.46rem; margin-left: 3px; }
+    /* Local time lines inside .tl-met */
+    .tl-localtime {
+      font-family: var(--font-mono); font-size: 0.32rem; line-height: 1.4;
+      color: rgba(74,144,217,0.38); margin-top: 2px; white-space: nowrap;
+    }
+    /* "NEXT EVENT" countdown banner */
+    #tl-next-event {
+      padding: 5px 10px 4px; border-bottom: 1px solid rgba(74,144,217,0.14);
+      background: rgba(74,144,217,0.05); flex-shrink: 0;
+      font-family: var(--font-mono); font-size: 0.42rem; line-height: 1.45;
+    }
+    #tl-next-event:empty { display: none; padding: 0; }
+    .tl-next-label { font-size: 0.33rem; letter-spacing: 0.1em; color: rgba(74,144,217,0.55); }
+    .tl-next-when  { font-size: 0.35rem; color: rgba(74,144,217,0.45); }
+    /* Local clock in top bar */
+    #local-time-display { font-size: 0.36rem; color: rgba(74,144,217,0.5); letter-spacing: 0.06em; margin-top: 1px; }
 
     /* APOD thumbnail strip */
     #apod-strip {
@@ -1063,6 +1079,7 @@
       <span class="tb-sect-label">MISSION ELAPSED TIME</span>
       <div id="met-display">D+000 00:00:00</div>
       <div id="utc-display">UTC --:--:--</div>
+      <div id="local-time-display"></div>
       <div class="met-sub">LAUNCH: 2026-04-01 · 22:35 UTC</div>
       <div id="signal-pill" class="acquired">▶ SIGNAL ACQUIRED</div>
     </div>
@@ -1131,6 +1148,7 @@
     <div class="panel-header">
       <span class="dot"></span>DEEP SPACE NETWORK — ARTEMIS II LINK
       <span id="dsn-badge" class="news-live-badge" style="margin-left:auto;">● LIVE</span>
+      <span id="dsn-local-time" style="font-size:0.38rem;color:rgba(74,144,217,0.5);letter-spacing:0.06em;white-space:nowrap;margin-left:8px;"></span>
     </div>
     <div id="dsn-content"><div style="padding:16px;font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:rgba(74,144,217,0.5);">CONNECTING TO DSN FEED…</div></div>
     <div class="corner-tl"></div><div class="corner-br"></div>
@@ -1261,6 +1279,7 @@
       <span class="dot"></span>MISSION TIMELINE
       <span id="flight-day-badge">FLIGHT DAY —</span>
     </div>
+    <div id="tl-next-event"></div>
     <div class="timeline-scroll" id="timeline-scroll"></div>
     <div id="apod-strip" title="NASA Astronomy Picture of the Day">
       <img id="apod-thumb" src="" alt="APOD">
@@ -1362,6 +1381,30 @@
   // ── GLOBAL CONFIG (used by all sections below) ───────────────────────
   const LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
 
+  // ── TIMEZONE HELPERS ─────────────────────────────────────────────────
+  const userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  function tzAbbr(date) {
+    const part = new Intl.DateTimeFormat('en', { timeZoneName: 'short', timeZone: userTZ })
+      .formatToParts(date || new Date()).find(p => p.type === 'timeZoneName');
+    return part ? part.value : userTZ;
+  }
+
+  // "Apr 2, 10:35 PM" (includeDate=true) or "10:35 PM" (false)
+  function fmtLocal(date, includeDate) {
+    const opts = { timeZone: userTZ, hour: '2-digit', minute: '2-digit', hour12: true };
+    if (includeDate) Object.assign(opts, { month: 'short', day: 'numeric' });
+    return new Intl.DateTimeFormat('en', opts).format(date);
+  }
+
+  // "Apr 2, 10:35 PM UTC"
+  function fmtUTC(date) {
+    return new Intl.DateTimeFormat('en', {
+      timeZone: 'UTC', month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    }).format(date) + ' UTC';
+  }
+
   // ══════════════════════════════════════════════════════════════════════
   // ── MISSION TIMELINE ─────────────────────────────────────────────────
   (function() {
@@ -1454,6 +1497,25 @@
       const badge = document.getElementById('flight-day-badge');
       if (badge) badge.textContent = `FLIGHT DAY ${Math.max(1, flightDay)}`;
 
+      // ── Next-event countdown ──────────────────────────────────────
+      const nextEv  = EVENTS[activeIdx + 1];
+      const tln     = document.getElementById('tl-next-event');
+      if (tln) {
+        if (nextEv) {
+          const remaining = nextEv.met - nowMet;
+          const eventDate = new Date(LAUNCH_UTC.getTime() + nextEv.met * 1000);
+          const hh = Math.floor(remaining / 3600);
+          const mm = Math.floor((remaining % 3600) / 60);
+          const countStr = hh > 0 ? `${hh}h ${mm}m` : `${mm}m`;
+          const localWhen = fmtLocal(eventDate, true) + ' ' + tzAbbr(eventDate);
+          tln.innerHTML =
+            `<div><span class="tl-next-label">NEXT: </span>${nextEv.name}</div>` +
+            `<div class="tl-next-when">in ${countStr} · ${localWhen}</div>`;
+        } else {
+          tln.textContent = '';
+        }
+      }
+
       scroll.innerHTML = '';
       let lastDay = null;
       let activeEl = null;
@@ -1471,11 +1533,17 @@
         const isActive   = idx === activeIdx;
         const cls = isComplete ? 'tl-complete' : isActive ? 'tl-active' : 'tl-upcoming';
 
+        const evDate   = new Date(LAUNCH_UTC.getTime() + ev.met * 1000);
+        const localStr = fmtLocal(evDate, true) + ' ' + tzAbbr(evDate);
+        const utcStr   = fmtUTC(evDate);
+
         const el = document.createElement('div');
         el.className = `tl-event ${cls}`;
         el.innerHTML = `
           <div class="tl-dot"></div>
-          <div class="tl-met">${fmtMet(ev.met)}</div>
+          <div class="tl-met">${fmtMet(ev.met)}
+            <div class="tl-localtime">${localStr}<br>${utcStr}</div>
+          </div>
           <div class="tl-name">${ev.name}${isComplete ? '<span class="tl-check"> ✓</span>' : ''}</div>
         `;
         scroll.appendChild(el);
@@ -1585,6 +1653,10 @@
 
     // UTC
     utcDisplay.textContent = 'UTC ' + now.toUTCString().slice(17, 25);
+
+    // Local clock
+    const ltDisp = document.getElementById('local-time-display');
+    if (ltDisp) ltDisp.textContent = fmtLocal(now, false) + ' ' + tzAbbr(now);
 
     // Phase
     const phaseIdx = getCurrentPhaseIndex(elapsedMin);
@@ -1955,11 +2027,23 @@
         const el      = document.createElement('div');
         el.className  = 'news-item';
         const link    = item.link || '#';
+
+        // Build "Published: Apr 2, 10:35 PM AEST" tooltip
+        let pubTooltip = '';
+        if (item.pubDate) {
+          const hasZone = /Z$|[+-]\d{2}:?\d{2}$|GMT|UTC/i.test(item.pubDate.trim());
+          const norm    = hasZone ? item.pubDate : item.pubDate.trim().replace(' ', 'T') + 'Z';
+          const pd      = new Date(norm);
+          if (!isNaN(pd.getTime())) {
+            pubTooltip = `Published: ${fmtLocal(pd, true)} ${tzAbbr(pd)}`;
+          }
+        }
+
         el.innerHTML  = `
           <div class="news-source"><span class="news-dot"></span>${item._src || 'RSS'}</div>
           <a class="news-title" href="${link}" target="_blank" rel="noopener noreferrer">${stripHtml(item.title || '')}</a>
           ${excerpt ? `<div class="news-desc">${excerpt}</div>` : ''}
-          <div class="news-time">${timeAgo(item.pubDate)}</div>
+          <div class="news-time" ${pubTooltip ? `title="${pubTooltip}"` : ''}>${timeAgo(item.pubDate)}</div>
         `;
         feed.appendChild(el);
       });
@@ -2779,6 +2863,10 @@
       } else {
         badge.textContent = '● EST'; badge.className = 'news-live-badge dsn-badge-est'; badge.style.marginLeft = 'auto';
       }
+
+      // Update YOUR TIME in header
+      const dsnLt = document.getElementById('dsn-local-time');
+      if (dsnLt) dsnLt.textContent = 'YOUR TIME: ' + fmtLocal(new Date(), false) + ' ' + tzAbbr();
 
       if (links.length === 0) {
         // No Artemis dish found — show estimated fallback
