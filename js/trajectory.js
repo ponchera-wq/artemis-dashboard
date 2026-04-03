@@ -29,25 +29,57 @@
     var T_SPAN_MET = T_END_MET - T_START_MET;
 
     // ── Build display transform (rotMat) ──────────────────────────────
+    // Find closest approach
     var caIdx = 0, caMinDist = Infinity;
     for (var i = 0; i < points.length; i++) {
       if (points[i].distMoonKm < caMinDist) { caMinDist = points[i].distMoonKm; caIdx = i; }
     }
     var caPt = points[caIdx];
 
+    // X axis: Earth-to-Moon direction at closest approach
     var moonAtCA = new THREE.Vector3(caPt.moon.x, caPt.moon.y, caPt.moon.z);
     var xAxis = moonAtCA.clone().normalize();
 
-    var caIdxPrev = Math.max(caIdx - 1, 0);
-    var caIdxNext = Math.min(caIdx + 1, points.length - 1);
-    var tangent3d = new THREE.Vector3(
-      points[caIdxNext].orion.x - points[caIdxPrev].orion.x,
-      points[caIdxNext].orion.y - points[caIdxPrev].orion.y,
-      points[caIdxNext].orion.z - points[caIdxPrev].orion.z
-    ).normalize();
+    // Compute angular momentum vectors for outbound and inbound legs
+    // to find a viewing normal that reveals the figure-8
+    function angularMomentum(p) {
+      var r = new THREE.Vector3(p.orion.x, p.orion.y, p.orion.z);
+      var v = new THREE.Vector3(p.orion.vx, p.orion.vy, p.orion.vz);
+      return new THREE.Vector3().crossVectors(r, v);
+    }
 
-    var zAxis = new THREE.Vector3().crossVectors(xAxis, tangent3d).normalize();
+    // Sample outbound point at ~40% of journey and inbound at ~60%
+    var outIdx = Math.floor(caIdx * 0.4);
+    var inIdx = Math.min(points.length - 1, caIdx + Math.floor((points.length - caIdx) * 0.4));
+    var hOut = angularMomentum(points[outIdx]);
+    var hIn = angularMomentum(points[inIdx]);
+
+    // Average the two angular momentum vectors — this gives a normal
+    // that's tilted between the two orbital planes, revealing the
+    // figure-8 crossing
+    var hAvg = hOut.clone().add(hIn).normalize();
+
+    // Z axis = average angular momentum (orbit normal)
+    var zAxis = hAvg.clone();
+
+    // Make sure Z axis is not parallel to X axis
+    if (Math.abs(xAxis.dot(zAxis)) > 0.95) {
+      // Fallback: use velocity tangent at CA
+      var caIdxPrev = Math.max(caIdx - 1, 0);
+      var caIdxNext = Math.min(caIdx + 1, points.length - 1);
+      var tangent3d = new THREE.Vector3(
+        points[caIdxNext].orion.x - points[caIdxPrev].orion.x,
+        points[caIdxNext].orion.y - points[caIdxPrev].orion.y,
+        points[caIdxNext].orion.z - points[caIdxPrev].orion.z
+      ).normalize();
+      zAxis = new THREE.Vector3().crossVectors(xAxis, tangent3d).normalize();
+    }
+
+    // Y axis = Z cross X (ensures right-handed orthonormal basis)
     var yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+    // Re-orthogonalise Z
+    zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+
     var rotMat = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis).transpose();
 
     function toScene(x, y, z) {
@@ -441,8 +473,8 @@
     bbox.getCenter(trajCenter);
 
     var camLookAt = trajCenter.clone();
-    var sph = { theta: 0.15, phi: 1.35, r: 95 };
-    var SPH_DEFAULT = { theta: 0.15, phi: 1.35, r: 95 };
+    var sph = { theta: 0.3, phi: 1.05, r: 85 };
+    var SPH_DEFAULT = { theta: 0.3, phi: 1.05, r: 85 };
     var isDrag = false, isPan = false, lastMx = 0, lastMy = 0, autoRotate = true, rotTimer = null;
     var velTheta = 0, velPhi = 0, damping = 0.92;
     var camMode = 'orbit';
