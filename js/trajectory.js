@@ -59,10 +59,32 @@
       return { metSec: p.metSec, pos: toScene(p.orion.x, p.orion.y, p.orion.z) };
     });
     var allPts = trajScene.map(function(p) { return p.pos.clone(); });
-    // If ephemeris starts after launch (T_START_MET > 0), prepend Earth centre
-    // so the trajectory line visually originates from Earth
+    // If ephemeris starts after launch, prepend a smooth spiral ascent from Earth's surface
     if (T_START_MET > 60) {
-      allPts.unshift(new THREE.Vector3(0, 0, 0));
+      var firstPt = trajScene[0].pos;
+      var launchPts = [];
+      var LAUNCH_STEPS = 25;
+      var dir = firstPt.clone().normalize();
+      var startPos = dir.clone().multiplyScalar(SCENE_EARTH_R * 1.02);
+      var up = new THREE.Vector3(0, 1, 0);
+      var perp1 = new THREE.Vector3().crossVectors(dir, up).normalize();
+      if (perp1.length() < 0.1) perp1.set(1, 0, 0);
+      var perp2 = new THREE.Vector3().crossVectors(dir, perp1).normalize();
+      for (var li = 0; li < LAUNCH_STEPS; li++) {
+        var f = li / LAUNCH_STEPS;
+        var eased = f < 0.5 ? 2 * f * f : 1 - Math.pow(-2 * f + 2, 2) / 2;
+        var pos = startPos.clone().lerp(firstPt, eased);
+        var spiralAngle = f * Math.PI * 4;
+        var spiralR = (1 - f) * (1 - f) * SCENE_EARTH_R * 0.4;
+        pos.add(perp1.clone().multiplyScalar(Math.sin(spiralAngle) * spiralR));
+        pos.add(perp2.clone().multiplyScalar(Math.cos(spiralAngle) * spiralR * 0.5));
+        launchPts.push(pos);
+      }
+      var launchTrajEntries = launchPts.map(function(p, i) {
+        return { metSec: (i / LAUNCH_STEPS) * T_START_MET, pos: p };
+      });
+      trajScene = launchTrajEntries.concat(trajScene);
+      allPts = trajScene.map(function(p) { return p.pos.clone(); });
     }
     var N_PTS = allPts.length;
 
@@ -178,25 +200,34 @@
 
     // ── Trajectory lines ──
     var upGeo = new THREE.BufferGeometry().setFromPoints(allPts);
-    var upMat = new THREE.LineDashedMaterial({ color: 0x00ffcc, transparent: true, opacity: 1.0, linewidth: 2, dashSize: 1.5, gapSize: 1.0 });
+    var upMat = new THREE.LineDashedMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.5, linewidth: 2, dashSize: 1.5, gapSize: 1.0 });
     var upLine = new THREE.Line(upGeo, upMat);
     upLine.computeLineDistances();
     scene.add(upLine);
     var upGlowGeo = new THREE.BufferGeometry().setFromPoints(allPts);
-    var upGlowMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.3, linewidth: 3, blending: THREE.AdditiveBlending });
+    var upGlowMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.2, linewidth: 3, blending: THREE.AdditiveBlending });
     scene.add(new THREE.Line(upGlowGeo, upGlowMat));
 
-    var C_GREEN = new THREE.Color(0xffffff);
+    var C_GREEN = new THREE.Color(0x00ffcc);
     var completedGeo = new THREE.BufferGeometry();
     var completedMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 1.0 });
     var completedLine = new THREE.Line(completedGeo, completedMat);
     scene.add(completedLine);
     var compGlowGeo = new THREE.BufferGeometry();
-    var compGlowMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.3, linewidth: 3, blending: THREE.AdditiveBlending });
-    scene.add(new THREE.Line(compGlowGeo, compGlowMat));
+    var compGlowMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.5, linewidth: 3, blending: THREE.AdditiveBlending });
+    var compGlowLine = new THREE.Line(compGlowGeo, compGlowMat);
+    scene.add(compGlowLine);
+    var compBloomGeo = new THREE.BufferGeometry();
+    var compBloomMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false });
+    var compBloomLine = new THREE.Line(compBloomGeo, compBloomMat);
+    scene.add(compBloomLine);
     var activeSegGeo = new THREE.BufferGeometry();
-    var activeSegMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.85 });
+    var activeSegMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 1.0 });
     scene.add(new THREE.Line(activeSegGeo, activeSegMat));
+    var activeGlowGeo = new THREE.BufferGeometry();
+    var activeGlowMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+    var activeGlowLine = new THREE.Line(activeGlowGeo, activeGlowMat);
+    scene.add(activeGlowLine);
 
     var FLAME_LEN = 18;
     var flameGeo = new THREE.BufferGeometry();
@@ -346,13 +377,13 @@
 
     // ── Trace replay dot ──
     var traceDot = new THREE.Mesh(
-      new THREE.SphereGeometry(0.25, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
+      new THREE.SphereGeometry(0.3, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0 })
     );
     scene.add(traceDot);
     var traceDotGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.5, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, side: THREE.BackSide })
+      new THREE.SphereGeometry(0.6, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, side: THREE.BackSide })
     );
     scene.add(traceDotGlow);
     var animProgress = 0;
@@ -682,8 +713,8 @@
         }
         var ff = tti / TRACE_TRAIL_LEN;
         traceColorBuf[tti*3]   = 1.0;
-        traceColorBuf[tti*3+1] = 0.7 - ff * 0.5;
-        traceColorBuf[tti*3+2] = 0.2 - ff * 0.2;
+        traceColorBuf[tti*3+1] = 0.75 * (1 - ff);
+        traceColorBuf[tti*3+2] = 0.25 * (1 - ff);
       }
       traceLineGeo.attributes.position.needsUpdate = true;
       traceLineGeo.attributes.color.needsUpdate = true;
@@ -700,7 +731,10 @@
         completedGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors, 3));
         compGlowGeo.setFromPoints(slice);
         compGlowGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors.slice(), 3));
-        activeSegGeo.setFromPoints(allPts.slice(Math.max(0, splitIdx - 12), Math.min(N_PTS, splitIdx + 5)));
+        compBloomGeo.setFromPoints(slice);
+        var activeSeg = allPts.slice(Math.max(0, splitIdx - 12), Math.min(N_PTS, splitIdx + 5));
+        activeSegGeo.setFromPoints(activeSeg);
+        activeGlowGeo.setFromPoints(activeSeg);
         var fStart = Math.max(0, splitIdx - FLAME_LEN);
         var flamePts = allPts.slice(fStart, splitIdx + 1);
         if (flamePts.length > 1) {
