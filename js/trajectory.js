@@ -769,7 +769,8 @@
       // ── 2D Holographic callouts ──
       lctx.clearRect(0, 0, W, H);
       var ds = window.dashboardState || {};
-      var isImp = ds.useImperial !== false;
+      var _tuEarth = document.getElementById('tu-earth');
+      var isImp = _tuEarth ? _tuEarth.textContent.trim() === 'MI' : false;
       var KM_TO_MI = 0.621371;
 
       var moonDistStr = isImp ? Math.round(state.distMoonKm * KM_TO_MI).toLocaleString() + ' mi' : Math.round(state.distMoonKm).toLocaleString() + ' km';
@@ -849,7 +850,8 @@
     function tickHUD() {
       if (!hudEl) return;
       var ds = window.dashboardState || {};
-      var isImp = ds.useImperial !== false;
+      var _tuEarthHud = document.getElementById('tu-earth');
+      var isImp = _tuEarthHud ? _tuEarthHud.textContent.trim() === 'MI' : false;
       var elapsed = Date.now() - LAUNCH_UTC;
       var metSec = elapsed / 1000;
       var state = MissionEphemeris.getState(metSec);
