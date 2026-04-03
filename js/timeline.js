@@ -120,8 +120,8 @@
       var detailHtml = '';
       if (ev.desc || ev.crew) {
         detailHtml = '<div class="tl-detail">';
-        if (ev.crew) detailHtml += '<div class="tl-crew"><span class="tl-crew-label">CREW:</span> ' + ev.crew + '</div>';
-        if (ev.desc) detailHtml += '<div class="tl-desc">' + ev.desc + '</div>';
+        if (ev.crew) detailHtml += '<div class="tl-crew">\ud83d\udc68\u200d\ud83d\ude80 ' + ev.crew + '</div>';
+        if (ev.desc) detailHtml += '<div class="tl-desc-text">' + ev.desc + '</div>';
         detailHtml += '</div>';
       }
 

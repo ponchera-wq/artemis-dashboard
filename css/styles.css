@@ -838,21 +838,17 @@
       margin-left: 6px;
     }
     .tl-event.tl-expanded .tl-detail { display: block; }
-    .tl-desc {
+    .tl-desc-text {
       font-size: 0.78rem;
       color: rgba(180, 210, 240, 0.85);
       line-height: 1.45;
-      margin-top: 2px;
     }
+    .tl-desc { font-size: 0.78rem; color: rgba(180, 210, 240, 0.85); line-height: 1.45; } /* legacy compat */
     .tl-crew {
       font-size: 0.72rem;
       color: #00ccaa;
-      margin-bottom: 4px;
-      letter-spacing: 0.03em;
-    }
-    .tl-crew-label {
-      color: rgba(100, 140, 180, 0.7);
-      font-size: 0.68rem;
+      margin-bottom: 3px;
+      letter-spacing: 0.02em;
     }
     .tl-event[style*="cursor"] .tl-name::after {
       content: ' \25b8';
