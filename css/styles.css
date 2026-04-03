@@ -1641,12 +1641,16 @@
       /* Reset button already hidden on mobile */
 
       /* ── Mobile panel order (flex order; no effect on desktop grid) ── */
-      #feed-arow       { order: 1; }
-      #feed-blog       { order: 2; }
-      #feed-youtube    { order: 3; }
-      #feed-dsn        { order: 4; }
-      #feed-weather    { order: 5; }
-      #mission-updates { order: 6; }
+      #top-bar         { order: 1; }
+      #ref-nav         { order: 2; }
+      #feed-arow       { order: 3; }
+      #feed-blog       { order: 4; }
+      #feed-youtube    { order: 5; }
+      #feed-dsn        { order: 6; }
+      #feed-weather    { order: 7; }
+      #mission-updates { order: 8; }
+      #crew-strip      { order: 9; }
+      #site-footer     { order: 10; }
 
       /* ── Mobile panel collapse ── */
       .panel.mobile-collapsed {
@@ -2064,8 +2068,8 @@
   gap: 4px;
   padding: 0 8px;
   background: rgba(4, 6, 16, 0.82);
-  border-top: 1px solid rgba(0,255,204,0.10);
-  border-bottom: 1px solid rgba(0,255,204,0.10);
+  border-top: 1px solid rgba(255,140,0,0.18);
+  border-bottom: 1px solid rgba(255,140,0,0.18);
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
@@ -2079,7 +2083,7 @@
 .ref-nav-btn {
   background: none;
   border: none;
-  color: rgba(180, 200, 230, 0.45);
+  color: #FF8C00;
   font-family: var(--font-mono);
   font-size: 0.55rem;
   letter-spacing: 0.12em;
@@ -2095,15 +2099,21 @@
   position: absolute;
   bottom: 0; left: 14px; right: 14px;
   height: 1px;
-  background: rgba(0,255,204,0);
+  background: rgba(255,140,0,0);
   transition: background 0.15s;
 }
 .ref-nav-btn:hover {
-  color: #00ffcc;
-  text-shadow: 0 0 8px rgba(0,255,204,0.5);
+  color: #FFA500;
+  text-shadow: 0 0 8px rgba(255,140,0,0.5);
 }
 .ref-nav-btn:hover::after {
-  background: rgba(0,255,204,0.55);
+  background: rgba(255,140,0,0.5);
+}
+.ref-nav-btn.active {
+  color: #FFB347;
+}
+.ref-nav-btn.active::after {
+  background: rgba(255,140,0,0.5);
 }
 .ref-nav-btn:active { color: #fff; }
 
@@ -2131,8 +2141,8 @@ body.ref-modal-active {
 
 #ref-modal-inner {
   background: rgba(7, 9, 22, 0.97);
-  border: 1px solid rgba(0,255,204,0.22);
-  box-shadow: 0 0 40px rgba(0,255,204,0.07), 0 8px 40px rgba(0,0,0,0.8);
+  border: 1px solid rgba(255,140,0,0.25);
+  box-shadow: 0 0 40px rgba(255,140,0,0.07), 0 8px 40px rgba(0,0,0,0.8);
   border-radius: 3px;
   width: 100%;
   max-width: 820px;
@@ -2148,7 +2158,7 @@ body.ref-modal-active {
   align-items: center;
   justify-content: space-between;
   padding: 12px 18px 10px;
-  border-bottom: 1px solid rgba(0,255,204,0.14);
+  border-bottom: 1px solid rgba(255,140,0,0.18);
   flex-shrink: 0;
 }
 
@@ -2157,14 +2167,14 @@ body.ref-modal-active {
   font-weight: 700;
   font-size: 0.85rem;
   letter-spacing: 0.14em;
-  color: #00ffcc;
+  color: #FF8C00;
   text-transform: uppercase;
 }
 
 #ref-modal-close {
   background: none;
-  border: 1px solid rgba(0,255,204,0.25);
-  color: rgba(0,255,204,0.6);
+  border: 1px solid rgba(255,140,0,0.3);
+  color: rgba(255,140,0,0.7);
   font-size: 0.75rem;
   width: 26px; height: 26px;
   cursor: pointer;
@@ -2175,8 +2185,8 @@ body.ref-modal-active {
 }
 #ref-modal-close:hover {
   color: #fff;
-  border-color: rgba(0,255,204,0.6);
-  background: rgba(0,255,204,0.07);
+  border-color: rgba(255,140,0,0.7);
+  background: rgba(255,140,0,0.08);
 }
 
 #ref-modal-body {
@@ -2184,11 +2194,11 @@ body.ref-modal-active {
   padding: 20px 22px 28px;
   flex: 1;
   scrollbar-width: thin;
-  scrollbar-color: rgba(0,255,204,0.3) transparent;
+  scrollbar-color: rgba(255,140,0,0.3) transparent;
 }
 #ref-modal-body::-webkit-scrollbar { width: 4px; }
 #ref-modal-body::-webkit-scrollbar-track { background: transparent; }
-#ref-modal-body::-webkit-scrollbar-thumb { background: rgba(0,255,204,0.3); border-radius: 2px; }
+#ref-modal-body::-webkit-scrollbar-thumb { background: rgba(255,140,0,0.3); border-radius: 2px; }
 
 /* ══════════════════════════════════════════════════════════
    REFERENCE CONTENT STYLES
@@ -2215,7 +2225,7 @@ body.ref-modal-active {
   font-size: 0.82rem;
   color: rgba(232,234,246,0.75);
   line-height: 1.7;
-  border-left: 2px solid rgba(0,255,204,0.35);
+  border-left: 2px solid rgba(255,140,0,0.4);
   padding-left: 14px;
   margin-bottom: 22px;
 }
@@ -2223,19 +2233,19 @@ body.ref-modal-active {
 .ref-h2 {
   font-family: var(--font-mono);
   font-size: 0.62rem;
-  color: #00ffcc;
+  color: #FF8C00;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   margin: 22px 0 10px;
   padding-bottom: 5px;
-  border-bottom: 1px solid rgba(0,255,204,0.15);
+  border-bottom: 1px solid rgba(255,140,0,0.2);
 }
 .ref-h2:first-of-type { margin-top: 0; }
 
 .ref-label {
   font-family: var(--font-mono);
   font-size: 0.52rem;
-  color: rgba(0,255,204,0.55);
+  color: rgba(255,140,0,0.7);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -2249,7 +2259,7 @@ body.ref-modal-active {
 }
 
 .ref-hl {
-  color: #00ffcc;
+  color: #FFA500;
   font-weight: 600;
 }
 
@@ -2257,7 +2267,7 @@ body.ref-modal-active {
 .ref-spec-table {
   width: 100%;
   margin-bottom: 14px;
-  border: 1px solid rgba(0,255,204,0.1);
+  border: 1px solid rgba(255,140,0,0.12);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -2266,11 +2276,11 @@ body.ref-modal-active {
   justify-content: space-between;
   padding: 5px 12px;
   font-size: 0.72rem;
-  border-bottom: 1px solid rgba(0,255,204,0.07);
+  border-bottom: 1px solid rgba(255,140,0,0.07);
 }
 .ref-spec-row:last-child { border-bottom: none; }
 .ref-spec-row:nth-child(odd)  { background: rgba(0,0,0,0.2); }
-.ref-spec-row:nth-child(even) { background: rgba(0,255,204,0.03); }
+.ref-spec-row:nth-child(even) { background: rgba(255,140,0,0.03); }
 .ref-spec-label {
   font-family: var(--font-body);
   color: rgba(180,200,230,0.65);
@@ -2289,8 +2299,8 @@ body.ref-modal-active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-left: 3px solid rgba(0,255,204,0.5);
-  background: rgba(0,255,204,0.04);
+  border-left: 3px solid rgba(255,140,0,0.5);
+  background: rgba(255,140,0,0.04);
   padding: 7px 14px;
   margin-bottom: 8px;
   border-radius: 0 2px 2px 0;
@@ -2298,7 +2308,7 @@ body.ref-modal-active {
 .ref-callout-label {
   font-family: var(--font-mono);
   font-size: 0.55rem;
-  color: rgba(0,255,204,0.6);
+  color: rgba(255,140,0,0.7);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }

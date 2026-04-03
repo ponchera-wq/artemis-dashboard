@@ -585,7 +585,7 @@
     ];
     scripts.forEach(function(src) {
       var s = document.createElement('script');
-      s.defer = true; s.src = src + '?v=' + v;
+      s.async = false; s.src = src + '?v=' + v;
       document.head.appendChild(s);
     });
   })();
