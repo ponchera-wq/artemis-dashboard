@@ -508,10 +508,8 @@
       // ── Get current state from shared ephemeris ──
       var state = MissionEphemeris.getState(metSec);
 
-      // ── Update Moon position from ephemeris ──
-      var moonScenePos = toScene(state.moon.x, state.moon.y, state.moon.z);
-      moon.position.copy(moonScenePos);
-      moonGlow.position.copy(moonScenePos);
+      // Moon stays fixed at the closest-approach position — rotMat was built around
+      // that epoch, so it's the only position consistent with the trajectory shape.
 
       // ── Orion position ──
       var orionResult = getPosByMet(metSec);
