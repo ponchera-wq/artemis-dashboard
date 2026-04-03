@@ -587,12 +587,16 @@
 
     // ── Mouse/touch interaction ──
     renderer.domElement.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+    var dragStartX = 0, dragStartY = 0, wasDragged = false;
     renderer.domElement.addEventListener('mousedown', function(e) {
       if (e.button === 2) { isPan = true; } else { isDrag = true; }
+      dragStartX = e.clientX; dragStartY = e.clientY; wasDragged = false;
       exitPreset(); stopAuto(); lastMx = e.clientX; lastMy = e.clientY; velTheta = 0; velPhi = 0;
     });
     window.addEventListener('mouseup', function() { isDrag = false; isPan = false; });
     window.addEventListener('mousemove', function(e) {
+      var ddx = e.clientX - dragStartX, ddy = e.clientY - dragStartY;
+      if (Math.abs(ddx) > 3 || Math.abs(ddy) > 3) wasDragged = true;
       var dx = e.clientX - lastMx, dy = e.clientY - lastMy;
       if (isPan) {
         var panScale = sph.r * 0.003;
@@ -681,15 +685,18 @@
     var raycaster = new THREE.Raycaster();
     var mouse3 = new THREE.Vector2();
     var tooltipEl = document.getElementById('traj-tooltip');
+    var hoveredWpIdx = -1;
     renderer.domElement.addEventListener('mousemove', function(e) {
       var rect = renderer.domElement.getBoundingClientRect();
       var mx2 = (e.clientX - rect.left) * (W / rect.width);
       var my2 = (e.clientY - rect.top) * (H / rect.height);
       var hoveringLabel = false;
+      var hoveredWi = -1;
       for (var wi2 = 0; wi2 < wpClickAreas.length; wi2++) {
         var a2 = wpClickAreas[wi2];
-        if (mx2 >= a2.x && mx2 <= a2.x + a2.w && my2 >= a2.y && my2 <= a2.y + a2.h) { hoveringLabel = true; break; }
+        if (mx2 >= a2.x && mx2 <= a2.x + a2.w && my2 >= a2.y && my2 <= a2.y + a2.h) { hoveringLabel = true; hoveredWi = a2.idx; break; }
       }
+      hoveredWpIdx = hoveredWi;
       if (hoveringLabel) { renderer.domElement.style.cursor = 'pointer'; if (tooltipEl) tooltipEl.style.opacity = '0'; return; }
       if (!tooltipEl) return;
       mouse3.x = ((e.clientX-rect.left)/rect.width)*2-1; mouse3.y = -((e.clientY-rect.top)/rect.height)*2+1;
@@ -700,6 +707,7 @@
     });
     renderer.domElement.addEventListener('mouseleave', function() { if (tooltipEl) tooltipEl.style.opacity='0'; });
     renderer.domElement.addEventListener('click', function(e) {
+      if (wasDragged) return;  // Don't process clicks that were actually drags
       var rect = renderer.domElement.getBoundingClientRect();
       var scaleX = W / rect.width, scaleY = H / rect.height;
       var mx = (e.clientX - rect.left) * scaleX;
@@ -969,16 +977,24 @@
         var s = proj(wpMeshes[i].position); if (!s.vis) return;
         var color = ws === 'done' ? '#00e676' : ws === 'active' ? '#ffd700' : 'rgba(100,130,170,0.55)';
         var bold = ws === 'active';
+        var isHovered = (i === hoveredWpIdx);
         lctx.save();
         lctx.font = (bold ? 'bold ' : '') + '9px "Share Tech Mono",monospace';
         var m = lctx.measureText(wp.label);
         var bw = m.width + 10, bh = 14;
         var lx = s.x + 18, ly = s.y - 18;
         if (lx + bw > W - 4) lx = s.x - bw - 12;
-        lctx.fillStyle = 'rgba(0,8,18,0.72)';
-        lctx.fillRect(lx - 4, ly - bh/2, bw, bh);
-        lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = bold ? 0.85 : 0.5;
-        lctx.strokeRect(lx - 4, ly - bh/2, bw, bh);
+        if (isHovered) {
+          lctx.fillStyle = 'rgba(0,20,40,0.9)';
+          lctx.fillRect(lx - 4, ly - bh/2, bw, bh);
+          lctx.strokeStyle = '#00ffcc'; lctx.lineWidth = 1.5; lctx.globalAlpha = 1.0;
+          lctx.strokeRect(lx - 4, ly - bh/2, bw, bh);
+        } else {
+          lctx.fillStyle = 'rgba(0,8,18,0.72)';
+          lctx.fillRect(lx - 4, ly - bh/2, bw, bh);
+          lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = bold ? 0.85 : 0.5;
+          lctx.strokeRect(lx - 4, ly - bh/2, bw, bh);
+        }
         lctx.globalAlpha = 1.0;
         lctx.fillStyle = color; lctx.textAlign = 'left'; lctx.textBaseline = 'middle';
         if (bold) { lctx.shadowColor = color; lctx.shadowBlur = 10; }
@@ -987,7 +1003,7 @@
         lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = 0.4;
         lctx.setLineDash([2,3]); lctx.stroke(); lctx.setLineDash([]);
         lctx.restore();
-        wpClickAreas.push({x: lx - 4, y: ly - bh/2, w: bw, h: bh, wp: wp, idx: i});
+        wpClickAreas.push({x: lx - 14, y: ly - bh/2 - 8, w: bw + 20, h: bh + 16, wp: wp, idx: i});
       });
 
       if (progressEl) { var fd = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1); progressEl.textContent = 'MISSION PROGRESS: ' + (gt*100).toFixed(1) + '%  \u00b7  FLIGHT DAY ' + fd; }
