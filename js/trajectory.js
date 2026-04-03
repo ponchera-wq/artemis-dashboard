@@ -120,6 +120,12 @@
     }
     var N_PTS = allPts.length;
 
+    // Index of closest approach in allPts (accounts for prepended launch spiral)
+    var caSceneIdx = 0;
+    for (var ci = 0; ci < trajScene.length; ci++) {
+      if (trajScene[ci].metSec >= points[caIdx].metSec) { caSceneIdx = ci; break; }
+    }
+
     function getPosByMet(metSec) {
       if (metSec <= T_START_MET) return { pos: allPts[0].clone(), idx: 0, frac: 0 };
       if (metSec >= T_END_MET) return { pos: allPts[N_PTS - 1].clone(), idx: N_PTS - 1, frac: 1 };
@@ -268,6 +274,21 @@
       scene.add(line);
       compGlowLines.push({geo: geo, line: line});
     });
+    // ── Return leg (amber/orange) ──
+    var returnGeo = new THREE.BufferGeometry();
+    var returnMat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 1.0 });
+    var returnLine = new THREE.Line(returnGeo, returnMat);
+    scene.add(returnLine);
+    var returnGlowLines = [];
+    [{x:0,y:0.04,z:0},{x:0,y:-0.04,z:0},{x:0.04,y:0,z:0},{x:-0.04,y:0,z:0},{x:0,y:0,z:0.04},{x:0,y:0,z:-0.04}].forEach(function(off) {
+      var geo = new THREE.BufferGeometry();
+      var mat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false });
+      var line = new THREE.Line(geo, mat);
+      line.position.set(off.x, off.y, off.z);
+      scene.add(line);
+      returnGlowLines.push({geo: geo});
+    });
+
     var activeSegGeo = new THREE.BufferGeometry();
     var activeSegMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 1.0 });
     scene.add(new THREE.Line(activeSegGeo, activeSegMat));
@@ -734,11 +755,31 @@
       var splitIdx = Math.min(Math.floor(gt * N_PTS), N_PTS - 1);
       if (splitIdx > 0) {
         var slice = allPts.slice(0, splitIdx + 2);
-        var sliceColors = new Float32Array((splitIdx + 2) * 3);
-        for (var ci = 0; ci < splitIdx + 2; ci++) { sliceColors[ci*3]=C_GREEN.r; sliceColors[ci*3+1]=C_GREEN.g; sliceColors[ci*3+2]=C_GREEN.b; }
-        completedGeo.setFromPoints(slice);
-        completedGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors, 3));
-        compGlowLines.forEach(function(g) { g.geo.setFromPoints(slice); });
+        if (splitIdx <= caSceneIdx) {
+          // Outbound leg — all cyan
+          var sliceColors = new Float32Array(slice.length * 3);
+          for (var ci = 0; ci < slice.length; ci++) { sliceColors[ci*3]=C_GREEN.r; sliceColors[ci*3+1]=C_GREEN.g; sliceColors[ci*3+2]=C_GREEN.b; }
+          completedGeo.setFromPoints(slice);
+          completedGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors, 3));
+          compGlowLines.forEach(function(g) { g.geo.setFromPoints(slice); });
+          returnGeo.setFromPoints([]);
+          returnGlowLines.forEach(function(g) { g.geo.setFromPoints([]); });
+          upMat.color.setHex(0x00ffcc);
+          upGlowLines.forEach(function(l) { l.material.color.setHex(0x00ffcc); });
+        } else {
+          // Past closest approach — outbound cyan, return amber
+          var outSlice = allPts.slice(0, caSceneIdx + 1);
+          var retSlice = allPts.slice(caSceneIdx, splitIdx + 2);
+          var outColors = new Float32Array(outSlice.length * 3);
+          for (var ci = 0; ci < outSlice.length; ci++) { outColors[ci*3]=C_GREEN.r; outColors[ci*3+1]=C_GREEN.g; outColors[ci*3+2]=C_GREEN.b; }
+          completedGeo.setFromPoints(outSlice);
+          completedGeo.setAttribute('color', new THREE.BufferAttribute(outColors, 3));
+          compGlowLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
+          returnGeo.setFromPoints(retSlice);
+          returnGlowLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
+          upMat.color.setHex(0xff8844);
+          upGlowLines.forEach(function(l) { l.material.color.setHex(0xff8844); });
+        }
         var activeSeg = allPts.slice(Math.max(0, splitIdx - 12), Math.min(N_PTS, splitIdx + 5));
         activeSegGeo.setFromPoints(activeSeg);
         activeSegMat.opacity = 0.7 + 0.3 * pulse;
