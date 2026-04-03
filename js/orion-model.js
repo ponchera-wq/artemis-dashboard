@@ -33,9 +33,9 @@ function createOrionModel(THREE) {
   ship.add(dockRing);
 
   // Forward hatch cylinder
-  ship.add(Object.assign(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.038, 0.042, 0.03, 16), whiteMat
-  ), { position: new THREE.Vector3(0, 0.34, 0) }));
+  var hatch = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.042, 0.03, 16), whiteMat);
+  hatch.position.set(0, 0.34, 0);
+  ship.add(hatch);
 
   // Crew Module (bell/gumdrop shape using LatheGeometry)
   var cmProfile = [];
