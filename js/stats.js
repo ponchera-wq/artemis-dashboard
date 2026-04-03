@@ -9,7 +9,7 @@ const tuEarth = document.getElementById('tu-earth');
 const tuMoon  = document.getElementById('tu-moon');
 const tuSpeed = document.getElementById('tu-speed');
 
-let useImperial = true;
+let useImperial = false;
 const KM_TO_MI = 0.621371;
 
 function setTelemBadge(mode) {
@@ -68,7 +68,7 @@ function tickTelem() {
 document.getElementById('unit-toggle').addEventListener('click', function() {
   useImperial = !useImperial;
   var btn = document.getElementById('unit-toggle');
-  btn.textContent  = useImperial ? 'MILES - KILOMETERS' : 'KM - MILES';
+  btn.textContent  = useImperial ? 'MI - KM' : 'KM - MILES';
   btn.style.color  = useImperial ? 'var(--amber)' : '';
   btn.style.borderColor = useImperial ? 'rgba(255,167,38,0.5)' : '';
   tickTelem();

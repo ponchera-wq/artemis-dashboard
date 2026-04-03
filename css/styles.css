@@ -2065,6 +2065,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
   gap: 4px;
   padding: 0 8px;
   background: rgba(4, 6, 16, 0.82);
