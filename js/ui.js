@@ -359,16 +359,6 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
       dragSource = null;
     });
 
-    // Size toggle button
-    const sizeBtn = panel.querySelector('.size-btn');
-    if (sizeBtn) {
-      sizeBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        const cur = state.sizes[id] || 's';
-        state.sizes[id] = SIZE_CYCLE[(SIZE_CYCLE.indexOf(cur) + 1) % SIZE_CYCLE.length];
-        applyLayout();
-      });
-    }
   });
 
   // Reset layout button
@@ -391,14 +381,6 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
   }
 
   function applyLayout() {
-    // Update size button labels always (visible on all breakpoints)
-    PANEL_IDS.forEach(id => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      const btn = el.querySelector('.size-btn');
-      if (btn) btn.textContent = (state.sizes[id] || 's').toUpperCase();
-    });
-
     // Custom grid positions only on desktop (≥1200px)
     // Tablet/mobile: clear inline overrides and let CSS media queries handle layout
     if (!isDesktop()) {

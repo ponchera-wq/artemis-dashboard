@@ -1682,7 +1682,7 @@
 
       /* Touch targets: min 44px height on all interactive elements */
       button, .yt-tab, .tl-filter, #unit-toggle,
-      .panel-expand, .yt-expand-btn, .size-btn,
+      .panel-expand, .yt-expand-btn,
       .news-tab, .tl-filter { min-height: 44px; }
 
       /* Hide controls box on mobile */
@@ -1979,20 +1979,6 @@
     .panel.dragging { opacity: 0.28; }
 
     /* ── Panel size toggle ── */
-    .size-btn {
-      font-family: var(--font-mono);
-      font-size: 0.36rem;
-      color: var(--amber);
-      background: transparent;
-      border: 1px solid rgba(255,167,38,0.35);
-      border-radius: 2px;
-      padding: 1px 5px;
-      cursor: pointer;
-      letter-spacing: 0.05em;
-      transition: color 0.15s, border-color 0.15s;
-      flex-shrink: 0;
-    }
-    .size-btn:hover { color: #ffcc66; border-color: rgba(255,167,38,0.75); }
 
     /* ── Reset layout button ── */
     #reset-layout-btn {
@@ -2013,7 +1999,6 @@
 
     @media (max-width: 767px) {
       .drag-handle { display: none; }
-      .size-btn { display: none; }
       #reset-layout-btn { display: none; }
     }
 

@@ -244,7 +244,7 @@ display:flex;align-items:center;gap:3px;">
   <!-- ══ ROW 2: MAIN FEEDS ══════════════════════════════════════════════ -->
 
   <div class="panel" id="feed-youtube">
-    <div class="panel-header"><span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>NASA LIVE<button class="yt-expand-btn" id="yt-expand" title="Expand video">&#x26F6; EXPAND</button><button class="size-btn" title="Toggle size: S→M→L">S</button></div>
+    <div class="panel-header"><span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>NASA LIVE<button class="yt-expand-btn" id="yt-expand" title="Expand video">&#x26F6; EXPAND</button></div>
     <div class="yt-tabs">
       <button class="yt-tab"        data-target="yt-orion">ORION VIEWS</button>
       <button class="yt-tab active" data-target="yt-coverage">MISSION COVERAGE</button>
@@ -266,7 +266,7 @@ display:flex;align-items:center;gap:3px;">
   </div>
 
   <div class="panel" id="feed-arow">
-    <div class="panel-header" style="letter-spacing:2px"><span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>MISSION TRAJECTORY — LIVE POSITION<button class="yt-expand-btn panel-expand" data-panel="feed-arow" title="Expand">&#x26F6; EXPAND</button><button class="size-btn" title="Toggle size: S→M→L">S</button></div>
+    <div class="panel-header" style="letter-spacing:2px"><span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>MISSION TRAJECTORY — LIVE POSITION<button class="yt-expand-btn panel-expand" data-panel="feed-arow" title="Expand">&#x26F6; EXPAND</button></div>
     <div id="trajectory-3d" style="flex:1;width:100%;min-height:0;position:relative;overflow:hidden;background:#000005;">
       <div id="traj-progress" style="position:absolute;top:9px;right:9px;font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(74,144,217,0.9);pointer-events:none;z-index:2;letter-spacing:0.05em;text-align:right;"></div>
       <div id="traj-tooltip" style="position:absolute;top:0;left:0;background:rgba(8,12,26,0.88);border:1px solid rgba(74,144,217,0.55);padding:3px 9px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#a8d4ff;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:3;white-space:nowrap;border-radius:2px;"></div>
@@ -312,10 +312,9 @@ display:flex;align-items:center;gap:3px;">
 
   <div class="panel" id="feed-dsn">
     <div class="panel-header">
-      <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>DEEP SPACE NETWORK — ARTEMIS II LINK
+      <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>DEEP SPACE NETWORK
       <button class="yt-expand-btn panel-expand" data-panel="feed-dsn" title="Expand">&#x26F6; EXPAND</button>
-      <span id="dsn-badge" class="news-live-badge" style="margin-left:auto;">● LIVE</span>
-      <button class="size-btn" title="Toggle size: S→M→L">S</button>
+      <div id="signal-pill" class="acquired" style="margin-left:auto;">▶ SIGNAL ACQUIRED</div>
     </div>
     <div id="dsn-content"><div style="padding:16px;font-family:'Share Tech Mono',monospace;font-size:0.5rem;color:rgba(74,144,217,0.5);">CONNECTING TO DSN FEED…</div></div>
     <div class="corner-tl"></div><div class="corner-br"></div>
@@ -328,7 +327,6 @@ display:flex;align-items:center;gap:3px;">
       <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>SPACE WEATHER — NOAA SWPC
       <span style="margin-left:auto;font-size:0.5rem;color:var(--text-dim);letter-spacing:0.08em;">AUTO-REFRESH 5m</span>
       <button class="yt-expand-btn panel-expand" data-panel="feed-weather" title="Expand">&#x26F6; EXPAND</button>
-      <button class="size-btn" title="Toggle size: S→M→L">S</button>
     </div>
     <div class="panel-body" style="flex-direction:column;gap:8px;padding:10px 12px;overflow:hidden;justify-content:flex-start;">
 
@@ -434,7 +432,6 @@ display:flex;align-items:center;gap:3px;">
       <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>NEWS FEED
       <span class="news-live-badge">● LIVE</span>
       <button class="yt-expand-btn panel-expand" data-panel="mission-updates" title="Expand">&#x26F6; EXPAND</button>
-      <button class="size-btn" title="Toggle size: S→M→L">S</button>
     </div>
     <div class="news-tabs">
       <button class="news-tab active" data-tab="all">ALL</button>
@@ -454,7 +451,6 @@ display:flex;align-items:center;gap:3px;">
       <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>MISSION TIMELINE
       <span id="flight-day-badge">FLIGHT DAY —</span>
       <button class="yt-expand-btn panel-expand" data-panel="feed-blog" title="Expand" style="margin-left:auto;">&#x26F6; EXPAND</button>
-      <button class="size-btn" title="Toggle size: S→M→L">S</button>
     </div>
     <div class="tl-filters" id="tl-filters">
       <button class="tl-filter active" data-phase="all">ALL</button>
