@@ -828,20 +828,38 @@
       border-left: 3px solid transparent;
       cursor: pointer;
     }
-    .tl-event:hover { background: rgba(0, 204, 170, 0.05); }
-    .tl-desc {
+    .tl-event:hover { background: rgba(0, 204, 170, 0.04); }
+    .tl-detail {
       display: none;
-      padding: 6px 0 8px 0;
+      padding: 8px 0 10px 22px;
+      margin-top: 4px;
+      border-left: 2px solid rgba(0, 204, 170, 0.25);
+      margin-left: 6px;
+    }
+    .tl-event.tl-expanded .tl-detail { display: block; }
+    .tl-desc {
       font-size: 0.78rem;
       color: rgba(180, 210, 240, 0.85);
-      line-height: 1.4;
-      border-left: 1px solid rgba(0, 204, 170, 0.3);
-      padding-left: 8px;
-      margin-left: 0;
-      margin-top: 4px;
-      font-family: var(--font-ui);
+      line-height: 1.45;
+      margin-top: 2px;
     }
-    .tl-event.tl-expanded .tl-desc { display: block; }
+    .tl-crew {
+      font-size: 0.72rem;
+      color: #00ccaa;
+      margin-bottom: 4px;
+      letter-spacing: 0.03em;
+    }
+    .tl-crew-label {
+      color: rgba(100, 140, 180, 0.7);
+      font-size: 0.68rem;
+    }
+    .tl-event[style*="cursor"] .tl-name::after {
+      content: ' \25b8';
+      font-size: 0.65rem;
+      opacity: 0.4;
+      margin-left: 4px;
+    }
+    .tl-event.tl-expanded .tl-name::after { content: ' \25be'; }
     .tl-event.tl-complete { border-left-color: var(--green); }
     .tl-event.tl-active   { border-left-color: var(--amber); background: rgba(255,167,38,0.06); }
     .tl-event.tl-upcoming { border-left-color: rgba(74,144,217,0.18); }
