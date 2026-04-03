@@ -7,9 +7,9 @@ const PHASES = [
   { name: 'TLI BURN',       label: 'TLI',       startMin:  25 * 60,        endMin:  25 * 60 + 30 },
   { name: 'OUTBOUND COAST', label: 'OUTBOUND',  startMin:  25 * 60 + 30,   endMin:  4 * 24 * 60 },
   { name: 'LUNAR FLYBY',    label: 'LUNAR FLY', startMin:  4 * 24 * 60,    endMin:  5 * 24 * 60 },
-  { name: 'RETURN COAST',   label: 'RETURN',    startMin:  5 * 24 * 60,    endMin:  (9 * 24 + 12) * 60 },
-  { name: 'ENTRY',          label: 'ENTRY',     startMin:  (9 * 24 + 12) * 60, endMin: 10 * 24 * 60 },
-  { name: 'SPLASHDOWN',     label: 'SPLASHDOWN',startMin:  10 * 24 * 60,   endMin:  Infinity },
+  { name: 'RETURN COAST',   label: 'RETURN',    startMin:  5 * 24 * 60,    endMin:  12991 },
+  { name: 'ENTRY',          label: 'ENTRY',     startMin:  12991,           endMin:  13051 },
+  { name: 'SPLASHDOWN',     label: 'SPLASHDOWN',startMin:  13051,           endMin:  Infinity },
 ];
 
 // ── MET CLOCK ───────────────────────────────────────────────────────
