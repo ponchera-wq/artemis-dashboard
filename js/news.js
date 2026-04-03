@@ -58,20 +58,30 @@
   }
 
   function matches(item, keys) {
-    const txt = ((item.title || '') + ' ' + (item.description || '')).toLowerCase();
+    const cats = Array.isArray(item.categories) ? item.categories.join(' ') : '';
+    const txt = ((item.title || '') + ' ' + (item.description || '') + ' ' + cats).toLowerCase();
     return keys.some(k => txt.includes(k));
   }
 
   async function fetchSource(src, filterKeys) {
     try {
-      const res = await fetch(R2J + encodeURIComponent(src.url));
-      if (!res.ok) return [];
+      const res = await fetch(R2J + encodeURIComponent(src.url) + '&count=15');
+      if (!res.ok) {
+        console.warn('[news] HTTP error fetching', src.name, res.status);
+        return [];
+      }
       const data = await res.json();
-      if (data.status !== 'ok' || !Array.isArray(data.items)) return [];
-      return data.items
-        .filter(item => matches(item, filterKeys))
-        .map(item => ({ ...item, _src: src.name }));
-    } catch (_) { return []; }
+      if (data.status !== 'ok' || !Array.isArray(data.items)) {
+        console.warn('[news] rss2json error for', src.name, data.message || data.status);
+        return [];
+      }
+      const matched = data.items.filter(item => matches(item, filterKeys));
+      console.log('[news]', src.name, '→', data.items.length, 'items,', matched.length, 'matched');
+      return matched.map(item => ({ ...item, _src: src.name }));
+    } catch (err) {
+      console.warn('[news] fetch failed for', src.name, err.message);
+      return [];
+    }
   }
 
   function byDate(arr) {
