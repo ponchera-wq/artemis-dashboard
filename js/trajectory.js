@@ -92,16 +92,23 @@
     container.appendChild(renderer.domElement);
 
     // ── Skybox ──
+    // Use a fresh loader WITHOUT crossOrigin so local files don't get CORS-rejected
+    var skyLoader = new THREE.TextureLoader();
     var skyGeo = new THREE.SphereGeometry(300, 32, 32);
-    var skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide });
+    // Default color 0x000000 so fallback is black (not white) when texture fails
+    var skyMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
     var skyMesh = new THREE.Mesh(skyGeo, skyMat);
     scene.add(skyMesh);
-    loader.load('css/bg-3dtraj.jpg', function(tex) {
-      skyMat.map = tex;
-      skyMat.needsUpdate = true;
-    }, undefined, function() {
-      console.warn('Skybox texture failed to load');
-    });
+    // Try paths in order: with and without leading ./
+    var skyPaths = ['css/bg-3dtraj.jpg', './css/bg-3dtraj.jpg', '/css/bg-3dtraj.jpg'];
+    (function trySkyPath(i) {
+      if (i >= skyPaths.length) { console.warn('[SKY] All paths failed — using black fallback'); return; }
+      skyLoader.load(skyPaths[i],
+        function(tex) { console.log('[SKY] Loaded from:', skyPaths[i]); skyMat.map = tex; skyMat.color.set(0xffffff); skyMat.needsUpdate = true; },
+        undefined,
+        function(err) { console.warn('[SKY] Failed:', skyPaths[i], err); trySkyPath(i + 1); }
+      );
+    })(0);
 
     var lc = document.createElement('canvas');
     lc.width = W; lc.height = H;
