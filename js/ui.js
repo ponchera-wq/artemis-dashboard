@@ -171,7 +171,12 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
     document.querySelectorAll('#feed-youtube .yt-tab').forEach(t => t.classList.remove('active'));
     document.querySelectorAll('.yt-frame').forEach(f => f.classList.remove('active'));
     tab.classList.add('active');
-    document.getElementById(tab.dataset.target).classList.add('active');
+    const frame = document.getElementById(tab.dataset.target);
+    frame.classList.add('active');
+    // Lazy-load: only set src on first click (data-src iframes have no src initially)
+    if (frame.tagName === 'IFRAME' && !frame.src && frame.dataset.src) {
+      frame.src = frame.dataset.src;
+    }
   });
 });
 
