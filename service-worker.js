@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artemis-dashboard-v6';
+const CACHE_NAME = 'artemis-dashboard-v7';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -12,6 +12,7 @@ const STATIC_ASSETS = [
   '/js/news.js',
   '/js/crew.js',
   '/js/weather.js',
+  '/js/orion-model.js',
   '/js/trajectory.js',
   '/js/dsn.js',
   '/js/ui.js',
@@ -72,17 +73,34 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // Static assets: cache-first
+  // JS/CSS: network-first so updates are always picked up; fall back to cache offline
+  var isCode = url.pathname.match(/\.(js|css)(\?|$)/);
+  if (isCode) {
+    event.respondWith(
+      fetch(event.request).then(function(response) {
+        if (response.ok) {
+          var clone = response.clone();
+          caches.open(CACHE_NAME).then(function(c) { c.put(event.request, clone); });
+        }
+        return response;
+      }).catch(function() {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // Everything else (HTML, JSON, images): cache-first, update in background
   event.respondWith(
     caches.match(event.request).then(function(cached) {
-      if (cached) return cached;
-      return fetch(event.request).then(function(response) {
-        if (response.ok && url.protocol === 'https:') {
+      var fetchPromise = fetch(event.request).then(function(response) {
+        if (response.ok) {
           var clone = response.clone();
           caches.open(CACHE_NAME).then(function(c) { c.put(event.request, clone); });
         }
         return response;
       });
+      return cached || fetchPromise;
     })
   );
 });
