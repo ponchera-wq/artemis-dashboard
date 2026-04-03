@@ -270,9 +270,11 @@
     } else if (window.dashboardState) {
       window.dashboardState.dsnStation = null;
     }
-    badge.textContent = isLive ? '● LIVE' : '● EST';
-    badge.className   = isLive ? 'news-live-badge' : 'news-live-badge dsn-badge-est';
-    badge.style.marginLeft = 'auto';
+    if (badge) {
+      badge.textContent = isLive ? '● LIVE' : '● EST';
+      badge.className   = isLive ? 'news-live-badge' : 'news-live-badge dsn-badge-est';
+      badge.style.marginLeft = 'auto';
+    }
     const dsnLt = document.getElementById('dsn-local-time');
     if (dsnLt) dsnLt.textContent = '';
 
