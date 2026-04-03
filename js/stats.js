@@ -9,8 +9,14 @@ const tuEarth = document.getElementById('tu-earth');
 const tuMoon  = document.getElementById('tu-moon');
 const tuSpeed = document.getElementById('tu-speed');
 
+const elAnalogy    = document.getElementById('stat-earth-analogy');
+const elSplashdown = document.getElementById('splashdown-countdown');
+const elPerilune   = document.getElementById('perilune-countdown');
+
 let useImperial = false;
 const KM_TO_MI = 0.621371;
+
+function pad(n) { return ('0' + n).slice(-2); }
 
 function setTelemBadge(mode) {
   const b = document.getElementById('telem-badge');
@@ -21,6 +27,68 @@ function flashEl(el) {
   el.classList.remove('tick');
   void el.offsetWidth;
   el.classList.add('tick');
+}
+
+function distAnalogy(km) {
+  var EARTH_CIRC = 40075;
+  var EARTH_MOON = 384400;
+  var EARTH_DIAM = 12742;
+  if (km < 50000) {
+    return (km / EARTH_DIAM).toFixed(1) + '\u00d7 Earth diameter';
+  } else if (km < 300000) {
+    return (km / EARTH_MOON * 100).toFixed(0) + '% of Earth\u2013Moon dist';
+  } else if (km < 800000) {
+    return (km / EARTH_CIRC).toFixed(1) + '\u00d7 Earth circumference';
+  } else {
+    return (km / EARTH_MOON).toFixed(2) + '\u00d7 Earth\u2013Moon dist';
+  }
+}
+
+function tickSplashdown() {
+  if (!elSplashdown || typeof SPLASHDOWN_UTC === 'undefined') return;
+  var diff = SPLASHDOWN_UTC - Date.now();
+  var str, cls = 'stat-value';
+  if (diff > 0) {
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor((diff % 86400000) / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    str = d > 0 ? d + 'd ' + pad(h) + ':' + pad(m) + ':' + pad(s)
+                : pad(h) + ':' + pad(m) + ':' + pad(s);
+    if (diff < 3600000) cls += ' warn';
+  } else {
+    str = 'SPLASHED DOWN';
+    cls += ' complete';
+  }
+  elSplashdown.textContent = str;
+  elSplashdown.className = cls;
+}
+
+function tickPerilune() {
+  if (!elPerilune || typeof PERILUNE_UTC === 'undefined') return;
+  var diff = PERILUNE_UTC - Date.now();
+  var absDiff = Math.abs(diff);
+  var str, cls = 'stat-value';
+  if (absDiff < 30 * 60 * 1000) {
+    str = 'IN PROGRESS';
+    cls += ' warn';
+  } else if (diff < 0) {
+    var agoMin = Math.floor(-diff / 60000);
+    str = agoMin < 60
+      ? 'COMPLETED \u2713  ' + agoMin + 'm ago'
+      : 'COMPLETED \u2713  ' + Math.floor(agoMin / 60) + 'h ago';
+    cls += ' complete';
+  } else {
+    var d = Math.floor(diff / 86400000);
+    var h = Math.floor((diff % 86400000) / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    str = d > 0 ? d + 'd ' + pad(h) + ':' + pad(m) + ':' + pad(s)
+                : pad(h) + ':' + pad(m) + ':' + pad(s);
+    if (diff < 6 * 3600000) cls += ' imminent';
+  }
+  elPerilune.textContent = str;
+  elPerilune.className = cls;
 }
 
 function tickTelem() {
@@ -63,6 +131,13 @@ function tickTelem() {
   if (tvEarth.textContent !== eStr) { tvEarth.textContent = eStr; flashEl(tvEarth); }
   if (tvMoon.textContent  !== mStr) { tvMoon.textContent  = mStr; flashEl(tvMoon);  }
   if (tvSpeed.textContent !== sStr) { tvSpeed.textContent = sStr; flashEl(tvSpeed); }
+
+  // Distance analogy (always km, regardless of unit toggle)
+  if (elAnalogy) elAnalogy.textContent = distAnalogy(state.distEarthKm);
+
+  // Countdown clocks
+  tickSplashdown();
+  tickPerilune();
 }
 
 document.getElementById('unit-toggle').addEventListener('click', function() {

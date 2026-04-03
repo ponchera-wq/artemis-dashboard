@@ -125,6 +125,7 @@ display:flex;align-items:center;gap:3px;">
       <div class="telem-value" id="tv-earth">—</div>
       <div class="telem-unit" id="tu-earth">KM</div>
       <div id="earth-annotation" style="font-family:var(--font-mono);font-size:0.32rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
+      <div class="stat-sub" id="stat-earth-analogy"></div>
     </div>
 
     <!-- Distance from Moon -->
@@ -142,6 +143,20 @@ display:flex;align-items:center;gap:3px;">
       <div class="telem-unit" id="tu-speed">KM/H</div>
       <div id="telem-badge" class="telem-badge-est">EST</div>
       <div id="telem-update-time" style="position:absolute;bottom:20px;right:7px;font-family:var(--font-mono);font-size:0.30rem;color:rgba(74,144,217,0.45);letter-spacing:0.05em;pointer-events:none;"></div>
+    </div>
+
+    <!-- Perilune countdown -->
+    <div class="tb-telem stat-block" id="perilune-block">
+      <div class="stat-label">LUNAR FLYBY</div>
+      <div class="stat-value" id="perilune-countdown">--:--:--</div>
+      <div class="stat-sub" id="perilune-dist">CLOSEST APPROACH: ~6,583 KM</div>
+    </div>
+
+    <!-- Splashdown countdown -->
+    <div class="tb-telem stat-block" id="splashdown-block">
+      <div class="stat-label">SPLASHDOWN</div>
+      <div class="stat-value" id="splashdown-countdown">--:--:--</div>
+      <div class="stat-sub" id="splashdown-date">10 APR · 17:00 UTC</div>
     </div>
 
     <!-- Controls box -->

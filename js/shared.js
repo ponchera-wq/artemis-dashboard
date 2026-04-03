@@ -4,6 +4,9 @@
 
 window.NASA_API_KEY = 'NkWaGNE5rQyjA2k7cwhJhPzzSblE9MILSMEBP6yD';
 window.LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
+window.SPLASHDOWN_UTC = new Date('2026-04-10T17:00:00Z');
+window.PERILUNE_MET_SEC = 433479;
+window.PERILUNE_UTC = new Date(window.LAUNCH_UTC.getTime() + window.PERILUNE_MET_SEC * 1000);
 
 window.userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
