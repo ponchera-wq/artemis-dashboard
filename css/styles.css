@@ -293,12 +293,11 @@
     }
 
     #unit-toggle {
-      position: absolute; bottom: 5px; right: 7px;
       font-family: var(--font-mono); font-size: 0.48rem;
-      color: var(--fg-dim); background: transparent;
-      border: 1px solid rgba(74,144,217,0.3); border-radius: 3px;
-      padding: 1px 6px; cursor: pointer; letter-spacing: 0.06em;
-      transition: color 0.2s, border-color 0.2s;
+      color: var(--amber); background: transparent;
+      border: 1px solid rgba(255,167,38,0.5); border-radius: 3px;
+      padding: 3px 9px; cursor: pointer; letter-spacing: 0.08em;
+      transition: color 0.2s, border-color 0.2s; white-space: nowrap;
     }
     #unit-toggle:hover { color: var(--accent-light); border-color: rgba(74,144,217,0.7); }
 
