@@ -36,9 +36,10 @@ function getCurrentPhaseIndex(elapsedMin) {
   return 0;
 }
 
-const metDisplay    = document.getElementById('met-display');
-const utcDisplay    = document.getElementById('utc-display');
-const currentPhaseEl = document.getElementById('current-phase-name');
+const metDisplay      = document.getElementById('met-display');
+const utcDisplay      = document.getElementById('utc-display');
+const flightDayDisplay = document.getElementById('flight-day-display');
+const currentPhaseEl  = document.getElementById('current-phase-name');
 
 // Build phase bar once
 const phaseBar = document.getElementById('phase-bar');
@@ -59,6 +60,16 @@ function tick() {
 
   // MET
   metDisplay.textContent = formatMET(elapsed);
+
+  // Flight Day label (D+002 = Flight Day 3; FD = elapsed days + 1)
+  if (flightDayDisplay) {
+    if (elapsed >= 0) {
+      var fd = Math.floor(elapsed / 86400000) + 1;
+      flightDayDisplay.textContent = 'FLIGHT DAY ' + fd;
+    } else {
+      flightDayDisplay.textContent = 'PRE-LAUNCH';
+    }
+  }
 
   // UTC
   utcDisplay.textContent = 'UTC ' + now.toUTCString().slice(17, 25);
