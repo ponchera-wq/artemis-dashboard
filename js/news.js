@@ -26,7 +26,7 @@
   const FILTERS = {
     nasa:     ['artemis', 'orion', 'moon'],
     space:    ['artemis', 'orion', 'moon', 'sls'],
-    media:    ['artemis', 'moon', 'nasa'],
+    media:    ['artemis', 'orion', 'moon', 'nasa', 'lunar', 'spacecraft', 'astronaut'],
     partners: ['artemis', 'orion', 'moon', 'hansen', 'lunar', 'service module'],
   };
 
@@ -65,7 +65,7 @@
 
   async function fetchSource(src, filterKeys) {
     try {
-      const res = await fetch(R2J + encodeURIComponent(src.url) + '&count=15');
+      const res = await fetch(R2J + encodeURIComponent(src.url));
       if (!res.ok) {
         console.warn('[news] HTTP error fetching', src.name, res.status);
         return [];
