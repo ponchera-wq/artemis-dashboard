@@ -244,9 +244,9 @@
     scene.add(upLine);
     // Upcoming path glow — 4 offset copies (additive, dashed)
     var upGlowLines = [];
-    [{x:0,y:0.15,z:0},{x:0,y:-0.15,z:0},{x:0.15,y:0,z:0},{x:-0.15,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.25,z:0},{x:0,y:-0.25,z:0},{x:0.25,y:0,z:0},{x:-0.25,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry().setFromPoints(allPts);
-      var mat = new THREE.LineDashedMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, dashSize: 0.8, gapSize: 0.4 });
+      var mat = new THREE.LineDashedMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, dashSize: 0.8, gapSize: 0.4 });
       var line = new THREE.Line(geo, mat);
       line.position.set(off.x, off.y, off.z);
       line.computeLineDistances();
@@ -261,25 +261,34 @@
     scene.add(completedLine);
     // Completed path glow — 6 offset copies (additive)
     var GLOW_OFFSETS = [
-      {x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},
-      {x:0.2,y:0,z:0},{x:-0.2,y:0,z:0},
-      {x:0,y:0,z:0.2},{x:0,y:0,z:-0.2},
+      {x:0,y:0.35,z:0},{x:0,y:-0.35,z:0},
+      {x:0.35,y:0,z:0},{x:-0.35,y:0,z:0},
+      {x:0,y:0,z:0.35},{x:0,y:0,z:-0.35},
       {x:0.14,y:0.14,z:0},{x:-0.14,y:-0.14,z:0}
     ];
     var compGlowLines = [];
     GLOW_OFFSETS.forEach(function(off) {
       var geo = new THREE.BufferGeometry();
-      var mat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false });
+      var mat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
       var line = new THREE.Line(geo, mat);
       line.position.set(off.x, off.y, off.z);
       scene.add(line);
       compGlowLines.push({geo: geo, line: line});
     });
+    var compCoreLines = [];
+    [{x:0,y:0.06,z:0},{x:0,y:-0.06,z:0},{x:0.06,y:0,z:0},{x:-0.06,y:0,z:0}].forEach(function(off) {
+      var geo = new THREE.BufferGeometry();
+      var mat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.7 });
+      var line = new THREE.Line(geo, mat);
+      line.position.set(off.x, off.y, off.z);
+      scene.add(line);
+      compCoreLines.push({geo: geo});
+    });
     var compBloomLines = [];
-    [{x:0,y:0.45,z:0},{x:0,y:-0.45,z:0},{x:0.45,y:0,z:0},{x:-0.45,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.7,z:0},{x:0,y:-0.7,z:0},{x:0.7,y:0,z:0},{x:-0.7,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({
-        color: 0x00ffcc, transparent: true, opacity: 0.04,
+        color: 0x00ffcc, transparent: true, opacity: 0.15,
         blending: THREE.AdditiveBlending, depthWrite: false
       });
       var line = new THREE.Line(geo, mat);
@@ -293,19 +302,28 @@
     var returnLine = new THREE.Line(returnGeo, returnMat);
     scene.add(returnLine);
     var returnGlowLines = [];
-    [{x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},{x:0.2,y:0,z:0},{x:-0.2,y:0,z:0},{x:0,y:0,z:0.2},{x:0,y:0,z:-0.2}].forEach(function(off) {
+    [{x:0,y:0.35,z:0},{x:0,y:-0.35,z:0},{x:0.35,y:0,z:0},{x:-0.35,y:0,z:0},{x:0,y:0,z:0.35},{x:0,y:0,z:-0.35}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
-      var mat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false });
+      var mat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
       var line = new THREE.Line(geo, mat);
       line.position.set(off.x, off.y, off.z);
       scene.add(line);
       returnGlowLines.push({geo: geo});
     });
+    var returnCoreLines = [];
+    [{x:0,y:0.06,z:0},{x:0,y:-0.06,z:0},{x:0.06,y:0,z:0},{x:-0.06,y:0,z:0}].forEach(function(off) {
+      var geo = new THREE.BufferGeometry();
+      var mat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 0.7 });
+      var line = new THREE.Line(geo, mat);
+      line.position.set(off.x, off.y, off.z);
+      scene.add(line);
+      returnCoreLines.push({geo: geo});
+    });
     var returnBloomLines = [];
-    [{x:0,y:0.45,z:0},{x:0,y:-0.45,z:0},{x:0.45,y:0,z:0},{x:-0.45,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.7,z:0},{x:0,y:-0.7,z:0},{x:0.7,y:0,z:0},{x:-0.7,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({
-        color: 0xff8844, transparent: true, opacity: 0.04,
+        color: 0xff8844, transparent: true, opacity: 0.15,
         blending: THREE.AdditiveBlending, depthWrite: false
       });
       var line = new THREE.Line(geo, mat);
@@ -321,7 +339,7 @@
     var activeGlowLines = [];
     [{x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},{x:0.2,y:0,z:0},{x:-0.2,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
-      var mat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false });
+      var mat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false });
       var line = new THREE.Line(geo, mat);
       line.position.set(off.x, off.y, off.z);
       scene.add(line);
@@ -712,10 +730,14 @@
       var scaleX = W / rect.width, scaleY = H / rect.height;
       var mx = (e.clientX - rect.left) * scaleX;
       var my = (e.clientY - rect.top) * scaleY;
+      
+      console.log('[WP Click] Checking ' + wpClickAreas.length + ' areas at (' + mx.toFixed(0) + ',' + my.toFixed(0) + ')');
+
       // Check 2D label hit areas first
       for (var wi = wpClickAreas.length - 1; wi >= 0; wi--) {
         var a = wpClickAreas[wi];
         if (mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h) {
+          console.log('[WP Click] HIT: ' + a.wp.label);
           var targetPos = wpScenePos(a.wp);
           var camDist = 8;
           var camDir = new THREE.Vector3(2, 1.5, 3).normalize();
@@ -873,9 +895,11 @@
           completedGeo.setFromPoints(slice);
           completedGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors, 3));
           compGlowLines.forEach(function(g) { g.geo.setFromPoints(slice); });
+          compCoreLines.forEach(function(g) { g.geo.setFromPoints(slice); });
           compBloomLines.forEach(function(g) { g.geo.setFromPoints(slice); });
           returnGeo.setFromPoints([]);
           returnGlowLines.forEach(function(g) { g.geo.setFromPoints([]); });
+          returnCoreLines.forEach(function(g) { g.geo.setFromPoints([]); });
           returnBloomLines.forEach(function(g) { g.geo.setFromPoints([]); });
           upMat.color.setHex(0x00ffcc);
           upGlowLines.forEach(function(l) { l.material.color.setHex(0x00ffcc); });
@@ -888,9 +912,11 @@
           completedGeo.setFromPoints(outSlice);
           completedGeo.setAttribute('color', new THREE.BufferAttribute(outColors, 3));
           compGlowLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
+          compCoreLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
           compBloomLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
           returnGeo.setFromPoints(retSlice);
           returnGlowLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
+          returnCoreLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
           returnBloomLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
           upMat.color.setHex(0xff8844);
           upGlowLines.forEach(function(l) { l.material.color.setHex(0xff8844); });
