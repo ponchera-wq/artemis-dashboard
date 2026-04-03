@@ -255,12 +255,18 @@
     var wpMeshes = [], wpMats = [];
     var wpVisible = WAYPOINTS.filter(function(wp) { return wp.metSec >= T_START_MET; });
     wpVisible.forEach(function(wp) {
-      var mat = new THREE.MeshBasicMaterial({ color: 0x2a3a4a });
-      var mesh = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), mat);
+      var mat = new THREE.MeshBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.9 });
+      var mesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), mat);
       mesh.position.copy(wpScenePos(wp));
       mesh.userData = wp;
       wpMeshes.push(mesh); wpMats.push(mat);
       scene.add(mesh);
+      var wpGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.15, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.15, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      wpGlow.position.copy(wpScenePos(wp));
+      scene.add(wpGlow);
     });
 
     // ── Orion spacecraft (detailed model) ──
@@ -760,8 +766,8 @@
       // Waypoint states
       wpVisible.forEach(function(wp, i) {
         var ws = wpGetState(wp, nowMet);
-        wpMats[i].color.setHex(ws === 'done' ? 0x00e676 : ws === 'active' ? 0xffd700 : 0x2a3a4a);
-        wpMeshes[i].scale.setScalar(ws === 'active' ? 1.0 + pulse * 0.55 : 1.0);
+        wpMats[i].color.setHex(ws === 'done' ? 0x00e676 : ws === 'active' ? 0xffd700 : 0x00ccff);
+        wpMeshes[i].scale.setScalar(ws === 'active' ? 1.0 + pulse * 0.2 : 1.0);
       });
 
       earth.rotation.y += 0.00175; moon.rotation.y += 0.0003;
