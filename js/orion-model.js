@@ -150,10 +150,11 @@ function createOrionModel(THREE) {
     for (var pi = 0; pi < 3; pi++) {
       var pD = 0.16 + pi * 0.14;
 
-      // Solar panel (flat plane)
+      // Solar panel (flat plane) — lies horizontal in XZ plane
       var pan = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.06), solarMat);
       pan.position.set(Math.cos(sA) * pD, -0.14, Math.sin(sA) * pD);
-      pan.rotation.y = -sA + Math.PI / 2;
+      pan.rotation.set(0, 0, 0);
+      pan.lookAt(pan.position.x, pan.position.y + 1, pan.position.z);
       ship.add(pan);
 
       // Panel detail lines (copper traces)
@@ -161,14 +162,15 @@ function createOrionModel(THREE) {
         var det = new THREE.Mesh(new THREE.PlaneGeometry(0.125, 0.003), solarDetailMat);
         det.position.copy(pan.position);
         det.position.y += (dl - 1) * 0.015 + 0.001;
-        det.rotation.y = pan.rotation.y;
+        det.rotation.set(0, 0, 0);
+        det.lookAt(det.position.x, det.position.y + 1, det.position.z);
         ship.add(det);
       }
 
-      // Panel frame
+      // Panel frame (BoxGeometry thin in Y — already horizontal)
       var pf = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.002, 0.065), frameMat);
       pf.position.copy(pan.position);
-      pf.rotation.y = pan.rotation.y;
+      pf.rotation.copy(pan.rotation);
       ship.add(pf);
 
       // Hinge between panels
@@ -187,27 +189,89 @@ function createOrionModel(THREE) {
   // Exhaust glow
   var exOuter = new THREE.Mesh(
     new THREE.SphereGeometry(0.05, 8, 8),
-    new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })
   );
   exOuter.position.y = -0.25; ship.add(exOuter);
 
   var exInner = new THREE.Mesh(
     new THREE.SphereGeometry(0.02, 8, 8),
-    new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false })
+    new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false })
   );
   exInner.position.y = -0.25; ship.add(exInner);
 
   // Glow halo
-  ship.add(new THREE.Mesh(
+  var haloMesh = new THREE.Mesh(
     new THREE.SphereGeometry(0.5, 16, 16),
     new THREE.MeshBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 0.04, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
-  ));
+  );
+  ship.add(haloMesh);
+
+  // Particle exhaust system
+  var PARTICLE_COUNT = 30;
+  var pPositions = new Float32Array(PARTICLE_COUNT * 3);
+  var pColors = new Float32Array(PARTICLE_COUNT * 3);
+  var pLifetimes = new Float32Array(PARTICLE_COUNT);
+  var pVelocities = [];
+
+  function resetParticle(i) {
+    pPositions[i*3]   = (Math.random() - 0.5) * 0.012;
+    pPositions[i*3+1] = -0.25;
+    pPositions[i*3+2] = (Math.random() - 0.5) * 0.012;
+    pLifetimes[i] = 0;
+    pVelocities[i] = {
+      x: (Math.random() - 0.5) * 0.002,
+      y: -(0.006 + Math.random() * 0.004),
+      z: (Math.random() - 0.5) * 0.002
+    };
+  }
+  for (var ppi = 0; ppi < PARTICLE_COUNT; ppi++) {
+    resetParticle(ppi);
+    pLifetimes[ppi] = Math.random();
+  }
+
+  // Circular particle texture
+  var pCanvas = document.createElement('canvas');
+  pCanvas.width = 32; pCanvas.height = 32;
+  var pCtx = pCanvas.getContext('2d');
+  var pGrad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  pGrad.addColorStop(0,   'rgba(255,255,255,1)');
+  pGrad.addColorStop(0.3, 'rgba(255,200,100,0.8)');
+  pGrad.addColorStop(0.7, 'rgba(255,100,20,0.3)');
+  pGrad.addColorStop(1,   'rgba(255,50,0,0)');
+  pCtx.fillStyle = pGrad;
+  pCtx.fillRect(0, 0, 32, 32);
+
+  var pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPositions, 3));
+  pGeo.setAttribute('color',    new THREE.BufferAttribute(pColors, 3));
+
+  var pMat = new THREE.PointsMaterial({
+    size: 0.012,
+    map: new THREE.CanvasTexture(pCanvas),
+    vertexColors: true,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    sizeAttenuation: true
+  });
+  var exhaustParticles = new THREE.Points(pGeo, pMat);
+  ship.add(exhaustParticles);
 
   // Expose references for animation
   ship.userData.exhaustOuter = exOuter;
   ship.userData.exhaustInner = exInner;
   ship.userData.hullMat = whiteMat;
-  ship.userData.glowMat = ship.children[ship.children.length - 1].material;
+  ship.userData.glowMat = haloMesh.material;
+  ship.userData.exhaustParticles = exhaustParticles;
+  ship.userData.particleData = {
+    positions: pPositions,
+    colors: pColors,
+    lifetimes: pLifetimes,
+    velocities: pVelocities,
+    geo: pGeo,
+    count: PARTICLE_COUNT,
+    reset: resetParticle
+  };
 
   return ship;
 }

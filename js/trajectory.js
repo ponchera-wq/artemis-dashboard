@@ -453,7 +453,7 @@
     scene.add(new THREE.Points(trailGeo, new THREE.PointsMaterial({ color: 0x00ffaa, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.4 })));
     var trailIdx = 0, trailFrame = 0;
 
-    var arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 0.8, 0xff8800, 0.2, 0.1);
+    var arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 0.8, 0x00ffcc, 0.2, 0.1);
     scene.add(arrow);
 
     var edBuf = new Float32Array(6), mdBuf = new Float32Array(6);
@@ -828,6 +828,26 @@
       // Exhaust pulse
       exhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
       exhaustInner.material.opacity = 0.2 + 0.2 * Math.sin(now / 430);
+
+      // Particle exhaust animation
+      var pd = orionGroup.userData.particleData;
+      if (pd) {
+        var pt = now / 1000;
+        for (var pi = 0; pi < pd.count; pi++) {
+          pd.lifetimes[pi] += 0.03;
+          if (pd.lifetimes[pi] > 1) pd.reset(pi);
+          var pv = pd.velocities[pi];
+          pd.positions[pi*3]   += pv.x + Math.sin(pt * 8 + pi) * 0.0003;
+          pd.positions[pi*3+1] += pv.y;
+          pd.positions[pi*3+2] += pv.z + Math.cos(pt * 8 + pi) * 0.0003;
+          var life = pd.lifetimes[pi];
+          pd.colors[pi*3]   = 1;
+          pd.colors[pi*3+1] = Math.max(0, 1 - life * 1.5);
+          pd.colors[pi*3+2] = Math.max(0, 0.8 - life * 3);
+        }
+        pd.geo.attributes.position.needsUpdate = true;
+        pd.geo.attributes.color.needsUpdate = true;
+      }
 
       orionGroup.userData.hullMat.emissiveIntensity = 0.7 + pulse * 0.6;
       glowMat.opacity = 0.08 + pulse * 0.15;
