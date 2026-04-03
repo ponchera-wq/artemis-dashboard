@@ -19,3 +19,7 @@ npm-debug.log*
 # Local env
 .env
 .env.local
+
+# Large files
+a2-reference-guide-012825.pdf
+data/skyfield-data/
