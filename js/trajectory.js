@@ -216,9 +216,11 @@
     }
 
     var wpMeshes = [], wpMats = [];
-    WAYPOINTS.forEach(function(wp) {
-      var mat = new THREE.MeshBasicMaterial({ color: 0x334455 });
-      var mesh = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), mat);
+    // Only show waypoints within the ephemeris data range (pre-OEM events all stack at Earth)
+    var wpVisible = WAYPOINTS.filter(function(wp) { return wp.metSec >= T_START_MET; });
+    wpVisible.forEach(function(wp) {
+      var mat = new THREE.MeshBasicMaterial({ color: 0x2a3a4a });
+      var mesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), mat);
       mesh.position.copy(wpScenePos(wp));
       mesh.userData = wp;
       wpMeshes.push(mesh); wpMats.push(mat);
@@ -230,7 +232,9 @@
     var capsuleGeo = new THREE.ConeGeometry(0.3, 0.8, 12);
     var orionMat = new THREE.MeshPhongMaterial({ color: 0xfff8f0, emissive: 0xfff0e0, emissiveIntensity: 1.0, shininess: 60 });
     var capsule = new THREE.Mesh(capsuleGeo, orionMat);
-    capsule.rotation.x = Math.PI / 2;
+    // Cone tip points along +Y by default. lookAt sets the group so -Z faces velocity.
+    // Rotate -90° on X so cone tip points along -Z (i.e. in the velocity direction).
+    capsule.rotation.x = -Math.PI / 2;
     orionGroup.add(capsule);
     var glowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.18, side: THREE.BackSide });
     var glowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), glowMat);
@@ -575,7 +579,7 @@
       mdGeo.attributes.position.needsUpdate=true; mdLine.computeLineDistances();
 
       // Waypoint states
-      WAYPOINTS.forEach(function(wp, i) {
+      wpVisible.forEach(function(wp, i) {
         var ws = wpGetState(wp, nowMet);
         wpMats[i].color.setHex(ws === 'done' ? 0x00e676 : ws === 'active' ? 0xffd700 : 0x2a3a4a);
         wpMeshes[i].scale.setScalar(ws === 'active' ? 1.0 + pulse * 0.55 : 1.0);
@@ -626,15 +630,31 @@
       drawCallout('ALT: ' + earthDistStr, altPt, 'rgba(0,204,255,0.7)', 0, 0, false, null);
 
       // Waypoint labels
-      WAYPOINTS.forEach(function(wp, i) {
+      wpVisible.forEach(function(wp, i) {
         var ws = wpGetState(wp, nowMet);
         var s = proj(wpMeshes[i].position); if (!s.vis) return;
-        var color = ws==='done' ? 'rgba(0,230,118,0.55)' : ws==='active' ? '#ffd700' : 'rgba(100,130,160,0.28)';
+        var color = ws === 'done' ? '#00e676' : ws === 'active' ? '#ffd700' : 'rgba(100,130,170,0.55)';
+        var bold = ws === 'active';
         lctx.save();
-        lctx.font = (ws==='active' ? 'bold ' : '') + '9px "Share Tech Mono",monospace';
+        lctx.font = (bold ? 'bold ' : '') + '9px "Share Tech Mono",monospace';
+        var m = lctx.measureText(wp.label);
+        var bw = m.width + 10, bh = 14;
+        var lx = s.x + 12, ly = s.y - 10;
+        // Keep label on screen
+        if (lx + bw > W - 4) lx = s.x - bw - 12;
+        // Background box
+        lctx.fillStyle = 'rgba(0,8,18,0.72)';
+        lctx.fillRect(lx - 4, ly - bh/2, bw, bh);
+        lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = bold ? 0.85 : 0.5;
+        lctx.strokeRect(lx - 4, ly - bh/2, bw, bh);
+        lctx.globalAlpha = 1.0;
         lctx.fillStyle = color; lctx.textAlign = 'left'; lctx.textBaseline = 'middle';
-        lctx.shadowColor = color; lctx.shadowBlur = ws==='active' ? 8 : 4;
-        lctx.fillText(wp.label, s.x + 10, s.y - 8);
+        if (bold) { lctx.shadowColor = color; lctx.shadowBlur = 10; }
+        lctx.fillText(wp.label, lx, ly);
+        // Tick line from dot to label
+        lctx.beginPath(); lctx.moveTo(s.x, s.y); lctx.lineTo(lx - 4, ly);
+        lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = 0.4;
+        lctx.setLineDash([2,3]); lctx.stroke(); lctx.setLineDash([]);
         lctx.restore();
       });
 
