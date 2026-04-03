@@ -29,9 +29,6 @@
     var T_SPAN_MET = T_END_MET - T_START_MET;
 
     // ── Build display transform (rotMat) ──────────────────────────────
-    // Rotate EME2000 coordinates so Earth-Moon line at closest approach
-    // aligns with +X axis, producing the canonical NASA figure-8 view.
-    // This is a VIEW transform only — physical state comes from the ephemeris.
     var caIdx = 0, caMinDist = Infinity;
     for (var i = 0; i < points.length; i++) {
       if (points[i].distMoonKm < caMinDist) { caMinDist = points[i].distMoonKm; caIdx = i; }
@@ -53,20 +50,17 @@
     var yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
     var rotMat = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis).transpose();
 
-    // Helper: convert EME2000 km vector to scene coordinates
     function toScene(x, y, z) {
       var v = new THREE.Vector3(x, y, z).applyMatrix4(rotMat);
       return new THREE.Vector3(v.x * SCENE_SCALE, v.y * SCENE_SCALE, v.z * SCENE_SCALE);
     }
 
-    // Pre-compute scene-space trajectory for rendering
     var trajScene = points.map(function(p) {
       return { metSec: p.metSec, pos: toScene(p.orion.x, p.orion.y, p.orion.z) };
     });
     var allPts = trajScene.map(function(p) { return p.pos.clone(); });
     var N_PTS = allPts.length;
 
-    // Helper: find Orion scene position by MET (binary search + lerp)
     function getPosByMet(metSec) {
       if (metSec <= T_START_MET) return { pos: allPts[0].clone(), idx: 0, frac: 0 };
       if (metSec >= T_END_MET) return { pos: allPts[N_PTS - 1].clone(), idx: N_PTS - 1, frac: 1 };
@@ -92,7 +86,6 @@
     Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
     container.appendChild(renderer.domElement);
 
-    // 2D overlay canvas for holographic callouts
     var lc = document.createElement('canvas');
     lc.width = W; lc.height = H;
     Object.assign(lc.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%',pointerEvents:'none',zIndex:'1' });
@@ -145,13 +138,11 @@
       new THREE.MeshBasicMaterial({ color: 0xccccbb, transparent: true, opacity: 0.08, side: THREE.BackSide }));
     scene.add(moonGlow);
 
-    // Set initial Moon position from ephemeris at closest approach
     var initMoonPos = toScene(caPt.moon.x, caPt.moon.y, caPt.moon.z);
     moon.position.copy(initMoonPos);
     moonGlow.position.copy(initMoonPos);
 
     // ── Starfield — dense deep-space backdrop ──
-    // Layer 1: many small dim stars
     var STAR_COUNT = 1800;
     var starPos = new Float32Array(STAR_COUNT * 3);
     var starColors = new Float32Array(STAR_COUNT * 3);
@@ -160,7 +151,6 @@
       starPos[i*3]   = r*Math.sin(ph)*Math.cos(th);
       starPos[i*3+1] = r*Math.sin(ph)*Math.sin(th);
       starPos[i*3+2] = r*Math.cos(ph);
-      // Slight blue/white/warm variation
       var tint = Math.random();
       starColors[i*3]   = tint < 0.3 ? 0.7 : tint < 0.6 ? 0.9 : 1.0;
       starColors[i*3+1] = tint < 0.3 ? 0.8 : tint < 0.6 ? 0.9 : 0.95;
@@ -170,7 +160,6 @@
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
     starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
     scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ vertexColors: true, size: 0.12, sizeAttenuation: true, transparent: true, opacity: 0.75 })));
-    // Layer 2: brighter sparse stars
     var BRIGHT_COUNT = 120;
     var brightPos = new Float32Array(BRIGHT_COUNT * 3);
     for (var i = 0; i < BRIGHT_COUNT; i++) {
@@ -180,14 +169,16 @@
     var brightGeo = new THREE.BufferGeometry();
     brightGeo.setAttribute('position', new THREE.BufferAttribute(brightPos, 3));
     scene.add(new THREE.Points(brightGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
-    // Deep space nebula — large dark sphere with subtle color gradient effect using two overlapping spheres
-    scene.add(new THREE.Mesh(new THREE.SphereGeometry(295, 32, 32),
-      new THREE.MeshBasicMaterial({ color: 0x000005, side: THREE.BackSide })));
-    scene.add(new THREE.Mesh(new THREE.SphereGeometry(280, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0x06010f, transparent: true, opacity: 0.55, side: THREE.BackSide })));
-    // Faint nebula cloud in one region
-    scene.add(new THREE.Mesh(new THREE.SphereGeometry(260, 12, 12),
-      new THREE.MeshBasicMaterial({ color: 0x0a0520, transparent: true, opacity: 0.18, side: THREE.BackSide })));
+
+    // ── Skybox — equirectangular starmap ──
+    var skyGeo = new THREE.SphereGeometry(200, 32, 32);
+    var skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, transparent: true, opacity: 0.35 });
+    var skyMesh = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(skyMesh);
+    loader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/starmap_4k.jpg', function(tex) {
+      skyMat.map = tex;
+      skyMat.needsUpdate = true;
+    });
 
     // ── Earth-Moon reference line ──
     var emBuf = new Float32Array(6);
@@ -242,7 +233,6 @@
     }
 
     var wpMeshes = [], wpMats = [];
-    // Only show waypoints within the ephemeris data range (pre-OEM events all stack at Earth)
     var wpVisible = WAYPOINTS.filter(function(wp) { return wp.metSec >= T_START_MET; });
     wpVisible.forEach(function(wp) {
       var mat = new THREE.MeshBasicMaterial({ color: 0x2a3a4a });
@@ -253,20 +243,96 @@
       scene.add(mesh);
     });
 
-    // ── Orion spacecraft ──
+    // ── Orion spacecraft (detailed model) ──
     var orionGroup = new THREE.Group();
-    var capsuleGeo = new THREE.ConeGeometry(0.3, 0.8, 12);
-    var orionMat = new THREE.MeshPhongMaterial({ color: 0xfff8f0, emissive: 0xfff0e0, emissiveIntensity: 1.0, shininess: 60 });
-    var capsule = new THREE.Mesh(capsuleGeo, orionMat);
-    // Cone tip points along +Y by default. lookAt sets the group so -Z faces velocity.
-    // Rotate -90° on X so cone tip points along -Z (i.e. in the velocity direction).
-    capsule.rotation.x = -Math.PI / 2;
+
+    // Capsule (crew module — forward end)
+    var orionMat = new THREE.MeshPhongMaterial({ color: 0xcccccc, emissive: 0x222222, shininess: 60 });
+    var capsule = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.18, 8), orionMat);
+    capsule.position.y = -0.3;
     orionGroup.add(capsule);
-    var glowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.18, side: THREE.BackSide });
-    var glowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.9, 16, 16), glowMat);
+
+    // Docking adapter
+    var dockingAdapter = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.03, 0.03, 0.05, 8),
+      new THREE.MeshPhongMaterial({ color: 0xaaaaaa })
+    );
+    dockingAdapter.position.y = -0.415;
+    orionGroup.add(dockingAdapter);
+
+    // Heat shield
+    var heatShield = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.08, 0.02, 8),
+      new THREE.MeshPhongMaterial({ color: 0x4a3a2a })
+    );
+    heatShield.position.y = -0.21;
+    orionGroup.add(heatShield);
+
+    // Crew module adapter
+    var cma = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.08, 0.1, 0.04, 8),
+      new THREE.MeshPhongMaterial({ color: 0x6a6a6a })
+    );
+    cma.position.y = -0.18;
+    orionGroup.add(cma);
+
+    // Service module (main body)
+    var serviceModule = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8),
+      new THREE.MeshPhongMaterial({ color: 0x777777, emissive: 0x111111 })
+    );
+    serviceModule.position.y = 0.0;
+    orionGroup.add(serviceModule);
+
+    // Engine bell
+    var engineBell = new THREE.Mesh(
+      new THREE.ConeGeometry(0.06, 0.1, 8, 1, true),
+      new THREE.MeshPhongMaterial({ color: 0x3a3a3a })
+    );
+    engineBell.position.y = 0.2;
+    orionGroup.add(engineBell);
+
+    // Solar arrays (4 panels in X-wing pattern)
+    var solarMat = new THREE.MeshPhongMaterial({ color: 0x0d2847, emissive: 0x0a1a3a, side: THREE.DoubleSide });
+    var armMat = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
+
+    var panelConfigs = [
+      { px: -0.25, rz: 0.1 },   // left upper
+      { px: -0.25, rz: -0.1 },  // left lower
+      { px: 0.25, rz: -0.1 },   // right upper
+      { px: 0.25, rz: 0.1 }     // right lower
+    ];
+    panelConfigs.forEach(function(cfg) {
+      var panel = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.07), solarMat);
+      panel.position.set(cfg.px, 0, 0);
+      panel.rotation.z = cfg.rz;
+      orionGroup.add(panel);
+      var arm = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05, 4), armMat);
+      arm.rotation.z = Math.PI / 2;
+      arm.position.set(cfg.px > 0 ? 0.05 : -0.05, 0, 0);
+      orionGroup.add(arm);
+    });
+
+    // Engine exhaust
+    var exhaustOuter = new THREE.Mesh(
+      new THREE.ConeGeometry(0.04, 0.2, 6),
+      new THREE.MeshBasicMaterial({ color: 0xff8833, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending })
+    );
+    exhaustOuter.position.y = 0.3;
+    orionGroup.add(exhaustOuter);
+
+    var exhaustInner = new THREE.Mesh(
+      new THREE.ConeGeometry(0.025, 0.12, 6),
+      new THREE.MeshBasicMaterial({ color: 0xffffcc, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending })
+    );
+    exhaustInner.position.y = 0.26;
+    orionGroup.add(exhaustInner);
+
+    // Mission glow
+    var glowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.12, side: THREE.BackSide });
+    var glowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), glowMat);
     orionGroup.add(glowMesh);
-    var outerGlowMat = new THREE.MeshBasicMaterial({ color: 0x00ffaa, transparent: true, opacity: 0.07, side: THREE.BackSide });
-    orionGroup.add(new THREE.Mesh(new THREE.SphereGeometry(1.4, 16, 16), outerGlowMat));
+
     orionGroup.userData = { label: 'ORION' };
     scene.add(orionGroup);
 
@@ -288,6 +354,36 @@
     var mdGeo = new THREE.BufferGeometry(); mdGeo.setAttribute('position', new THREE.BufferAttribute(mdBuf, 3));
     var mdLine = new THREE.Line(mdGeo, new THREE.LineDashedMaterial({ color: 0xffdd44, transparent: true, opacity: 0.3, dashSize: 0.08, gapSize: 0.06 }));
     scene.add(mdLine);
+
+    // ── Trace replay dot ──
+    var traceDot = new THREE.Mesh(
+      new THREE.SphereGeometry(0.06, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    scene.add(traceDot);
+    var traceDotGlow = new THREE.Mesh(
+      new THREE.SphereGeometry(0.15, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1, side: THREE.BackSide })
+    );
+    scene.add(traceDotGlow);
+    var animProgress = 0;
+    var TRACE_TRAIL_LEN = 15;
+    var traceTrailBuf = [];
+    var traceTrailFrame = 0;
+    var traceLineBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
+    var traceColorBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
+    var traceLineGeo = new THREE.BufferGeometry();
+    traceLineGeo.setAttribute('position', new THREE.BufferAttribute(traceLineBuf, 3));
+    traceLineGeo.setAttribute('color', new THREE.BufferAttribute(traceColorBuf, 3));
+    var traceLineMat = new THREE.LineBasicMaterial({ vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false });
+    var traceLineObj = new THREE.Line(traceLineGeo, traceLineMat);
+    scene.add(traceLineObj);
+    var traceGlowBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
+    var traceGlowGeo = new THREE.BufferGeometry();
+    traceGlowGeo.setAttribute('position', new THREE.BufferAttribute(traceGlowBuf, 3));
+    var traceGlowMat = new THREE.LineBasicMaterial({ color: 0xffaa44, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false });
+    var traceGlowObj = new THREE.Line(traceGlowGeo, traceGlowMat);
+    scene.add(traceGlowObj);
 
     // ── Camera ──
     var bbox = new THREE.Box3();
@@ -538,19 +634,20 @@
       // ── Get current state from shared ephemeris ──
       var state = MissionEphemeris.getState(metSec);
 
-      // Moon stays fixed at the closest-approach position — rotMat was built around
-      // that epoch, so it's the only position consistent with the trajectory shape.
-
       // ── Orion position ──
       var orionResult = getPosByMet(metSec);
       orionGroup.position.copy(orionResult.pos);
       var gt = orionResult.frac;
 
-      // Orient capsule using ephemeris velocity
-      _velDir.copy(getOrionVelocityDir(metSec));
-      _lookMat.lookAt(orionGroup.position, orionGroup.position.clone().add(_velDir), _upVec);
-      _quatLook.setFromRotationMatrix(_lookMat);
-      orionGroup.quaternion.slerp(_quatLook, 0.1);
+      // Orient spacecraft: align local +Y with velocity tangent
+      var velDir = getOrionVelocityDir(metSec);
+      var upRef = new THREE.Vector3(0, 0, 1);
+      var quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), velDir);
+      orionGroup.quaternion.slerp(quat, 0.1);
+
+      // Exhaust pulse
+      exhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
+      exhaustInner.material.opacity = 0.2 + 0.2 * Math.sin(now / 430);
 
       orionMat.emissiveIntensity = 0.7 + pulse * 0.6;
       glowMat.opacity = 0.08 + pulse * 0.15;
@@ -566,9 +663,40 @@
       }
 
       // Speed arrow from ephemeris
-      arrow.position.copy(orionGroup.position); arrow.setDirection(_velDir);
+      arrow.position.copy(orionGroup.position); arrow.setDirection(velDir);
       var speedKmh = state.speedKms * 3600;
       arrow.setLength(0.35+Math.max(0.2,Math.min(1.0,speedKmh/40000))*0.85, 0.18, 0.09);
+
+      // ── Trace replay animation ──
+      animProgress += (gt / (15 * 60));
+      if (animProgress > gt) animProgress = 0;
+      var traceFrac = Math.max(0, Math.min(animProgress, 0.999));
+      var traceResult = getPosByMet(T_START_MET + traceFrac * T_SPAN_MET);
+      traceDot.position.copy(traceResult.pos);
+      traceDotGlow.position.copy(traceResult.pos);
+
+      traceTrailFrame++;
+      if (traceTrailFrame % 2 === 0) {
+        traceTrailBuf.unshift(traceResult.pos.clone());
+        if (traceTrailBuf.length > TRACE_TRAIL_LEN) traceTrailBuf.pop();
+      }
+      for (var tti = 0; tti < TRACE_TRAIL_LEN; tti++) {
+        if (tti < traceTrailBuf.length) {
+          traceLineBuf[tti*3] = traceTrailBuf[tti].x;
+          traceLineBuf[tti*3+1] = traceTrailBuf[tti].y;
+          traceLineBuf[tti*3+2] = traceTrailBuf[tti].z;
+          traceGlowBuf[tti*3] = traceTrailBuf[tti].x;
+          traceGlowBuf[tti*3+1] = traceTrailBuf[tti].y;
+          traceGlowBuf[tti*3+2] = traceTrailBuf[tti].z;
+        }
+        var ff = tti / TRACE_TRAIL_LEN;
+        traceColorBuf[tti*3] = 1.0 - ff * 0.3;
+        traceColorBuf[tti*3+1] = 0.95 - ff * 0.45;
+        traceColorBuf[tti*3+2] = 0.85 - ff * 0.75;
+      }
+      traceLineGeo.attributes.position.needsUpdate = true;
+      traceLineGeo.attributes.color.needsUpdate = true;
+      traceGlowGeo.attributes.position.needsUpdate = true;
 
       // ── Completed path ──
       var nowMet = metSec;
@@ -586,7 +714,7 @@
         var flamePts = allPts.slice(fStart, splitIdx + 1);
         if (flamePts.length > 1) {
           var fColors = new Float32Array(flamePts.length * 3);
-          for (var fi = 0; fi < flamePts.length; fi++) { var ff = fi / (flamePts.length - 1); fColors[fi*3]=Math.pow(ff, 0.6); fColors[fi*3+1]=Math.pow(ff, 1.5)*0.95; fColors[fi*3+2]=Math.pow(ff, 3.0)*0.90; }
+          for (var fi = 0; fi < flamePts.length; fi++) { var fff = fi / (flamePts.length - 1); fColors[fi*3]=Math.pow(fff, 0.6); fColors[fi*3+1]=Math.pow(fff, 1.5)*0.95; fColors[fi*3+2]=Math.pow(fff, 3.0)*0.90; }
           flameGeo.setFromPoints(flamePts);
           flameGeo.setAttribute('color', new THREE.BufferAttribute(fColors, 3));
           flameGlowGeo.setFromPoints(flamePts);
@@ -636,7 +764,6 @@
       var isImp = ds.useImperial !== false;
       var KM_TO_MI = 0.621371;
 
-      // Orion label — offset further above so it doesn't overlap the glow sphere
       var moonDistStr = isImp ? Math.round(state.distMoonKm * KM_TO_MI).toLocaleString() + ' mi' : Math.round(state.distMoonKm).toLocaleString() + ' km';
       var orionEarthDist = orionGroup.position.distanceTo(earth.position);
       drawCallout('ORION \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, orionGroup.position.y + (orionEarthDist < 1.8 ? -3.0 : -2.2), orionGroup.position.z), '#00ffaa', 0, -24, true, orionGroup.position);
@@ -644,13 +771,11 @@
       drawCallout('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.4, earth.position.z), 'rgba(100,170,255,0.85)', 0, 0, false, earth.position);
       drawCallout('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 0.8, moon.position.z), 'rgba(200,195,180,0.85)', 0, 0, false, moon.position);
 
-      // Earth-Moon distance from ephemeris
       var emMid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5); emMid.y += 0.7;
       var emKm = Math.sqrt(state.moon.x*state.moon.x + state.moon.y*state.moon.y + state.moon.z*state.moon.z);
       var emDistStr = isImp ? Math.round(emKm * KM_TO_MI).toLocaleString() + ' MI' : Math.round(emKm).toLocaleString() + ' KM';
       drawCallout('EARTH\u2013MOON: ' + emDistStr, emMid, 'rgba(255,255,255,0.35)', 0, 0, false, null);
 
-      // Altitude from ephemeris
       var earthDistStr = isImp ? Math.round(state.distEarthKm * KM_TO_MI).toLocaleString() + ' mi' : Math.round(state.distEarthKm).toLocaleString() + ' km';
       var altPt = new THREE.Vector3().lerpVectors(orionGroup.position, earth.position, 0.4); altPt.y += 0.35;
       drawCallout('ALT: ' + earthDistStr, altPt, 'rgba(0,204,255,0.7)', 0, 0, false, null);
@@ -666,9 +791,7 @@
         var m = lctx.measureText(wp.label);
         var bw = m.width + 10, bh = 14;
         var lx = s.x + 18, ly = s.y - 18;
-        // Keep label on screen
         if (lx + bw > W - 4) lx = s.x - bw - 12;
-        // Background box
         lctx.fillStyle = 'rgba(0,8,18,0.72)';
         lctx.fillRect(lx - 4, ly - bh/2, bw, bh);
         lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = bold ? 0.85 : 0.5;
@@ -677,7 +800,6 @@
         lctx.fillStyle = color; lctx.textAlign = 'left'; lctx.textBaseline = 'middle';
         if (bold) { lctx.shadowColor = color; lctx.shadowBlur = 10; }
         lctx.fillText(wp.label, lx, ly);
-        // Tick line from dot to label
         lctx.beginPath(); lctx.moveTo(s.x, s.y); lctx.lineTo(lx - 4, ly);
         lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = 0.4;
         lctx.setLineDash([2,3]); lctx.stroke(); lctx.setLineDash([]);
@@ -753,7 +875,6 @@
       var dsnEl = document.getElementById('hud-dsn');
       if (dsnEl) dsnEl.textContent = ds.dsnStation || 'ACQUIRING';
 
-      // LOS timing from shared events
       var losEv = null, aosEv = null;
       var wps = MissionEvents.getWaypoints();
       for (var i = 0; i < wps.length; i++) { if (wps[i].label === 'FAR SIDE LOS') losEv = wps[i]; if (wps[i].label === 'SIGNAL ACQ') aosEv = wps[i]; }
