@@ -826,7 +826,22 @@
       display: flex; align-items: flex-start;
       gap: 7px; padding: 5px 10px;
       border-left: 3px solid transparent;
+      cursor: pointer;
     }
+    .tl-event:hover { background: rgba(0, 204, 170, 0.05); }
+    .tl-desc {
+      display: none;
+      padding: 6px 0 8px 0;
+      font-size: 0.78rem;
+      color: rgba(180, 210, 240, 0.85);
+      line-height: 1.4;
+      border-left: 1px solid rgba(0, 204, 170, 0.3);
+      padding-left: 8px;
+      margin-left: 0;
+      margin-top: 4px;
+      font-family: var(--font-ui);
+    }
+    .tl-event.tl-expanded .tl-desc { display: block; }
     .tl-event.tl-complete { border-left-color: var(--green); }
     .tl-event.tl-active   { border-left-color: var(--amber); background: rgba(255,167,38,0.06); }
     .tl-event.tl-upcoming { border-left-color: rgba(74,144,217,0.18); }

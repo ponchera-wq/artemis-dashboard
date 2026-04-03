@@ -74,7 +74,7 @@
     for (var i = 0; i < EVENTS.length; i++) {
       var ev = EVENTS[i];
       if (activePhaseFilter === 'all' || ev.phase === activePhaseFilter) {
-        filtered.push({ metSec: ev.metSec, name: ev.name, day: ev.day, crit: ev.crit, phase: ev.phase, _i: i });
+        filtered.push({ metSec: ev.metSec, name: ev.name, day: ev.day, crit: ev.crit, phase: ev.phase, desc: ev.desc || '', _i: i });
       }
     }
 
@@ -124,7 +124,17 @@
         '<div class="tl-met">' + fmtMet(ev.metSec) +
           '<div class="tl-localtime">' + localStr + '<br>' + utcStr + '</div>' +
         '</div>' +
-        '<div class="tl-name">' + ev.name + (isComplete ? '<span class="tl-check"> \u2713</span>' : '') + '<span class="tl-crit tl-crit-' + ev.crit + '">' + ev.crit + '</span>' + (etaStr ? '<div class="tl-eta">' + etaStr + '</div>' : '') + '</div>';
+        '<div class="tl-name">' + ev.name + (isComplete ? '<span class="tl-check"> \u2713</span>' : '') + '<span class="tl-crit tl-crit-' + ev.crit + '">' + ev.crit + '</span>' + (etaStr ? '<div class="tl-eta">' + etaStr + '</div>' : '') +
+          (ev.desc ? '<div class="tl-desc">' + ev.desc + '</div>' : '') +
+        '</div>';
+      if (ev.desc) {
+        el.addEventListener('click', function(e) {
+          var isExpanded = this.classList.contains('tl-expanded');
+          var allEvents = scroll.querySelectorAll('.tl-event.tl-expanded');
+          for (var j = 0; j < allEvents.length; j++) allEvents[j].classList.remove('tl-expanded');
+          if (!isExpanded) this.classList.add('tl-expanded');
+        });
+      }
       scroll.appendChild(el);
       if (isActive) activeEl = el;
     }
