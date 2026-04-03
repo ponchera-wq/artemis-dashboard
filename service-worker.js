@@ -1,9 +1,11 @@
-const CACHE_NAME = 'artemis-dashboard-v4';
+const CACHE_NAME = 'artemis-dashboard-v5';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/css/styles.css',
   '/js/shared.js',
+  '/js/mission-ephemeris.js',
+  '/js/mission-events.js',
   '/js/clock.js',
   '/js/stats.js',
   '/js/timeline.js',
@@ -14,6 +16,7 @@ const STATIC_ASSETS = [
   '/js/dsn.js',
   '/js/ui.js',
   '/js/reference.js',
+  '/data/mission-ephemeris.json',
   '/manifest.json',
   '/content/mission.html',
   '/content/science.html',

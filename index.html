@@ -16,28 +16,28 @@
   <meta name="apple-mobile-web-app-title" content="Artemis II">
   <link rel="manifest" href="manifest.json">
   <!-- SEO -->
-  <meta name="description" content="Real-time Artemis II mission dashboard with live JPL telemetry, 3D trajectory map, space weather monitoring, crew profiles, and NASA news feeds. Track Orion's journey to the Moon.">
+  <meta name="description" content="Real-time Artemis II mission dashboard with NASA OEM ephemeris data, 3D trajectory map, space weather monitoring, crew profiles, and NASA news feeds. Track Orion's journey to the Moon.">
   <meta name="keywords" content="Artemis II, Artemis 2, NASA, Moon mission, Orion spacecraft, live tracker, mission dashboard, JPL Horizons, space weather, SLS rocket, lunar flyby, 2026">
   <meta name="author" content="Caz">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://artemis-live-dashboard.vercel.app/">
   <!-- Open Graph -->
   <meta property="og:title" content="Artemis II — Live Mission Dashboard">
-  <meta property="og:description" content="Real-time mission tracking for NASA's Artemis II crewed lunar flyby. Live telemetry, 3D trajectory, space weather, crew profiles, and news feeds.">
+  <meta property="og:description" content="Real-time mission tracking for NASA's Artemis II crewed lunar flyby. OEM ephemeris data, 3D trajectory, space weather, crew profiles, and news feeds.">
   <meta property="og:url" content="https://artemis-live-dashboard.vercel.app/">
   <meta property="og:type" content="website">
   <meta property="og:image" content="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Artemis II — Live Mission Dashboard">
-  <meta name="twitter:description" content="Real-time Artemis II mission tracking with live JPL telemetry, 3D trajectory map, and space weather monitoring.">
+  <meta name="twitter:description" content="Real-time Artemis II mission tracking with NASA OEM ephemeris data, 3D trajectory map, and space weather monitoring.">
   <!-- Structured data -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebApplication",
     "name": "Artemis II Live Mission Dashboard",
-    "description": "Real-time mission dashboard tracking NASA's Artemis II crewed lunar flyby with live telemetry, 3D trajectory visualization, and space weather monitoring.",
+    "description": "Real-time mission dashboard tracking NASA's Artemis II crewed lunar flyby with NASA OEM ephemeris data, 3D trajectory visualization, and space weather monitoring.",
     "url": "https://artemis-live-dashboard.vercel.app/",
     "applicationCategory": "Space Tracking",
     "operatingSystem": "Web Browser",
@@ -578,7 +578,8 @@
   (function() {
     var v = window._cbv || Date.now();
     var scripts = [
-      'js/shared.js','js/clock.js','js/stats.js','js/timeline.js',
+      'js/shared.js','js/mission-ephemeris.js','js/mission-events.js',
+      'js/clock.js','js/stats.js','js/timeline.js',
       'js/news.js','js/crew.js','js/weather.js','js/trajectory.js',
       'js/dsn.js','js/ui.js','js/reference.js'
     ];
