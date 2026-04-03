@@ -91,24 +91,24 @@
     Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
     container.appendChild(renderer.domElement);
 
-    // ── Skybox ──
-    // Use a fresh loader WITHOUT crossOrigin so local files don't get CORS-rejected
-    var skyLoader = new THREE.TextureLoader();
+    // ── Skybox — equirectangular star map ──
     var skyGeo = new THREE.SphereGeometry(300, 32, 32);
-    // Default color 0x000000 so fallback is black (not white) when texture fails
     var skyMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
     var skyMesh = new THREE.Mesh(skyGeo, skyMat);
     scene.add(skyMesh);
-    // Try paths in order: with and without leading ./
-    var skyPaths = ['css/bg-3dtraj.jpg', './css/bg-3dtraj.jpg', '/css/bg-3dtraj.jpg'];
-    (function trySkyPath(i) {
-      if (i >= skyPaths.length) { console.warn('[SKY] All paths failed — using black fallback'); return; }
-      skyLoader.load(skyPaths[i],
-        function(tex) { console.log('[SKY] Loaded from:', skyPaths[i]); skyMat.map = tex; skyMat.color.set(0xffffff); skyMat.needsUpdate = true; },
+    var skyPaths = ['bg-3dtraj.jpg', 'css/bg-3dtraj.jpg', './css/bg-3dtraj.jpg',
+                    '/css/bg-3dtraj.jpg', 'img/bg-3dtraj.jpg'];
+    var skyLoaded = false;
+    function trySkyPath(idx) {
+      if (idx >= skyPaths.length || skyLoaded) { if (!skyLoaded) console.warn('[SKY] All paths failed — black fallback'); return; }
+      console.log('[SKY] Trying: ' + skyPaths[idx]);
+      loader.load(skyPaths[idx],
+        function(tex) { console.log('[SKY] SUCCESS: ' + skyPaths[idx]); skyLoaded = true; skyMat.map = tex; skyMat.color.set(0xffffff); skyMat.needsUpdate = true; },
         undefined,
-        function(err) { console.warn('[SKY] Failed:', skyPaths[i], err); trySkyPath(i + 1); }
+        function() { console.warn('[SKY] Failed: ' + skyPaths[idx]); trySkyPath(idx + 1); }
       );
-    })(0);
+    }
+    trySkyPath(0);
 
     var lc = document.createElement('canvas');
     lc.width = W; lc.height = H;
@@ -166,33 +166,7 @@
     moon.position.copy(initMoonPos);
     moonGlow.position.copy(initMoonPos);
 
-    // ── Starfield — dense deep-space backdrop ──
-    var STAR_COUNT = 1800;
-    var starPos = new Float32Array(STAR_COUNT * 3);
-    var starColors = new Float32Array(STAR_COUNT * 3);
-    for (var i = 0; i < STAR_COUNT; i++) {
-      var th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1), r = 220 + Math.random()*80;
-      starPos[i*3]   = r*Math.sin(ph)*Math.cos(th);
-      starPos[i*3+1] = r*Math.sin(ph)*Math.sin(th);
-      starPos[i*3+2] = r*Math.cos(ph);
-      var tint = Math.random();
-      starColors[i*3]   = tint < 0.3 ? 0.7 : tint < 0.6 ? 0.9 : 1.0;
-      starColors[i*3+1] = tint < 0.3 ? 0.8 : tint < 0.6 ? 0.9 : 0.95;
-      starColors[i*3+2] = tint < 0.3 ? 1.0 : tint < 0.6 ? 1.0 : 0.85;
-    }
-    var starGeo = new THREE.BufferGeometry();
-    starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ vertexColors: true, size: 0.12, sizeAttenuation: true, transparent: true, opacity: 0.8 })));
-    var BRIGHT_COUNT = 120;
-    var brightPos = new Float32Array(BRIGHT_COUNT * 3);
-    for (var i = 0; i < BRIGHT_COUNT; i++) {
-      var th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1), r = 225 + Math.random()*60;
-      brightPos[i*3] = r*Math.sin(ph)*Math.cos(th); brightPos[i*3+1] = r*Math.sin(ph)*Math.sin(th); brightPos[i*3+2] = r*Math.cos(ph);
-    }
-    var brightGeo = new THREE.BufferGeometry();
-    brightGeo.setAttribute('position', new THREE.BufferAttribute(brightPos, 3));
-    scene.add(new THREE.Points(brightGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
+    // Starfield removed — skybox texture (bg-3dtraj.jpg) provides stars
 
 
     // ── Earth-Moon reference line ──
