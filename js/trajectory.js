@@ -87,13 +87,13 @@
     var renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
-    renderer.setClearColor(0x000000, 1);
+    renderer.setClearColor(0x030810, 1);
     Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
     container.appendChild(renderer.domElement);
 
     // ── Skybox — equirectangular star map ──
     var skyGeo = new THREE.SphereGeometry(300, 32, 32);
-    var skyMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+    var skyMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide, transparent: true, opacity: 0.25 });
     var skyMesh = new THREE.Mesh(skyGeo, skyMat);
     scene.add(skyMesh);
     var skyPaths = ['bg-3dtraj.jpg', 'css/bg-3dtraj.jpg', './css/bg-3dtraj.jpg',
