@@ -7,7 +7,9 @@
     { id: 'sls',        label: 'SLS ROCKET', title: 'SPACE LAUNCH SYSTEM' },
     { id: 'orion',      label: 'ORION',      title: 'ORION SPACECRAFT' },
     { id: 'ground-ops', label: 'GROUND OPS', title: 'EXPLORATION GROUND SYSTEMS' },
-    { id: 'comms',      label: 'COMMS',      title: 'SPACE COMMUNICATIONS &amp; NAVIGATION' }
+    { id: 'comms',      label: 'COMMS',      title: 'SPACE COMMUNICATIONS &amp; NAVIGATION' },
+    { id: 'esm',        label: 'ESA / ESM',  title: 'EUROPEAN SERVICE MODULE' },
+    { id: 'canada',     label: 'CANADA / CSA', title: 'CANADA &amp; THE CANADIAN SPACE AGENCY' }
   ];
 
   var cache = {};
