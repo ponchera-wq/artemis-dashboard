@@ -159,7 +159,7 @@
     var starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
     starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
-    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ vertexColors: true, size: 0.12, sizeAttenuation: true, transparent: true, opacity: 0.75 })));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ vertexColors: true, size: 0.12, sizeAttenuation: true, transparent: true, opacity: 0.8 })));
     var BRIGHT_COUNT = 120;
     var brightPos = new Float32Array(BRIGHT_COUNT * 3);
     for (var i = 0; i < BRIGHT_COUNT; i++) {
@@ -170,21 +170,26 @@
     brightGeo.setAttribute('position', new THREE.BufferAttribute(brightPos, 3));
     scene.add(new THREE.Points(brightGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
 
-    // ── Procedural nebula clouds ──
-    var nebConfigs = [
-      { r: 40, color: 0x1a0a3a, opacity: 0.08, x:  20, y:  10, z: -30 }, // purple
-      { r: 35, color: 0x0a1a3a, opacity: 0.06, x: -15, y:  -8, z: -25 }, // blue
-      { r: 50, color: 0x051a14, opacity: 0.05, x:  -5, y:  20, z:  15 }, // teal
-      { r: 30, color: 0x12042a, opacity: 0.07, x:  30, y: -15, z:  20 }, // deep violet
-    ];
-    nebConfigs.forEach(function(cfg) {
+    // ── Procedural nebula clouds (additive blending for glow effect) ──
+    function addNebula(x, y, z, radius, r, g, b, opacity) {
       var neb = new THREE.Mesh(
-        new THREE.SphereGeometry(cfg.r, 16, 16),
-        new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: cfg.opacity, side: THREE.BackSide })
+        new THREE.SphereGeometry(radius, 16, 16),
+        new THREE.MeshBasicMaterial({
+          color: new THREE.Color(r/255, g/255, b/255),
+          transparent: true, opacity: opacity,
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        })
       );
-      neb.position.set(cfg.x, cfg.y, cfg.z);
+      neb.position.set(x, y, z);
       scene.add(neb);
-    });
+    }
+    addNebula( 25,  12, -20, 30,  40, 15,  80, 0.04);  // purple
+    addNebula(-18,  -8, -25, 25,  10, 30,  70, 0.035); // deep blue
+    addNebula( 10, -15,  30, 35,  60, 20,  45, 0.03);  // magenta
+    addNebula(-25,  20,  15, 28,  15, 45,  60, 0.03);  // teal
+    addNebula( 30,  -5, -35, 20,  80, 40,  20, 0.02);  // warm amber
 
     // ── Earth-Moon reference line ──
     var emBuf = new Float32Array(6);
