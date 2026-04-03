@@ -244,7 +244,7 @@
     scene.add(upLine);
     // Upcoming path glow — 4 offset copies (additive, dashed)
     var upGlowLines = [];
-    [{x:0,y:0.25,z:0},{x:0,y:-0.25,z:0},{x:0.25,y:0,z:0},{x:-0.25,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.05,z:0},{x:0,y:-0.05,z:0},{x:0.05,y:0,z:0},{x:-0.05,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry().setFromPoints(allPts);
       var mat = new THREE.LineDashedMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false, dashSize: 0.8, gapSize: 0.4 });
       var line = new THREE.Line(geo, mat);
@@ -261,10 +261,10 @@
     scene.add(completedLine);
     // Completed path glow — 6 offset copies (additive)
     var GLOW_OFFSETS = [
-      {x:0,y:0.35,z:0},{x:0,y:-0.35,z:0},
-      {x:0.35,y:0,z:0},{x:-0.35,y:0,z:0},
-      {x:0,y:0,z:0.35},{x:0,y:0,z:-0.35},
-      {x:0.14,y:0.14,z:0},{x:-0.14,y:-0.14,z:0}
+      {x:0,y:0.1,z:0},{x:0,y:-0.1,z:0},
+      {x:0.1,y:0,z:0},{x:-0.1,y:0,z:0},
+      {x:0,y:0,z:0.1},{x:0,y:0,z:-0.1},
+      {x:0.05,y:0.05,z:0},{x:-0.05,y:-0.05,z:0}
     ];
     var compGlowLines = [];
     GLOW_OFFSETS.forEach(function(off) {
@@ -276,7 +276,7 @@
       compGlowLines.push({geo: geo, line: line});
     });
     var compCoreLines = [];
-    [{x:0,y:0.06,z:0},{x:0,y:-0.06,z:0},{x:0.06,y:0,z:0},{x:-0.06,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.02,z:0},{x:0,y:-0.02,z:0},{x:0.02,y:0,z:0},{x:-0.02,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.7 });
       var line = new THREE.Line(geo, mat);
@@ -285,7 +285,7 @@
       compCoreLines.push({geo: geo});
     });
     var compBloomLines = [];
-    [{x:0,y:0.7,z:0},{x:0,y:-0.7,z:0},{x:0.7,y:0,z:0},{x:-0.7,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},{x:0.2,y:0,z:0},{x:-0.2,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({
         color: 0x00ffcc, transparent: true, opacity: 0.15,
@@ -302,7 +302,7 @@
     var returnLine = new THREE.Line(returnGeo, returnMat);
     scene.add(returnLine);
     var returnGlowLines = [];
-    [{x:0,y:0.35,z:0},{x:0,y:-0.35,z:0},{x:0.35,y:0,z:0},{x:-0.35,y:0,z:0},{x:0,y:0,z:0.35},{x:0,y:0,z:-0.35}].forEach(function(off) {
+    [{x:0,y:0.1,z:0},{x:0,y:-0.1,z:0},{x:0.1,y:0,z:0},{x:-0.1,y:0,z:0},{x:0,y:0,z:0.1},{x:0,y:0,z:-0.1}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
       var line = new THREE.Line(geo, mat);
@@ -311,7 +311,7 @@
       returnGlowLines.push({geo: geo});
     });
     var returnCoreLines = [];
-    [{x:0,y:0.06,z:0},{x:0,y:-0.06,z:0},{x:0.06,y:0,z:0},{x:-0.06,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.02,z:0},{x:0,y:-0.02,z:0},{x:0.02,y:0,z:0},{x:-0.02,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 0.7 });
       var line = new THREE.Line(geo, mat);
@@ -320,7 +320,7 @@
       returnCoreLines.push({geo: geo});
     });
     var returnBloomLines = [];
-    [{x:0,y:0.7,z:0},{x:0,y:-0.7,z:0},{x:0.7,y:0,z:0},{x:-0.7,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},{x:0.2,y:0,z:0},{x:-0.2,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({
         color: 0xff8844, transparent: true, opacity: 0.15,
@@ -337,7 +337,7 @@
     scene.add(new THREE.Line(activeSegGeo, activeSegMat));
     // Active segment glow — 4 offset copies (additive, gold)
     var activeGlowLines = [];
-    [{x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},{x:0.2,y:0,z:0},{x:-0.2,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.05,z:0},{x:0,y:-0.05,z:0},{x:0.05,y:0,z:0},{x:-0.05,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false });
       var line = new THREE.Line(geo, mat);
