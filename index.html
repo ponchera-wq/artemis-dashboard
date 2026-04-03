@@ -129,6 +129,18 @@ display:flex;align-items:center;gap:3px;">
       </div>
       <div id="earth-annotation" style="font-family:var(--font-mono);font-size:0.36rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
       <div class="stat-sub" id="stat-earth-analogy"></div>
+      <div class="earth-extras">
+        <div class="earth-extra-row">
+          <span class="earth-extra-lbl">TOTAL</span>
+          <span class="earth-extra-val" id="stat-odometer">—</span>
+        </div>
+        <div class="earth-extra-sub" id="stat-odometer-sub"></div>
+        <div class="earth-extra-row apollo-tint">
+          <span class="earth-extra-lbl">APOLLO 13</span>
+          <span class="earth-extra-val" id="stat-apollo13">—</span>
+        </div>
+        <div class="earth-extra-sub apollo-tint" id="stat-apollo13-sub"></div>
+      </div>
     </div>
 
     <!-- Distance from Moon -->
@@ -164,20 +176,6 @@ display:flex;align-items:center;gap:3px;">
       <div class="stat-label">SPLASHDOWN</div>
       <div class="stat-value" id="splashdown-countdown">--:--:--</div>
       <div class="stat-sub" id="splashdown-date">11 APR · 00:06 UTC</div>
-    </div>
-
-    <!-- Odometer -->
-    <div class="tb-telem stat-block" id="odometer-block">
-      <div class="stat-label">TOTAL DISTANCE</div>
-      <div class="stat-value" id="stat-odometer">—</div>
-      <div class="stat-sub" id="stat-odometer-sub"></div>
-    </div>
-
-    <!-- Apollo 13 comparison -->
-    <div class="tb-telem stat-block historical" id="apollo13-block">
-      <div class="stat-label">APOLLO 13 AT THIS MET</div>
-      <div class="stat-value" id="stat-apollo13">—</div>
-      <div class="stat-sub" id="stat-apollo13-sub"></div>
     </div>
 
     <!-- G-Force -->
@@ -294,6 +292,21 @@ display:flex;align-items:center;gap:3px;">
           <div class="to-extra-label">SPLASHDOWN</div>
           <div class="to-extra-val" id="to-splashdown">--:--:--</div>
           <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;">11 APR · 00:06 UTC</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">TOTAL DISTANCE</div>
+          <div class="to-extra-val" id="to-odometer">—</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-odometer-sub"></div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">APOLLO 13 AT MET</div>
+          <div class="to-extra-val" id="to-apollo13">—</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-apollo13-sub"></div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">G-FORCE</div>
+          <div class="to-extra-val" id="to-gforce">—</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-gforce-sub"></div>
         </div>
         <div class="to-extra-item">
           <div class="to-extra-label">UNITS</div>

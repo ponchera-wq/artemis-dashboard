@@ -403,8 +403,36 @@
     .telem-val-row { display: flex; align-items: baseline; gap: 0.3em; }
     .telem-val-row .telem-unit { font-size: 0.55rem; letter-spacing: 0.08em; }
 
+    /* ── Earth block sub-stats (odometer + Apollo 13) ──────────────── */
+    .earth-extras {
+      display: flex; flex-direction: column; align-items: center;
+      width: 100%; margin-top: 2px; padding-top: 2px;
+      border-top: 1px solid rgba(74,144,217,0.1); gap: 0px;
+    }
+    .earth-extra-row {
+      display: flex; align-items: baseline; gap: 4px;
+    }
+    .earth-extra-lbl {
+      font-family: var(--font-ui);
+      font-size: 0.26rem; letter-spacing: 0.12em;
+      color: var(--text-dim); opacity: 0.75;
+    }
+    .earth-extra-val {
+      font-family: var(--font-mono);
+      font-size: 0.50rem; font-weight: 700;
+      letter-spacing: 0.04em; color: rgba(0,229,255,0.7);
+    }
+    .earth-extra-sub {
+      font-family: var(--font-mono);
+      font-size: 0.27rem; color: var(--text-dim);
+      letter-spacing: 0.03em; text-align: center;
+    }
+    .earth-extra-row.apollo-tint .earth-extra-lbl { color: rgba(255,167,38,0.65); opacity: 1; }
+    .earth-extra-row.apollo-tint .earth-extra-val  { color: rgba(255,167,38,0.6); }
+    .earth-extra-sub.apollo-tint { color: rgba(255,167,38,0.45); }
+
     /* ── Stat blocks (splashdown / perilune countdowns + analogy) ─── */
-    .stat-block { border-left: 1px solid rgba(74,144,217,0.15); min-width: 100px; flex-shrink: 1; }
+    .stat-block { border-left: 1px solid rgba(74,144,217,0.15); min-width: 80px; flex-shrink: 1; }
     .stat-label {
       font-family: var(--font-ui);
       font-size: 0.34rem;
@@ -995,6 +1023,10 @@
     #panel-overlay-content .met-sub { font-size: 0.6rem; }
     #panel-overlay-content #earth-annotation,
     #panel-overlay-content #moon-annotation { font-size: 0.55rem; }
+    #panel-overlay-content .earth-extra-val { font-size: 0.9rem; }
+    #panel-overlay-content .earth-extra-lbl { font-size: 0.5rem; }
+    #panel-overlay-content .earth-extra-sub { font-size: 0.45rem; }
+    #panel-overlay-content .stat-value      { font-size: clamp(1rem, 1.8vw, 1.5rem); }
     /* Make the top-bar children lay out as a flex row inside the overlay */
     #panel-overlay-content:has(#tb-met) {
       display: flex !important;

@@ -103,6 +103,18 @@
     mirror('to-u-speed', 'tu-speed');
     mirror('to-a-earth', 'earth-annotation');
     mirror('to-a-moon',  'moon-annotation');
+    mirror('to-a-earth-analogy', 'stat-earth-analogy');
+
+    // Flight Day
+    mirror('to-flight-day', 'flight-day-display');
+
+    // Perilune + Splashdown countdowns (mirror value and CSS class)
+    const periluneEl = document.getElementById('perilune-countdown');
+    const toPerilune = document.getElementById('to-perilune');
+    if (periluneEl && toPerilune) { toPerilune.textContent = periluneEl.textContent; toPerilune.className = 'to-extra-val ' + (periluneEl.className.replace('stat-value','').trim()); }
+    const splashdownEl = document.getElementById('splashdown-countdown');
+    const toSplashdown = document.getElementById('to-splashdown');
+    if (splashdownEl && toSplashdown) { toSplashdown.textContent = splashdownEl.textContent; toSplashdown.className = 'to-extra-val ' + (splashdownEl.className.replace('stat-value','').trim()); }
 
     // Trend arrows
     const eNum = parseFloat(eStr.replace(/,/g,'')) || null;
@@ -139,6 +151,21 @@
       'SPLASHDOWN':   'RECOVERY OPERATIONS',
     };
     set('to-phase-detail', DETAILS[phase] || phase || '—');
+
+    // Odometer + Apollo 13 + G-force
+    mirror('to-odometer', 'stat-odometer');
+    mirror('to-odometer-sub', 'stat-odometer-sub');
+    mirror('to-apollo13', 'stat-apollo13');
+    mirror('to-apollo13-sub', 'stat-apollo13-sub');
+    const gfSrc = document.getElementById('stat-gforce');
+    const toGf  = document.getElementById('to-gforce');
+    if (gfSrc && toGf) {
+      toGf.textContent = gfSrc.textContent;
+      toGf.className = 'to-extra-val' +
+        (gfSrc.classList.contains('good') ? ' live' :
+         gfSrc.classList.contains('warn') ? ' est' : '');
+    }
+    mirror('to-gforce-sub', 'stat-gforce-sub');
 
     // Unit toggle button label
     const utBtn = document.getElementById('to-unit-toggle');
