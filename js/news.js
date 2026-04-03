@@ -7,6 +7,7 @@
     nasa: [
       { url: 'https://www.nasa.gov/feed/',             name: 'NASA' },
       { url: 'https://www.nasa.gov/blogs/artemis/feed/', name: 'NASA ARTEMIS' },
+      { url: 'https://www.nasa.gov/blogs/missions/feed/', name: 'NASA BLOG' },
     ],
     space: [
       { url: 'https://www.space.com/feeds/all',         name: 'SPACE.COM' },
@@ -16,15 +17,20 @@
     media: [
       { url: 'https://feeds.bbci.co.uk/news/science_and_environment/rss.xml',    name: 'BBC SCI' },
     ],
+    partners: [
+      { url: 'https://blogs.esa.int/orion/feed/', name: 'ESA ORION' },
+      { url: 'https://www.asc-csa.gc.ca/eng/rss/default.xml', name: 'CSA' },
+    ],
   };
 
   const FILTERS = {
-    nasa:  ['artemis', 'orion', 'moon'],
-    space: ['artemis', 'orion', 'moon', 'sls'],
-    media: ['artemis', 'moon', 'nasa'],
+    nasa:     ['artemis', 'orion', 'moon'],
+    space:    ['artemis', 'orion', 'moon', 'sls'],
+    media:    ['artemis', 'moon', 'nasa'],
+    partners: ['artemis', 'orion', 'moon', 'hansen', 'lunar', 'service module'],
   };
 
-  const cache = { nasa: [], space: [], media: [] };
+  const cache = { nasa: [], space: [], media: [], partners: [] };
   let activeTab = 'all';
 
   function stripHtml(s) {
@@ -87,7 +93,7 @@
   }
 
   function getItems(tab) {
-    if (tab === 'all') return dedup(byDate([...cache.nasa, ...cache.space, ...cache.media]));
+    if (tab === 'all') return dedup(byDate([...cache.nasa, ...cache.space, ...cache.media, ...cache.partners]));
     return byDate(cache[tab] || []);
   }
 
@@ -129,14 +135,16 @@
   }
 
   async function refreshAll() {
-    const [n, s, m] = await Promise.all([
-      Promise.all(SOURCES.nasa.map(src  => fetchSource(src, FILTERS.nasa))).then(r => r.flat()),
-      Promise.all(SOURCES.space.map(src => fetchSource(src, FILTERS.space))).then(r => r.flat()),
-      Promise.all(SOURCES.media.map(src => fetchSource(src, FILTERS.media))).then(r => r.flat()),
+    const [n, s, m, p] = await Promise.all([
+      Promise.all(SOURCES.nasa.map(src      => fetchSource(src, FILTERS.nasa))).then(r => r.flat()),
+      Promise.all(SOURCES.space.map(src     => fetchSource(src, FILTERS.space))).then(r => r.flat()),
+      Promise.all(SOURCES.media.map(src     => fetchSource(src, FILTERS.media))).then(r => r.flat()),
+      Promise.all(SOURCES.partners.map(src  => fetchSource(src, FILTERS.partners))).then(r => r.flat()),
     ]);
-    cache.nasa  = byDate(n);
-    cache.space = byDate(s);
-    cache.media = byDate(m);
+    cache.nasa     = byDate(n);
+    cache.space    = byDate(s);
+    cache.media    = byDate(m);
+    cache.partners = byDate(p);
     renderTab(activeTab);
   }
 
