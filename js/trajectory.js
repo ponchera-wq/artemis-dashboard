@@ -82,7 +82,7 @@
     var renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
-    renderer.setClearColor(0x000005, 1);
+    renderer.setClearColor(0x050a14, 1);
     Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
     container.appendChild(renderer.domElement);
 
@@ -170,14 +170,20 @@
     brightGeo.setAttribute('position', new THREE.BufferAttribute(brightPos, 3));
     scene.add(new THREE.Points(brightGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
 
-    // ── Skybox — equirectangular starmap ──
-    var skyGeo = new THREE.SphereGeometry(200, 32, 32);
-    var skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide, transparent: true, opacity: 0.35 });
-    var skyMesh = new THREE.Mesh(skyGeo, skyMat);
-    scene.add(skyMesh);
-    loader.load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@dev/examples/textures/equirectangular/starmap_4k.jpg', function(tex) {
-      skyMat.map = tex;
-      skyMat.needsUpdate = true;
+    // ── Procedural nebula clouds ──
+    var nebConfigs = [
+      { r: 40, color: 0x1a0a3a, opacity: 0.08, x:  20, y:  10, z: -30 }, // purple
+      { r: 35, color: 0x0a1a3a, opacity: 0.06, x: -15, y:  -8, z: -25 }, // blue
+      { r: 50, color: 0x051a14, opacity: 0.05, x:  -5, y:  20, z:  15 }, // teal
+      { r: 30, color: 0x12042a, opacity: 0.07, x:  30, y: -15, z:  20 }, // deep violet
+    ];
+    nebConfigs.forEach(function(cfg) {
+      var neb = new THREE.Mesh(
+        new THREE.SphereGeometry(cfg.r, 16, 16),
+        new THREE.MeshBasicMaterial({ color: cfg.color, transparent: true, opacity: cfg.opacity, side: THREE.BackSide })
+      );
+      neb.position.set(cfg.x, cfg.y, cfg.z);
+      scene.add(neb);
     });
 
     // ── Earth-Moon reference line ──
@@ -357,18 +363,20 @@
 
     // ── Trace replay dot ──
     var traceDot = new THREE.Mesh(
-      new THREE.SphereGeometry(0.06, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff })
+      new THREE.SphereGeometry(0.12, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
     );
     scene.add(traceDot);
     var traceDotGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.15, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.1, side: THREE.BackSide })
+      new THREE.SphereGeometry(0.28, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, side: THREE.BackSide })
     );
     scene.add(traceDotGlow);
     var animProgress = 0;
     var TRACE_TRAIL_LEN = 15;
+    // Pre-fill trail buffer so it starts rendering immediately (not degenerate zeros)
     var traceTrailBuf = [];
+    for (var _ti = 0; _ti < TRACE_TRAIL_LEN; _ti++) { traceTrailBuf.push(allPts[0].clone()); }
     var traceTrailFrame = 0;
     var traceLineBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
     var traceColorBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
@@ -668,8 +676,8 @@
       arrow.setLength(0.35+Math.max(0.2,Math.min(1.0,speedKmh/40000))*0.85, 0.18, 0.09);
 
       // ── Trace replay animation ──
-      animProgress += (gt / (15 * 60));
-      if (animProgress > gt) animProgress = 0;
+      animProgress += (gt > 0 ? gt / (15 * 60) : 0.0001);
+      if (animProgress >= gt && gt > 0) animProgress = 0;
       var traceFrac = Math.max(0, Math.min(animProgress, 0.999));
       var traceResult = getPosByMet(T_START_MET + traceFrac * T_SPAN_MET);
       traceDot.position.copy(traceResult.pos);
