@@ -821,9 +821,24 @@
       font-family: var(--font-mono); font-size: 0.52rem;
       color: var(--accent-light); letter-spacing: 0.1em;
     }
+    /* Artemis logo watermark in Mission Timeline panel */
+    #feed-blog { position: relative; overflow: hidden; }
+    #feed-blog::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px; height: 200px;
+      background: url('css/artemis-logo.png') center/contain no-repeat;
+      opacity: 0.04;
+      pointer-events: none;
+      z-index: 0;
+    }
+
     .timeline-scroll {
       flex: 1; overflow-y: auto; max-height: 340px;
       scrollbar-width: thin; scrollbar-color: rgba(74,144,217,0.3) transparent;
+      position: relative; z-index: 1;
     }
     .tl-day-header {
       font-family: var(--font-ui); font-size: 0.43rem;
