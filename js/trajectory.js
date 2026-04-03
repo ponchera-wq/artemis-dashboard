@@ -269,7 +269,7 @@
       compGlowLines.push({geo: geo, line: line});
     });
     var activeSegGeo = new THREE.BufferGeometry();
-    var activeSegMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 1.0 });
+    var activeSegMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 1.0 });
     scene.add(new THREE.Line(activeSegGeo, activeSegMat));
     // Active segment glow — 4 offset copies (additive, gold)
     var activeGlowLines = [];
@@ -287,7 +287,7 @@
     var flameMat = new THREE.LineBasicMaterial({ vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false });
     scene.add(new THREE.Line(flameGeo, flameMat));
     var flameGlowGeo = new THREE.BufferGeometry();
-    var flameGlowMat = new THREE.LineBasicMaterial({ color: 0xffeedd, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false });
+    var flameGlowMat = new THREE.LineBasicMaterial({ color: 0xffeedd, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false });
     scene.add(new THREE.Line(flameGlowGeo, flameGlowMat));
 
     // ── Waypoints from shared MissionEvents ──
@@ -434,37 +434,9 @@
     var mdLine = new THREE.Line(mdGeo, new THREE.LineDashedMaterial({ color: 0xffdd44, transparent: true, opacity: 0.3, dashSize: 0.08, gapSize: 0.06 }));
     scene.add(mdLine);
 
-    // ── Trace replay dot ──
-    var traceDot = new THREE.Mesh(
-      new THREE.SphereGeometry(0.3, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1.0 })
-    );
-    scene.add(traceDot);
-    var traceDotGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.6, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, side: THREE.BackSide })
-    );
-    scene.add(traceDotGlow);
-    var animProgress = 0;
-    var TRACE_TRAIL_LEN = 15;
-    // Pre-fill trail buffer so it starts rendering immediately (not degenerate zeros)
-    var traceTrailBuf = [];
-    for (var _ti = 0; _ti < TRACE_TRAIL_LEN; _ti++) { traceTrailBuf.push(allPts[0].clone()); }
-    var traceTrailFrame = 0;
-    var traceLineBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
-    var traceColorBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
-    var traceLineGeo = new THREE.BufferGeometry();
-    traceLineGeo.setAttribute('position', new THREE.BufferAttribute(traceLineBuf, 3));
-    traceLineGeo.setAttribute('color', new THREE.BufferAttribute(traceColorBuf, 3));
-    var traceLineMat = new THREE.LineBasicMaterial({ vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, linewidth: 2 });
-    var traceLineObj = new THREE.Line(traceLineGeo, traceLineMat);
-    scene.add(traceLineObj);
-    var traceGlowBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
-    var traceGlowGeo = new THREE.BufferGeometry();
-    traceGlowGeo.setAttribute('position', new THREE.BufferAttribute(traceGlowBuf, 3));
-    var traceGlowMat = new THREE.LineBasicMaterial({ color: 0xffaa44, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false });
-    var traceGlowObj = new THREE.Line(traceGlowGeo, traceGlowMat);
-    scene.add(traceGlowObj);
+    // ── Trace replay dot removed — replaced by neon pulse on completed path ──
+    var animProgress = 0;    // kept to avoid breaking references
+    var TRACE_TRAIL_LEN = 15; // kept to avoid breaking references
 
     // ── Camera ──
     var bbox = new THREE.Box3();
@@ -748,36 +720,7 @@
       var speedKmh = state.speedKms * 3600;
       arrow.setLength(0.35+Math.max(0.2,Math.min(1.0,speedKmh/40000))*0.85, 0.18, 0.09);
 
-      // ── Trace replay animation ──
-      animProgress += (gt > 0 ? gt / (15 * 60) : 0.0001);
-      if (animProgress >= gt && gt > 0) animProgress = 0;
-      var traceFrac = Math.max(0, Math.min(animProgress, 0.999));
-      var traceResult = getPosByMet(T_START_MET + traceFrac * T_SPAN_MET);
-      traceDot.position.copy(traceResult.pos);
-      traceDotGlow.position.copy(traceResult.pos);
-
-      traceTrailFrame++;
-      if (traceTrailFrame % 2 === 0) {
-        traceTrailBuf.unshift(traceResult.pos.clone());
-        if (traceTrailBuf.length > TRACE_TRAIL_LEN) traceTrailBuf.pop();
-      }
-      for (var tti = 0; tti < TRACE_TRAIL_LEN; tti++) {
-        if (tti < traceTrailBuf.length) {
-          traceLineBuf[tti*3] = traceTrailBuf[tti].x;
-          traceLineBuf[tti*3+1] = traceTrailBuf[tti].y;
-          traceLineBuf[tti*3+2] = traceTrailBuf[tti].z;
-          traceGlowBuf[tti*3] = traceTrailBuf[tti].x;
-          traceGlowBuf[tti*3+1] = traceTrailBuf[tti].y;
-          traceGlowBuf[tti*3+2] = traceTrailBuf[tti].z;
-        }
-        var ff = tti / TRACE_TRAIL_LEN;
-        traceColorBuf[tti*3]   = 1.0;
-        traceColorBuf[tti*3+1] = 0.75 * (1 - ff);
-        traceColorBuf[tti*3+2] = 0.25 * (1 - ff);
-      }
-      traceLineGeo.attributes.position.needsUpdate = true;
-      traceLineGeo.attributes.color.needsUpdate = true;
-      traceGlowGeo.attributes.position.needsUpdate = true;
+      // ── Trace replay animation removed — neon pulse handled via activeSegMat below ──
 
       // ── Completed path ──
       var nowMet = metSec;
@@ -791,12 +734,13 @@
         compGlowLines.forEach(function(g) { g.geo.setFromPoints(slice); });
         var activeSeg = allPts.slice(Math.max(0, splitIdx - 12), Math.min(N_PTS, splitIdx + 5));
         activeSegGeo.setFromPoints(activeSeg);
+        activeSegMat.opacity = 0.7 + 0.3 * pulse;
         activeGlowLines.forEach(function(g) { g.geo.setFromPoints(activeSeg); });
         var fStart = Math.max(0, splitIdx - FLAME_LEN);
         var flamePts = allPts.slice(fStart, splitIdx + 1);
         if (flamePts.length > 1) {
           var fColors = new Float32Array(flamePts.length * 3);
-          for (var fi = 0; fi < flamePts.length; fi++) { var fff = fi / (flamePts.length - 1); fColors[fi*3]=Math.pow(fff, 0.6); fColors[fi*3+1]=Math.pow(fff, 1.5)*0.95; fColors[fi*3+2]=Math.pow(fff, 3.0)*0.90; }
+          for (var fi = 0; fi < flamePts.length; fi++) { var fff = fi / (flamePts.length - 1); fColors[fi*3]=Math.pow(fff, 0.4); fColors[fi*3+1]=Math.pow(fff, 0.8)*0.95; fColors[fi*3+2]=Math.pow(fff, 1.2)*0.90; }
           flameGeo.setFromPoints(flamePts);
           flameGeo.setAttribute('color', new THREE.BufferAttribute(fColors, 3));
           flameGlowGeo.setFromPoints(flamePts);
