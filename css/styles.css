@@ -1022,12 +1022,12 @@
     .yt-expand-btn {
       margin-left: auto;
       font-family: var(--font-mono); font-size: 0.48rem;
-      color: var(--text-dim); background: transparent;
-      border: 1px solid rgba(74,144,217,0.3); border-radius: 3px;
+      color: var(--amber); background: transparent;
+      border: 1px solid rgba(255,167,38,0.45); border-radius: 3px;
       padding: 2px 8px; cursor: pointer; letter-spacing: 0.08em;
       transition: all 0.2s;
     }
-    .yt-expand-btn:hover { color: var(--blue-light); border-color: var(--blue-light); }
+    .yt-expand-btn:hover { color: #ffcc66; border-color: rgba(255,167,38,0.85); }
 
     #yt-overlay {
       position: fixed; inset: 0;
@@ -1927,9 +1927,9 @@
     .size-btn {
       font-family: var(--font-mono);
       font-size: 0.36rem;
-      color: rgba(74,144,217,0.38);
+      color: var(--amber);
       background: transparent;
-      border: 1px solid rgba(74,144,217,0.18);
+      border: 1px solid rgba(255,167,38,0.35);
       border-radius: 2px;
       padding: 1px 5px;
       cursor: pointer;
@@ -1937,7 +1937,7 @@
       transition: color 0.15s, border-color 0.15s;
       flex-shrink: 0;
     }
-    .size-btn:hover { color: rgba(0,229,255,0.75); border-color: rgba(0,229,255,0.45); }
+    .size-btn:hover { color: #ffcc66; border-color: rgba(255,167,38,0.75); }
 
     /* ── Reset layout button ── */
     #reset-layout-btn {
