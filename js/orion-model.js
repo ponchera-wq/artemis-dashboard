@@ -1,5 +1,6 @@
 // orion-model.js — Detailed Orion spacecraft for trajectory view
 // Returns a THREE.Group. Call: createOrionModel(THREE)
+console.log('[OrionModel] orion-model.js loaded, createOrionModel available:', typeof createOrionModel !== 'undefined' || 'will be after parse');
 function createOrionModel(THREE) {
   var ship = new THREE.Group();
 
@@ -210,3 +211,4 @@ function createOrionModel(THREE) {
 
   return ship;
 }
+console.log('[OrionModel] createOrionModel defined:', typeof createOrionModel);

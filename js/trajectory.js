@@ -400,14 +400,46 @@
       exhaustInner = orionGroup.userData.exhaustInner;
       glowMat = orionGroup.userData.glowMat;
     } catch (err) {
-      console.error('Failed to load Orion model:', err);
-      // Fallback
-      var dummyMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-      orionGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), dummyMat));
-      orionGroup.userData.hullMat = dummyMat;
-      exhaustOuter = new THREE.Mesh(new THREE.BufferGeometry(), dummyMat);
-      exhaustInner = new THREE.Mesh(new THREE.BufferGeometry(), dummyMat);
-      glowMat = dummyMat;
+      console.error('[Orion] Model load failed, using simple fallback:', err);
+      // Simple but decent fallback
+      var fbMat = new THREE.MeshPhongMaterial({ color: 0xcccccc, emissive: 0x222222, shininess: 60 });
+      // Crew module cone
+      var fbCapsule = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.18, 8), fbMat);
+      fbCapsule.position.y = -0.3;
+      orionGroup.add(fbCapsule);
+      // Service module cylinder
+      var fbSM = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.15, 8), fbMat);
+      fbSM.position.y = -0.135;
+      orionGroup.add(fbSM);
+      // 4 solar panels
+      var fbSolarMat = new THREE.MeshPhongMaterial({ color: 0x1a237e, side: THREE.DoubleSide });
+      for (var fsi = 0; fsi < 4; fsi++) {
+        var fsA = (fsi / 4) * Math.PI * 2 + Math.PI / 4;
+        var fsPanel = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.05), fbSolarMat);
+        fsPanel.position.set(Math.cos(fsA) * 0.2, -0.135, Math.sin(fsA) * 0.2);
+        fsPanel.rotation.y = -fsA + Math.PI / 2;
+        orionGroup.add(fsPanel);
+      }
+      // Engine
+      var fbEng = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.06, 6), fbMat);
+      fbEng.position.y = -0.03;
+      orionGroup.add(fbEng);
+      // Exhaust
+      exhaustOuter = new THREE.Mesh(
+        new THREE.SphereGeometry(0.04, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      exhaustOuter.position.y = 0.0;
+      orionGroup.add(exhaustOuter);
+      exhaustInner = new THREE.Mesh(
+        new THREE.SphereGeometry(0.02, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false })
+      );
+      exhaustInner.position.y = 0.0;
+      orionGroup.add(exhaustInner);
+      glowMat = new THREE.MeshBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 0.04, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false });
+      orionGroup.add(new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), glowMat));
+      orionGroup.userData.hullMat = fbMat;
     }
     
     orionGroup.userData.label = 'ORION';
