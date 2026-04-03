@@ -503,8 +503,14 @@
     };
 
     // ── Preset buttons bar ──
+    var presetWrapper = document.createElement('div');
+    Object.assign(presetWrapper.style, { position:'absolute',bottom:'10px',left:'50%',transform:'translateX(-50%)',display:'flex',flexDirection:'column',alignItems:'center',gap:'0',zIndex:'4' });
+    var povLabel = document.createElement('div');
+    Object.assign(povLabel.style, { fontFamily:"'Share Tech Mono',monospace",fontSize:'8px',color:'rgba(74,144,217,0.55)',letterSpacing:'0.14em',textAlign:'center',padding:'2px 12px',border:'1px solid rgba(74,144,217,0.2)',borderBottom:'none',borderRadius:'3px 3px 0 0',background:'rgba(4,8,20,0.75)',whiteSpace:'nowrap' });
+    povLabel.textContent = 'POINT OF VIEW';
+    presetWrapper.appendChild(povLabel);
     var presetBar = document.createElement('div');
-    Object.assign(presetBar.style, { position:'absolute',top:'8px',left:'50%',transform:'translateX(-50%)',display:'flex',gap:'4px',zIndex:'4' });
+    Object.assign(presetBar.style, { display:'flex',gap:'4px',padding:'4px 6px',background:'rgba(4,8,20,0.75)',border:'1px solid rgba(74,144,217,0.2)',borderRadius:'0 0 5px 5px' });
     var presetBtns = {};
     Object.entries(PRESETS).forEach(function(entry) {
       var key = entry[0], p = entry[1];
@@ -522,7 +528,8 @@
       });
       presetBtns[key] = btn; presetBar.appendChild(btn);
     });
-    container.appendChild(presetBar);
+    presetWrapper.appendChild(presetBar);
+    container.appendChild(presetWrapper);
 
     function updatePresetBtns() {
       Object.entries(presetBtns).forEach(function(entry) {
