@@ -374,6 +374,17 @@
     #telem-moon  .telem-value { color: #ffd740; text-shadow: 0 0 10px rgba(255,215,64,0.4); }
     #telem-speed .telem-value { color: #ffa726; text-shadow: 0 0 10px rgba(255,167,38,0.45); }
 
+    /* Controls box (expand + unit toggle + future items) */
+    #tb-controls {
+      flex: 0 0 96px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: center;
+      padding: 8px 8px;
+      gap: 5px;
+    }
+
     /* LIVE / EST badge */
     #telem-badge {
       position: absolute; top: 5px; right: 7px;
@@ -1661,8 +1672,8 @@
       .panel-expand, .yt-expand-btn, .size-btn,
       .news-tab, .tl-filter { min-height: 44px; }
 
-      /* Hide telem expand btn on mobile (overlaps badge) */
-      #telem-expand-btn { display: none; }
+      /* Hide controls box on mobile */
+      #tb-controls { display: none; }
 
       /* Overflow containment */
       #crew-strip { overflow-x: hidden; }
