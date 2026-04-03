@@ -68,7 +68,7 @@ function tickTelem() {
 document.getElementById('unit-toggle').addEventListener('click', function() {
   useImperial = !useImperial;
   var btn = document.getElementById('unit-toggle');
-  btn.textContent  = useImperial ? 'MI \u00b7 KM' : 'KM \u00b7 MI';
+  btn.textContent  = useImperial ? 'MILES - KILOMETERS' : 'KM - MILES';
   btn.style.color  = useImperial ? 'var(--amber)' : '';
   btn.style.borderColor = useImperial ? 'rgba(255,167,38,0.5)' : '';
   tickTelem();

@@ -113,11 +113,13 @@
       <div class="telem-unit" id="tu-speed">KM/H</div>
       <div id="telem-badge" class="telem-badge-est">EST</div>
       <div id="telem-update-time" style="position:absolute;bottom:20px;right:7px;font-family:var(--font-mono);font-size:0.30rem;color:rgba(74,144,217,0.45);letter-spacing:0.05em;pointer-events:none;"></div>
-      <button id="unit-toggle" title="Switch units" style="color:var(--amber);border-color:rgba(255,167,38,0.5);">MI · KM</button>
     </div>
-    <!-- Top-bar expand button (dedicated telem overlay, not panel-move system) -->
-    <button class="yt-expand-btn" id="telem-expand-btn"
-      style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:2;font-size:0.42rem;padding:3px 10px;letter-spacing:0.12em;white-space:nowrap;" title="Expand telemetry">&#x26F6; EXPAND</button>
+    <!-- Top-bar expand + unit toggle buttons -->
+    <div style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:2;display:flex;gap:6px;align-items:center;">
+      <button class="yt-expand-btn" id="telem-expand-btn"
+        style="font-size:0.42rem;padding:3px 10px;letter-spacing:0.12em;white-space:nowrap;" title="Expand telemetry">&#x26F6; EXPAND</button>
+      <button id="unit-toggle" title="Switch units" style="color:var(--amber);border-color:rgba(255,167,38,0.5);white-space:nowrap;">MILES - KILOMETERS</button>
+    </div>
   </div>
 
   <!-- ══ REFERENCE GUIDE NAV BAR ═════════════════════════════════════ -->
