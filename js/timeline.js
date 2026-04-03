@@ -139,10 +139,11 @@
         el.style.cursor = 'pointer';
         el.addEventListener('click', function(e) {
           e.stopPropagation();
-          var wasExpanded = el.classList.contains('tl-expanded');
+          var target = this;
+          var wasExpanded = target.classList.contains('tl-expanded');
           var allExpanded = scroll.querySelectorAll('.tl-expanded');
           for (var j = 0; j < allExpanded.length; j++) allExpanded[j].classList.remove('tl-expanded');
-          if (!wasExpanded) el.classList.add('tl-expanded');
+          if (!wasExpanded) target.classList.add('tl-expanded');
         });
       }
       if (isActive) activeEl = el;
