@@ -59,6 +59,11 @@
       return { metSec: p.metSec, pos: toScene(p.orion.x, p.orion.y, p.orion.z) };
     });
     var allPts = trajScene.map(function(p) { return p.pos.clone(); });
+    // If ephemeris starts after launch (T_START_MET > 0), prepend Earth centre
+    // so the trajectory line visually originates from Earth
+    if (T_START_MET > 60) {
+      allPts.unshift(new THREE.Vector3(0, 0, 0));
+    }
     var N_PTS = allPts.length;
 
     function getPosByMet(metSec) {
@@ -82,9 +87,21 @@
     var renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
-    renderer.setClearColor(0x050a14, 1);
+    renderer.setClearColor(0x000000, 1);
     Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
     container.appendChild(renderer.domElement);
+
+    // ── Skybox ──
+    var skyGeo = new THREE.SphereGeometry(300, 32, 32);
+    var skyMat = new THREE.MeshBasicMaterial({ side: THREE.BackSide });
+    var skyMesh = new THREE.Mesh(skyGeo, skyMat);
+    scene.add(skyMesh);
+    loader.load('css/bg-3dtraj.jpg', function(tex) {
+      skyMat.map = tex;
+      skyMat.needsUpdate = true;
+    }, undefined, function() {
+      console.warn('Skybox texture failed to load');
+    });
 
     var lc = document.createElement('canvas');
     lc.width = W; lc.height = H;
@@ -170,26 +187,6 @@
     brightGeo.setAttribute('position', new THREE.BufferAttribute(brightPos, 3));
     scene.add(new THREE.Points(brightGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
 
-    // ── Procedural nebula clouds (additive blending for glow effect) ──
-    function addNebula(x, y, z, radius, r, g, b, opacity) {
-      var neb = new THREE.Mesh(
-        new THREE.SphereGeometry(radius, 16, 16),
-        new THREE.MeshBasicMaterial({
-          color: new THREE.Color(r/255, g/255, b/255),
-          transparent: true, opacity: opacity,
-          side: THREE.BackSide,
-          blending: THREE.AdditiveBlending,
-          depthWrite: false
-        })
-      );
-      neb.position.set(x, y, z);
-      scene.add(neb);
-    }
-    addNebula( 25,  12, -20, 30,  40, 15,  80, 0.04);  // purple
-    addNebula(-18,  -8, -25, 25,  10, 30,  70, 0.035); // deep blue
-    addNebula( 10, -15,  30, 35,  60, 20,  45, 0.03);  // magenta
-    addNebula(-25,  20,  15, 28,  15, 45,  60, 0.03);  // teal
-    addNebula( 30,  -5, -35, 20,  80, 40,  20, 0.02);  // warm amber
 
     // ── Earth-Moon reference line ──
     var emBuf = new Float32Array(6);
@@ -247,7 +244,7 @@
     var wpVisible = WAYPOINTS.filter(function(wp) { return wp.metSec >= T_START_MET; });
     wpVisible.forEach(function(wp) {
       var mat = new THREE.MeshBasicMaterial({ color: 0x2a3a4a });
-      var mesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), mat);
+      var mesh = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), mat);
       mesh.position.copy(wpScenePos(wp));
       mesh.userData = wp;
       wpMeshes.push(mesh); wpMats.push(mat);
@@ -368,13 +365,13 @@
 
     // ── Trace replay dot ──
     var traceDot = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 8, 8),
+      new THREE.SphereGeometry(0.25, 8, 8),
       new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
     );
     scene.add(traceDot);
     var traceDotGlow = new THREE.Mesh(
-      new THREE.SphereGeometry(0.28, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, side: THREE.BackSide })
+      new THREE.SphereGeometry(0.5, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, side: THREE.BackSide })
     );
     scene.add(traceDotGlow);
     var animProgress = 0;
@@ -388,7 +385,7 @@
     var traceLineGeo = new THREE.BufferGeometry();
     traceLineGeo.setAttribute('position', new THREE.BufferAttribute(traceLineBuf, 3));
     traceLineGeo.setAttribute('color', new THREE.BufferAttribute(traceColorBuf, 3));
-    var traceLineMat = new THREE.LineBasicMaterial({ vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false });
+    var traceLineMat = new THREE.LineBasicMaterial({ vertexColors: true, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, linewidth: 2 });
     var traceLineObj = new THREE.Line(traceLineGeo, traceLineMat);
     scene.add(traceLineObj);
     var traceGlowBuf = new Float32Array(TRACE_TRAIL_LEN * 3);
@@ -703,9 +700,9 @@
           traceGlowBuf[tti*3+2] = traceTrailBuf[tti].z;
         }
         var ff = tti / TRACE_TRAIL_LEN;
-        traceColorBuf[tti*3] = 1.0 - ff * 0.3;
-        traceColorBuf[tti*3+1] = 0.95 - ff * 0.45;
-        traceColorBuf[tti*3+2] = 0.85 - ff * 0.75;
+        traceColorBuf[tti*3]   = 1.0;
+        traceColorBuf[tti*3+1] = 0.7 - ff * 0.5;
+        traceColorBuf[tti*3+2] = 0.2 - ff * 0.2;
       }
       traceLineGeo.attributes.position.needsUpdate = true;
       traceLineGeo.attributes.color.needsUpdate = true;
