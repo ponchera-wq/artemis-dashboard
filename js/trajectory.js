@@ -580,7 +580,7 @@
     window.addEventListener('mouseup', function() { isDrag = false; isPan = false; });
     window.addEventListener('mousemove', function(e) {
       var ddx = e.clientX - dragStartX, ddy = e.clientY - dragStartY;
-      if (Math.abs(ddx) > 3 || Math.abs(ddy) > 3) wasDragged = true;
+      if (Math.abs(ddx) > 8 || Math.abs(ddy) > 8) wasDragged = true;
       var dx = e.clientX - lastMx, dy = e.clientY - lastMy;
       if (isPan) {
         var panScale = sph.r * 0.003;
@@ -828,6 +828,8 @@
       // Exhaust pulse
       exhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
       exhaustInner.material.opacity = 0.2 + 0.2 * Math.sin(now / 430);
+      var ng = orionGroup.userData.nozzleGlow;
+      if (ng) ng.material.opacity = 0.5 + 0.3 * Math.sin(now / 180);
 
       // Particle exhaust animation
       var pd = orionGroup.userData.particleData;
@@ -841,9 +843,10 @@
           pd.positions[pi*3+1] += pv.y;
           pd.positions[pi*3+2] += pv.z + Math.cos(pt * 8 + pi) * 0.0003;
           var life = pd.lifetimes[pi];
-          pd.colors[pi*3]   = 1;
-          pd.colors[pi*3+1] = Math.max(0, 1 - life * 1.5);
-          pd.colors[pi*3+2] = Math.max(0, 0.8 - life * 3);
+          // white (life=0) → orange (life=0.4) → red (life=0.7) → fade (life=1)
+          pd.colors[pi*3]   = 1.0;                           // R always 1
+          pd.colors[pi*3+1] = Math.max(0, 1.0 - life * 2.5); // G fades fast
+          pd.colors[pi*3+2] = Math.max(0, 0.9 - life * 4.0); // B fades fastest
         }
         pd.geo.attributes.position.needsUpdate = true;
         pd.geo.attributes.color.needsUpdate = true;

@@ -150,27 +150,29 @@ function createOrionModel(THREE) {
     for (var pi = 0; pi < 3; pi++) {
       var pD = 0.16 + pi * 0.14;
 
-      // Solar panel (flat plane) — lies horizontal in XZ plane
+      // Solar panel — Rx(-PI/2) lays it flat, Ry(-sA) points long axis outward
       var pan = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.06), solarMat);
       pan.position.set(Math.cos(sA) * pD, -0.14, Math.sin(sA) * pD);
-      pan.rotation.set(0, 0, 0);
-      pan.lookAt(pan.position.x, pan.position.y + 1, pan.position.z);
+      pan.rotation.set(-Math.PI / 2, -sA, 0);
       ship.add(pan);
 
-      // Panel detail lines (copper traces)
+      // Panel detail lines — offset perpendicular to outward dir in XZ plane
       for (var dl = 0; dl < 3; dl++) {
         var det = new THREE.Mesh(new THREE.PlaneGeometry(0.125, 0.003), solarDetailMat);
-        det.position.copy(pan.position);
-        det.position.y += (dl - 1) * 0.015 + 0.001;
-        det.rotation.set(0, 0, 0);
-        det.lookAt(det.position.x, det.position.y + 1, det.position.z);
+        var perpOff = (dl - 1) * 0.015;
+        det.position.set(
+          Math.cos(sA) * pD + (-Math.sin(sA)) * perpOff,
+          -0.14 + 0.001,
+          Math.sin(sA) * pD +   Math.cos(sA)  * perpOff
+        );
+        det.rotation.set(-Math.PI / 2, -sA, 0);
         ship.add(det);
       }
 
-      // Panel frame (BoxGeometry thin in Y — already horizontal)
-      var pf = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.002, 0.065), frameMat);
+      // Panel frame — BoxGeometry(W, D, H): local Z=thin after rotation gives flat slab
+      var pf = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.065, 0.002), frameMat);
       pf.position.copy(pan.position);
-      pf.rotation.copy(pan.rotation);
+      pf.rotation.set(-Math.PI / 2, -sA, 0);
       ship.add(pf);
 
       // Hinge between panels
@@ -208,20 +210,20 @@ function createOrionModel(THREE) {
 
   // Particle exhaust system
   var PARTICLE_COUNT = 30;
-  var pPositions = new Float32Array(PARTICLE_COUNT * 3);
-  var pColors = new Float32Array(PARTICLE_COUNT * 3);
-  var pLifetimes = new Float32Array(PARTICLE_COUNT);
+  var pPositions  = new Float32Array(PARTICLE_COUNT * 3);
+  var pColors     = new Float32Array(PARTICLE_COUNT * 3);
+  var pLifetimes  = new Float32Array(PARTICLE_COUNT);
   var pVelocities = [];
 
   function resetParticle(i) {
-    pPositions[i*3]   = (Math.random() - 0.5) * 0.012;
+    pPositions[i*3]   = (Math.random() - 0.5) * 0.016;
     pPositions[i*3+1] = -0.25;
-    pPositions[i*3+2] = (Math.random() - 0.5) * 0.012;
+    pPositions[i*3+2] = (Math.random() - 0.5) * 0.016;
     pLifetimes[i] = 0;
     pVelocities[i] = {
-      x: (Math.random() - 0.5) * 0.002,
-      y: -(0.006 + Math.random() * 0.004),
-      z: (Math.random() - 0.5) * 0.002
+      x: (Math.random() - 0.5) * 0.003,
+      y: -(0.008 + Math.random() * 0.006),
+      z: (Math.random() - 0.5) * 0.003
     };
   }
   for (var ppi = 0; ppi < PARTICLE_COUNT; ppi++) {
@@ -229,15 +231,15 @@ function createOrionModel(THREE) {
     pLifetimes[ppi] = Math.random();
   }
 
-  // Circular particle texture
+  // Soft circular particle texture
   var pCanvas = document.createElement('canvas');
   pCanvas.width = 32; pCanvas.height = 32;
   var pCtx = pCanvas.getContext('2d');
   var pGrad = pCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
-  pGrad.addColorStop(0,   'rgba(255,255,255,1)');
-  pGrad.addColorStop(0.3, 'rgba(255,200,100,0.8)');
-  pGrad.addColorStop(0.7, 'rgba(255,100,20,0.3)');
-  pGrad.addColorStop(1,   'rgba(255,50,0,0)');
+  pGrad.addColorStop(0,    'rgba(255,255,255,1)');
+  pGrad.addColorStop(0.25, 'rgba(255,220,180,0.9)');
+  pGrad.addColorStop(0.55, 'rgba(255,100,20,0.5)');
+  pGrad.addColorStop(1,    'rgba(255,30,0,0)');
   pCtx.fillStyle = pGrad;
   pCtx.fillRect(0, 0, 32, 32);
 
@@ -250,6 +252,7 @@ function createOrionModel(THREE) {
     map: new THREE.CanvasTexture(pCanvas),
     vertexColors: true,
     transparent: true,
+    opacity: 0.9,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     sizeAttenuation: true
@@ -257,20 +260,35 @@ function createOrionModel(THREE) {
   var exhaustParticles = new THREE.Points(pGeo, pMat);
   ship.add(exhaustParticles);
 
+  // Hot nozzle glow sphere at exit point
+  var nozzleGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(0.018, 8, 8),
+    new THREE.MeshBasicMaterial({
+      color: 0xffeeaa,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    })
+  );
+  nozzleGlow.position.y = -0.25;
+  ship.add(nozzleGlow);
+
   // Expose references for animation
-  ship.userData.exhaustOuter = exOuter;
-  ship.userData.exhaustInner = exInner;
-  ship.userData.hullMat = whiteMat;
-  ship.userData.glowMat = haloMesh.material;
+  ship.userData.exhaustOuter     = exOuter;
+  ship.userData.exhaustInner     = exInner;
+  ship.userData.hullMat          = whiteMat;
+  ship.userData.glowMat          = haloMesh.material;
   ship.userData.exhaustParticles = exhaustParticles;
+  ship.userData.nozzleGlow       = nozzleGlow;
   ship.userData.particleData = {
-    positions: pPositions,
-    colors: pColors,
-    lifetimes: pLifetimes,
+    positions:  pPositions,
+    colors:     pColors,
+    lifetimes:  pLifetimes,
     velocities: pVelocities,
-    geo: pGeo,
-    count: PARTICLE_COUNT,
-    reset: resetParticle
+    geo:        pGeo,
+    count:      PARTICLE_COUNT,
+    reset:      resetParticle
   };
 
   return ship;
