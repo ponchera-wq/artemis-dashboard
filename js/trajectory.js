@@ -387,12 +387,31 @@
     });
 
     // ── Orion spacecraft (detailed model from orion-model.js) ──
-    var orionGroup = createOrionModel(THREE);
+    var orionGroup = new THREE.Group();
+    var exhaustOuter, exhaustInner, glowMat;
+    
+    try {
+      if (typeof createOrionModel !== 'undefined') {
+        orionGroup = createOrionModel(THREE);
+      } else {
+        throw new Error('createOrionModel is not defined. (Cache issue?)');
+      }
+      exhaustOuter = orionGroup.userData.exhaustOuter;
+      exhaustInner = orionGroup.userData.exhaustInner;
+      glowMat = orionGroup.userData.glowMat;
+    } catch (err) {
+      console.error('Failed to load Orion model:', err);
+      // Fallback
+      var dummyMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+      orionGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), dummyMat));
+      orionGroup.userData.hullMat = dummyMat;
+      exhaustOuter = new THREE.Mesh(new THREE.BufferGeometry(), dummyMat);
+      exhaustInner = new THREE.Mesh(new THREE.BufferGeometry(), dummyMat);
+      glowMat = dummyMat;
+    }
+    
     orionGroup.userData.label = 'ORION';
     scene.add(orionGroup);
-    var exhaustOuter = orionGroup.userData.exhaustOuter;
-    var exhaustInner = orionGroup.userData.exhaustInner;
-    var glowMat = orionGroup.userData.glowMat;
 
     // ── Trail particles ──
     var TRAIL_LEN = 30;
