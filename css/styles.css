@@ -866,6 +866,7 @@
     .tl-event.tl-complete .tl-dot { background: var(--green); }
     .tl-event.tl-active   .tl-dot { background: var(--amber); animation: tl-pulse 1.3s ease-in-out infinite; }
     .tl-event.tl-upcoming .tl-dot { background: rgba(74,144,217,0.28); }
+    @keyframes sa-p{0%,100%{opacity:1}50%{opacity:.4}}
     @keyframes tl-pulse {
       0%, 100% { box-shadow: 0 0 5px var(--amber); opacity: 1; }
       50%       { box-shadow: none; opacity: 0.35; }
