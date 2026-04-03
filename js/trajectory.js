@@ -1070,8 +1070,8 @@
     Object.assign(miniTimeline.style, {
       position: 'absolute',
       right: '10px',
-      top: '38px',
-      maxHeight: 'calc(100% - 76px)',
+      top: '10px',
+      maxHeight: 'calc(100% - 48px)',
       width: '140px',
       background: 'rgba(5, 12, 30, 0.85)',
       border: '1px solid rgba(74, 144, 217, 0.3)',
