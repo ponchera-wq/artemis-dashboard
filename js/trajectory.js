@@ -85,10 +85,10 @@
     var H = container.clientHeight || 300;
     var camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 1000);
 
-    var renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    var renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000005, 1);
     Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
     container.appendChild(renderer.domElement);
 
@@ -150,18 +150,44 @@
     moon.position.copy(initMoonPos);
     moonGlow.position.copy(initMoonPos);
 
-    // ── Starfield ──
-    var STAR_COUNT = 600;
+    // ── Starfield — dense deep-space backdrop ──
+    // Layer 1: many small dim stars
+    var STAR_COUNT = 1800;
     var starPos = new Float32Array(STAR_COUNT * 3);
+    var starColors = new Float32Array(STAR_COUNT * 3);
     for (var i = 0; i < STAR_COUNT; i++) {
-      var th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1), r = 200 + Math.random()*100;
-      starPos[i*3] = r*Math.sin(ph)*Math.cos(th); starPos[i*3+1] = r*Math.sin(ph)*Math.sin(th); starPos[i*3+2] = r*Math.cos(ph);
+      var th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1), r = 220 + Math.random()*80;
+      starPos[i*3]   = r*Math.sin(ph)*Math.cos(th);
+      starPos[i*3+1] = r*Math.sin(ph)*Math.sin(th);
+      starPos[i*3+2] = r*Math.cos(ph);
+      // Slight blue/white/warm variation
+      var tint = Math.random();
+      starColors[i*3]   = tint < 0.3 ? 0.7 : tint < 0.6 ? 0.9 : 1.0;
+      starColors[i*3+1] = tint < 0.3 ? 0.8 : tint < 0.6 ? 0.9 : 0.95;
+      starColors[i*3+2] = tint < 0.3 ? 1.0 : tint < 0.6 ? 1.0 : 0.85;
     }
     var starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xccddee, size: 0.10, sizeAttenuation: true, transparent: true, opacity: 0.6 })));
+    starGeo.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ vertexColors: true, size: 0.12, sizeAttenuation: true, transparent: true, opacity: 0.75 })));
+    // Layer 2: brighter sparse stars
+    var BRIGHT_COUNT = 120;
+    var brightPos = new Float32Array(BRIGHT_COUNT * 3);
+    for (var i = 0; i < BRIGHT_COUNT; i++) {
+      var th = Math.random()*Math.PI*2, ph = Math.acos(2*Math.random()-1), r = 225 + Math.random()*60;
+      brightPos[i*3] = r*Math.sin(ph)*Math.cos(th); brightPos[i*3+1] = r*Math.sin(ph)*Math.sin(th); brightPos[i*3+2] = r*Math.cos(ph);
+    }
+    var brightGeo = new THREE.BufferGeometry();
+    brightGeo.setAttribute('position', new THREE.BufferAttribute(brightPos, 3));
+    scene.add(new THREE.Points(brightGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
+    // Deep space nebula — large dark sphere with subtle color gradient effect using two overlapping spheres
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(295, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0x000005, side: THREE.BackSide })));
     scene.add(new THREE.Mesh(new THREE.SphereGeometry(280, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0x1a0a3a, transparent: true, opacity: 0.12, side: THREE.BackSide })));
+      new THREE.MeshBasicMaterial({ color: 0x06010f, transparent: true, opacity: 0.55, side: THREE.BackSide })));
+    // Faint nebula cloud in one region
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(260, 12, 12),
+      new THREE.MeshBasicMaterial({ color: 0x0a0520, transparent: true, opacity: 0.18, side: THREE.BackSide })));
 
     // ── Earth-Moon reference line ──
     var emBuf = new Float32Array(6);
@@ -610,10 +636,10 @@
       var isImp = ds.useImperial !== false;
       var KM_TO_MI = 0.621371;
 
-      // Orion label with Moon distance from ephemeris
+      // Orion label — offset further above so it doesn't overlap the glow sphere
       var moonDistStr = isImp ? Math.round(state.distMoonKm * KM_TO_MI).toLocaleString() + ' mi' : Math.round(state.distMoonKm).toLocaleString() + ' km';
       var orionEarthDist = orionGroup.position.distanceTo(earth.position);
-      drawCallout('ORION \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, orionGroup.position.y + (orionEarthDist < 1.8 ? -1.5 : -0.6), orionGroup.position.z), '#00ffaa', 0, -16, true, orionGroup.position);
+      drawCallout('ORION \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, orionGroup.position.y + (orionEarthDist < 1.8 ? -3.0 : -2.2), orionGroup.position.z), '#00ffaa', 0, -24, true, orionGroup.position);
 
       drawCallout('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.4, earth.position.z), 'rgba(100,170,255,0.85)', 0, 0, false, earth.position);
       drawCallout('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 0.8, moon.position.z), 'rgba(200,195,180,0.85)', 0, 0, false, moon.position);
@@ -639,7 +665,7 @@
         lctx.font = (bold ? 'bold ' : '') + '9px "Share Tech Mono",monospace';
         var m = lctx.measureText(wp.label);
         var bw = m.width + 10, bh = 14;
-        var lx = s.x + 12, ly = s.y - 10;
+        var lx = s.x + 18, ly = s.y - 18;
         // Keep label on screen
         if (lx + bw > W - 4) lx = s.x - bw - 12;
         // Background box
