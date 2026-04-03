@@ -823,7 +823,7 @@
     }
     .tl-day-header:first-child { border-top: none; }
     .tl-event {
-      display: flex; align-items: flex-start;
+      display: flex; align-items: flex-start; flex-wrap: wrap;
       gap: 7px; padding: 5px 10px;
       border-left: 3px solid transparent;
       cursor: pointer;
@@ -831,6 +831,7 @@
     .tl-event:hover { background: rgba(0, 204, 170, 0.04); }
     .tl-detail {
       display: none;
+      flex: 0 0 100%;
       padding: 8px 0 10px 22px;
       margin-top: 4px;
       border-left: 2px solid rgba(0, 204, 170, 0.25);
