@@ -1030,11 +1030,82 @@
         lctx.setLineDash([2,3]); lctx.stroke(); lctx.setLineDash([]);
         lctx.restore();
         wpClickAreas.push({x: lx - 14, y: ly - bh/2 - 8, w: bw + 20, h: bh + 16, wp: wp, idx: i});
+
+        if (typeof mtItems !== 'undefined' && mtItems[i]) {
+          var elC = ws === 'done' ? '#00e676' : ws === 'active' ? '#ffd700' : 'rgba(121, 134, 168, 0.8)';
+          var elB = ws === 'done' ? '#00e676' : ws === 'active' ? '#ffd700' : 'transparent';
+          if (mtItems[i].el.style.backgroundColor === '' || mtItems[i].el.style.backgroundColor === 'transparent') {
+            mtItems[i].el.style.color = elC;
+            mtItems[i].el.style.borderLeftColor = elB;
+          }
+        }
       });
 
       if (progressEl) { var fd = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1); progressEl.textContent = 'MISSION PROGRESS: ' + (gt*100).toFixed(1) + '%  \u00b7  FLIGHT DAY ' + fd; }
     }
     animate();
+
+    // ── Mini Timeline ──
+    var miniTimeline = document.createElement('div');
+    miniTimeline.id = 'mini-timeline';
+    document.head.insertAdjacentHTML('beforeend', '<style>@media (max-width: 768px) { #mini-timeline { display: none !important; } } #mini-timeline::-webkit-scrollbar { width: 4px; } #mini-timeline::-webkit-scrollbar-thumb { background: rgba(0, 255, 170, 0.3); border-radius: 2px; } #mini-timeline::-webkit-scrollbar-track { background: transparent; }</style>');
+    Object.assign(miniTimeline.style, {
+      position: 'absolute',
+      right: '10px',
+      top: '40px',
+      maxHeight: 'calc(100% - 80px)',
+      width: '140px',
+      background: 'rgba(5, 12, 30, 0.85)',
+      border: '1px solid rgba(74, 144, 217, 0.3)',
+      borderRadius: '4px',
+      zIndex: '4',
+      overflowY: 'auto',
+      pointerEvents: 'auto',
+      display: 'flex',
+      flexDirection: 'column',
+      padding: '8px 0',
+      boxShadow: '0 0 15px rgba(0,0,0,0.5)',
+      fontFamily: "'Share Tech Mono', monospace"
+    });
+
+    var mtItems = [];
+    wpVisible.forEach(function(wp, i) {
+      var item = document.createElement('div');
+      item.textContent = wp.label;
+      Object.assign(item.style, {
+        padding: '6px 12px',
+        fontSize: '9px',
+        color: 'rgba(121, 134, 168, 0.8)',
+        cursor: 'pointer',
+        borderLeft: '2px solid transparent',
+        transition: 'all 0.15s',
+        backgroundColor: 'transparent'
+      });
+      item.addEventListener('mouseenter', function() {
+        item.style.backgroundColor = 'rgba(74, 144, 217, 0.15)';
+        item.style.color = '#fff';
+      });
+      item.addEventListener('mouseleave', function() {
+        item.style.backgroundColor = 'transparent';
+        var ws = wpGetState(wp, (Date.now()-LAUNCH_UTC)/1000);
+        item.style.color = ws === 'done' ? '#00e676' : ws === 'active' ? '#ffd700' : 'rgba(121, 134, 168, 0.8)';
+      });
+      item.addEventListener('click', function(e) {
+        var targetPos = wpScenePos(wp);
+        var camDist = 6;
+        var camDir = new THREE.Vector3(2, 1.5, 3).normalize();
+        var newCamPos = targetPos.clone().add(camDir.multiplyScalar(camDist));
+        startLerp(newCamPos, targetPos.clone(), 1.5, 'lerp');
+        activePreset = null; updatePresetBtns();
+        
+        // Show popup more intelligently (maybe slightly off center to avoid occluding target)
+        var cRect = container.getBoundingClientRect();
+        showWpPopup(wp, cRect.width / 2 + 50, cRect.height / 2 - 50);
+      });
+      miniTimeline.appendChild(item);
+      mtItems.push({el: item, wp: wp});
+    });
+    container.appendChild(miniTimeline);
 
     // ── Telemetry HUD ──
     var hudEl = document.getElementById('traj-hud');
