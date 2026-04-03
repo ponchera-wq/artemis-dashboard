@@ -402,7 +402,7 @@
     .telem-value.tick { animation: digit-flip 0.28s ease-out; }
 
     /* ── Stat blocks (splashdown / perilune countdowns + analogy) ─── */
-    .stat-block { border-left: 1px solid rgba(74,144,217,0.15); }
+    .stat-block { border-left: 1px solid rgba(74,144,217,0.15); min-width: 100px; flex-shrink: 1; }
     .stat-label {
       font-family: var(--font-ui);
       font-size: 0.34rem;
@@ -1624,6 +1624,27 @@
       .yt-frame { aspect-ratio: 16 / 9; flex: none; width: 100%; height: auto !important; }
       .news-tab { min-height: 44px; padding: 8px 12px; }
       .tl-event { min-height: 44px; }
+
+      /* Countdown blocks: grid layout in tablet range so they're not clipped */
+      #top-bar {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-areas:
+          "met     met     met"
+          "phase   phase   phase"
+          "earth   moon    speed"
+          "perilune perilune splashdown";
+        height: auto;
+      }
+      #top-bar > * + * { border-left: none; }
+      #tb-met          { grid-area: met;        border-bottom: 1px solid var(--border); flex: none; width: auto; }
+      #tb-phase        { grid-area: phase;      border-bottom: 1px solid var(--border); flex: none; }
+      #telem-earth     { grid-area: earth;      border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; }
+      #telem-moon      { grid-area: moon;       border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; }
+      #telem-speed     { grid-area: speed;      border-bottom: 1px solid var(--border); flex: none; }
+      #perilune-block  { grid-area: perilune;   border-right: 1px solid var(--border); flex: none; }
+      #splashdown-block{ grid-area: splashdown; flex: none; }
+      #tb-controls     { display: none; }
     }
 
     /* ══════════════════════════════════════════════════════════════════
@@ -1644,23 +1665,27 @@
       #telem-overlay-inner { max-width: 100%; }
       .to-phase-pip-row { overflow-x: hidden; }
 
-      /* Top bar: 2-col grid — MET full-width → Phase full-width → Earth|Moon → Speed */
+      /* Top bar: 2-col grid — MET full-width → Phase full-width → Earth|Moon → Speed|Perilune → Splashdown */
       #top-bar {
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
-          "met   met"
-          "phase phase"
-          "earth moon"
-          "speed speed";
+          "met      met"
+          "phase    phase"
+          "earth    moon"
+          "speed    perilune"
+          "splashdown splashdown";
         height: auto; flex-shrink: 0;
       }
       #top-bar > * + * { border-left: none; }
-      #tb-met      { grid-area: met;   border-bottom: 1px solid var(--border); padding: 8px 12px; flex: none; width: auto; }
-      #tb-phase    { grid-area: phase; border-bottom: 1px solid var(--border); padding: 6px 12px; flex: none; }
-      #telem-earth { grid-area: earth; border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
-      #telem-moon  { grid-area: moon;  border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
-      #telem-speed { grid-area: speed; flex: none; padding: 8px; }
+      #tb-met          { grid-area: met;        border-bottom: 1px solid var(--border); padding: 8px 12px; flex: none; width: auto; }
+      #tb-phase        { grid-area: phase;      border-bottom: 1px solid var(--border); padding: 6px 12px; flex: none; }
+      #telem-earth     { grid-area: earth;      border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
+      #telem-moon      { grid-area: moon;       border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
+      #telem-speed     { grid-area: speed;      border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
+      #perilune-block  { grid-area: perilune;   border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
+      #splashdown-block{ grid-area: splashdown; flex: none; padding: 8px; }
+      #tb-controls     { display: none; }
 
       #met-display { font-size: clamp(1rem, 7vw, 1.5rem); }
       .telem-value { font-size: clamp(1.1rem, 7vw, 1.8rem); }
