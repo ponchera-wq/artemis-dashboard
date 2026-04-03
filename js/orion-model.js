@@ -150,9 +150,10 @@ function createOrionModel(THREE) {
     for (var pi = 0; pi < 3; pi++) {
       var pD = 0.16 + pi * 0.14;
 
-      // Solar panel — Rx(-PI/2) lays it flat, Ry(-sA) points long axis outward
+      // Solar panel — 'YXZ' order: Rx(-PI/2) lays flat first, then Ry(-sA) spins outward
       var pan = new THREE.Mesh(new THREE.PlaneGeometry(0.13, 0.06), solarMat);
       pan.position.set(Math.cos(sA) * pD, -0.14, Math.sin(sA) * pD);
+      pan.rotation.order = 'YXZ';
       pan.rotation.set(-Math.PI / 2, -sA, 0);
       ship.add(pan);
 
@@ -165,13 +166,15 @@ function createOrionModel(THREE) {
           -0.14 + 0.001,
           Math.sin(sA) * pD +   Math.cos(sA)  * perpOff
         );
+        det.rotation.order = 'YXZ';
         det.rotation.set(-Math.PI / 2, -sA, 0);
         ship.add(det);
       }
 
-      // Panel frame — BoxGeometry(W, D, H): local Z=thin after rotation gives flat slab
+      // Panel frame — BoxGeometry(W, D, H): 'YXZ' matches panel rotation
       var pf = new THREE.Mesh(new THREE.BoxGeometry(0.135, 0.065, 0.002), frameMat);
       pf.position.copy(pan.position);
+      pf.rotation.order = 'YXZ';
       pf.rotation.set(-Math.PI / 2, -sA, 0);
       ship.add(pf);
 
@@ -219,6 +222,9 @@ function createOrionModel(THREE) {
     pPositions[i*3]   = (Math.random() - 0.5) * 0.016;
     pPositions[i*3+1] = -0.25;
     pPositions[i*3+2] = (Math.random() - 0.5) * 0.016;
+    pColors[i*3]   = 1.0;
+    pColors[i*3+1] = 1.0;
+    pColors[i*3+2] = 0.9;
     pLifetimes[i] = 0;
     pVelocities[i] = {
       x: (Math.random() - 0.5) * 0.003,
@@ -248,16 +254,17 @@ function createOrionModel(THREE) {
   pGeo.setAttribute('color',    new THREE.BufferAttribute(pColors, 3));
 
   var pMat = new THREE.PointsMaterial({
-    size: 0.012,
+    size: 0.025,
     map: new THREE.CanvasTexture(pCanvas),
     vertexColors: true,
     transparent: true,
-    opacity: 0.9,
+    opacity: 1.0,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
     sizeAttenuation: true
   });
   var exhaustParticles = new THREE.Points(pGeo, pMat);
+  exhaustParticles.frustumCulled = false;
   ship.add(exhaustParticles);
 
   // Hot nozzle glow sphere at exit point
