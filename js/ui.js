@@ -78,11 +78,6 @@
     mirror('to-utc',   'utc-display');
     mirror('to-local', 'local-time-display');
 
-    // Signal
-    const sp = document.getElementById('signal-pill');
-    const sg = document.getElementById('to-signal');
-    if (sp && sg) { sg.textContent = sp.textContent; sg.className = sp.className; }
-
     // Phase
     mirror('to-phase', 'current-phase-name');
     mirror('to-current-event', 'current-event-name');

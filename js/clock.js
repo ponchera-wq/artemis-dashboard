@@ -104,23 +104,4 @@ function tick() {
 tick();
 setInterval(tick, 1000);
 
-// ── SIGNAL PILL ──────────────────────────────────────────────────────
-let signalAcquired = true;
-const signalPill = document.getElementById('signal-pill');
-
-function applySignalState() {
-  if (signalAcquired) {
-    signalPill.className = 'acquired';
-    signalPill.textContent = '▶ SIGNAL ACQUIRED';
-  } else {
-    signalPill.className = 'los';
-    signalPill.textContent = '⊘ LOS · FAR SIDE';
-  }
-}
-
-applySignalState();
-signalPill.addEventListener('click', () => {
-  signalAcquired = !signalAcquired;
-  applySignalState();
-});
 })();
