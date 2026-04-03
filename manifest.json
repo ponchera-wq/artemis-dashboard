@@ -9,13 +9,13 @@
   "theme_color": "#0B3D91",
   "icons": [
     {
-      "src": "https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png",
+      "src": "css/artemis-logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png",
+      "src": "css/artemis-logo.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"

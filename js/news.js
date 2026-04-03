@@ -19,7 +19,6 @@
     ],
     partners: [
       { url: 'https://blogs.esa.int/orion/feed/', name: 'ESA ORION' },
-      { url: 'https://www.asc-csa.gc.ca/eng/rss/default.xml', name: 'CSA' },
     ],
   };
 
@@ -27,7 +26,7 @@
     nasa:     ['artemis', 'orion', 'moon'],
     space:    ['artemis', 'orion', 'moon', 'sls'],
     media:    ['artemis', 'orion', 'moon', 'nasa', 'lunar', 'spacecraft', 'astronaut'],
-    partners: ['artemis', 'orion', 'moon', 'hansen', 'lunar', 'service module'],
+    partners: ['artemis', 'orion', 'moon', 'lunar', 'service module'],
   };
 
   const cache = { nasa: [], space: [], media: [], partners: [] };

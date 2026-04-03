@@ -8,10 +8,10 @@
   <meta http-equiv="Expires" content="0">
   <title>Artemis II — Live Mission Dashboard</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='5' fill='%23080c1a'/><circle cx='16' cy='16' r='10' fill='%23c8c4b0'/><circle cx='20.5' cy='12.5' r='8' fill='%23080c1a'/><circle cx='6' cy='9' r='2.5' fill='%2300ffcc'/><circle cx='6' cy='9' r='4' fill='%2300ffcc' opacity='0.18'/></svg>">
-  <link rel="apple-touch-icon" href="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png">
+  <link rel="apple-touch-icon" href="css/artemis-logo.png">
   <!-- PWA -->
   <meta name="theme-color" content="#0B3D91">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Artemis II">
   <link rel="manifest" href="manifest.json">
@@ -26,7 +26,7 @@
   <meta property="og:description" content="Real-time mission tracking for NASA's Artemis II crewed lunar flyby. OEM ephemeris data, 3D trajectory, space weather, crew profiles, and news feeds.">
   <meta property="og:url" content="https://artemis-live-dashboard.vercel.app/">
   <meta property="og:type" content="website">
-  <meta property="og:image" content="https://www.nasa.gov/wp-content/uploads/2023/05/artemis-logo-1.png">
+  <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/6/60/Artemis_Logo_NASA.png">
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Artemis II — Live Mission Dashboard">
@@ -67,6 +67,31 @@
 <body>
 
 <div id="sa-conn" style="position:fixed;top:8px;left:12px;z-index:100;font-family:'Share Tech Mono',monospace;font-size:.72rem;color:rgba(0,255,170,.85);display:flex;align-items:center;gap:5px;background:rgba(5,10,20,.7);padding:3px 10px;border-radius:3px;border:1px solid rgba(0,204,170,.15);pointer-events:none;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite"></span><span id="viewer-num">—</span><span style="color:rgba(140,170,200,.6);font-size:.65rem">WATCHING</span></div>
+
+<div id="sa-share" style="position:fixed;top:8px;left:auto;right:12px;z-index:100;
+font-family:'Share Tech Mono',monospace;font-size:0.7rem;
+display:flex;align-items:center;gap:3px;">
+  <button onclick="navigator.clipboard.writeText(window.location.href).then(function(){var b=document.getElementById('sa-ct');b.textContent='COPIED!';setTimeout(function(){b.textContent='LINK'},1500)})"
+    style="background:rgba(5,10,20,.7);border:1px solid rgba(0,204,170,.15);color:#00ffaa;padding:3px 8px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:.65rem;display:flex;align-items:center;gap:3px;">
+    <span style="font-size:.75rem">📋</span><span id="sa-ct">LINK</span>
+  </button>
+  <button onclick="window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Tracking Artemis II live — first crewed Moon mission in 50 years 🚀🌕')+'&url='+encodeURIComponent(location.href),'_blank','width=550,height=420')"
+    style="background:rgba(5,10,20,.7);border:1px solid rgba(0,204,170,.15);color:#ccc;padding:3px 7px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:.72rem;" title="Share on X">
+    𝕏
+  </button>
+  <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),'_blank','width=550,height=420')"
+    style="background:rgba(5,10,20,.7);border:1px solid rgba(0,204,170,.15);color:#4267B2;padding:3px 8px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:.72rem;font-weight:bold;" title="Share on Facebook">
+    f
+  </button>
+  <button onclick="window.open('https://reddit.com/submit?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent('Artemis II Live Mission Dashboard — real-time tracking'),'_blank','width=550,height=420')"
+    style="background:rgba(5,10,20,.7);border:1px solid rgba(0,204,170,.15);color:#FF4500;padding:3px 7px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:.72rem;" title="Share on Reddit">
+    ▲
+  </button>
+  <button onclick="window.open('https://api.whatsapp.com/send?text='+encodeURIComponent('Tracking Artemis II live! First crewed Moon mission in 50 years 🚀 '+location.href),'_blank')"
+    style="background:rgba(5,10,20,.7);border:1px solid rgba(0,204,170,.15);color:#25D366;padding:3px 7px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:.72rem;" title="Share on WhatsApp">
+    💬
+  </button>
+</div>
 
 <div id="dashboard">
 
@@ -124,6 +149,7 @@
   <!-- ══ REFERENCE GUIDE NAV BAR ═════════════════════════════════════ -->
   <nav id="ref-nav" aria-label="Reference guide navigation">
     <button id="unit-toggle" title="Switch units" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);color:var(--amber);border:1px solid rgba(255,167,38,0.5);background:none;font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.08em;padding:3px 9px;cursor:pointer;white-space:nowrap;z-index:11;">KM - MILES</button>
+    <button id="ref-nav-toggle" aria-label="Toggle reference menu">☰</button>
   </nav>
 
   <!-- ══ REFERENCE GUIDE MODAL ════════════════════════════════════════ -->

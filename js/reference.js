@@ -30,6 +30,10 @@
   }
 
   function openModal(id, title) {
+    var navEl2 = document.getElementById('ref-nav');
+    if (navEl2) { navEl2.classList.remove('ref-nav-open'); }
+    var navTog2 = document.getElementById('ref-nav-toggle');
+    if (navTog2) navTog2.textContent = '☰';
     if (cache[id]) {
       show(title, cache[id]);
       return;
@@ -77,6 +81,15 @@
     if (!modal) return;
 
     buildNav();
+
+    var navToggle = document.getElementById('ref-nav-toggle');
+    var navEl = document.getElementById('ref-nav');
+    if (navToggle && navEl) {
+      navToggle.addEventListener('click', function() {
+        navEl.classList.toggle('ref-nav-open');
+        navToggle.textContent = navEl.classList.contains('ref-nav-open') ? '✕' : '☰';
+      });
+    }
 
     modalClose.addEventListener('click', closeModal);
 
