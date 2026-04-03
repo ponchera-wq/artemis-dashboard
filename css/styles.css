@@ -1350,8 +1350,8 @@
     /* ── Placeholder grid positions ── */
     #feed-youtube  { grid-row: 3; grid-column: 1; }
     #feed-arow     { grid-row: 3; grid-column: 2; }
-    #feed-dsn      { grid-row: 3; grid-column: 3; }
-    #feed-weather  { grid-row: 4; grid-column: 1; }
+    #feed-dsn      { grid-row: 4; grid-column: 1; }
+    #feed-weather  { grid-row: 3; grid-column: 3; }
     #feed-blog     { grid-row: 4; grid-column: 2; }
     #mission-updates { grid-row: 4; grid-column: 3; }
 
@@ -1572,9 +1572,9 @@
       #ref-nav         { grid-row: 1; grid-column: 1 / -1; }
       #top-bar         { grid-row: 2; grid-column: 1 / -1; }
       #feed-youtube    { grid-row: 3; grid-column: 1; min-height: 260px; }
-      #feed-dsn        { grid-row: 3; grid-column: 2; min-height: 260px; }
+      #feed-dsn        { grid-row: 5; grid-column: 1; min-height: 260px; }
       #feed-arow       { grid-row: 4; grid-column: 1 / -1; }
-      #feed-weather    { grid-row: 5; grid-column: 1; min-height: 240px; }
+      #feed-weather    { grid-row: 3; grid-column: 2; min-height: 240px; }
       #feed-blog       { grid-row: 5; grid-column: 2; min-height: 240px; }
       #mission-updates { grid-row: 6; grid-column: 1 / -1; }
       #crew-strip      { grid-row: 7; grid-column: 1 / -1; overflow-x: hidden; }
@@ -1701,8 +1701,8 @@
       #feed-arow       { order: 3; }
       #feed-blog       { order: 4; }
       #feed-youtube    { order: 5; }
-      #feed-dsn        { order: 6; }
-      #feed-weather    { order: 7; }
+      #feed-dsn        { order: 7; }
+      #feed-weather    { order: 6; }
       #mission-updates { order: 8; }
       #crew-strip      { order: 9; }
       #site-footer     { order: 10; }

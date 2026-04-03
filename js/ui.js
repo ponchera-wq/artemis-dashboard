@@ -283,7 +283,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
    State persisted in localStorage
 ═══════════════════════════════════════════════════ */
 (function initLayout() {
-  const PANEL_IDS = ['feed-youtube','feed-arow','feed-dsn','feed-weather','feed-blog','mission-updates'];
+  const PANEL_IDS = ['feed-youtube','feed-arow','feed-weather','feed-dsn','feed-blog','mission-updates'];
   const SIZE_CYCLE = ['s','m','l'];
   const COLS = 3;
   const isMobile = () => window.innerWidth < 768;
@@ -296,7 +296,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
 
   let state;
   try {
-    const saved = localStorage.getItem('artemis-layout-v3');
+    const saved = localStorage.getItem('artemis-layout-v4');
     state = saved ? JSON.parse(saved) : DEFAULT_STATE();
     // Validate
     if (!state.order || state.order.length !== PANEL_IDS.length ||
@@ -450,7 +450,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
     if (siteFooter) siteFooter.style.gridRow = String(maxRow + 2);
 
     // Persist
-    try { localStorage.setItem('artemis-layout-v3', JSON.stringify(state)); } catch(e) {}
+    try { localStorage.setItem('artemis-layout-v4', JSON.stringify(state)); } catch(e) {}
 
     // Notify Three.js canvas of size change (guard prevents re-entry)
     _layoutFiring = true;
