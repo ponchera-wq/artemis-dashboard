@@ -244,7 +244,7 @@
     scene.add(upLine);
     // Upcoming path glow — 4 offset copies (additive, dashed)
     var upGlowLines = [];
-    [{x:0,y:0.03,z:0},{x:0,y:-0.03,z:0},{x:0.03,y:0,z:0},{x:-0.03,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.15,z:0},{x:0,y:-0.15,z:0},{x:0.15,y:0,z:0},{x:-0.15,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry().setFromPoints(allPts);
       var mat = new THREE.LineDashedMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.08, blending: THREE.AdditiveBlending, depthWrite: false, dashSize: 0.8, gapSize: 0.4 });
       var line = new THREE.Line(geo, mat);
@@ -261,18 +261,31 @@
     scene.add(completedLine);
     // Completed path glow — 6 offset copies (additive)
     var GLOW_OFFSETS = [
-      {x:0,y:0.04,z:0},{x:0,y:-0.04,z:0},
-      {x:0.04,y:0,z:0},{x:-0.04,y:0,z:0},
-      {x:0,y:0,z:0.04},{x:0,y:0,z:-0.04}
+      {x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},
+      {x:0.2,y:0,z:0},{x:-0.2,y:0,z:0},
+      {x:0,y:0,z:0.2},{x:0,y:0,z:-0.2},
+      {x:0.14,y:0.14,z:0},{x:-0.14,y:-0.14,z:0}
     ];
     var compGlowLines = [];
     GLOW_OFFSETS.forEach(function(off) {
       var geo = new THREE.BufferGeometry();
-      var mat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false });
+      var mat = new THREE.LineBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false });
       var line = new THREE.Line(geo, mat);
       line.position.set(off.x, off.y, off.z);
       scene.add(line);
       compGlowLines.push({geo: geo, line: line});
+    });
+    var compBloomLines = [];
+    [{x:0,y:0.45,z:0},{x:0,y:-0.45,z:0},{x:0.45,y:0,z:0},{x:-0.45,y:0,z:0}].forEach(function(off) {
+      var geo = new THREE.BufferGeometry();
+      var mat = new THREE.LineBasicMaterial({
+        color: 0x00ffcc, transparent: true, opacity: 0.04,
+        blending: THREE.AdditiveBlending, depthWrite: false
+      });
+      var line = new THREE.Line(geo, mat);
+      line.position.set(off.x, off.y, off.z);
+      scene.add(line);
+      compBloomLines.push({geo: geo});
     });
     // ── Return leg (amber/orange) ──
     var returnGeo = new THREE.BufferGeometry();
@@ -280,13 +293,25 @@
     var returnLine = new THREE.Line(returnGeo, returnMat);
     scene.add(returnLine);
     var returnGlowLines = [];
-    [{x:0,y:0.04,z:0},{x:0,y:-0.04,z:0},{x:0.04,y:0,z:0},{x:-0.04,y:0,z:0},{x:0,y:0,z:0.04},{x:0,y:0,z:-0.04}].forEach(function(off) {
+    [{x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},{x:0.2,y:0,z:0},{x:-0.2,y:0,z:0},{x:0,y:0,z:0.2},{x:0,y:0,z:-0.2}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
-      var mat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, depthWrite: false });
+      var mat = new THREE.LineBasicMaterial({ color: 0xff8844, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, depthWrite: false });
       var line = new THREE.Line(geo, mat);
       line.position.set(off.x, off.y, off.z);
       scene.add(line);
       returnGlowLines.push({geo: geo});
+    });
+    var returnBloomLines = [];
+    [{x:0,y:0.45,z:0},{x:0,y:-0.45,z:0},{x:0.45,y:0,z:0},{x:-0.45,y:0,z:0}].forEach(function(off) {
+      var geo = new THREE.BufferGeometry();
+      var mat = new THREE.LineBasicMaterial({
+        color: 0xff8844, transparent: true, opacity: 0.04,
+        blending: THREE.AdditiveBlending, depthWrite: false
+      });
+      var line = new THREE.Line(geo, mat);
+      line.position.set(off.x, off.y, off.z);
+      scene.add(line);
+      returnBloomLines.push({geo: geo});
     });
 
     var activeSegGeo = new THREE.BufferGeometry();
@@ -294,7 +319,7 @@
     scene.add(new THREE.Line(activeSegGeo, activeSegMat));
     // Active segment glow — 4 offset copies (additive, gold)
     var activeGlowLines = [];
-    [{x:0,y:0.03,z:0},{x:0,y:-0.03,z:0},{x:0.03,y:0,z:0},{x:-0.03,y:0,z:0}].forEach(function(off) {
+    [{x:0,y:0.2,z:0},{x:0,y:-0.2,z:0},{x:0.2,y:0,z:0},{x:-0.2,y:0,z:0}].forEach(function(off) {
       var geo = new THREE.BufferGeometry();
       var mat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false });
       var line = new THREE.Line(geo, mat);
@@ -657,8 +682,16 @@
     var mouse3 = new THREE.Vector2();
     var tooltipEl = document.getElementById('traj-tooltip');
     renderer.domElement.addEventListener('mousemove', function(e) {
-      if (!tooltipEl) return;
       var rect = renderer.domElement.getBoundingClientRect();
+      var mx2 = (e.clientX - rect.left) * (W / rect.width);
+      var my2 = (e.clientY - rect.top) * (H / rect.height);
+      var hoveringLabel = false;
+      for (var wi2 = 0; wi2 < wpClickAreas.length; wi2++) {
+        var a2 = wpClickAreas[wi2];
+        if (mx2 >= a2.x && mx2 <= a2.x + a2.w && my2 >= a2.y && my2 <= a2.y + a2.h) { hoveringLabel = true; break; }
+      }
+      if (hoveringLabel) { renderer.domElement.style.cursor = 'pointer'; if (tooltipEl) tooltipEl.style.opacity = '0'; return; }
+      if (!tooltipEl) return;
       mouse3.x = ((e.clientX-rect.left)/rect.width)*2-1; mouse3.y = -((e.clientY-rect.top)/rect.height)*2+1;
       raycaster.setFromCamera(mouse3, camera);
       var hits = raycaster.intersectObjects([capsule, glowMesh].concat(wpMeshes));
@@ -667,8 +700,25 @@
     });
     renderer.domElement.addEventListener('mouseleave', function() { if (tooltipEl) tooltipEl.style.opacity='0'; });
     renderer.domElement.addEventListener('click', function(e) {
-      if (popupOpen) { closePopup(); return; }
       var rect = renderer.domElement.getBoundingClientRect();
+      var scaleX = W / rect.width, scaleY = H / rect.height;
+      var mx = (e.clientX - rect.left) * scaleX;
+      var my = (e.clientY - rect.top) * scaleY;
+      // Check 2D label hit areas first
+      for (var wi = wpClickAreas.length - 1; wi >= 0; wi--) {
+        var a = wpClickAreas[wi];
+        if (mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h) {
+          var targetPos = wpScenePos(a.wp);
+          var camDist = 8;
+          var camDir = new THREE.Vector3(2, 1.5, 3).normalize();
+          var newCamPos = targetPos.clone().add(camDir.multiplyScalar(camDist));
+          startLerp(newCamPos, targetPos.clone(), 1.5, 'lerp');
+          activePreset = null; updatePresetBtns();
+          showWpPopup(a.wp, e.clientX, e.clientY);
+          e.stopPropagation(); return;
+        }
+      }
+      if (popupOpen) { closePopup(); return; }
       mouse3.x = ((e.clientX-rect.left)/rect.width)*2-1; mouse3.y = -((e.clientY-rect.top)/rect.height)*2+1;
       raycaster.setFromCamera(mouse3, camera);
       var hits = raycaster.intersectObjects(wpMeshes);
@@ -704,6 +754,59 @@
     var _upVec = new THREE.Vector3(0, 1, 0);
     var _quatLook = new THREE.Quaternion();
     var _lookMat = new THREE.Matrix4();
+
+    var wpClickAreas = [];
+
+    var wpPopup = null;
+    function showWpPopup(wp, screenX, screenY) {
+      if (wpPopup) wpPopup.remove();
+      var cont = document.getElementById('trajectory-panel') || container.parentElement || container;
+      wpPopup = document.createElement('div');
+      wpPopup.style.cssText = 'position:absolute;z-index:20;background:rgba(5,12,30,0.95);border:1px solid rgba(0,204,170,0.4);border-radius:6px;padding:12px 16px;max-width:300px;font-family:"Share Tech Mono",monospace;box-shadow:0 0 20px rgba(0,255,170,0.15);';
+      var fullEvent = null;
+      var events = MissionEvents.events;
+      for (var ei = 0; ei < events.length; ei++) {
+        if (events[ei].label === wp.label) { fullEvent = events[ei]; break; }
+      }
+      var evDate = new Date(LAUNCH_UTC.getTime() + wp.metSec * 1000);
+      var metH = Math.floor(wp.metSec / 3600);
+      var metM = Math.floor((wp.metSec % 3600) / 60);
+      var metStr = 'T+' + metH + 'h ' + metM + 'm';
+      var nowMet2 = (Date.now() - LAUNCH_UTC) / 1000;
+      var diff = wp.metSec - nowMet2;
+      var statusStr = '';
+      if (diff > 0) {
+        var dh = Math.floor(diff / 3600); var dm = Math.floor((diff % 3600) / 60);
+        statusStr = '<span style="color:#4488aa;">in ' + dh + 'h ' + dm + 'm</span>';
+      } else {
+        var ah = Math.floor(-diff / 3600); var am = Math.floor((-diff % 3600) / 60);
+        statusStr = '<span style="color:#00e676;">' + ah + 'h ' + am + 'm ago \u2713</span>';
+      }
+      var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">';
+      html += '<span style="color:#00ffcc;font-size:0.9rem;font-weight:bold;">' + wp.label + '</span>';
+      html += '<span style="cursor:pointer;color:rgba(100,130,170,0.6);font-size:0.8rem;" onclick="this.parentElement.parentElement.remove()">\u2715</span>';
+      html += '</div>';
+      html += '<div style="color:#8899aa;font-size:0.68rem;margin-bottom:8px;">' + metStr + ' \u00b7 ' + evDate.toUTCString().slice(0,22) + ' UTC \u00b7 ' + statusStr + '</div>';
+      if (fullEvent && fullEvent.name) html += '<div style="color:#ccdde8;font-size:0.78rem;margin-bottom:6px;">' + fullEvent.name + '</div>';
+      if (fullEvent && fullEvent.crew) html += '<div style="color:#00ccaa;font-size:0.7rem;margin-bottom:5px;">\ud83d\udc68\u200d\ud83d\ude80 ' + fullEvent.crew + '</div>';
+      if (fullEvent && fullEvent.desc) html += '<div style="color:rgba(180,210,240,0.85);font-size:0.73rem;line-height:1.45;">' + fullEvent.desc + '</div>';
+      wpPopup.innerHTML = html;
+      var cRect = cont.getBoundingClientRect();
+      var left = screenX - cRect.left + 15;
+      var top = screenY - cRect.top - 20;
+      if (left + 300 > cRect.width) left = left - 330;
+      if (top < 10) top = 10;
+      if (top + 200 > cRect.height) top = cRect.height - 210;
+      wpPopup.style.left = Math.max(5, left) + 'px';
+      wpPopup.style.top = Math.max(5, top) + 'px';
+      cont.style.position = 'relative';
+      cont.appendChild(wpPopup);
+      setTimeout(function() { if (wpPopup && wpPopup.parentElement) wpPopup.remove(); }, 10000);
+    }
+
+    container.addEventListener('mousedown', function(e) {
+      if (wpPopup && !wpPopup.contains(e.target)) { wpPopup.remove(); wpPopup = null; }
+    });
 
     function animate() {
       requestAnimationFrame(animate);
@@ -762,8 +865,10 @@
           completedGeo.setFromPoints(slice);
           completedGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors, 3));
           compGlowLines.forEach(function(g) { g.geo.setFromPoints(slice); });
+          compBloomLines.forEach(function(g) { g.geo.setFromPoints(slice); });
           returnGeo.setFromPoints([]);
           returnGlowLines.forEach(function(g) { g.geo.setFromPoints([]); });
+          returnBloomLines.forEach(function(g) { g.geo.setFromPoints([]); });
           upMat.color.setHex(0x00ffcc);
           upGlowLines.forEach(function(l) { l.material.color.setHex(0x00ffcc); });
         } else {
@@ -775,8 +880,10 @@
           completedGeo.setFromPoints(outSlice);
           completedGeo.setAttribute('color', new THREE.BufferAttribute(outColors, 3));
           compGlowLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
+          compBloomLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
           returnGeo.setFromPoints(retSlice);
           returnGlowLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
+          returnBloomLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
           upMat.color.setHex(0xff8844);
           upGlowLines.forEach(function(l) { l.material.color.setHex(0xff8844); });
         }
@@ -856,6 +963,7 @@
       drawCallout('ALT: ' + earthDistStr, altPt, 'rgba(0,204,255,0.7)', 0, 0, false, null);
 
       // Waypoint labels
+      wpClickAreas = [];
       wpVisible.forEach(function(wp, i) {
         var ws = wpGetState(wp, nowMet);
         var s = proj(wpMeshes[i].position); if (!s.vis) return;
@@ -879,6 +987,7 @@
         lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = 0.4;
         lctx.setLineDash([2,3]); lctx.stroke(); lctx.setLineDash([]);
         lctx.restore();
+        wpClickAreas.push({x: lx - 4, y: ly - bh/2, w: bw, h: bh, wp: wp, idx: i});
       });
 
       if (progressEl) { var fd = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1); progressEl.textContent = 'MISSION PROGRESS: ' + (gt*100).toFixed(1) + '%  \u00b7  FLIGHT DAY ' + fd; }
