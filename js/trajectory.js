@@ -661,7 +661,7 @@
 
     // ── Zoom controls ──
     var ctrlDiv = document.createElement('div');
-    Object.assign(ctrlDiv.style, { position:'absolute',bottom:'8px',right:'8px',display:'flex',flexDirection:'column',gap:'3px',zIndex:'3' });
+    Object.assign(ctrlDiv.style, { display:'flex',flexDirection:'row',gap:'3px',marginLeft:'6px',paddingLeft:'6px',borderLeft:'1px solid rgba(74,144,217,0.3)',alignItems:'center' });
     [{text:'+',fn:function(){exitPreset();sph.r=Math.max(5,sph.r*0.8);applyCam();stopAuto();}},{text:'\u2212',fn:function(){exitPreset();sph.r=Math.min(200,sph.r*1.2);applyCam();stopAuto();}},{text:'\u27f2',fn:function(){exitPreset();Object.assign(sph,JSON.parse(JSON.stringify(SPH_DEFAULT)));camLookAt.copy(trajCenter);applyCam();autoRotate=true;activePreset='overview';updatePresetBtns();}}].forEach(function(b) {
       var btn = document.createElement('button'); btn.textContent = b.text;
       Object.assign(btn.style, { width:'26px',height:'26px',background:'rgba(8,12,26,0.85)',border:'1px solid rgba(74,144,217,0.45)',borderRadius:'3px',color:'#4A90D9',fontSize:'14px',fontFamily:"'Share Tech Mono',monospace",cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:'1',padding:'0' });
@@ -669,7 +669,7 @@
       btn.addEventListener('mouseleave', function() { btn.style.borderColor='rgba(74,144,217,0.45)'; btn.style.color='#4A90D9'; });
       btn.addEventListener('click', b.fn); ctrlDiv.appendChild(btn);
     });
-    container.appendChild(ctrlDiv);
+    presetBar.appendChild(ctrlDiv);
 
     // ── Waypoint popup ──
     var popupEl = document.createElement('div');
@@ -1042,18 +1042,36 @@
       });
 
       if (progressEl) { var fd = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1); progressEl.textContent = 'MISSION PROGRESS: ' + (gt*100).toFixed(1) + '%  \u00b7  FLIGHT DAY ' + fd; }
+
+      // Update countdown
+      var nextWp = null;
+      for (var wi = 0; wi < wpVisible.length; wi++) {
+        if (wpVisible[wi].metSec > nowMet) { nextWp = wpVisible[wi]; break; }
+      }
+      var mtNt = document.getElementById('mt-next-time');
+      if (mtNt) {
+        if (nextWp) {
+           var rem = nextWp.metSec - nowMet;
+           var h = Math.floor(rem / 3600);
+           var m = Math.floor((rem % 3600) / 60);
+           var s = Math.floor(rem % 60);
+           mtNt.textContent = '-' + String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        } else {
+           mtNt.textContent = 'COMPLETE';
+        }
+      }
     }
     animate();
 
     // ── Mini Timeline ──
     var miniTimeline = document.createElement('div');
     miniTimeline.id = 'mini-timeline';
-    document.head.insertAdjacentHTML('beforeend', '<style>@media (max-width: 768px) { #mini-timeline { display: none !important; } } #mini-timeline::-webkit-scrollbar { width: 4px; } #mini-timeline::-webkit-scrollbar-thumb { background: rgba(0, 255, 170, 0.3); border-radius: 2px; } #mini-timeline::-webkit-scrollbar-track { background: transparent; }</style>');
+    document.head.insertAdjacentHTML('beforeend', '<style>@media (max-width: 768px) { #mini-timeline { display: none !important; } #mt-toggle { display: none !important; } } #mini-timeline::-webkit-scrollbar { width: 4px; } #mini-timeline::-webkit-scrollbar-thumb { background: rgba(0, 255, 170, 0.3); border-radius: 2px; } #mini-timeline::-webkit-scrollbar-track { background: transparent; }</style>');
     Object.assign(miniTimeline.style, {
       position: 'absolute',
       right: '10px',
-      top: '40px',
-      maxHeight: 'calc(100% - 80px)',
+      top: '38px',
+      maxHeight: 'calc(100% - 76px)',
       width: '140px',
       background: 'rgba(5, 12, 30, 0.85)',
       border: '1px solid rgba(74, 144, 217, 0.3)',
@@ -1065,8 +1083,66 @@
       flexDirection: 'column',
       padding: '8px 0',
       boxShadow: '0 0 15px rgba(0,0,0,0.5)',
-      fontFamily: "'Share Tech Mono', monospace"
+      fontFamily: "'Share Tech Mono', monospace",
+      transition: 'transform 0.3s ease, opacity 0.3s ease'
     });
+
+    var mtToggle = document.createElement('button');
+    mtToggle.id = 'mt-toggle';
+    mtToggle.innerHTML = '&#9656;';
+    Object.assign(mtToggle.style, {
+      position: 'absolute',
+      top: '10px',
+      right: '150px',
+      zIndex: '5',
+      width: '20px',
+      height: '28px',
+      background: 'rgba(4, 8, 18, 0.82)',
+      border: '1px solid rgba(74, 144, 217, 0.3)',
+      borderRadius: '3px 0 0 3px',
+      color: 'rgba(74, 144, 217, 0.7)',
+      fontSize: '11px',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '0',
+      fontFamily: "'Share Tech Mono', monospace",
+      transition: 'transform 0.3s ease, right 0.3s ease'
+    });
+    var mtVisible = true;
+    mtToggle.addEventListener('click', function() {
+      mtVisible = !mtVisible;
+      miniTimeline.style.transform = mtVisible ? 'none' : 'translateX(calc(100% + 10px))';
+      miniTimeline.style.opacity = mtVisible ? '1' : '0';
+      miniTimeline.style.pointerEvents = mtVisible ? 'auto' : 'none';
+      mtToggle.style.right = mtVisible ? '150px' : '0px';
+      mtToggle.innerHTML = mtVisible ? '&#9656;' : '&#9666;';
+    });
+    
+    var mtHeader = document.createElement('div');
+    Object.assign(mtHeader.style, {
+      padding: '0 12px 6px',
+      borderBottom: '1px solid rgba(74, 144, 217, 0.2)',
+      marginBottom: '6px',
+      fontSize: '9px',
+      color: 'rgba(74, 144, 217, 0.8)',
+      textAlign: 'center'
+    });
+    var mtNextTitle = document.createElement('div');
+    mtNextTitle.textContent = 'NEXT WAYPOINT';
+    var mtNextTime = document.createElement('div');
+    mtNextTime.id = 'mt-next-time';
+    mtNextTime.textContent = '—';
+    Object.assign(mtNextTime.style, {
+      fontSize: '12px',
+      color: '#ffd700',
+      fontWeight: 'bold',
+      marginTop: '3px'
+    });
+    mtHeader.appendChild(mtNextTitle);
+    mtHeader.appendChild(mtNextTime);
+    miniTimeline.appendChild(mtHeader);
 
     var mtItems = [];
     wpVisible.forEach(function(wp, i) {
@@ -1106,6 +1182,7 @@
       mtItems.push({el: item, wp: wp});
     });
     container.appendChild(miniTimeline);
+    container.appendChild(mtToggle);
 
     // ── Telemetry HUD ──
     var hudEl = document.getElementById('traj-hud');

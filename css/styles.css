@@ -2005,7 +2005,7 @@
 /* ── Trajectory HUD Panel ────────────────────────────────────────────── */
 .traj-hud {
   position: absolute;
-  top: 38px;
+  top: 10px;
   left: 6px;
   width: 172px;
   max-height: calc(100% - 52px);
@@ -2032,7 +2032,7 @@
 }
 .hud-toggle {
   position: absolute;
-  top: 38px;
+  top: 10px;
   left: 182px;
   z-index: 5;
   width: 20px;
