@@ -386,98 +386,13 @@
       scene.add(wpGlow);
     });
 
-    // ── Orion spacecraft (detailed model) ──
-    var orionGroup = new THREE.Group();
-
-    // Capsule (crew module — forward end)
-    var orionMat = new THREE.MeshPhongMaterial({ color: 0xcccccc, emissive: 0x222222, shininess: 60 });
-    var capsule = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.18, 8), orionMat);
-    capsule.position.y = -0.3;
-    orionGroup.add(capsule);
-
-    // Docking adapter
-    var dockingAdapter = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.03, 0.05, 8),
-      new THREE.MeshPhongMaterial({ color: 0xaaaaaa })
-    );
-    dockingAdapter.position.y = -0.415;
-    orionGroup.add(dockingAdapter);
-
-    // Heat shield
-    var heatShield = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.02, 8),
-      new THREE.MeshPhongMaterial({ color: 0x4a3a2a })
-    );
-    heatShield.position.y = -0.21;
-    orionGroup.add(heatShield);
-
-    // Crew module adapter
-    var cma = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.1, 0.04, 8),
-      new THREE.MeshPhongMaterial({ color: 0x6a6a6a })
-    );
-    cma.position.y = -0.18;
-    orionGroup.add(cma);
-
-    // Service module (main body)
-    var serviceModule = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.1, 0.1, 0.3, 8),
-      new THREE.MeshPhongMaterial({ color: 0x777777, emissive: 0x111111 })
-    );
-    serviceModule.position.y = 0.0;
-    orionGroup.add(serviceModule);
-
-    // Engine bell
-    var engineBell = new THREE.Mesh(
-      new THREE.ConeGeometry(0.06, 0.1, 8, 1, true),
-      new THREE.MeshPhongMaterial({ color: 0x3a3a3a })
-    );
-    engineBell.position.y = 0.2;
-    orionGroup.add(engineBell);
-
-    // Solar arrays (4 panels in X-wing pattern)
-    var solarMat = new THREE.MeshPhongMaterial({ color: 0x0d2847, emissive: 0x0a1a3a, side: THREE.DoubleSide });
-    var armMat = new THREE.MeshPhongMaterial({ color: 0xaaaaaa });
-
-    var panelConfigs = [
-      { px: -0.25, rz: 0.1 },   // left upper
-      { px: -0.25, rz: -0.1 },  // left lower
-      { px: 0.25, rz: -0.1 },   // right upper
-      { px: 0.25, rz: 0.1 }     // right lower
-    ];
-    panelConfigs.forEach(function(cfg) {
-      var panel = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.07), solarMat);
-      panel.position.set(cfg.px, 0, 0);
-      panel.rotation.z = cfg.rz;
-      orionGroup.add(panel);
-      var arm = new THREE.Mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.05, 4), armMat);
-      arm.rotation.z = Math.PI / 2;
-      arm.position.set(cfg.px > 0 ? 0.05 : -0.05, 0, 0);
-      orionGroup.add(arm);
-    });
-
-    // Engine exhaust
-    var exhaustOuter = new THREE.Mesh(
-      new THREE.ConeGeometry(0.04, 0.2, 6),
-      new THREE.MeshBasicMaterial({ color: 0xff8833, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending })
-    );
-    exhaustOuter.position.y = 0.3;
-    orionGroup.add(exhaustOuter);
-
-    var exhaustInner = new THREE.Mesh(
-      new THREE.ConeGeometry(0.025, 0.12, 6),
-      new THREE.MeshBasicMaterial({ color: 0xffffcc, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending })
-    );
-    exhaustInner.position.y = 0.26;
-    orionGroup.add(exhaustInner);
-
-    // Mission glow
-    var glowMat = new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true, opacity: 0.12, side: THREE.BackSide });
-    var glowMesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 16, 16), glowMat);
-    orionGroup.add(glowMesh);
-
-    orionGroup.userData = { label: 'ORION' };
+    // ── Orion spacecraft (detailed model from orion-model.js) ──
+    var orionGroup = createOrionModel(THREE);
+    orionGroup.userData.label = 'ORION';
     scene.add(orionGroup);
+    var exhaustOuter = orionGroup.userData.exhaustOuter;
+    var exhaustInner = orionGroup.userData.exhaustInner;
+    var glowMat = orionGroup.userData.glowMat;
 
     // ── Trail particles ──
     var TRAIL_LEN = 30;
@@ -863,7 +778,7 @@
       exhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
       exhaustInner.material.opacity = 0.2 + 0.2 * Math.sin(now / 430);
 
-      orionMat.emissiveIntensity = 0.7 + pulse * 0.6;
+      orionGroup.userData.hullMat.emissiveIntensity = 0.7 + pulse * 0.6;
       glowMat.opacity = 0.08 + pulse * 0.15;
       orionLight.position.copy(orionGroup.position);
 
