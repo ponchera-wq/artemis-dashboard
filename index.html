@@ -123,25 +123,31 @@ display:flex;align-items:center;gap:3px;">
     <!-- Distance from Earth -->
     <div class="tb-telem" id="telem-earth">
       <div class="telem-label">🌍 DISTANCE FROM EARTH</div>
-      <div class="telem-value" id="tv-earth">—</div>
-      <div class="telem-unit" id="tu-earth">KM</div>
-      <div id="earth-annotation" style="font-family:var(--font-mono);font-size:0.32rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
+      <div class="telem-val-row">
+        <div class="telem-value" id="tv-earth">—</div>
+        <div class="telem-unit" id="tu-earth">KM</div>
+      </div>
+      <div id="earth-annotation" style="font-family:var(--font-mono);font-size:0.36rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
       <div class="stat-sub" id="stat-earth-analogy"></div>
     </div>
 
     <!-- Distance from Moon -->
     <div class="tb-telem" id="telem-moon">
       <div class="telem-label">🌕 DISTANCE FROM MOON</div>
-      <div class="telem-value" id="tv-moon">—</div>
-      <div class="telem-unit" id="tu-moon">KM</div>
-      <div id="moon-annotation" style="font-family:var(--font-mono);font-size:0.32rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
+      <div class="telem-val-row">
+        <div class="telem-value" id="tv-moon">—</div>
+        <div class="telem-unit" id="tu-moon">KM</div>
+      </div>
+      <div id="moon-annotation" style="font-family:var(--font-mono);font-size:0.36rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
     </div>
 
     <!-- Orion Speed -->
     <div class="tb-telem" id="telem-speed">
       <div class="telem-label">🚀 ORION SPEED</div>
-      <div class="telem-value" id="tv-speed">—</div>
-      <div class="telem-unit" id="tu-speed">KM/H</div>
+      <div class="telem-val-row">
+        <div class="telem-value" id="tv-speed">—</div>
+        <div class="telem-unit" id="tu-speed">KM/H</div>
+      </div>
       <div id="telem-badge" class="telem-badge-est">EST</div>
       <div id="telem-update-time" style="position:absolute;bottom:20px;right:7px;font-family:var(--font-mono);font-size:0.30rem;color:rgba(74,144,217,0.45);letter-spacing:0.05em;pointer-events:none;"></div>
     </div>
@@ -158,6 +164,27 @@ display:flex;align-items:center;gap:3px;">
       <div class="stat-label">SPLASHDOWN</div>
       <div class="stat-value" id="splashdown-countdown">--:--:--</div>
       <div class="stat-sub" id="splashdown-date">11 APR · 00:06 UTC</div>
+    </div>
+
+    <!-- Odometer -->
+    <div class="tb-telem stat-block" id="odometer-block">
+      <div class="stat-label">TOTAL DISTANCE</div>
+      <div class="stat-value" id="stat-odometer">—</div>
+      <div class="stat-sub" id="stat-odometer-sub"></div>
+    </div>
+
+    <!-- Apollo 13 comparison -->
+    <div class="tb-telem stat-block historical" id="apollo13-block">
+      <div class="stat-label">APOLLO 13 AT THIS MET</div>
+      <div class="stat-value" id="stat-apollo13">—</div>
+      <div class="stat-sub" id="stat-apollo13-sub"></div>
+    </div>
+
+    <!-- G-Force -->
+    <div class="tb-telem stat-block" id="gforce-block">
+      <div class="stat-label">G-FORCE</div>
+      <div class="stat-value" id="stat-gforce">—</div>
+      <div class="stat-sub" id="stat-gforce-sub">APPARENT ACCELERATION</div>
     </div>
 
     <!-- Controls box -->
@@ -200,6 +227,7 @@ display:flex;align-items:center;gap:3px;">
             <span id="to-local"></span>
           </div>
           <div class="to-launch-label">LAUNCH: 2026-04-01 · 22:35 UTC</div>
+          <div id="to-flight-day" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--green);letter-spacing:0.1em;margin-top:4px;"></div>
           <div id="to-signal"></div>
         </div>
         <div class="to-block to-phase-block">
@@ -215,22 +243,29 @@ display:flex;align-items:center;gap:3px;">
       <div class="to-row to-row2">
         <div class="to-gauge to-gauge-earth">
           <div class="to-gauge-label">🌍 DISTANCE FROM EARTH</div>
-          <div class="to-gauge-value" id="to-v-earth">—</div>
-          <div class="to-gauge-unit" id="to-u-earth">MI</div>
+          <div class="to-gauge-val-row">
+            <div class="to-gauge-value" id="to-v-earth">—</div>
+            <div class="to-gauge-unit" id="to-u-earth">MI</div>
+          </div>
           <div class="to-gauge-annotation" id="to-a-earth"></div>
+          <div class="to-gauge-annotation" id="to-a-earth-analogy" style="color:rgba(74,144,217,0.65);"></div>
           <div class="to-gauge-trend" id="to-t-earth"></div>
         </div>
         <div class="to-gauge to-gauge-moon">
           <div class="to-gauge-label">🌕 DISTANCE FROM MOON</div>
-          <div class="to-gauge-value" id="to-v-moon">—</div>
-          <div class="to-gauge-unit" id="to-u-moon">MI</div>
+          <div class="to-gauge-val-row">
+            <div class="to-gauge-value" id="to-v-moon">—</div>
+            <div class="to-gauge-unit" id="to-u-moon">MI</div>
+          </div>
           <div class="to-gauge-annotation" id="to-a-moon"></div>
           <div class="to-gauge-trend" id="to-t-moon"></div>
         </div>
         <div class="to-gauge to-gauge-speed">
           <div class="to-gauge-label">🚀 ORION SPEED</div>
-          <div class="to-gauge-value" id="to-v-speed">—</div>
-          <div class="to-gauge-unit" id="to-u-speed">MPH</div>
+          <div class="to-gauge-val-row">
+            <div class="to-gauge-value" id="to-v-speed">—</div>
+            <div class="to-gauge-unit" id="to-u-speed">MPH</div>
+          </div>
           <div class="to-gauge-annotation" id="to-a-speed"></div>
           <div class="to-gauge-trend" id="to-t-speed"></div>
         </div>
@@ -249,6 +284,16 @@ display:flex;align-items:center;gap:3px;">
         <div class="to-extra-item">
           <div class="to-extra-label">ORBIT / TRAJECTORY</div>
           <div class="to-extra-val" id="to-phase-detail">—</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">LUNAR FLYBY</div>
+          <div class="to-extra-val" id="to-perilune">--:--:--</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;">CLOSEST APPROACH: ~6,583 KM</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">SPLASHDOWN</div>
+          <div class="to-extra-val" id="to-splashdown">--:--:--</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;">11 APR · 00:06 UTC</div>
         </div>
         <div class="to-extra-item">
           <div class="to-extra-label">UNITS</div>

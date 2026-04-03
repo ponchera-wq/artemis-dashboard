@@ -13,6 +13,8 @@ const elAnalogy    = document.getElementById('stat-earth-analogy');
 const elSplashdown = document.getElementById('splashdown-countdown');
 const elPerilune   = document.getElementById('perilune-countdown');
 
+let odoTickCount = 0;
+
 let useImperial = false;
 const KM_TO_MI = 0.621371;
 
@@ -134,6 +136,49 @@ function tickTelem() {
 
   // Distance analogy (always km, regardless of unit toggle)
   if (elAnalogy) elAnalogy.textContent = distAnalogy(state.distEarthKm);
+
+  // ── Odometer (update every 5 ticks to avoid O(n) every second) ──
+  odoTickCount++;
+  if (odoTickCount === 1 || odoTickCount % 5 === 0) {
+    var odoKm = window.computeOdometer(metSec);
+    var odoEl = document.getElementById('stat-odometer');
+    var odoSubEl = document.getElementById('stat-odometer-sub');
+    if (odoEl) odoEl.textContent = Math.round(odoKm).toLocaleString() + ' km';
+    if (odoSubEl) odoSubEl.textContent = (odoKm / 40075).toFixed(1) + '\u00d7 Earth circumference';
+  }
+
+  // ── Apollo 13 comparison ─────────────────────────────────────────
+  var a13km = window.getApollo13DistAtMet(metSec);
+  var currentKm = state.distEarthKm;
+  var a13El = document.getElementById('stat-apollo13');
+  var a13SubEl = document.getElementById('stat-apollo13-sub');
+  if (a13El) a13El.textContent = Math.round(a13km).toLocaleString() + ' km';
+  if (a13SubEl) {
+    var diff = currentKm - a13km;
+    var sign = diff >= 0 ? '+' : '';
+    if (metSec < 692700) {
+      a13SubEl.textContent = 'Artemis II is ' + sign +
+        Math.round(Math.abs(diff)).toLocaleString() +
+        ' km ' + (diff >= 0 ? 'further' : 'closer');
+    } else {
+      a13SubEl.textContent = 'A13 had splashed down by now';
+    }
+  }
+
+  // ── G-force readout ──────────────────────────────────────────────
+  var gf = window.computeGforce(metSec);
+  var gfEl = document.getElementById('stat-gforce');
+  if (gfEl) {
+    gfEl.textContent = gf.toFixed(3) + ' G';
+    gfEl.className = 'stat-value' + (gf > 0.05 ? ' warn' : ' good');
+  }
+  var gfSubEl = document.getElementById('stat-gforce-sub');
+  if (gfSubEl) {
+    if (gf < 0.005) gfSubEl.textContent = 'FREEFALL COAST';
+    else if (gf < 0.05) gfSubEl.textContent = 'MINOR MANOEUVRE';
+    else if (gf < 0.5) gfSubEl.textContent = 'THRUSTER BURN';
+    else gfSubEl.textContent = 'MAJOR BURN';
+  }
 
   // Countdown clocks
   tickSplashdown();

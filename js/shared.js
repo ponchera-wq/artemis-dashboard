@@ -29,6 +29,70 @@ window.fmtUTC = function(date) {
   }).format(date) + ' UTC';
 };
 
+// ── Cumulative distance odometer (total path length, km) ─────────────────
+window.computeOdometer = function(metSec) {
+  var pts = MissionEphemeris.points;
+  if (!pts || pts.length < 2) return 0;
+  var total = 0;
+  for (var i = 1; i < pts.length; i++) {
+    if (pts[i].metSec > metSec) break;
+    var dx = pts[i].orion.x - pts[i-1].orion.x;
+    var dy = pts[i].orion.y - pts[i-1].orion.y;
+    var dz = pts[i].orion.z - pts[i-1].orion.z;
+    total += Math.sqrt(dx*dx + dy*dy + dz*dz);
+  }
+  return total; // km
+};
+
+// ── Apollo 13 Earth-distance profile (historical free-return flyby) ───────
+var APOLLO13_PROFILE = [
+  { metSec: 0,      earthKm: 0 },
+  { metSec: 10800,  earthKm: 1850 },
+  { metSec: 21600,  earthKm: 5200 },
+  { metSec: 36000,  earthKm: 13000 },
+  { metSec: 86400,  earthKm: 61300 },
+  { metSec: 172800, earthKm: 185000 },
+  { metSec: 259200, earthKm: 296000 },
+  { metSec: 320000, earthKm: 358000 },
+  { metSec: 345600, earthKm: 400000 },
+  { metSec: 432000, earthKm: 350000 },
+  { metSec: 518400, earthKm: 250000 },
+  { metSec: 604800, earthKm: 120000 },
+  { metSec: 692700, earthKm: 0 }
+];
+
+window.getApollo13DistAtMet = function(metSec) {
+  var p = APOLLO13_PROFILE;
+  if (metSec <= p[0].metSec) return p[0].earthKm;
+  if (metSec >= p[p.length-1].metSec) return p[p.length-1].earthKm;
+  for (var i = 1; i < p.length; i++) {
+    if (metSec <= p[i].metSec) {
+      var f = (metSec - p[i-1].metSec) / (p[i].metSec - p[i-1].metSec);
+      return p[i-1].earthKm + (p[i].earthKm - p[i-1].earthKm) * f;
+    }
+  }
+  return 0;
+};
+
+// ── G-force from velocity delta between ephemeris points ──────────────────
+window.computeGforce = function(metSec) {
+  var pts = MissionEphemeris.points;
+  if (!pts || pts.length < 2) return 0;
+  var lo = 0, hi = pts.length - 1;
+  for (var i = 0; i < pts.length - 1; i++) {
+    if (pts[i].metSec <= metSec && pts[i+1].metSec > metSec) {
+      lo = i; hi = i + 1; break;
+    }
+  }
+  var dt = pts[hi].metSec - pts[lo].metSec;
+  if (dt <= 0) return 0;
+  var dvx = pts[hi].orion.vx - pts[lo].orion.vx;
+  var dvy = pts[hi].orion.vy - pts[lo].orion.vy;
+  var dvz = pts[hi].orion.vz - pts[lo].orion.vz;
+  var accel = Math.sqrt(dvx*dvx + dvy*dvy + dvz*dvz) / dt; // km/s²
+  return accel / 0.00981; // convert to G
+};
+
 // Shared state object for cross-module communication
 window.dashboardState = {
   useImperial: true,
