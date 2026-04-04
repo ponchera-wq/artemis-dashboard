@@ -188,16 +188,119 @@ function tickTelem() {
 document.getElementById('unit-toggle').addEventListener('click', function() {
   useImperial = !useImperial;
   var btn = document.getElementById('unit-toggle');
-  btn.textContent  = useImperial ? 'MI - KM' : 'KM - MILES';
-  btn.style.color  = useImperial ? 'var(--amber)' : '';
-  btn.style.borderColor = useImperial ? 'rgba(255,167,38,0.5)' : '';
+  if (btn) {
+    btn.textContent  = useImperial ? 'MI - KM' : 'KM - MILES';
+    btn.style.color  = useImperial ? 'var(--amber)' : '';
+    btn.style.borderColor = useImperial ? 'rgba(255,167,38,0.5)' : '';
+  }
   tickTelem();
+});
+
+// ── MINI OBSERVER WIDGET ──────────────────────────────────────────────
+function updateMiniObserver() {
+  var latR = localStorage.getItem('observer_lat');
+  var lonR = localStorage.getItem('observer_lon');
+  var nextPassEl = document.getElementById('mini-obs-next-pass');
+  var statusEl = document.getElementById('mini-obs-status');
+  
+  if (!nextPassEl || !statusEl) return;
+
+  if (!latR || !lonR) {
+    nextPassEl.innerHTML = '<a href="observer.html" style="color:var(--amber);text-decoration:none;">LOCATION NOT SET. Click to calibrate.</a>';
+    statusEl.style.display = 'none';
+    return;
+  }
+  statusEl.style.display = 'inline-block';
+
+  var lat = parseFloat(latR);
+  var lon = parseFloat(lonR);
+
+  // Time formatting
+  var tzAbbr = (function() {
+      try {
+          var parts = new Intl.DateTimeFormat([], { timeZoneName: 'short' }).formatToParts(new Date());
+          var match = parts.find(function(p) { return p.type === 'timeZoneName'; });
+          return match ? match.value : '';
+      } catch(e) { return ''; }
+  })();
+  function fmtTime(ms) {
+      var t = new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      return tzAbbr ? t + ' ' + tzAbbr : t;
+  }
+
+  // Get metrics
+  if (window.ObserverAstro && window.MissionEphemeris) {
+    var nowMs = Date.now();
+    var metSec = window.MissionEphemeris.getMetSec(nowMs);
+    var m = window.ObserverAstro.calculateMetrics(metSec, nowMs, lat, lon, 0);
+    
+    // Status
+    if (m && m.orion.altitude > 0) {
+      if (m.sun.altitude < -18) {
+         statusEl.textContent = 'VISIBLE IN TRUE NIGHT';
+         statusEl.style.background = 'rgba(0, 230, 118, 0.1)';
+         statusEl.style.color = '#00e676';
+         statusEl.style.borderColor = 'rgba(0, 230, 118, 0.5)';
+      } else {
+         statusEl.textContent = 'ABOVE HORIZON (DAY/TWILIGHT)';
+         statusEl.style.background = 'rgba(255, 167, 38, 0.1)';
+         statusEl.style.color = '#ffa726';
+         statusEl.style.borderColor = 'rgba(255, 167, 38, 0.5)';
+      }
+    } else {
+      statusEl.textContent = 'BELOW HORIZON';
+      statusEl.style.background = 'rgba(255, 80, 80, 0.1)';
+      statusEl.style.color = '#ff5050';
+      statusEl.style.borderColor = 'rgba(255, 80, 80, 0.5)';
+    }
+
+    // Windows
+    var wins = window.ObserverAstro.calculateViewingWindows(lat, lon, nowMs, metSec, 0);
+    if (!wins || wins.length === 0) {
+      nextPassEl.textContent = 'NEXT PASS: NONE IN 24H';
+    } else {
+      var w = wins[0];
+      var diffMs = w.startMs - nowMs;
+      var inHours = Math.floor(diffMs / 3600000);
+      var inMins  = Math.floor((diffMs % 3600000) / 60000);
+      var countStr = diffMs > 0 ? '(in ' + (inHours > 0 ? inHours + 'h ' : '') + inMins + 'm)' : '(NOW)';
+      nextPassEl.textContent = 'NEXT PASS: ' + fmtTime(w.startMs) + ' ' + countStr + ' • Peak ' + w.peakAlt.toFixed(0) + '°';
+    }
+  }
+}
+
+// Mini observer info tooltip
+document.addEventListener('click', function(e) {
+  var obsBtn = e.target.closest('#mini-obs-info');
+  var swTooltip = document.getElementById('sw-tooltip'); // Use existing tooltip container
+  
+  if (obsBtn && swTooltip) {
+    var titleEl = document.getElementById('sw-tt-title');
+    var eli5El = document.getElementById('sw-tt-eli5');
+    var scaleEl = document.getElementById('sw-tt-scale');
+    var whyEl = document.getElementById('sw-tt-why');
+    
+    if (titleEl) titleEl.textContent = 'LOCAL OBSERVER MODE';
+    if (eli5El) eli5El.textContent = 'Observer Mode calculates exactly where to point your telescope from your backyard. Click to see the full celestial map and imaging guide.';
+    if (scaleEl) scaleEl.textContent = '';
+    if (whyEl) whyEl.textContent = '';
+    
+    var r = obsBtn.getBoundingClientRect();
+    swTooltip.style.top = (r.bottom + window.scrollY + 8) + 'px';
+    swTooltip.style.left = (r.left + window.scrollX - 200) + 'px'; // adjust so it stays on screen
+    swTooltip.classList.add('visible');
+    e.stopPropagation();
+  }
 });
 
 // Wait for ephemeris data before starting ticks
 MissionEphemeris.ready.then(function() {
   tickTelem();
   setInterval(tickTelem, 1000);
+
+  updateMiniObserver();
+  setInterval(updateMiniObserver, 60000); // 1 minute
 });
 
 })();
+
