@@ -195,8 +195,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ── Viewing Windows Renderer ─────────────────────────────────────────
+    // Cache the timezone abbreviation (e.g. "AEDT", "EST", "UTC+11")
+    const _tzAbbr = (() => {
+        try {
+            const parts = new Intl.DateTimeFormat([], { timeZoneName: 'short' }).formatToParts(new Date());
+            return parts.find(p => p.type === 'timeZoneName')?.value || '';
+        } catch { return ''; }
+    })();
+
     function fmtLocalTime(ms) {
-        return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        const t = new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+        return _tzAbbr ? `${t} ${_tzAbbr}` : t;
     }
 
     function fmtDuration(ms) {
