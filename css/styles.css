@@ -110,6 +110,7 @@
         gap: 2px;
       }
       .footer-center, .footer-right { text-align: center; }
+      .desktop-only { display: none !important; }
     }
 
     /* ── Panel base ── */
@@ -1654,7 +1655,7 @@
       #ref-nav         { grid-row: 1; grid-column: 1 / -1; }
       #top-bar         { grid-row: 2; grid-column: 1 / -1; }
       #feed-youtube    { grid-row: 3; grid-column: 1; min-height: 260px; }
-      #feed-dsn        { grid-row: 5; grid-column: 1; min-height: 130px; }
+      #feed-dsn        { grid-row: 5; grid-column: 1; min-height: 260px; }
       #feed-arow       { grid-row: 4; grid-column: 1 / -1; }
       #feed-weather    { grid-row: 3; grid-column: 2; min-height: 240px; }
       #feed-blog       { grid-row: 5; grid-column: 2; min-height: 240px; }
@@ -1744,7 +1745,7 @@
       #feed-arow { height: 290px; flex-shrink: 0; }
 
       /* DSN custom panel */
-      #feed-dsn { flex-shrink: 0; min-height: 130px; }
+      #feed-dsn { flex-shrink: 0; min-height: 260px; }
 
       /* Space weather */
       #feed-weather { min-height: 280px; flex-shrink: 0; }
@@ -2210,18 +2211,19 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  gap: 4px;
-  padding: 0 8px;
   background: rgba(4, 6, 16, 0.82);
   border-top: 1px solid rgba(255,140,0,0.18);
   border-bottom: 1px solid rgba(255,140,0,0.18);
-  overflow-x: auto;
-  overflow-y: hidden;
-  white-space: nowrap;
-  scrollbar-width: none;
   flex-shrink: 0;
   height: 32px;
   z-index: 10;
+}
+#ref-menu-items {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 100%;
 }
 #ref-nav::-webkit-scrollbar { display: none; }
 
@@ -2620,53 +2622,106 @@ body.ref-modal-active {
   .ref-nav-btn { padding: 4px 10px; font-size: 0.50rem; }
 }
 
-/* ── Share bar mobile ── */
-#mobile-share-bar { display: none; } /* shown only on mobile via @media below */
+/* ── Consolidated Mobile Header ── */
+#ref-top-row { display: none; } /* Hide on desktop */
 
 @media (max-width: 767px) {
-  #sa-share { top: 8px; right: 8px; }
-  #sa-share button span#sa-ct { display: none; }
+  #ref-nav {
+    height: auto;
+    max-height: 36px;
+    position: sticky;
+    top: 0;
+    z-index: 9000; /* Above everything */
+    background: rgba(8, 12, 26, 0.96);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-bottom: 1px solid rgba(0, 229, 255, 0.25);
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  }
 
-  /* Hide the fixed top watching badge + share bar on mobile */
-  #sa-conn  { display: none !important; }
-  #sa-share { display: none !important; }
+  #ref-nav.ref-nav-open {
+    max-height: 100vh;
+    overflow-y: auto;
+  }
 
-  /* Mobile share/watching bar in footer */
-  #mobile-share-bar {
+  #ref-top-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 8px 12px;
-    border-bottom: 1px solid rgba(0,204,170,.12);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: .72rem;
-    color: rgba(0,255,170,.85);
+    height: 36px;
+    padding: 0 10px;
+    flex-shrink: 0;
   }
 
-  #mobile-watching {
+  #ref-nav-toggle {
     display: flex;
     align-items: center;
-    gap: 5px;
-  }
-
-  #mobile-share-btns {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-
-  .mob-share-btn {
-    background: rgba(5,10,20,.7);
-    border: 1px solid rgba(0,204,170,.15);
+    justify-content: center;
+    width: 28px;
+    height: 24px;
+    background: rgba(74, 144, 217, 0.1);
+    border: 1px solid rgba(74, 144, 217, 0.3);
+    color: var(--blue-light);
+    font-size: 1rem;
     border-radius: 3px;
     cursor: pointer;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: .72rem;
-    padding: 4px 7px;
-    line-height: 1;
+    position: static; /* Reset from relative/absolute */
+    transform: none;
   }
+
+  #ref-watching {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  #ref-share-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .ref-share-btn {
+    background: rgba(74, 144, 217, 0.1);
+    border: 1px solid rgba(74, 144, 217, 0.2);
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    padding: 2px 6px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .ref-share-btn:active { background: rgba(0, 229, 255, 0.2); color: #fff; }
+
+  #ref-menu-items {
+    display: none;
+    flex-direction: column;
+    border-top: 1px solid rgba(74, 144, 217, 0.1);
+  }
+
+  #ref-nav.ref-nav-open #ref-menu-items {
+    display: flex;
+  }
+
+  #ref-nav .ref-nav-btn {
+    display: block !important;
+    width: 100%;
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(74, 144, 217, 0.1);
+    font-size: 0.65rem;
+    color: var(--text);
+  }
+  #ref-nav .ref-nav-btn:last-child { border-bottom: none; }
 }
 
 /* ── Reference nav hamburger ── */

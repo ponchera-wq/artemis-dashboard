@@ -69,11 +69,10 @@
 </head>
 <body style="background:#08080e;">
 
-<div id="sa-conn" style="position:fixed;top:8px;left:12px;z-index:100;font-family:'Share Tech Mono',monospace;font-size:.72rem;color:rgba(0,255,170,.85);display:flex;align-items:center;gap:5px;background:rgba(5,10,20,.7);padding:3px 10px;border-radius:3px;border:1px solid rgba(0,204,170,.15);pointer-events:none;"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite"></span><span id="viewer-num">—</span><span style="color:rgba(140,170,200,.6);font-size:.65rem">WATCHING</span></div>
+<!-- Top Fixed Elements (Desktop only, hidden on mobile via CSS) -->
+<div id="sa-conn" class="desktop-only"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite"></span><span id="viewer-num">—</span><span style="color:rgba(140,170,200,.6);font-size:.65rem">WATCHING</span></div>
 
-<div id="sa-share" style="position:fixed;top:8px;left:auto;right:12px;z-index:100;
-font-family:'Share Tech Mono',monospace;font-size:0.7rem;
-display:flex;align-items:center;gap:3px;">
+<div id="sa-share" class="desktop-only">
   <button onclick="navigator.clipboard.writeText(window.location.href).then(function(){var b=document.getElementById('sa-ct');b.textContent='COPIED!';setTimeout(function(){b.textContent='LINK'},1500)})"
     style="background:rgba(5,10,20,.7);border:1px solid rgba(0,204,170,.15);color:#00ffaa;padding:3px 8px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:.65rem;display:flex;align-items:center;gap:3px;">
     <span style="font-size:.75rem">📋</span><span id="sa-ct">LINK</span>
@@ -97,6 +96,26 @@ display:flex;align-items:center;gap:3px;">
 </div>
 
 <div id="dashboard">
+
+  <!-- ══ REFERENCE GUIDE NAV BAR (Consolidated Mobile Header) ═════════ -->
+  <nav id="ref-nav" aria-label="Reference guide navigation">
+    <div id="ref-top-row">
+      <button id="ref-nav-toggle" aria-label="Toggle reference menu">☰</button>
+      <div id="ref-watching">
+        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite"></span>
+        <span id="viewer-num-mobile">—</span> WATCHING
+      </div>
+      <div id="ref-share-row">
+        <button onclick="navigator.clipboard.writeText(window.location.href).then(function(){var b=document.getElementById('ref-ct');b.textContent='COPIED!';setTimeout(function(){b.textContent='LINK'},1500)})"
+          class="ref-share-btn" title="Copy Link"><span id="ref-ct">LINK</span></button>
+        <button onclick="window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Tracking Artemis II live — first crewed Moon mission in 50 years 🚀🌕')+'&url='+encodeURIComponent(location.href),'_blank','width=550,height=420')"
+          class="ref-share-btn">𝕏</button>
+        <button onclick="window.open('https://api.whatsapp.com/send?text='+encodeURIComponent('Tracking Artemis II live! First crewed Moon mission in 50 years 🚀 '+location.href),'_blank')"
+          class="ref-share-btn">💬</button>
+      </div>
+    </div>
+    <div id="ref-menu-items"></div>
+  </nav>
 
   <!-- ══ ROW 1: TOP BAR (MET · PHASE · TELEMETRY) ════════════════════ -->
   <div id="top-bar">
@@ -211,10 +230,7 @@ display:flex;align-items:center;gap:3px;">
     </div>
   </div>
 
-  <!-- ══ REFERENCE GUIDE NAV BAR ═════════════════════════════════════ -->
-  <nav id="ref-nav" aria-label="Reference guide navigation">
-    <button id="ref-nav-toggle" aria-label="Toggle reference menu">☰</button>
-  </nav>
+
 
   <!-- ══ REFERENCE GUIDE MODAL ════════════════════════════════════════ -->
   <div id="ref-modal" role="dialog" aria-modal="true" aria-labelledby="ref-modal-title">
@@ -418,19 +434,6 @@ display:flex;align-items:center;gap:3px;">
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
-  <div class="panel" id="mini-observer" style="grid-row:7; grid-column:1; min-height:110px;">
-    <div class="panel-header">
-      <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span>LOCAL OBSERVER
-      <button class="dsn-info-btn" id="mini-obs-info" style="margin-left:4px;">ⓘ</button>
-    </div>
-    <div class="panel-body" style="flex-direction:column;gap:8px;padding:10px 12px;overflow:hidden;justify-content:flex-start;">
-      <div id="mini-obs-next-pass" style="font-family:'Share Tech Mono',monospace;font-size:0.6rem;color:rgba(0,229,255,0.9);margin-bottom:2px;">NEXT PASS: &mdash;</div>
-      <div id="mini-obs-status" style="display:inline-block;padding:2px 6px;border-radius:2px;font-family:'Orbitron',sans-serif;font-size:0.45rem;background:rgba(255,80,80,0.1);color:#ff5050;border:1px solid rgba(255,80,80,0.5);">BELOW HORIZON</div>
-      <a href="observer.html" style="display:block;margin-top:auto;text-align:center;font-family:'Orbitron',sans-serif;font-size:0.55rem;letter-spacing:0.1em;color:#00e5ff;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.3);padding:6px 12px;border-radius:2px;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(0,229,255,0.2)'" onmouseout="this.style.background='rgba(0,229,255,0.08)'">GO TO OBSERVER MODE &rarr;</a>
-    </div>
-    <div class="corner-tl"></div><div class="corner-br"></div>
-  </div>
-
   <!-- ══ ROW 3: SECONDARY ═══════════════════════════════════════════════ -->
 
   <div class="panel" id="feed-weather">
@@ -607,27 +610,6 @@ display:flex;align-items:center;gap:3px;">
 
   <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->
   <div id="site-footer">
-    <!-- Mobile-only share bar (hidden on desktop) -->
-    <div id="mobile-share-bar">
-      <div id="mobile-watching">
-        <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite"></span>
-        <span id="viewer-num-mobile">—</span>
-        <span style="color:rgba(140,170,200,.6);font-size:.65rem">WATCHING</span>
-      </div>
-      <div id="mobile-share-btns">
-        <span style="font-size:.6rem;color:rgba(140,170,200,.5);letter-spacing:.06em;">SHARE:</span>
-        <button onclick="navigator.clipboard.writeText(window.location.href).then(function(){var b=document.getElementById('mob-ct');b.textContent='COPIED!';setTimeout(function(){b.textContent='LINK'},1500)})"
-          class="mob-share-btn" style="color:#00ffaa;">📋 <span id="mob-ct">LINK</span></button>
-        <button onclick="window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Tracking Artemis II live — first crewed Moon mission in 50 years 🚀🌕')+'&url='+encodeURIComponent(location.href),'_blank','width=550,height=420')"
-          class="mob-share-btn" style="color:#ccc;">𝕏</button>
-        <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),'_blank','width=550,height=420')"
-          class="mob-share-btn" style="color:#4267B2;">f</button>
-        <button onclick="window.open('https://reddit.com/submit?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent('Artemis II Live Mission Dashboard — real-time tracking'),'_blank','width=550,height=420')"
-          class="mob-share-btn" style="color:#FF4500;">▲</button>
-        <button onclick="window.open('https://api.whatsapp.com/send?text='+encodeURIComponent('Tracking Artemis II live! First crewed Moon mission in 50 years 🚀 '+location.href),'_blank')"
-          class="mob-share-btn" style="color:#25D366;">💬</button>
-      </div>
-    </div>
     <div class="footer-row">
       <span class="footer-left">🚀 Built on launch day by EZ &middot; Melbourne, Australia</span>
       <span class="footer-center" id="footer-modified"></span>
@@ -724,7 +706,7 @@ display:flex;align-items:center;gap:3px;">
     var v = window._cbv || Date.now();
     var scripts = [
       'js/shared.js','js/mission-ephemeris.js','js/mission-events.js',
-      'js/observer-astro.js','js/clock.js','js/stats.js','js/timeline.js',
+      'js/clock.js','js/stats.js','js/timeline.js',
       'js/news.js','js/crew.js','js/weather.js','js/orion-model.js',
       'js/apollo-model.js','js/iss-model.js','js/trajectory.js',
       'js/dsn.js','js/ui.js','js/reference.js'
