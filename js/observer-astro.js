@@ -201,6 +201,7 @@ window.ObserverAstro = (function() {
             const sunHor = window.Astronomy.Horizon(date, pos.observerObj, sunEq.ra, sunEq.dec, 'normal');
             
             const moonEq = window.Astronomy.Equator('Moon', date, pos.observerObj, true, true);
+            const moonHor = window.Astronomy.Horizon(date, pos.observerObj, moonEq.ra, moonEq.dec, 'normal');
             const moonIllum = window.Astronomy.Illumination('Moon', date);
 
             // 4. Hardware Dependent Metrics
@@ -399,6 +400,13 @@ window.ObserverAstro = (function() {
             if (sunAlt > -6) return { label: "Civil Twilight", optimal: false };
             if (sunAlt > -12) return { label: "Nautical Twilight", subLabel: "Sub-optimal: Skyglow Present", optimal: false };
             return { label: "Astronomical Night", subLabel: "Optimal Dark Sky", optimal: true };
+        },
+
+        getSunPos: function(date) {
+            if (!window.Astronomy) return null;
+            const sunVecAu = window.Astronomy.GeoVector('Sun', date);
+            if (!sunVecAu) return null;
+            return { x: sunVecAu.x * AU_KM, y: sunVecAu.y * AU_KM, z: sunVecAu.z * AU_KM };
         },
 
         getHardwareConfig: () => hardwareConfig,

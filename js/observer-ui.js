@@ -4,12 +4,18 @@
  * Geolocation binding, DOM update loop, and SVG plot.
  */
 
+let isDrag = false;
+let o = {};
+let renderer, scene, camera, orionGroup, stars, earthMesh, trajectoryLine, shadowCone;
+let t_scene, t_camera, t_renderer, t_earth, t_traj, t_orion, t_shadow, t_sun;
+const EARTH_R_KM = 6371;
+const S_SCALE = 1/EARTH_R_KM;
+
 document.addEventListener("DOMContentLoaded", () => {
-    let obsLat = null;
-    let obsLon = null;
-    let obsAlt = 0; // default to roughly sea level if unavailable
-    let isReady = false;
-    let renderer, scene, camera, orionGroup, stars;
+    let obsLat = -35.4014; // Default: Canberra DSN (Tidbinbilla)
+    let obsLon = 148.9817;
+    let obsAlt = 549; // Meters AMSL
+    let isReady = true; 
     let useEyepiece = false;
 
     // DOM Elements
@@ -62,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const inFocalLength  = document.getElementById('in-focal-length');
     const inPixelSize    = document.getElementById('in-pixel-size');
     const inHyperstar    = document.getElementById('in-hyperstar');
+    const inPlannedExp   = document.getElementById('in-planned-exp');
     const btnStellarium  = document.getElementById('btn-export-stellarium');
 
     // Window scan runs every 60 ticks (1 per minute) — it's a 73-step loop so we throttle
@@ -107,6 +114,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const skyInfoBtn   = document.getElementById('sky-info-btn');
     const skyTooltip   = document.getElementById('sky-tooltip');
 
+    if (locStatus) {
+        setLocationResolved(`CANBERRA DSN (TIDBINBILLA) (-35.40°, 148.98°)`);
+    }
+    
     if (skyToggleBtn) {
         skyToggleBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -128,22 +139,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateSkyModeUI() {
         const eyepieceCanvas = document.getElementById('eyepiece-canvas');
+        const threeCanvas = document.getElementById('three-canvas');
+        const svgElement = skyPlotCtr.querySelector('svg');
+
         if (useEyepiece) {
             skyToggleBtn.classList.remove('active');
             skyToggleBtn.textContent = '3D VIEW';
             eyepieceToggleBtn.classList.add('active');
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'block';
+            if (threeCanvas) threeCanvas.style.display = 'none';
+            if (svgElement) svgElement.style.display = 'none';
             initEyepiece();
         } else if (use3D) {
             eyepieceToggleBtn.classList.remove('active');
             skyToggleBtn.classList.add('active');
             skyToggleBtn.textContent = '2D MAP';
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'none';
+            if (threeCanvas) threeCanvas.style.display = 'block';
+            if (svgElement) svgElement.style.display = 'none';
+            initThreeJS();
         } else {
             eyepieceToggleBtn.classList.remove('active');
             skyToggleBtn.classList.remove('active');
             skyToggleBtn.textContent = '3D VIEW';
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'none';
+            if (threeCanvas) threeCanvas.style.display = 'none';
+            if (svgElement) svgElement.style.display = 'block';
         }
     }
 
@@ -179,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const hs = inHyperstar.checked;
         const ps = parseFloat(inPixelSize.value) || 3.76;
         
-        let fl = parseFloat(inFocalLength.value) || 1422;
+        let fl = parseFloat(inFocalLength.value) || 1420;
         if (hs) {
             fl = ap * 1.9;
             inFocalLength.value = fl.toFixed(0);
@@ -203,6 +224,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (inFocalLength && inPixelSize && inAperture && inHyperstar) {
         const cfg = window.ObserverAstro.getHardwareConfig();
+        // Force SCT Standard if first run
+        if (!localStorage.getItem('artemis_observer_hw')) {
+            cfg.telescopeFocalLength = 1420;
+            cfg.cameraPixelSize = 3.76;
+            cfg.apertureMm = 203.2;
+            window.ObserverAstro.setHardwareConfig(cfg);
+        }
+
         inAperture.value = cfg.apertureMm;
         inHyperstar.checked = cfg.hyperstarMode;
         inFocalLength.value = cfg.telescopeFocalLength;
@@ -213,6 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
         inHyperstar.addEventListener('change', updateHardware);
         inFocalLength.addEventListener('input', updateHardware);
         inPixelSize.addEventListener('input', updateHardware);
+        if (inPlannedExp) inPlannedExp.addEventListener('input', updateHardware);
     }
 
     /**
@@ -422,6 +452,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!locNextPass) return;
         if (!wins || wins.length === 0) {
             locNextPass.textContent = '';
+            if (winPanel) winPanel.innerHTML = '<div style="opacity:0.5; font-size:0.65rem; text-align:center;">NO VISIBLE PASSES IN NEXT 24H</div>';
             return;
         }
         const w = wins[0];
@@ -431,6 +462,26 @@ document.addEventListener("DOMContentLoaded", () => {
         const inMins  = Math.floor((diffMs % 3600000) / 60000);
         const countStr = diffMs > 0 ? ` (in ${inHours > 0 ? inHours + 'h ' : ''}${inMins}m)` : ' (NOW)';
         locNextPass.textContent = `NEXT PASS: ${fmtLocalTime(w.startMs)}${countStr} • Peak ${w.peakAlt.toFixed(0)}°`;
+
+        // Populatecards in the panel
+        if (winPanel) {
+            winPanel.innerHTML = wins.map(win => `
+                <div class="obs-telem-cell" style="margin-bottom:0; background:rgba(0,229,255,0.03); border-color:rgba(0,229,255,0.15);">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-family:'Orbitron',sans-serif; color:#00e5ff; font-size:0.65rem; letter-spacing:0.05em;">
+                            ${new Date(win.startMs).toLocaleDateString([], {month:'short', day:'numeric'})} &bull; ${fmtLocalTime(win.startMs)}
+                        </div>
+                        <div style="font-family:'Share Tech Mono',monospace; color:#00e676; font-size:0.7rem;">
+                            PEAK ${win.peakAlt.toFixed(1)}&deg;
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:12px; margin-top:4px; font-size:0.55rem; color:var(--text-dim); font-family:'Share Tech Mono',monospace;">
+                        <span>DURATION: ${fmtDuration(win.endMs - win.startMs)}</span>
+                        <span>BEST MAG: ${win.peakMag != null ? win.peakMag.toFixed(1) : '—'}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
 
         // PRO: Exposure Start Logic (NextPass - 45s)
         if (expStartDisp) {
@@ -451,7 +502,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // SVG Sky Plot — Planisphere with dashed rings, degree labels, zenith marker
-    function drawPlot(alt, az, metSec, nowMs, moonAlt, moonAz) {
+    function drawPlot(o, alt, az, metSec, nowMs, moonAlt, moonAz) {
         const R = 45;
         // Ring radii represent:  R=45 → 0° horizon, R=30 → 30° alt, R=15 → 60° alt, centre = 90° zenith
         let svg = `<svg viewBox="0 0 100 100" style="width:100%;height:100%;font-family:'Share Tech Mono',monospace;">
@@ -532,7 +583,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // ── Orion / spacecraft dot + label ────────────────────────────────────
         const radNow = (az - 90) * Math.PI / 180;
-        const shadow = o.shadowFactor < 1.0; // Umbra or Penumbra
+        const shadow = o && o.shadowFactor < 1.0; // Umbra or Penumbra
         
         let dotColor = "#00ffaa"; // Default Visible/Sunlit
         let dotOp = "1";
@@ -561,7 +612,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // UI Ticker
     function tick() {
-        if (!isReady || !window.MissionEphemeris || !window.MissionEphemeris.ready) {
+        if (!isReady || !window.MissionEphemeris || !window.MissionEphemeris.points) {
             return;
         }
 
@@ -577,7 +628,8 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
-        const o = m.orion;
+        o = m.orion;
+        window.o = o; // expose for console debugging
         let isVis = false;
         
         // Sun elevation & Shadow state
@@ -640,9 +692,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (useEyepiece) {
             updateEyepiece(o.raHours, o.decDeg, o.altitude);
         } else if (use3D) {
-            draw3DDome(o.altitude, o.azimuth, m.moon.altitude, m.moon.azimuth);
+            updateThreeJS(metSec, o);
+            // Fallback SVG dome if needed or just skip it
+            // draw3DDome(o, o.altitude, o.azimuth, m.moon.altitude, m.moon.azimuth);
         } else {
-            drawPlot(o.altitude, o.azimuth, metSec, nowMs, m.moon.altitude, m.moon.azimuth);
+            drawPlot(o, o.altitude, o.azimuth, metSec, nowMs, m.moon.altitude, m.moon.azimuth);
         }
 
         // Imaging Assist
@@ -653,6 +707,18 @@ document.addEventListener("DOMContentLoaded", () => {
             if (difficultyDisp) difficultyDisp.textContent  = img.difficultyLabel;
             if (pixelSpanDisp)  pixelSpanDisp.textContent   = o.pixelSpan != null && o.pixelSpan > 0 ? o.pixelSpan.toFixed(2) : (o.pixelSpan === 0 ? "Below Floor" : "—");
             
+            // Warn if planned exposure > max calculated exposure
+            if (inPlannedExp && img.maxExpSec != null) {
+                const plan = parseFloat(inPlannedExp.value) || 0;
+                if (plan > img.maxExpSec) {
+                    maxExpDisp.style.color = "#ef5350";
+                    maxExpDisp.title = "EXPOSURE TOO LONG — WILL CAUSE SMEARING";
+                } else {
+                    maxExpDisp.style.color = "#ffa726";
+                    maxExpDisp.title = "";
+                }
+            }
+
             // PRO: Confidence Label
             if (confidenceDisp) {
                 const conf = window.ObserverAstro.calculateDetectionConfidence(o.pixelSpan);
@@ -677,7 +743,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(tick, 1000);
 
     // ── 3D Isometric Sky Dome ─────────────────────────────────────────
-    function draw3DDome(alt, az, moonAlt, moonAz) {
+    function draw3DDome(o, alt, az, moonAlt, moonAz) {
         const CX = 75, CY = 88, SC = 52; // isometric origin and scale
 
         // Isometric projection: Alt(deg), Az(deg) -> SVG {x, y}
@@ -772,13 +838,13 @@ document.addEventListener("DOMContentLoaded", () => {
             // Drop line to horizon
             svg += `<line x1="${op.x.toFixed(1)}" y1="${op.y.toFixed(1)}" x2="${opGnd.x.toFixed(1)}" y2="${opGnd.y.toFixed(1)}" stroke="rgba(0,200,100,0.22)" stroke-width="0.5" stroke-dasharray="1.5 2"/>`;
             // Orion dot
-            const dotColor = o.shadowFactor < 1.0 ? "#ef5350" : "#00e676";
+            const dotColor = (o && o.shadowFactor < 1.0) ? "#ef5350" : "#00e676";
             svg += `<circle cx="${op.x.toFixed(1)}" cy="${op.y.toFixed(1)}" r="2.5" fill="${dotColor}" filter="drop-shadow(0 0 3px ${dotColor})"/>`;
             const lx = Math.min(143, op.x + 4), ly = Math.max(5, op.y - 2);
             svg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" font-size="3.2" fill="${dotColor}" dominant-baseline="middle">Orion ${alt.toFixed(0)}°</text>`;
         } else {
             // Below horizon banner at bottom of dome
-            const shadow = o.shadowFactor < 1.0;
+            const shadow = o && o.shadowFactor < 1.0;
             const label = shadow ? `ORION IN SHADOW` : `ORION BELOW HORIZON`;
             const color = shadow ? "#ef5350" : "#7986a8";
             svg += `<text x="${CX}" y="122" font-size="3" fill="${color}" text-anchor="middle" opacity="0.75">${label} (${Math.abs(alt).toFixed(0)}°)</text>`;
@@ -851,7 +917,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ── PRO: Virtual Eyepiece (Three.js) ─────────────────────────────
-    function initEyepiece() {
+    window.initEyepiece = function() {
         if (renderer) return; // already init
         const canvas = document.getElementById('eyepiece-canvas');
         if (!canvas) return;
@@ -920,6 +986,126 @@ document.addEventListener("DOMContentLoaded", () => {
         // Scale Orion based on distance? No, keep it as a "pre-visualization" reference
         if (orionGroup) {
             orionGroup.visible = (altitude > 0);
+        }
+    }
+
+    // ── PRO: High-Fidelity 3D Engine ──────────────────────────────────
+    window.initThreeJS = function() {
+        if (t_renderer) return;
+        const canvas = document.getElementById('three-canvas');
+        if (!canvas) return;
+
+        t_scene = new THREE.Scene();
+
+        t_renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+        t_renderer.setPixelRatio(window.devicePixelRatio);
+        const cRect = canvas.getBoundingClientRect();
+        const cW = (cRect.width  > 0 ? cRect.width  : canvas.parentElement.clientWidth)  || 350;
+        const cH = (cRect.height > 0 ? cRect.height : canvas.parentElement.clientHeight) || 350;
+        t_renderer.setSize(cW, cH);
+
+        t_camera = new THREE.PerspectiveCamera(45, cW / cH, 0.1, 2000);
+        t_camera.position.set(8, 6, 8);
+        t_camera.lookAt(0, 0, 0);
+
+        // Earth
+        const loader = new THREE.TextureLoader();
+        const eGeo = new THREE.SphereGeometry(1, 64, 64);
+        const eMat = new THREE.MeshPhongMaterial({ 
+            color: 0xffffff,
+            map: loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
+            bumpMap: loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+            bumpScale: 0.05,
+            specularMap: loader.load('https://unpkg.com/three-globe/example/img/earth-water-mask.png'),
+            specular: new THREE.Color('grey')
+        });
+        t_earth = new THREE.Mesh(eGeo, eMat);
+        t_scene.add(t_earth);
+
+        // Starfield
+        const starGeo = new THREE.BufferGeometry();
+        const starPts = [];
+        for (let i = 0; i < 5000; i++) {
+            starPts.push((Math.random() - 0.5) * 1500, (Math.random() - 0.5) * 1500, (Math.random() - 0.5) * 1500);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPts, 3));
+        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, sizeAttenuation: false });
+        t_scene.add(new THREE.Points(starGeo, starMat));
+
+        // Trajectory Line
+        if (window.MissionEphemeris.points) {
+            const pts = window.MissionEphemeris.points.map(p => new THREE.Vector3(p.orion.x * S_SCALE, p.orion.y * S_SCALE, p.orion.z * S_SCALE));
+            const tGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const tMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.6 });
+            t_traj = new THREE.Line(tGeo, tMat);
+            t_scene.add(t_traj);
+        }
+
+        // Orion Model
+        if (window.createOrionModel) {
+            t_orion = window.createOrionModel(THREE);
+            t_orion.scale.set(0.15, 0.15, 0.15);
+            t_scene.add(t_orion);
+        }
+
+        // Shadow Cone (Umbra)
+        const sGeo = new THREE.CylinderGeometry(1.0, 0.6, 25, 32);
+        const sMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 });
+        t_shadow = new THREE.Mesh(sGeo, sMat);
+        t_scene.add(t_shadow);
+
+        // Lighting
+        t_scene.add(new THREE.AmbientLight(0x404040, 0.6));
+        t_sun = new THREE.DirectionalLight(0xffffff, 1.4);
+        t_scene.add(t_sun);
+
+        function t_animate() {
+            if (!use3D) {
+                // Stop loop if not needed
+                return;
+            }
+            requestAnimationFrame(t_animate);
+            t_renderer.render(t_scene, t_camera);
+            
+            if (t_earth) t_earth.rotation.y += 0.0003;
+            if (t_orion) t_orion.rotation.y += 0.005;
+
+            // Simple orbit camera if not dragging
+            if (!isDrag) {
+                const time = Date.now() * 0.0001;
+                t_camera.position.x = 8 * Math.sin(time);
+                t_camera.position.z = 8 * Math.cos(time);
+                t_camera.lookAt(0,0,0);
+            }
+        }
+        t_animate();
+    };
+
+    function updateThreeJS(met, orionData) {
+        if (!t_orion || !use3D) return;
+        
+        // Update Orion pos
+        t_orion.position.set(orionData.x * S_SCALE, orionData.y * S_SCALE, orionData.z * S_SCALE);
+        
+        // Update Sun & Shadow based on current time
+        const sunPos = window.ObserverAstro.getSunPos(new Date(Date.now())); // basic approx
+        if (sunPos) {
+            const sunVec = new THREE.Vector3(sunPos.x, sunPos.y, sunPos.z).normalize();
+            t_sun.position.copy(sunVec.clone().multiplyScalar(20));
+            
+            // Align shadow cone away from sun
+            const shadowDir = sunVec.clone().negate();
+            t_shadow.position.copy(shadowDir.multiplyScalar(12.5));
+            t_shadow.lookAt(0, 0, 0);
+            t_shadow.rotateX(Math.PI/2);
+        }
+
+        // Update camera to orbit
+        if (!isDrag) { // using simplified orbit for now
+            const time = Date.now() * 0.0001;
+            t_camera.position.x = 10 * Math.sin(time);
+            t_camera.position.z = 10 * Math.cos(time);
+            t_camera.lookAt(0,0,0);
         }
     }
 });
