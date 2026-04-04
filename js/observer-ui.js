@@ -27,7 +27,8 @@ let mm_isDrag = false, mm_dragStart = null, mm_azimuth = 0.4, mm_elevation = 0.5
 const EARTH_R_KM = 6371;
 const S_SCALE = 1/EARTH_R_KM;
 
-document.addEventListener("DOMContentLoaded", () => {
+function initObserverUI() {
+    console.log('[ObserverUI] Initializing...');
     let obsLat = DEFAULT_LAT;
     let obsLon = DEFAULT_LON;
     let obsAlt = DEFAULT_ELEV;
@@ -43,37 +44,27 @@ document.addEventListener("DOMContentLoaded", () => {
         img.src = 'https://unpkg.com/three-globe@2.45.1/example/img/earth-blue-marble.jpg';
     })();
 
-    // ── Collapsible section panels ────────────────────────────────────
-    function togglePanel(hdr, forceCollapse = null) {
-        const bodyId = hdr.getAttribute('data-target');
-        const body   = document.getElementById(bodyId);
-        if (!body) return;
-
-        const isCurrentlyCollapsed = body.classList.contains('collapsed');
-        const shouldCollapse = (forceCollapse !== null) ? forceCollapse : !isCurrentlyCollapsed;
-
-        if (shouldCollapse) {
-            body.classList.add('collapsed');
-            hdr.classList.add('is-collapsed');
-        } else {
-            body.classList.remove('collapsed');
-            hdr.classList.remove('is-collapsed');
-        }
-    }
-
-    document.querySelectorAll('.section-header[data-target]').forEach(hdr => {
-        hdr.addEventListener('click', (e) => {
-            // Don't collapse if the user clicks a button or input inside the header
+    // ── Robust Panel Toggle System ───────────────────────────────────
+    document.querySelectorAll('.panel-header').forEach(header => {
+        // Clone and replace to strip any dead/conflicting listeners
+        const newHeader = header.cloneNode(true);
+        header.parentNode.replaceChild(newHeader, header);
+        
+        newHeader.addEventListener('click', function(e) {
             if (e.target.closest('button, a, input')) return;
-            togglePanel(hdr);
+            const panel = this.parentElement;
+            panel.classList.toggle('collapsed');
         });
     });
 
     // Initial state: Step 1 (Gear), Step 2 (Sky), and Step 3 (Verdicts) are expanded
-    document.querySelectorAll('.section-header[data-target]').forEach(hdr => {
-        const target = hdr.getAttribute('data-target');
-        if (target !== 'sky-body' && target !== 'verdicts-body' && target !== 'gear-body') {
-            togglePanel(hdr, true); // Force collapse others
+    // All others (About, Coverage, Step 4) are collapsed by default in HTML or here
+    const panelsToOpen = ['section-gear', 'section-sky', 'section-verdicts'];
+    document.querySelectorAll('.obs-panel').forEach(panel => {
+        if (panelsToOpen.includes(panel.id)) {
+            panel.classList.remove('collapsed');
+        } else {
+            panel.classList.add('collapsed');
         }
     });
 
@@ -2250,4 +2241,11 @@ document.addEventListener("DOMContentLoaded", () => {
             console.warn('[ObserverUI] Failed to format metadata date:', e);
         }
     });
-});
+}
+
+// ── Entry Point ───────────────────────────────────────────────────────────
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initObserverUI);
+} else {
+    initObserverUI();
+}

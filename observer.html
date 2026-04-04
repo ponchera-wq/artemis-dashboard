@@ -40,7 +40,7 @@
     .guided-page { max-width: 1100px; margin: 0 auto; padding: 0 20px 40px; }
 
     /* ── Section header style ────────────────────────────────────── */
-    .section-header {
+    .section-header, .panel-header {
       display: flex; align-items: center; gap: 10px;
       padding: 14px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.06);
       margin-bottom: 14px;
@@ -71,7 +71,7 @@
     .sh-help-icon:hover { opacity: 1; box-shadow: 0 0 6px rgba(255,167,38,0.3); }
 
     /* ── Collapsible Logic (Mobile-First or Adaptive) ── */
-    .section-header { cursor: pointer; position: relative; user-select: none; }
+    .section-header, .panel-header { cursor: pointer; position: relative; user-select: none; }
     .panel-collapse-btn {
       margin-left: auto; width: 24px; height: 24px;
       display: flex; align-items: center; justify-content: center;
@@ -81,16 +81,19 @@
     .panel-collapse-btn::after {
       content: '\25be'; font-size: 1.2rem;
     }
+    .panel-header.is-collapsed .panel-collapse-btn,
     .section-header.is-collapsed .panel-collapse-btn { transform: rotate(-90deg); }
+    .panel-header:hover .panel-collapse-btn,
     .section-header:hover .panel-collapse-btn { opacity: 1; }
 
     .sh-toggle { display: none; } /* Hide the old [+] indicator */
 
-    .section-body {
+    .section-body, .panel-content {
       overflow: hidden; max-height: 4000px;
       padding: 20px; transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), padding 0.45s ease, opacity 0.4s ease;
       opacity: 1; margin-bottom: 20px;
     }
+    .obs-panel.collapsed .panel-content,
     .section-body.collapsed {
       max-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0;
       pointer-events: none; margin-bottom: 0;
@@ -431,27 +434,28 @@
     .pulse-amber { animation: pulse-amber 1.8s ease-in-out infinite; color: #ffcc00; }
 
     /* ── Collapsible Sections ─────────────────────────────────────── */
-    .section-header { cursor: pointer; user-select: none; }
-    .section-header:hover .sh-toggle { opacity: 1; }
+    .section-header, .panel-header { cursor: pointer; user-select: none; }
+    .section-header:hover .sh-toggle, .panel-header:hover .sh-toggle { opacity: 1; }
     .sh-toggle {
       margin-left: auto; font-family: 'Share Tech Mono', monospace;
       font-size: 0.65rem; color: rgba(0,229,255,0.45); opacity: 0.7;
       transition: opacity 0.15s, color 0.15s; flex-shrink: 0;
     }
-    .section-header.amber .sh-toggle { color: rgba(255,204,0,0.45); }
-    .section-header.muted .sh-toggle { color: rgba(74,144,217,0.45); }
-    .section-body {
+    .section-header.amber .sh-toggle, .panel-header.amber .sh-toggle { color: rgba(255,204,0,0.45); }
+    .section-header.muted .sh-toggle, .panel-header.muted .sh-toggle { color: rgba(74,144,217,0.45); }
+    .section-body, .panel-content {
       overflow: hidden;
       max-height: 2000px; /* large enough */
       transition: max-height 0.3s ease, opacity 0.25s ease;
       opacity: 1;
     }
+    .obs-panel.collapsed .panel-content,
     .section-body.collapsed {
       max-height: 0;
       opacity: 0;
       pointer-events: none;
     }
-    .section-header.is-collapsed .sh-toggle { color: rgba(0,229,255,0.7); }
+    .section-header.is-collapsed .sh-toggle, .panel-header.is-collapsed .sh-toggle { color: rgba(0,229,255,0.7); }
   </style>
 </head>
 <body>
@@ -471,14 +475,14 @@
   <div class="guided-page">
     
     <!-- ══ ABOUT THE OBSERVER TOOL ════════════════════════════════ -->
-    <div id="section-inspiration" class="obs-panel collapsed" style="margin-bottom:12px;">
-      <div class="panel-header muted" onclick="this.parentElement.classList.toggle('collapsed')" data-target="inspiration-body" style="padding:10px 0 6px; cursor:pointer;">
+    <div id="panel-about" class="obs-panel collapsed" style="margin-bottom:12px;">
+      <div class="panel-header muted" data-target="inspiration-body" style="padding:10px 0 6px; cursor:pointer;">
         <span class="sh-icon" style="font-size:0.9rem;">🛰️</span>
         <span class="sh-title" style="font-size:0.54rem;">•• ABOUT THE OBSERVER TOOL</span>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
-      <div class="section-body collapsed" id="inspiration-body" style="padding:12px 18px; background:rgba(74,144,217,0.03); border:1px solid rgba(74,144,217,0.1); border-radius:4px;">
+      <div class="panel-content collapsed" id="inspiration-body" style="padding:12px 18px; background:rgba(74,144,217,0.03); border:1px solid rgba(74,144,217,0.1); border-radius:4px;">
         <div style="font-family:'Rajdhani', sans-serif; font-size:0.75rem; color:rgba(232,234,246,0.8); line-height:1.5;">
           This application is a 'vibe code' project translating the astrophotography calculations and logic developed by <strong>Shawn Gano</strong> into a live web dashboard. For the original Python scripts and complete Artemis II imaging guide, visit <a href='https://www.gano.name/shawn/artemis2/' target='_blank' style='color:#00e5ff; text-decoration:none;'>gano.name/shawn/artemis2</a> or watch the <a href='https://youtu.be/GqiRlgBeyWY' target='_blank' style='color:#00e5ff; text-decoration:none;'>overview video</a>.
         </div>
@@ -488,8 +492,8 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- STEP 1: GEAR SETUP                                         -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <div id="section-gear">
-      <div class="section-header amber" data-target="gear-body" style="border-bottom-color:rgba(255,167,38,0.15); margin-bottom:0;">
+    <div id="section-gear" class="obs-panel">
+      <div class="panel-header amber" data-target="gear-body" style="border-bottom-color:rgba(255,167,38,0.15); margin-bottom:0;">
         <span class="sh-icon">⚙</span>
         <span class="sh-title">Step 1 — Your Setup <span id="ui-loc-header-name" style="font-size:0.52rem; color:var(--amber); margin-left:10px; opacity:0.8; letter-spacing:0.05em;">[Loading...]</span></span>
         <span class="sh-subtitle">Enter your location and telescope specs</span>
@@ -497,7 +501,7 @@
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
-      <div class="section-body" id="gear-body" style="margin-top:12px;">
+      <div class="panel-content" id="gear-body" style="margin-top:12px;">
 
       <div class="gear-grid">
 
@@ -579,8 +583,8 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- GLOBAL COVERAGE MAP (Relocated)                            -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <div id="section-coverage" style="margin-top:12px;">
-      <div class="section-header cyan" data-target="coverage-body">
+    <div id="section-coverage" class="obs-panel" style="margin-top:12px;">
+      <div class="panel-header cyan" data-target="coverage-body">
         <span class="sh-icon">🌍</span>
         <span class="sh-title">Global Mission Coverage</span>
         <span class="sh-subtitle">Ground track · Visibility footprint · Day/Night terminator</span>
@@ -588,7 +592,7 @@
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
-      <div class="section-body" id="coverage-body">
+      <div class="panel-content" id="coverage-body">
       
       <div style="color:#ffcc00; font-size:0.65rem; margin-bottom:8px; font-family:'Orbitron', sans-serif;">TARGET ACQUISITION: Click anywhere on the map to extract elevation and coordinates, or use manual entry above.</div>
 
@@ -611,8 +615,8 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- STEP 2: THE VISUAL MAP                                     -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <div id="section-sky">
-      <div class="section-header cyan" data-target="sky-body">
+    <div id="section-sky" class="obs-panel">
+      <div class="panel-header cyan" data-target="sky-body">
         <span class="sh-icon">🌐</span>
         <span class="sh-title" id="step2-title" style="font-size:0.75rem;">STEP 2 — LOCAL SKY - PLANISPHERE</span>
         <span class="sh-subtitle" id="ui-darkness-state">—</span>
@@ -628,7 +632,7 @@
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
-      <div class="section-body" id="sky-body">
+      <div class="panel-content" id="sky-body">
 
       <div id="sky-hud-wrap">
         <div id="sky-hud-inner">
@@ -694,8 +698,8 @@
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- STEP 3: STATUS VERDICTS                                    -->
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <div id="section-verdicts">
-      <div class="section-header cyan" data-target="verdicts-body">
+    <div id="section-verdicts" class="obs-panel">
+      <div class="panel-header cyan" data-target="verdicts-body">
         <span class="sh-icon">📡</span>
         <span class="sh-title">Step 3 — Imaging Strategy</span>
         <span class="sh-subtitle">Human-readable conditions for your session</span>
@@ -703,7 +707,7 @@
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
-      <div class="section-body" id="verdicts-body">
+      <div class="panel-content" id="verdicts-body">
 
       <div class="verdict-grid">
 
@@ -780,15 +784,15 @@
       </div><!-- /.section-body -->
     </div><!-- /#section-verdicts -->
 
-    <div id="section-passes">
-      <div class="section-header muted" data-target="passes-body">
+    <div id="section-passes" class="obs-panel" style="margin-top: 25px; margin-bottom: 25px;">
+      <div class="panel-header muted" data-target="passes-body">
         <span class="sh-icon">📅</span>
         <span class="sh-title">Step 4 — Upcoming Passes</span>
         <span class="sh-subtitle">Next dark-sky opportunities from your location</span>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
-      <div class="section-body" id="passes-body">
+      <div class="panel-content" id="passes-body">
       <div id="win-cards">
         <div style="font-family:'Share Tech Mono',monospace;opacity:0.3;font-size:0.72rem;text-align:center;padding:20px;">
           SCANNING TELEMETRY...
