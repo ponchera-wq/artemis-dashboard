@@ -205,6 +205,9 @@ display:flex;align-items:center;gap:3px;">
         style="font-size:0.42rem;padding:3px 10px;letter-spacing:0.12em;white-space:nowrap;width:100%;" title="Expand telemetry">&#x26F6; EXPAND</button>
       <button id="unit-toggle" title="Switch units"
         style="color:var(--amber);border:1px solid rgba(255,167,38,0.5);background:none;font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.08em;padding:3px 9px;cursor:pointer;white-space:nowrap;width:100%;">KM · MILES</button>
+      <a href="observer.html"
+        style="display:block;width:100%;text-align:center;font-family:var(--font-ui);font-size:0.42rem;letter-spacing:0.1em;padding:3px 9px;border:1px solid rgba(0,229,255,0.35);color:#00e5ff;background:rgba(0,229,255,0.07);border-radius:2px;cursor:pointer;text-decoration:none;white-space:nowrap;"
+        title="Open backyard telescope tracking tool">&#x1F52D; OBSERVER</a>
     </div>
   </div>
 
@@ -392,6 +395,12 @@ display:flex;align-items:center;gap:3px;">
           <div class="hud-row"><span class="hud-key">DAY</span><span class="hud-val" id="hud-day">&mdash;</span></div>
           <div class="hud-row"><span class="hud-key">NEXT</span><span class="hud-val" id="hud-next">&mdash;</span></div>
           <div class="hud-row"><span class="hud-key">&Delta;v REM</span><span class="hud-val" id="hud-dv">&mdash;</span></div>
+        </div>
+        <div class="hud-section" style="border-color:rgba(215,0,255,0.4)">
+          <div class="hud-section-label" style="color:#df00ff">LEGACY: APOLLO 13</div>
+          <div class="hud-row"><span class="hud-key">CALC. DIST</span><span class="hud-val" id="hud-apollo-dist" style="color:#df00ff">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">EST. VEL</span><span class="hud-val" id="hud-apollo-vel" style="color:#df00ff">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">LUNAR CA</span><span class="hud-val" style="color:#df00ff">254 km</span></div>
         </div>
       </div>
       <button id="hud-toggle" class="hud-toggle" title="Toggle telemetry HUD">&#9666;</button>
@@ -682,7 +691,8 @@ display:flex;align-items:center;gap:3px;">
     var scripts = [
       'js/shared.js','js/mission-ephemeris.js','js/mission-events.js',
       'js/clock.js','js/stats.js','js/timeline.js',
-      'js/news.js','js/crew.js','js/weather.js','js/orion-model.js','js/trajectory.js',
+      'js/news.js','js/crew.js','js/weather.js','js/orion-model.js',
+      'js/apollo-model.js','js/iss-model.js','js/trajectory.js',
       'js/dsn.js','js/ui.js','js/reference.js'
     ];
     scripts.forEach(function(src) {

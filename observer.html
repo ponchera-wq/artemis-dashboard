@@ -274,6 +274,68 @@
       0%, 100% { opacity: 0.4; } 50% { opacity: 1; }
     }
     .pulse-amber { animation: pulse-amber 1.8s ease-in-out infinite; color: #ffcc00; }
+
+    /* ── Collapse toggle button (hidden on desktop) ─────── */
+    .panel-collapse-btn {
+      display: none; /* hidden on desktop */
+      margin-left: auto;
+      background: none; border: none; cursor: pointer;
+      color: rgba(0,229,255,0.5); font-size: 0.9rem; line-height: 1;
+      padding: 0 4px; flex-shrink: 0;
+      transition: color 0.2s, transform 0.25s;
+    }
+    .panel-collapse-btn.collapsed { transform: rotate(-90deg); }
+
+    /* Mobile: sky fullscreen tap-to-enlarge */
+    #sky-fullscreen-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.92); align-items: center; justify-content: center;
+    }
+    #sky-fullscreen-overlay.open { display: flex; }
+    #sky-fullscreen-inner {
+      width: min(92vw, 92vh); aspect-ratio: 1;
+      background: radial-gradient(circle at center, #080c1a 0%, #010106 100%);
+      border: 1px solid rgba(0,229,255,0.3); border-radius: 50%;
+      position: relative;
+    }
+    #sky-fullscreen-inner svg { width: 100%; height: 100%; }
+    #sky-fullscreen-close {
+      position: absolute; top: -24px; right: -24px;
+      background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.4);
+      color: #00e5ff; border-radius: 50%; width: 28px; height: 28px;
+      font-size: 0.8rem; cursor: pointer; display: flex;
+      align-items: center; justify-content: center;
+    }
+
+    /* ── Mobile layout ─────────────────────────────────── */
+    @media (max-width: 767px) {
+      .obs-grid {
+        grid-template-columns: 1fr;
+        padding: 8px 10px;
+        gap: 6px;
+      }
+      /* Show collapse button */
+      .panel-collapse-btn { display: flex; align-items: center; }
+      /* Sky plot: square and tappable on mobile */
+      #sky-plot-container {
+        cursor: pointer;
+      }
+      #sky-plot-container::after {
+        content: 'TAP TO ENLARGE';
+        position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+        font-size: 0.55rem; color: rgba(0,229,255,0.45);
+        font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em;
+        pointer-events: none;
+      }
+      /* Collapsed panel body */
+      .obs-panel.collapsed .obs-panel-body { display: none; }
+      /* Mobile loc bar: stack on narrow screens */
+      .loc-bar { flex-wrap: wrap; gap: 6px; }
+      #ui-loc-status { max-width: 70vw; }
+      #loc-next-pass { border-left: none; padding-left: 0; font-size: 0.62rem; }
+      /* Hero smaller on mobile */
+      #mission-hero { margin: 6px 10px; padding: 10px 14px; }
+    }
   </style>
 </head>
 <body>
@@ -328,8 +390,11 @@
     <!-- ROW 1 -->
 
     <!-- PANEL 1: OBSERVATION SUMMARY -->
-    <div class="obs-panel" id="panel-summary">
-      <div class="obs-panel-title">OBSERVATION SUMMARY</div>
+    <div class="obs-panel" id="panel-summary" data-panel-id="panel-summary">
+      <div class="obs-panel-title" onclick="togglePanel('panel-summary')">
+        OBSERVATION SUMMARY
+        <button class="panel-collapse-btn" data-for="panel-summary" aria-label="Toggle">&#9660;</button>
+      </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Step 1: View Status.</span> <span class="step-detail">Look at the bar below. If it turns GREEN, Orion is visible now.</span></span>
         <div style="font-size:0.6rem;color:var(--text-dim,#7986a8);margin-bottom:4px;font-family:'Orbitron',sans-serif;letter-spacing:0.1em;">CURRENT STATUS:</div>
@@ -342,8 +407,11 @@
     </div>
 
     <!-- PANEL 2: POINTING -->
-    <div class="obs-panel" id="panel-pointing">
-      <div class="obs-panel-title">LIVE POINTING</div>
+    <div class="obs-panel" id="panel-pointing" data-panel-id="panel-pointing">
+      <div class="obs-panel-title" onclick="togglePanel('panel-pointing')">
+        LIVE POINTING
+        <button class="panel-collapse-btn" data-for="panel-pointing" aria-label="Toggle">&#9660;</button>
+      </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Step 2: Aim Telescope.</span> <span class="step-detail">Enter these numbers into your mount or read your gauges to find the ship.</span></span>
         <div class="obs-telem-cell">
@@ -367,8 +435,8 @@
     </div>
 
     <!-- PANEL 3: SKY PLOT -->
-    <div class="obs-panel" id="panel-sky">
-      <div class="obs-panel-title">
+    <div class="obs-panel" id="panel-sky" data-panel-id="panel-sky">
+      <div class="obs-panel-title" onclick="togglePanel('panel-sky')">
         LOCAL SKY &mdash; PLANISPHERE
         <span class="sky-header-extras">
           <button id="sky-toggle-btn">3D VIEW</button>
@@ -384,6 +452,7 @@
               <div class="tt-row"><strong>DASHED LINE:</strong> Path Orion will take over the next 60 minutes.</div>
             </div>
           </span>
+          <button class="panel-collapse-btn" data-for="panel-sky" aria-label="Toggle" onclick="event.stopPropagation()">&#9660;</button>
         </span>
       </div>
       <div class="obs-panel-body">
@@ -395,8 +464,11 @@
     <!-- ROW 2 -->
 
     <!-- PANEL 4: CONDITIONS -->
-    <div class="obs-panel" id="panel-cond">
-      <div class="obs-panel-title">LOCAL CONDITIONS</div>
+    <div class="obs-panel collapsed" id="panel-cond" data-panel-id="panel-cond">
+      <div class="obs-panel-title" onclick="togglePanel('panel-cond')">
+        LOCAL CONDITIONS
+        <button class="panel-collapse-btn collapsed" data-for="panel-cond" aria-label="Toggle">&#9660;</button>
+      </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Environment Check.</span> <span class="step-detail">Bright Moon or Twilight makes this dim ship harder to find.</span></span>
         <div class="m-row">
@@ -419,8 +491,11 @@
     </div>
 
     <!-- PANEL 5: RANGE & MOTION -->
-    <div class="obs-panel" id="panel-range">
-      <div class="obs-panel-title">RANGE &amp; ANGULAR MOTION</div>
+    <div class="obs-panel collapsed" id="panel-range" data-panel-id="panel-range">
+      <div class="obs-panel-title" onclick="togglePanel('panel-range')">
+        RANGE &amp; ANGULAR MOTION
+        <button class="panel-collapse-btn collapsed" data-for="panel-range" aria-label="Toggle">&#9660;</button>
+      </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Tracking.</span> <span class="step-detail">Higher speeds mean you need to adjust your telescope more often.</span></span>
         <div class="m-row">
@@ -438,8 +513,11 @@
     </div>
 
     <!-- PANEL 6: IMAGING ASSIST -->
-    <div class="obs-panel" id="panel-imaging">
-      <div class="obs-panel-title">IMAGING ASSIST</div>
+    <div class="obs-panel collapsed" id="panel-imaging" data-panel-id="panel-imaging">
+      <div class="obs-panel-title" onclick="togglePanel('panel-imaging')">
+        IMAGING ASSIST
+        <button class="panel-collapse-btn collapsed" data-for="panel-imaging" aria-label="Toggle">&#9660;</button>
+      </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Camera Tune.</span> <span class="step-detail">Set your exposure shorter than the 'Max' limit to avoid a blurry photo.</span></span>
         <div class="m-row">
@@ -460,6 +538,13 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Sky fullscreen overlay (mobile tap-to-enlarge) -->
+  <div id="sky-fullscreen-overlay">
+    <div id="sky-fullscreen-inner">
+      <button id="sky-fullscreen-close" onclick="document.getElementById('sky-fullscreen-overlay').classList.remove('open')">&times;</button>
+    </div>
   </div>
 
   <!-- SCRIPT LOAD ORDER -->

@@ -49,6 +49,40 @@ document.addEventListener("DOMContentLoaded", () => {
     // Window scan runs every 60 ticks (1 per minute) — it's a 73-step loop so we throttle
     let windowScanCountdown = 0;
 
+    // ── Panel collapse state (persists across ticks) ──────────────────
+    // Only active on mobile (<=767px); on desktop class has no effect.
+    window.togglePanel = function(panelId) {
+        // Only operate on mobile width
+        if (window.innerWidth > 767) return;
+        const panel = document.getElementById(panelId);
+        if (!panel) return;
+        const isCollapsed = panel.classList.toggle('collapsed');
+        const btn = panel.querySelector('.panel-collapse-btn');
+        if (btn) btn.classList.toggle('collapsed', isCollapsed);
+    };
+
+    // ── Sky plot: tap-to-fullscreen (mobile) ──────────────────────────
+    const skyPlotCtrEl  = document.getElementById('sky-plot-container');
+    const skyOverlay    = document.getElementById('sky-fullscreen-overlay');
+    const skyFsInner    = document.getElementById('sky-fullscreen-inner');
+
+    if (skyPlotCtrEl && skyOverlay && skyFsInner) {
+        skyPlotCtrEl.addEventListener('click', () => {
+            if (window.innerWidth > 767) return; // desktop: ignore
+            // Clone current SVG into the overlay
+            const liveSvg = skyPlotCtrEl.querySelector('svg');
+            // Remove previous cloned svg if any
+            const prev = skyFsInner.querySelector('svg');
+            if (prev) prev.remove();
+            if (liveSvg) skyFsInner.insertBefore(liveSvg.cloneNode(true), skyFsInner.firstChild);
+            skyOverlay.classList.add('open');
+        });
+        // Close on overlay background click
+        skyOverlay.addEventListener('click', (e) => {
+            if (e.target === skyOverlay) skyOverlay.classList.remove('open');
+        });
+    }
+
     // ── Sky plot mode state ───────────────────────────────────────
     let use3D = false;
     const skyToggleBtn = document.getElementById('sky-toggle-btn');
@@ -56,12 +90,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const skyTooltip   = document.getElementById('sky-tooltip');
 
     if (skyToggleBtn) {
-        skyToggleBtn.addEventListener('click', () => {
+        skyToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // don't fire togglePanel
             use3D = !use3D;
             skyToggleBtn.textContent = use3D ? '2D MAP' : '3D VIEW';
             skyToggleBtn.classList.toggle('active', use3D);
         });
     }
+
     if (skyInfoBtn && skyTooltip) {
         skyInfoBtn.addEventListener('click', (e) => {
             e.stopPropagation();
