@@ -67,11 +67,17 @@
       background: rgba(5,10,20,0.6); border: 1px solid rgba(74,144,217,0.15);
       border-radius: 4px; padding: 15px; display: flex; flex-direction: column;
       position: relative; overflow: hidden;
+      transition: border-color 0.4s ease, box-shadow 0.4s ease;
     }
     .obs-panel-title {
       font-size: 0.65rem; color: #7986a8; letter-spacing: 0.15em;
-      border-bottom: 1px solid rgba(74,144,217,0.2); padding-bottom: 8px;
-      margin-bottom: 12px; text-transform: uppercase;
+      padding-bottom: 4px; margin-bottom: 2px; text-transform: uppercase;
+    }
+    /* ELI5 subtitle */
+    .eli5 {
+      font-size: 0.6rem; color: rgba(121,134,168,0.65); font-style: italic;
+      margin-bottom: 10px; line-height: 1.4;
+      border-bottom: 1px solid rgba(74,144,217,0.15); padding-bottom: 7px;
     }
 
     /* Metrics Values */
@@ -84,7 +90,7 @@
     .m-val { color: #fff; font-size: 0.85rem; }
 
     /* Visibility Chip */
-    .vis-chip { display: inline-block; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; background: rgba(0,255,170,0.15); color: #00ffaa; border: 1px solid #00ffaa; margin-bottom: 15px; }
+    .vis-chip { display: inline-block; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; background: rgba(0,255,170,0.15); color: #00ffaa; border: 1px solid #00ffaa; margin-bottom: 10px; }
     .vis-chip.below { background: rgba(255,80,80,0.15); color: #ff5050; border-color: #ff5050; }
 
     /* SVG Polar Plot container */
@@ -93,6 +99,18 @@
       background: radial-gradient(circle at center, #0a1128 0%, #000 100%);
       border: 1px solid rgba(74,144,217,0.3); position: relative;
     }
+    /* Summary panel glow when Orion is visible */
+    #panel-summary.obs-visible {
+      border-color: rgba(0,255,170,0.55);
+      box-shadow: 0 0 22px rgba(0,255,170,0.1);
+    }
+    /* Next Pass card */
+    .next-pass-card { border: 1px solid rgba(0,255,170,0.25); border-radius: 4px; padding: 10px 12px; background: rgba(0,255,170,0.04); }
+    .next-pass-card.no-pass { border-color: rgba(74,144,217,0.15); background: transparent; }
+    .next-pass-label { font-size: 0.6rem; color: #00ffaa; letter-spacing: 0.12em; margin-bottom: 5px; }
+    .next-pass-time { font-family: 'Orbitron', sans-serif; font-size: 1.05rem; color: #fff; margin-bottom: 4px; }
+    .next-pass-sub { display: flex; gap: 12px; flex-wrap: wrap; }
+    .next-pass-sub span { font-size: 0.7rem; }
   </style>
 </head>
 <body>
@@ -127,22 +145,34 @@
   <!-- PANELS GRID -->
   <div class="obs-grid">
     <!-- ROW 1 -->
-    <!-- PANEL 1: VISIBILITY -->
-    <div class="obs-panel" id="panel-vis">
-      <div class="obs-panel-title">VISIBILITY STATUS</div>
+
+    <!-- PANEL 1: OBSERVATION SUMMARY (merged Visibility + Next Pass) -->
+    <div class="obs-panel" id="panel-summary">
+      <div class="obs-panel-title">OBSERVATION SUMMARY</div>
+      <div class="eli5">Can we see it? (Needs to be above ground, sunlit, and dark outside).</div>
       <div class="vis-chip" id="ui-vis-chip">—</div>
       <div class="m-sub">APPARENT MAGNITUDE</div>
       <div class="m-primary" id="ui-mag">—</div>
+      <div style="flex:1;"></div>
+      <div id="summary-next-pass" class="next-pass-card no-pass">
+        <div class="next-pass-label">NEXT PASS</div>
+        <div class="next-pass-time" id="ui-next-time">—</div>
+        <div class="next-pass-sub">
+          <span style="color:#a8d4ff;" id="ui-next-peak">— alt</span>
+          <span style="color:#ffb74d;" id="ui-next-mag">Mag —</span>
+          <span style="color:#7986a8;" id="ui-next-dur">— min</span>
+        </div>
+      </div>
     </div>
 
     <!-- PANEL 2: POINTING -->
     <div class="obs-panel" id="panel-pointing">
       <div class="obs-panel-title">LIVE POINTING</div>
-      <div class="m-sub" style="margin-top:0;">ALTITUDE °</div>
+      <div class="eli5">The ship's exact &ldquo;street address&rdquo; in the sky.</div>
+      <div class="m-sub" style="margin-top:0;">ALTITUDE &deg;</div>
       <div class="m-primary" id="ui-alt">—</div>
-      <div class="m-sub" style="margin-top:10px;">AZIMUTH °</div>
+      <div class="m-sub" style="margin-top:10px;">AZIMUTH &deg;</div>
       <div class="m-primary" style="color:#4A90D9;text-shadow:0 0 10px rgba(74,144,217,0.3);" id="ui-az">—</div>
-      
       <div style="flex-grow:1;"></div>
       <div class="m-row">
         <span class="m-key">RA (J2000)</span>
@@ -157,15 +187,16 @@
     <!-- PANEL 3: SKY PLOT -->
     <div class="obs-panel" id="panel-sky">
       <div class="obs-panel-title">LOCAL SKY</div>
-      <div id="sky-plot-container">
-        <!-- SVG injected by JS -->
-      </div>
+      <div class="eli5">A map of the sky above you. Center is straight up, edges are the horizon.</div>
+      <div id="sky-plot-container"><!-- SVG injected by JS --></div>
     </div>
 
     <!-- ROW 2 -->
-    <!-- PANEL 4: CONDITIONS + IMAGING ASSIST -->
+
+    <!-- PANEL 4: CONDITIONS -->
     <div class="obs-panel" id="panel-cond">
       <div class="obs-panel-title">LOCAL CONDITIONS</div>
+      <div class="eli5">Checking if the sun or moon are too bright to see a dim object.</div>
       <div class="m-row">
         <span class="m-key">SUN ALTITUDE</span>
         <span class="m-val" id="ui-sun-alt">—</span>
@@ -186,7 +217,8 @@
 
     <!-- PANEL 5: RANGE & MOTION -->
     <div class="obs-panel" id="panel-range">
-      <div class="obs-panel-title">RANGE & ANGULAR MOTION</div>
+      <div class="obs-panel-title">RANGE &amp; ANGULAR MOTION</div>
+      <div class="eli5">How far away it is and how fast your telescope needs to move.</div>
       <div class="m-row">
         <span class="m-key">TOPOCENTRIC DIST</span>
         <span class="m-val" id="ui-dist">—</span>
@@ -200,35 +232,27 @@
       </div>
     </div>
 
-    <!-- PANEL 6: BEST WINDOWS -->
-    <div class="obs-panel" id="panel-win">
-      <div class="obs-panel-title">VIEWING WINDOWS — NEXT 24H</div>
-      <div id="win-cards" style="overflow-y:auto;flex:1;">
-        <div style="font-size:0.75rem;color:#7986a8;text-align:center;padding:20px 0;">SCANNING…</div>
+    <!-- PANEL 6: IMAGING ASSIST (bottom-right) -->
+    <div class="obs-panel" id="panel-imaging">
+      <div class="obs-panel-title">IMAGING ASSIST</div>
+      <div class="eli5">Settings to make your photo a sharp dot, not a blurry streak.</div>
+      <div class="m-row">
+        <span class="m-key">TRACK RATE</span>
+        <span class="m-val" id="ui-track-rate">—</span>
       </div>
+      <div style="font-size:0.55rem;color:#7986a8;margin-top:-4px;margin-bottom:6px;">arcsec/sec</div>
+      <div class="m-row">
+        <span class="m-key">MAX UNTRACKED EXP</span>
+        <span class="m-val" id="ui-max-exp" style="color:#ffb74d;">—</span>
+      </div>
+      <div style="font-size:0.55rem;color:#7986a8;margin-top:-4px;margin-bottom:6px;">seconds (2&Prime; smear limit)</div>
+      <div class="m-row">
+        <span class="m-key">OBSERVATION DIFFICULTY</span>
+        <span class="m-val" id="ui-difficulty" style="color:#a8d4ff;">—</span>
+      </div>
+      <div style="font-size:0.55rem;color:#7986a8;margin-top:-4px;">based on apparent magnitude</div>
     </div>
 
-    <!-- PANEL 7: IMAGING ASSIST — full width row 3 -->
-    <div class="obs-panel" id="panel-imaging" style="grid-column: span 3;">
-      <div class="obs-panel-title">IMAGING ASSIST</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
-        <div>
-          <div class="m-key" style="margin-bottom:6px;">TRACK RATE</div>
-          <div class="m-val" id="ui-track-rate" style="font-size:1.1rem;color:#fff;">—</div>
-          <div class="m-key" style="margin-top:3px;font-size:0.55rem;">arcsec/sec</div>
-        </div>
-        <div>
-          <div class="m-key" style="margin-bottom:6px;">MAX UNTRACKED EXP</div>
-          <div class="m-val" id="ui-max-exp" style="font-size:1.1rem;color:#ffb74d;">—</div>
-          <div class="m-key" style="margin-top:3px;font-size:0.55rem;">seconds (2″ smear limit)</div>
-        </div>
-        <div>
-          <div class="m-key" style="margin-bottom:6px;">OBSERVATION DIFFICULTY</div>
-          <div class="m-val" id="ui-difficulty" style="font-size:1.1rem;color:#a8d4ff;">—</div>
-          <div class="m-key" style="margin-top:3px;font-size:0.55rem;">based on apparent magnitude</div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- SCRIPT LOAD ORDER -->

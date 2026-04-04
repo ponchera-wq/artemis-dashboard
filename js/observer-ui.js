@@ -139,35 +139,34 @@ document.addEventListener("DOMContentLoaded", () => {
         return `${Math.floor(mins / 60)}h ${mins % 60}m`;
     }
 
+    // Summary panel DOM refs
+    const summaryPanel   = document.getElementById('panel-summary');
+    const summaryCard    = document.getElementById('summary-next-pass');
+    const uiNextTime     = document.getElementById('ui-next-time');
+    const uiNextPeak     = document.getElementById('ui-next-peak');
+    const uiNextMag      = document.getElementById('ui-next-mag');
+    const uiNextDur      = document.getElementById('ui-next-dur');
+
     function renderWindows(wins) {
-        if (!winPanel) return;
-        if (!wins || wins.length === 0) {
-            winPanel.innerHTML = `<div style="color:#7986a8;font-size:0.8rem;text-align:center;padding:20px 0;">No visible passes in the next 24h.</div>`;
-            return;
+        // Update the summary panel's Next Pass card
+        if (summaryCard) {
+            if (!wins || wins.length === 0) {
+                summaryCard.className = 'next-pass-card no-pass';
+                if (uiNextTime) uiNextTime.textContent = 'None in 24h';
+                if (uiNextPeak) uiNextPeak.textContent = '—';
+                if (uiNextMag)  uiNextMag.textContent  = 'Mag —';
+                if (uiNextDur)  uiNextDur.textContent  = '—';
+            } else {
+                const w = wins[0];
+                const durMs  = w.endMs - w.startMs;
+                const magStr = w.peakMag != null ? `Mag ${w.peakMag.toFixed(1)}` : 'Mag —';
+                summaryCard.className = 'next-pass-card';
+                if (uiNextTime) uiNextTime.textContent = fmtLocalTime(w.startMs);
+                if (uiNextPeak) uiNextPeak.textContent = `⬆ peak ${w.peakAlt.toFixed(1)}°`;
+                if (uiNextMag)  uiNextMag.textContent  = `✦ ${magStr}`;
+                if (uiNextDur)  uiNextDur.textContent  = fmtDuration(durMs);
+            }
         }
-        winPanel.innerHTML = wins.map((w, i) => {
-            const magStr = w.peakMag != null ? `Mag ${w.peakMag.toFixed(1)}` : 'Mag —';
-            const durMs  = w.endMs - w.startMs;
-            const label  = i === 0 ? 'NEXT PASS' : `PASS ${i + 1}`;
-            return `
-            <div style="
-                border:1px solid rgba(0,255,170,0.2); border-radius:4px; padding:10px 12px;
-                margin-bottom:8px; background:rgba(0,255,170,0.04);
-            ">
-                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
-                    <span style="font-size:0.6rem;color:#00ffaa;letter-spacing:0.12em;">${label}</span>
-                    <span style="font-size:0.6rem;color:#7986a8;">${fmtDuration(durMs)}</span>
-                </div>
-                <div style="font-family:'Orbitron',sans-serif;font-size:1.1rem;color:#fff;margin-bottom:4px;">
-                    ${fmtLocalTime(w.startMs)}
-                    <span style="font-size:0.55rem;color:#7986a8;"> LOCAL</span>
-                </div>
-                <div style="display:flex;gap:12px;margin-top:4px;">
-                    <span style="font-size:0.7rem;color:#a8d4ff;">⬆ Peak ${w.peakAlt.toFixed(1)}°</span>
-                    <span style="font-size:0.7rem;color:#ffb74d;">✦ ${magStr}</span>
-                </div>
-            </div>`;
-        }).join('');
     }
 
     // SVG Sky Plot Drawer — with 60-minute projected path
@@ -266,14 +265,16 @@ document.addEventListener("DOMContentLoaded", () => {
             darkState.style.color = "#00e676";
         }
 
-        // Target altitude chip
+        // Target altitude chip + summary panel state
         if (o.altitude > 0) {
             isVis = true;
             visChip.textContent = "ABOVE HORIZON";
             visChip.className = "vis-chip";
+            if (summaryPanel) summaryPanel.classList.add('obs-visible');
         } else {
             visChip.textContent = "BELOW HORIZON";
             visChip.className = "vis-chip below";
+            if (summaryPanel) summaryPanel.classList.remove('obs-visible');
         }
 
         // Paint Pointing & Mag
