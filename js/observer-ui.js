@@ -2236,4 +2236,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Camera auto-orbit removed, handled by t_animate now
     }
+
+    // Sync Footer Metadata from Ephemeris
+    window.MissionEphemeris.ready.then(function() {
+        const footer = document.getElementById('data-timestamp-footer');
+        if (!footer || !window.MissionEphemeris.meta.creationDate) return;
+        try {
+            const rawDate = window.MissionEphemeris.meta.creationDate;
+            const d = new Date(rawDate.includes('Z') ? rawDate : rawDate + 'Z');
+            const fmt = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+            footer.innerHTML = `DATA LAST UPDATED: ${fmt.format(d)} | NASA OEM`;
+        } catch(e) {
+            console.warn('[ObserverUI] Failed to format metadata date:', e);
+        }
+    });
 });

@@ -473,7 +473,7 @@
     <!-- ══ INSPIRATION & SOURCE CREDIT ══════════════════════════════ -->
     <div id="section-inspiration" style="margin-bottom:12px;">
       <div class="section-header muted" data-target="inspiration-body" style="padding:10px 0 6px;">
-        <span class="sh-icon" style="font-size:0.9rem;">🎗</span>
+        <span class="sh-icon" style="font-size:0.9rem;">🛰️</span>
         <span class="sh-title" style="font-size:0.54rem;">•• INSPIRATION & SOURCE CREDIT</span>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
@@ -848,14 +848,25 @@
   <div id="sky-fullscreen-inner" style="display:none;"></div>
   <div id="sky-tooltip"       style="display:none;"></div>
   <div id="panel-summary"     style="display:none;"></div>
+  
+  <footer id="data-timestamp-footer" style="padding: 20px 0; text-align: center; font-family: 'Rajdhani', sans-serif; font-size: 0.65rem; color: rgba(255,255,255,0.25); letter-spacing: 0.1em; text-transform: uppercase;">
+    DATA LAST UPDATED: LOADING... | SOURCE: NASA OEM
+  </footer>
 
   <!-- ══ SCRIPTS ════════════════════════════════════════════════ -->
   <script src="js/shared.js"></script>
-  <script src="js/mission-ephemeris.js"></script>
-  <script src="js/mission-events.js"></script>
-  <script src="js/orion-model.js"></script>
-  <script src="js/observer-astro.js"></script>
-  <script src="js/observer-ui.js"></script>
+  <script>
+    (function() {
+      var v = window._cbv || Date.now();
+      var scripts = ['js/mission-ephemeris.js', 'js/mission-events.js', 'js/orion-model.js', 'js/observer-astro.js', 'js/observer-ui.js'];
+      scripts.forEach(function(src) {
+        var s = document.createElement('script');
+        s.src = src + '?v=' + v;
+        s.async = false;
+        document.body.appendChild(s);
+      });
+    })();
+  </script>
   <script>
     // ── HUD glue: wire new gear section inputs to the existing JS ──
     // The APPLY/CLEAR buttons in #section-gear fire the same handlers

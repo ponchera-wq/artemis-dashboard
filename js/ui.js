@@ -526,4 +526,18 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
       try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(colState)); } catch(ex) {}
     });
   });
+
+  // Sync Footer Metadata from Ephemeris
+  window.MissionEphemeris.ready.then(function() {
+    const footer = document.getElementById('footer-modified');
+    if (!footer || !window.MissionEphemeris.meta.creationDate) return;
+    try {
+      const rawDate = window.MissionEphemeris.meta.creationDate;
+      const d = new Date(rawDate.includes('Z') ? rawDate : rawDate + 'Z');
+      const fmt = new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+      footer.innerHTML = `DATA LAST UPDATED: ${fmt.format(d)} | NASA OEM`;
+    } catch(e) {
+      console.warn('[UI] Failed to format metadata date:', e);
+    }
+  });
 })();

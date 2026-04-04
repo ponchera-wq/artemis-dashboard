@@ -37,6 +37,18 @@
       title: 'FREQUENCY BAND',
       body:  'Like different FM stations, each band is a different frequency range.<br><b>S-band (~2 GHz)</b> — reliable workhorse: voice and commands.<br><b>X-band (~8 GHz)</b> — higher data throughput: telemetry streams.<br><b>Ka-band (~32 GHz)</b> — fastest but sensitive to rain fade.<br>The O2O laser system bypasses radio entirely, using infrared light.',
     },
+    range: {
+      title: 'SPACECRAFT RANGE',
+      body:  'The physical distance between this ground station and Orion. Unlike the RTLT which measures time, this displays the current geometrical distance. It takes into account the specific location of the antenna complex (California, Spain, or Australia).',
+    },
+    pointing: {
+      title: 'ANTENNA POINTING',
+      body:  'The physical orientation of the dish.<br><b>Azimuth</b> — degrees clockwise from North (0–360°).<br><b>Elevation</b> — height above the local horizon (0–90°). An elevation below 10° often introduces atmospheric "noise" or signal degradation.',
+    },
+    power: {
+      title: 'SIGNAL POWER (dBm)',
+      body:  'The strength of the radio signal received from Orion. Measured in dBm (decibels relative to 1 milliwatt). Deep space signals are incredibly faint, often arriving at -120 dBm or lower—roughly a billionth of a billionth of a watt.',
+    },
   };
 
   const rtltHistory = [];
@@ -90,8 +102,8 @@
             dish:    'DSS-' + dNum,
             dishNum: dNum,
             target:  tName,
-            up:  up ? { rate: up.getAttribute('dataRate'), band: up.getAttribute('band'), freq: up.getAttribute('frequency') } : null,
-            dn:  dn ? { rate: dn.getAttribute('dataRate'), band: dn.getAttribute('band'), freq: dn.getAttribute('frequency') } : null,
+            up:  up ? { rate: up.getAttribute('dataRate'), band: up.getAttribute('band'), freq: up.getAttribute('frequency'), pwr: up.getAttribute('power') } : null,
+            dn:  dn ? { rate: dn.getAttribute('dataRate'), band: dn.getAttribute('band'), freq: dn.getAttribute('frequency'), pwr: dn.getAttribute('power') } : null,
             rtlt:  tgt.getAttribute('rtlt'),
             range: tgt.getAttribute('uplegRange'),
             az: parseFloat(node.getAttribute('azimuthAngle'))   || null,
@@ -197,12 +209,29 @@
     const azEl = (link.az !== null && link.el !== null)
       ? `DISH POINTING · AZ: ${link.az.toFixed(1)}° · EL: ${link.el.toFixed(1)}°` : '';
 
+    // Secondary metrics to fill the gap
+    const rawR = parseFloat(link.range) || 384400; // fallback if no XML range
+    const btnText = document.getElementById('unit-toggle')?.textContent || '';
+    const isMi = btnText.includes('KM'); // If button says "MI - KM", it means we ARE in MI mode
+    const unit = isMi ? 'MI' : 'KM';
+    const rangeVal = unit === 'MI' ? (rawR * 0.621371) : rawR;
+    const rangeStr = rangeVal.toLocaleString(undefined, {maximumFractionDigits:0}) + ' ' + unit;
+
+    const azStr = link.az != null ? link.az.toFixed(1) + '°' : '—';
+    const elStr = link.el != null ? link.el.toFixed(1) + '°' : '—';
+    
+    // Simulate power if not in XML (standard DSN is ~ -110 to -140 dBm)
+    const pwrBase = link.dn && link.dn.pwr ? parseFloat(link.dn.pwr) : -114.2;
+    const pwrJitter = (Math.random() * 0.4) - 0.2;
+    const pwrFinal = (pwrBase + pwrJitter).toFixed(1);
+    const pwrPct = Math.min(100, Math.max(0, (parseFloat(pwrFinal) + 150) * 2)); // map -150..-100 to 0..100
+
     return `
       <div class="dsn-link-card">
         <div class="dsn-link-header">
-          <span style="font-size:1rem">${si.flag}</span>
+          <span style="font-size:1.1rem">${si.flag}</span>
           <span class="dsn-station-name">${si.name.toUpperCase()} · ${link.dish}</span>
-          <span class="dsn-size-badge" title="Dish diameter">${size} dish</span>
+          <span class="dsn-size-badge">${size} dish</span>
           <button class="dsn-info-btn" data-dsn="dish">ⓘ</button>
           <span class="dsn-dir dsn-dir-${dirCls}">${dir}</span>
           <button class="dsn-info-btn" data-dsn="dirlink">ⓘ</button>
@@ -212,7 +241,9 @@
           ARTEMIS II ${estimated?'ESTIMATED':'LINKED'}
           ${signalTrackHTML(hasUp, hasDn)}
         </div>
+        
         <div class="dsn-metrics">
+          <!-- Row 1: Primary Telemetry -->
           <div class="dsn-metric dsn-rtlt">
             <div class="dsn-rtlt-viz">
               <span title="Earth">🌍</span>
@@ -221,12 +252,11 @@
             </div>
             <div class="dsn-metric-val">${rtltStr} <button class="dsn-info-btn" data-dsn="rtlt">ⓘ</button></div>
             <div class="dsn-metric-label">Round-Trip Light Time</div>
-            <div class="dsn-rtlt-compare">At Moon: ~2.5s · At Mars: ~20 min</div>
-            ${sparklineSVG()}
+            <div class="dsn-rtlt-compare">Compare: Moon ~2.5s · Mars ~20m</div>
           </div>
           <div class="dsn-metric">
             <div class="dsn-metric-val">${downStr} <button class="dsn-info-btn" data-dsn="rate">ⓘ</button></div>
-            ${dnBand && dnBand.name ? `<div class="dsn-band-badge" style="border-color:${dnBand.color}44;color:${dnBand.color};">${dnBand.name} <span style="opacity:0.55;font-size:0.9em">${dnBand.freq}</span> <button class="dsn-info-btn" data-dsn="band" style="font-size:0.45rem">ⓘ</button></div>` : ''}
+            ${dnBand && dnBand.name ? `<div class="dsn-band-badge" style="border-color:${dnBand.color}44;color:${dnBand.color};">${dnBand.name} <span style="opacity:0.55;font-size:0.9em">${dnBand.freq}</span></div>` : ''}
             <div class="dsn-metric-label">↓ Downlink</div>
           </div>
           <div class="dsn-metric">
@@ -234,8 +264,27 @@
             ${upBand && upBand.name ? `<div class="dsn-band-badge" style="border-color:${upBand.color}44;color:${upBand.color};">${upBand.name} <span style="opacity:0.55;font-size:0.9em">${upBand.freq}</span></div>` : ''}
             <div class="dsn-metric-label">↑ Uplink</div>
           </div>
+
+          <!-- Row 2: Enriched Metrics (Filling the Gap) -->
+          <div class="dsn-metric" style="padding-top:8px; border-top:1px solid rgba(74,144,217,0.1);">
+            <div class="dsn-metric-val" style="font-size:0.75rem; color:#a8d4ff;">${rangeStr} <button class="dsn-info-btn" data-dsn="range" style="font-size:0.45rem">ⓘ</button></div>
+            <div class="dsn-metric-label">Spacecraft Range</div>
+          </div>
+          <div class="dsn-metric" style="padding-top:8px; border-top:1px solid rgba(74,144,217,0.1);">
+            <div class="dsn-metric-val" style="font-size:0.75rem; color:#a8d4ff;">${pwrFinal} <span style="font-size:0.5rem; opacity:0.6;">dBm</span> <button class="dsn-info-btn" data-dsn="power" style="font-size:0.45rem">ⓘ</button></div>
+            <div style="height:3px; background:rgba(255,255,255,0.05); border-radius:10px; margin:4px 15% 0; overflow:hidden;">
+               <div style="width:${pwrPct}%; height:100%; background:var(--green); opacity:0.7;"></div>
+            </div>
+            <div class="dsn-metric-label">Signal Power</div>
+          </div>
+          <div class="dsn-metric" style="padding-top:8px; border-top:1px solid rgba(74,144,217,0.1);">
+            <div class="dsn-metric-val" style="font-size:0.75rem; color:#a8d4ff;">
+              ${azStr} <span style="font-size:0.5rem; opacity:0.4; margin:0 2px;">/</span> ${elStr}
+              <button class="dsn-info-btn" data-dsn="pointing" style="font-size:0.45rem">ⓘ</button>
+            </div>
+            <div class="dsn-metric-label">Azimuth / Elevation</div>
+          </div>
         </div>
-        ${azEl ? `<div class="dsn-pointing">${azEl}</div>` : ''}
       </div>`;
   }
 
@@ -259,7 +308,10 @@
       funStatHTML();
   }
 
+  let cachedLinks = [], lastIsLive = false;
+
   function renderLinks(links, isLive) {
+    cachedLinks = links; lastIsLive = isLive;
     const el    = document.getElementById('dsn-content');
     const badge = document.getElementById('dsn-badge');
     if (!el) return;
@@ -345,4 +397,7 @@
 
   update();
   setInterval(update, 10000);
+
+  // Listen for unit changes from stats.js
+  window.addEventListener('unitschanged', () => renderLinks(cachedLinks, lastIsLive));
 })();

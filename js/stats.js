@@ -193,6 +193,8 @@ document.getElementById('unit-toggle').addEventListener('click', function() {
     btn.style.color  = useImperial ? 'var(--amber)' : '';
     btn.style.borderColor = useImperial ? 'rgba(255,167,38,0.5)' : '';
   }
+  // Notify other components (like DSN) of the unit change
+  window.dispatchEvent(new CustomEvent('unitschanged', { detail: { units: useImperial ? 'MI' : 'KM' } }));
   tickTelem();
 });
 
