@@ -38,6 +38,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const distDisp = document.getElementById('ui-dist');
     const rateDisp = document.getElementById('ui-rate');
 
+    // Viewing Windows panel
+    const winPanel = document.getElementById('win-cards');
+
+    // Window scan runs every 60 ticks (1 per minute) — it's a 73-step loop so we throttle
+    let windowScanCountdown = 0;
+
     function haltAndRequireLocation() {
         locStatus.textContent = "LOCATION REQUIRED";
         locStatus.style.color = "#ff5050";
@@ -115,6 +121,48 @@ document.addEventListener("DOMContentLoaded", () => {
         const m = Math.floor((val - h) * 60);
         const s = ((val - h - m/60) * 3600).toFixed(1);
         return `${h}h ${m}m ${s}s`;
+    }
+
+    // ── Viewing Windows Renderer ─────────────────────────────────────────
+    function fmtLocalTime(ms) {
+        return new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+
+    function fmtDuration(ms) {
+        const mins = Math.round((ms) / 60000);
+        if (mins < 60) return `${mins} min`;
+        return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+    }
+
+    function renderWindows(wins) {
+        if (!winPanel) return;
+        if (!wins || wins.length === 0) {
+            winPanel.innerHTML = `<div style="color:#7986a8;font-size:0.8rem;text-align:center;padding:20px 0;">No visible passes in the next 24h.</div>`;
+            return;
+        }
+        winPanel.innerHTML = wins.map((w, i) => {
+            const magStr = w.peakMag != null ? `Mag ${w.peakMag.toFixed(1)}` : 'Mag —';
+            const durMs  = w.endMs - w.startMs;
+            const label  = i === 0 ? 'NEXT PASS' : `PASS ${i + 1}`;
+            return `
+            <div style="
+                border:1px solid rgba(0,255,170,0.2); border-radius:4px; padding:10px 12px;
+                margin-bottom:8px; background:rgba(0,255,170,0.04);
+            ">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="font-size:0.6rem;color:#00ffaa;letter-spacing:0.12em;">${label}</span>
+                    <span style="font-size:0.6rem;color:#7986a8;">${fmtDuration(durMs)}</span>
+                </div>
+                <div style="font-family:'Orbitron',sans-serif;font-size:1.1rem;color:#fff;margin-bottom:4px;">
+                    ${fmtLocalTime(w.startMs)}
+                    <span style="font-size:0.55rem;color:#7986a8;"> LOCAL</span>
+                </div>
+                <div style="display:flex;gap:12px;margin-top:4px;">
+                    <span style="font-size:0.7rem;color:#a8d4ff;">⬆ Peak ${w.peakAlt.toFixed(1)}°</span>
+                    <span style="font-size:0.7rem;color:#ffb74d;">✦ ${magStr}</span>
+                </div>
+            </div>`;
+        }).join('');
     }
 
     // SVG Sky Plot Drawer
@@ -217,6 +265,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // SVG plotting
         drawPlot(o.altitude, o.azimuth);
+
+        // Viewing Windows — scan once per minute (throttled)
+        windowScanCountdown--;
+        if (windowScanCountdown <= 0) {
+            windowScanCountdown = 60;
+            const wins = window.ObserverAstro.calculateViewingWindows(obsLat, obsLon, nowMs, metSec, obsAlt);
+            renderWindows(wins);
+        }
     }
 
     // Call interval and initial kickoff

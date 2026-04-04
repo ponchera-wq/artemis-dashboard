@@ -167,6 +167,112 @@ window.ObserverAstro = (function() {
                     phaseAngleDeg: moonIllum ? moonIllum.phase_angle : null
                 }
             };
+        },
+
+        /**
+         * Scan the next 24 hours in 20-minute increments and return the next
+         * 3 contiguous windows where Orion is observable.
+         *
+         * Visibility criteria per step:
+         *   - Orion altitude  > 10°          (clear of horizon + atmospheric refraction)
+         *   - Sun altitude    < -6°           (civil twilight or darker)
+         *   - Orion is sunlit (phase angle < 90° from Sun — spacecraft in sunlight, not Earth shadow)
+         *
+         * @param {number} lat          Observer geodetic latitude (deg)
+         * @param {number} lon          Observer geodetic longitude (deg)
+         * @param {number} nowMs        Current wall-clock time (ms since epoch)
+         * @param {number} nowMetSec    Current mission elapsed time (seconds)
+         * @param {number} [altM=0]     Observer altitude above WGS84 ellipsoid (metres)
+         * @returns {Array} Up to 3 window objects
+         */
+        calculateViewingWindows: function(lat, lon, nowMs, nowMetSec, altM = 0) {
+            if (!window.MissionEphemeris || !window.Astronomy) return [];
+
+            const STEP_SEC   = 20 * 60;        // 20-minute steps (matches ephemeris resolution)
+            const STEPS      = 72;             // 72 × 20 min = 24 hours
+            const MIN_ALT    = 10;             // degrees
+            const MAX_SUN    = -6;             // civil twilight threshold
+            const MAX_WINDOWS = 3;
+
+            const windows = [];
+            let currentWindow = null;
+
+            for (let i = 0; i <= STEPS; i++) {
+                const offsetSec  = i * STEP_SEC;
+                const stepMs     = nowMs + offsetSec * 1000;
+                const stepMetSec = nowMetSec + offsetSec;
+                const stepDate   = new Date(stepMs);
+
+                // Get topocentric position (cheap path — no angular speed sampling)
+                const pos = getTopocentricPosition(stepMetSec, stepDate, lat, lon, altM);
+                if (!pos) continue;
+
+                // Sun altitude at this step
+                const observer  = pos.observerObj;
+                const sunEq     = window.Astronomy.Equator('Sun', stepDate, observer, true, true);
+                if (!sunEq) continue;
+                const sunHor    = window.Astronomy.Horizon(stepDate, observer, sunEq.ra, sunEq.dec, 'normal');
+                const sunAlt    = sunHor.altitude;
+
+                // Phase angle: angle at spacecraft between Sun and Observer
+                // If phase angle < 90° the spacecraft is sunlit (not in Earth's shadow)
+                let isSunlit = false;
+                let mag = null;
+                if (sunEq.vec) {
+                    const v_ob     = pos.topoVecAu;
+                    const v_so_x   = sunEq.vec.x - v_ob.x;
+                    const v_so_y   = sunEq.vec.y - v_ob.y;
+                    const v_so_z   = sunEq.vec.z - v_ob.z;
+                    const r_sun    = Math.sqrt(v_so_x**2 + v_so_y**2 + v_so_z**2);
+                    const r_ob     = Math.sqrt(v_ob.x**2 + v_ob.y**2 + v_ob.z**2);
+                    const dot      = v_so_x * (-v_ob.x) + v_so_y * (-v_ob.y) + v_so_z * (-v_ob.z);
+                    const phaseRad = Math.acos(Math.max(-1, Math.min(1, dot / (r_sun * r_ob))));
+                    isSunlit = phaseRad < Math.PI / 2;
+
+                    // Magnitude at this step (same formula as calculateMetrics)
+                    const p = (Math.sin(phaseRad) + (Math.PI - phaseRad) * Math.cos(phaseRad)) / Math.PI;
+                    if (p > 0 && pos.distanceKm > 0) {
+                        mag = 2.0 + 5.0 * Math.log10(pos.distanceKm / 1000.0) - 2.5 * Math.log10(p);
+                    }
+                }
+
+                const isVisible = pos.alt > MIN_ALT && sunAlt < MAX_SUN && isSunlit;
+
+                if (isVisible) {
+                    if (!currentWindow) {
+                        // Start of a new window
+                        currentWindow = {
+                            startMs:   stepMs,
+                            endMs:     stepMs,
+                            peakAlt:   pos.alt,
+                            peakMag:   mag,
+                            peakMs:    stepMs
+                        };
+                    } else {
+                        // Extend existing window
+                        currentWindow.endMs = stepMs;
+                        if (pos.alt > currentWindow.peakAlt) {
+                            currentWindow.peakAlt = pos.alt;
+                            currentWindow.peakMag = mag;
+                            currentWindow.peakMs  = stepMs;
+                        }
+                    }
+                } else {
+                    if (currentWindow) {
+                        // Close window
+                        windows.push(currentWindow);
+                        currentWindow = null;
+                        if (windows.length >= MAX_WINDOWS) break;
+                    }
+                }
+            }
+
+            // Close a window that runs to the end of the scan period
+            if (currentWindow && windows.length < MAX_WINDOWS) {
+                windows.push(currentWindow);
+            }
+
+            return windows;
         }
     };
 })();
