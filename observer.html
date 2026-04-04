@@ -4,347 +4,338 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Artemis II — Observer Mode</title>
-  <meta name="description" content="Artemis II Observer Mode — real-time local sky pointing, visibility windows, and 3D mission map for backyard astronomers.">
+  <meta name="description" content="Artemis II Observer — point your telescope at Orion with real-time sky guidance.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    /* ── Reset ──────────────────────────────────────────────── */
+    /* ── Reset ──────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
-
-    html { background: #08080e; }
-
+    html { background: #05050d; }
     body {
-      margin: 0; padding: 0;
+      margin: 0; padding: 0; background: #05050d;
       font-family: 'Share Tech Mono', monospace;
-      color: var(--text, #e8eaf6);
-      background: #08080e;
-      overflow-y: auto;
-      overflow-x: hidden;
-      min-height: 100vh;
-      max-width: 100vw;
+      color: #e8eaf6; overflow-y: auto; overflow-x: hidden; min-height: 100vh;
     }
-
-    /* Scanline overlay */
     body::after {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
-      background: repeating-linear-gradient(
-        0deg, transparent, transparent 3px,
-        rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
-      );
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.05) 3px, rgba(0,0,0,0.05) 4px);
     }
 
-    /* ── Sticky Nav Stack ───────────────────────────────────── */
-    #obs-sticky {
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-      background: #0a0a14;
-    }
-
+    /* ── Sticky Nav ───────────────────────────────────────────────── */
+    #obs-sticky { position: sticky; top: 0; z-index: 1000; background: #08080f; border-bottom: 1px solid rgba(0,229,255,0.12); }
     .obs-header {
       display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 20px;
-      border-bottom: 1px solid rgba(74,144,217,0.2);
+      padding: 10px 24px;
     }
-    .obs-brand {
-      font-family: 'Orbitron', sans-serif; font-size: 1.05rem;
-      font-weight: 900; color: #fff; letter-spacing: 0.12em;
-    }
-    .obs-brand span { color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+    .obs-brand { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 900; color: #fff; letter-spacing: 0.12em; }
+    .obs-brand span { color: #00e5ff; text-shadow: 0 0 12px rgba(0,229,255,0.55); }
     .obs-toggle { display: flex; border: 1px solid rgba(74,144,217,0.3); border-radius: 3px; overflow: hidden; }
-    .obs-toggle a {
-      padding: 5px 15px; text-decoration: none; color: rgba(121,134,168,0.9);
-      font-size: 0.62rem; font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em;
-      background: rgba(0,0,0,0.4); transition: all 0.2s;
-    }
+    .obs-toggle a { padding: 5px 16px; text-decoration: none; color: rgba(121,134,168,0.9); font-size: 0.6rem; font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em; background: rgba(0,0,0,0.4); transition: all 0.2s; }
     .obs-toggle a.active { background: rgba(0,229,255,0.1); color: #00e5ff; }
 
-    /* Location Bar */
-    .loc-bar {
-      display: flex; align-items: center;
-      padding: 5px 20px;
-      border-bottom: 1px solid rgba(74,144,217,0.15);
-      font-size: 0.68rem; gap: 10px; flex-wrap: wrap;
-    }
-    .loc-info { display: flex; gap: 12px; align-items: center; flex: 1; min-width: 0; }
-    .loc-coord { color: #00e5ff; font-family: 'Share Tech Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; }
-    .loc-darkness { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; white-space: nowrap; }
-    #loc-next-pass {
-      font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
-      color: #00e5ff; padding-left: 12px;
-      border-left: 2px solid rgba(0,229,255,0.35);
-      white-space: nowrap; flex-shrink: 0;
-    }
-    .loc-btn {
-      background: transparent; border: 1px solid rgba(255,167,38,0.45);
-      color: #ffa726; padding: 3px 10px; cursor: pointer; border-radius: 2px;
-      font-family: 'Orbitron', sans-serif; font-size: 0.52rem; letter-spacing: 0.08em;
-      flex-shrink: 0; transition: background 0.2s;
-    }
-    .loc-btn:hover { background: rgba(255,167,38,0.12); color: #ffcc00; }
+    /* ── Page Layout ─────────────────────────────────────────────── */
+    .guided-page { max-width: 1100px; margin: 0 auto; padding: 0 20px 40px; }
 
-    /* Priming strip */
-    #loc-prime {
-      padding: 6px 20px; background: rgba(255,204,0,0.06);
-      border-bottom: 1px solid rgba(255,204,0,0.2); font-size: 0.68rem;
-      color: #ffcc00; display: flex; align-items: center; gap: 10px;
+    /* ── Section header style ────────────────────────────────────── */
+    .section-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      margin-bottom: 14px;
     }
-    #loc-prime.hidden { display: none; }
+    .section-header .sh-icon { font-size: 1.1rem; }
+    .section-header .sh-title {
+      font-family: 'Orbitron', sans-serif; font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.2em; text-transform: uppercase;
+    }
+    .section-header .sh-subtitle {
+      font-family: 'Rajdhani', sans-serif; font-size: 0.75rem; opacity: 0.55; margin-left: auto;
+    }
+    .section-header.amber .sh-title { color: #ffcc00; }
+    .section-header.amber .sh-icon  { color: #ffcc00; }
+    .section-header.cyan  .sh-title { color: #00e5ff; }
+    .section-header.cyan  .sh-icon  { color: #00e5ff; }
+    .section-header.muted .sh-title { color: #4A90D9; }
+    .section-header.muted .sh-icon  { color: #4A90D9; }
 
-    /* Manual form */
-    #manual-loc-form {
-      display: none; padding: 10px 20px;
-      background: rgba(13,13,24,0.98);
-      border-bottom: 1px solid rgba(255,167,38,0.3);
-      font-size: 0.73rem; color: #ffa726;
-      align-items: center; gap: 10px; flex-wrap: wrap;
-    }
-    #manual-loc-form input {
-      background: rgba(0,0,0,0.6); border: 1px solid rgba(74,144,217,0.4); color: #fff;
-      padding: 4px 8px; width: 100px; font-family: inherit; border-radius: 2px;
-    }
-    #manual-loc-form button {
-      background: rgba(74,144,217,0.15); color: #00e5ff;
-      border: 1px solid rgba(0,229,255,0.3); padding: 4px 12px;
-      font-family: 'Orbitron', sans-serif; font-size: 0.58rem;
-      letter-spacing: 0.08em; cursor: pointer; border-radius: 2px;
+    /* ════════════════════════════════════════════════════════════ */
+    /* SECTION 1: GEAR SETUP (AMBER)                               */
+    /* ════════════════════════════════════════════════════════════ */
+    #section-gear {
+      background: rgba(255,204,0,0.03);
+      border: 1px solid rgba(255,204,0,0.18);
+      border-radius: 6px; padding: 14px 18px; margin-top: 16px;
     }
 
-    /* ── Mission Hero ───────────────────────────────────────── */
-    #mission-hero {
-      background: rgba(255,204,0,0.04); border-left: 3px solid #ffcc00;
-      padding: 12px 20px; margin: 12px 20px; border-radius: 3px;
+    /* Gear grid — 3 columns desktop, stack on mobile */
+    .gear-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px; align-items: start;
     }
-    #mission-hero h2 {
-      color: #ffcc00; margin: 0 0 6px 0; font-size: 0.82rem;
-      text-transform: uppercase; font-family: 'Orbitron', sans-serif;
-      letter-spacing: 0.14em;
+    .gear-group { display: flex; flex-direction: column; gap: 8px; }
+    .gear-label {
+      font-family: 'Orbitron', sans-serif; font-size: 0.44rem;
+      letter-spacing: 0.16em; color: rgba(255,204,0,0.7); text-transform: uppercase; margin-bottom: 2px;
     }
-    #mission-hero p {
-      color: rgba(0,229,255,0.6); font-size: 0.72rem; line-height: 1.6; margin: 0;
-      font-family: 'Share Tech Mono', monospace;
+    .gear-input {
+      background: rgba(0,0,0,0.5); border: 1px solid rgba(255,204,0,0.3); color: #ffe;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; padding: 7px 10px;
+      border-radius: 3px; width: 100%; transition: border-color 0.2s;
     }
-    #hero-awaiting { margin-top: 6px; font-size: 0.68rem; display: none; }
-    @keyframes pulse-amber { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-    .pulse-amber { animation: pulse-amber 1.8s ease-in-out infinite; color: #ffcc00; }
+    .gear-input:focus { outline: none; border-color: rgba(255,204,0,0.7); }
+    .gear-row { display: flex; gap: 8px; align-items: center; }
+    .gear-row .gear-input { flex: 1; }
 
-    /* ── MISSION MAP (3D Full-Width Panel) ─────────────────── */
-    #mission-map-panel {
-      margin: 0 20px 16px;
-      background: rgba(0,8,20,0.9);
+    /* Location pull inside gear section */
+    .loc-inline {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .loc-inline input {
+      background: rgba(0,0,0,0.5); border: 1px solid rgba(255,204,0,0.3); color: #ffe;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.82rem; padding: 7px 8px;
+      border-radius: 3px; width: 110px; transition: border-color 0.2s;
+    }
+    .loc-inline input:focus { outline: none; border-color: rgba(255,204,0,0.7); }
+    .loc-inline button {
+      font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.1em;
+      padding: 7px 14px; border-radius: 3px; cursor: pointer; transition: all 0.2s;
+    }
+    #btn-apply-loc { background: rgba(255,204,0,0.15); border: 1px solid rgba(255,204,0,0.5); color: #ffcc00; }
+    #btn-apply-loc:hover { background: rgba(255,204,0,0.28); }
+    #btn-clear-loc  { background: transparent; border: 1px solid rgba(239,83,80,0.4); color: #ef5350; }
+    #btn-clear-loc:hover  { background: rgba(239,83,80,0.1); }
+
+    .gear-loc-name {
+      font-size: 0.72rem; color: #00e5ff; font-family: 'Share Tech Mono', monospace;
+      padding-top: 4px; min-height: 1em;
+    }
+
+    /* Resolution summary pill */
+    #resolution-summary {
+      margin-top: 14px; padding: 10px 16px;
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(255,204,0,0.2);
+      border-radius: 4px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    #resolution-summary .res-label {
+      font-family: 'Rajdhani', sans-serif; font-size: 0.78rem; color: rgba(255,255,255,0.5);
+    }
+    #resolution-summary .res-value {
+      font-family: 'Orbitron', sans-serif; font-size: 0.9rem; font-weight: 700; color: #ffcc00;
+    }
+    #resolution-summary .res-badge {
+      font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.14em;
+      padding: 3px 10px; border-radius: 3px; margin-left: auto;
+    }
+    .res-badge.optimal { background: rgba(0,230,118,0.12); color: #00e676; border: 1px solid rgba(0,230,118,0.35); }
+    .res-badge.good    { background: rgba(0,229,255,0.1);  color: #00e5ff; border: 1px solid rgba(0,229,255,0.3); }
+    .res-badge.poor    { background: rgba(239,83,80,0.1);  color: #ef5350; border: 1px solid rgba(239,83,80,0.3); }
+
+    /* ════════════════════════════════════════════════════════════ */
+    /* SECTION 2: VISUAL MAP (SKY WINDOW)                          */
+    /* ════════════════════════════════════════════════════════════ */
+    #section-sky { margin-top: 24px; }
+
+    /* Container: large, widescreen, centred */
+    #sky-hud-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 62%; /* aspect ratio ~16:10 */
+      background: radial-gradient(ellipse at center, #060c1e 0%, #01020a 100%);
       border: 1px solid rgba(0,229,255,0.2);
-      border-radius: 4px;
-      overflow: hidden;
+      border-radius: 6px; overflow: hidden;
+    }
+    #sky-hud-inner {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* The actual plot circle, centred inside */
+    #sky-plot-container {
+      width: min(90%, 90vh);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #080c1e 0%, #010106 100%);
+      border: 1px solid rgba(0,229,255,0.15);
+      position: relative;
+    }
+    /* Three-canvas and eyepiece-canvas fill the circle */
+    #sky-plot-container canvas {
+      display: none; position: absolute; inset: 0; width: 100% !important; height: 100% !important;
+      border-radius: 50%;
+    }
+
+    /* ── HUD Overlays (floating labels in the black area) ───────── */
+    .sky-hud-label {
+      position: absolute;
+      background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+      border: 1px solid rgba(0,229,255,0.2); border-radius: 5px;
+      padding: 8px 12px; pointer-events: none;
+    }
+    .hud-key {
+      font-family: 'Orbitron', sans-serif; font-size: 0.38rem; letter-spacing: 0.16em;
+      color: rgba(0,229,255,0.55); text-transform: uppercase; margin-bottom: 3px;
+    }
+    .hud-val {
+      font-family: 'Orbitron', sans-serif; font-size: 0.95rem; font-weight: 700;
+      color: #00e5ff; line-height: 1.1;
+    }
+    .hud-val.green { color: #00e676; }
+    .hud-val.amber { color: #ffa726; }
+    .hud-val.red   { color: #ef5350; }
+    .hud-sub { font-family: 'Share Tech Mono', monospace; font-size: 0.6rem; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+    /* Position each HUD card */
+    #hud-status   { top: 12px; left: 12px; min-width: 120px; }
+    #hud-pointing { top: 12px; right: 12px; text-align: right; min-width: 130px; }
+    #hud-radec    { bottom: 12px; left: 12px; min-width: 120px; }
+    #hud-direction{ bottom: 12px; right: 12px; text-align: right; min-width: 120px; }
+
+    /* sky toggle buttons row */
+    .sky-controls {
+      position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; pointer-events: all;
+    }
+    .sky-ctrl-btn {
+      font-family: 'Orbitron', sans-serif; font-size: 0.44rem; letter-spacing: 0.1em;
+      padding: 4px 12px; border-radius: 3px; cursor: pointer; transition: all 0.2s;
+      background: rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.3); color: rgba(0,229,255,0.8);
+    }
+    .sky-ctrl-btn:hover, .sky-ctrl-btn.active { background: rgba(0,229,255,0.15); color: #fff; border-color: rgba(0,229,255,0.6); }
+    .sky-ctrl-btn.amber-btn { border-color: rgba(255,167,38,0.4); color: rgba(255,167,38,0.8); }
+    .sky-ctrl-btn.amber-btn:hover, .sky-ctrl-btn.amber-btn.active { background: rgba(255,167,38,0.15); color: #fff; border-color: rgba(255,167,38,0.7); }
+
+    /* ════════════════════════════════════════════════════════════ */
+    /* SECTION 3: STATUS VERDICTS (CYAN)                           */
+    /* ════════════════════════════════════════════════════════════ */
+    #section-verdicts { margin-top: 24px; }
+
+    .verdict-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .verdict-card {
+      background: rgba(0,10,24,0.9);
+      border: 1px solid rgba(0,229,255,0.15);
+      border-radius: 5px; padding: 14px 16px;
+      position: relative; overflow: hidden;
+      transition: border-color 0.3s ease;
+    }
+    .verdict-card.green-card { border-color: rgba(0,230,118,0.3); }
+    .verdict-card.red-card   { border-color: rgba(239,83,80,0.3); }
+    .verdict-card.amber-card { border-color: rgba(255,167,38,0.3); }
+
+    .verdict-icon { font-size: 1.4rem; margin-bottom: 6px; }
+    .verdict-title {
+      font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.16em;
+      color: rgba(0,229,255,0.6); text-transform: uppercase; margin-bottom: 4px;
+    }
+    .verdict-main {
+      font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 1.05rem;
+      line-height: 1.3; margin-bottom: 6px;
+    }
+    .verdict-main.green { color: #00e676; }
+    .verdict-main.amber { color: #ffcc00; }
+    .verdict-main.red   { color: #ef5350; }
+    .verdict-detail {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.62rem;
+      color: rgba(255,255,255,0.45); line-height: 1.45;
+    }
+
+    /* Detection potential progress bar */
+    #detection-bar-wrap {
+      margin-top: 10px;
+      background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.12);
+      border-radius: 3px; height: 8px; overflow: hidden;
+    }
+    #detection-bar-fill {
+      height: 100%; background: linear-gradient(90deg, #00e5ff 0%, #00e676 100%);
+      border-radius: 3px; width: 0%; transition: width 0.8s ease;
+    }
+    .detection-label {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 5px; font-family: 'Orbitron', sans-serif; font-size: 0.4rem;
+      letter-spacing: 0.1em; color: rgba(0,229,255,0.5);
+    }
+    #detection-pct { color: #00e5ff; font-size: 0.5rem; font-weight: 700; }
+
+    /* Magnitude verdict card: big number */
+    #mag-big {
+      font-family: 'Orbitron', sans-serif; font-size: 2.8rem; font-weight: 900;
+      line-height: 1; color: #00e5ff; letter-spacing: -0.02em;
+    }
+
+    /* ════════════════════════════════════════════════════════════ */
+    /* SECTION 4: UPCOMING PASSES                                   */
+    /* ════════════════════════════════════════════════════════════ */
+    #section-passes { margin-top: 24px; }
+    #win-cards { display: flex; flex-direction: column; gap: 10px; }
+    .win-card {
+      background: rgba(0,8,20,0.8); border: 1px solid rgba(74,144,217,0.2);
+      border-radius: 5px; padding: 14px 16px;
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .win-card .wc-badge {
+      background: rgba(74,144,217,0.12); border: 1px solid rgba(74,144,217,0.3);
+      border-radius: 4px; padding: 6px 12px; text-align: center; flex-shrink: 0; min-width: 60px;
+    }
+    .win-card .wc-rank  { font-family: 'Orbitron', sans-serif; font-size: 0.42rem; letter-spacing: 0.15em; color: #4A90D9; }
+    .win-card .wc-num   { font-family: 'Orbitron', sans-serif; font-size: 1.3rem; font-weight: 900; color: #00e5ff; line-height: 1; }
+    .win-card .wc-body  { flex: 1; min-width: 200px; }
+    .win-card .wc-time  { font-family: 'Share Tech Mono', monospace; font-size: 0.85rem; color: #e8eaf6; margin-bottom: 3px; }
+    .win-card .wc-detail{ font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; color: rgba(255,255,255,0.45); }
+    .win-card .wc-peak  {
+      text-align: right; flex-shrink: 0;
+    }
+    .win-card .wc-peak-label { font-family: 'Orbitron', sans-serif; font-size: 0.38rem; letter-spacing: 0.12em; color: rgba(0,229,255,0.5); margin-bottom: 2px; }
+    .win-card .wc-peak-val { font-family: 'Orbitron', sans-serif; font-size: 1.1rem; font-weight: 700; color: #00e676; }
+
+    /* Mission map 3D (below passes on desktop, always full-width) */
+    #mission-map-panel {
+      margin-top: 24px;
+      background: rgba(0,8,20,0.9); border: 1px solid rgba(0,229,255,0.15);
+      border-radius: 6px; overflow: hidden;
     }
     #mission-map-title {
-      font-family: 'Orbitron', sans-serif; font-size: 0.58rem; font-weight: 700;
+      font-family: 'Orbitron', sans-serif; font-size: 0.54rem; font-weight: 700;
       letter-spacing: 0.18em; color: #00e5ff;
-      padding: 8px 14px 6px;
-      border-bottom: 1px solid rgba(0,229,255,0.15);
-      text-transform: uppercase; display: flex; align-items: center; gap: 7px;
+      padding: 8px 16px 6px; border-bottom: 1px solid rgba(0,229,255,0.1);
+      text-transform: uppercase; display: flex; align-items: center; gap: 8px;
     }
-    #mission-map-title::before {
-      content: '•• '; color: #00e5ff; font-family: 'Share Tech Mono', monospace;
-      font-size: 0.7rem; letter-spacing: 0; text-shadow: 0 0 10px rgba(0,229,255,0.6);
-    }
-    #mission-map-title .map-subtitle {
-      margin-left: auto; font-size: 0.5rem; color: rgba(0,229,255,0.5); letter-spacing: 0.08em;
-    }
-    #mission-map-canvas-wrap {
-      width: 100%; height: 420px; position: relative; background: #00020a;
-    }
-    #mission-map-canvas {
-      width: 100%; height: 100%; display: block;
-    }
+    #mission-map-title::before { content: '•• '; font-family: 'Share Tech Mono'; font-size: 0.7rem; letter-spacing: 0; }
+    #mission-map-title .map-subtitle { margin-left: auto; font-size: 0.46rem; color: rgba(0,229,255,0.4); letter-spacing: 0.06em; }
+    #mission-map-canvas-wrap { width: 100%; height: 360px; background: #00020a; position: relative; }
+    #mission-map-canvas { width: 100%; height: 100%; display: block; }
     #mission-map-overlay {
       position: absolute; bottom: 10px; left: 14px; right: 14px;
-      display: flex; gap: 16px; pointer-events: none;
+      display: flex; gap: 12px; pointer-events: none; flex-wrap: wrap;
     }
-    .map-stat {
-      background: rgba(0,0,0,0.55); border: 1px solid rgba(0,229,255,0.18);
-      border-radius: 3px; padding: 5px 10px;
-    }
-    .map-stat-label { font-family: 'Orbitron', sans-serif; font-size: 0.38rem; letter-spacing: 0.14em; color: rgba(0,229,255,0.6); }
-    .map-stat-val { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700; color: #00e5ff; }
+    .map-stat { background: rgba(0,0,0,0.6); border: 1px solid rgba(0,229,255,0.15); border-radius: 3px; padding: 5px 10px; }
+    .map-stat-label { font-family: 'Orbitron', sans-serif; font-size: 0.36rem; letter-spacing: 0.14em; color: rgba(0,229,255,0.55); }
+    .map-stat-val   { font-family: 'Orbitron', sans-serif; font-size: 0.72rem; font-weight: 700; color: #00e5ff; }
 
-    /* ── Main Data Grid ─────────────────────────────────────── */
-    .obs-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 16px;
-      padding: 0 20px 20px;
-      max-width: 1600px;
-      margin: 0 auto;
+    /* ── Mobile ──────────────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .guided-page { padding: 0 12px 32px; }
+      .gear-grid { grid-template-columns: 1fr; gap: 12px; }
+      #sky-hud-wrap { padding-top: 90%; }
+      .verdict-grid { grid-template-columns: 1fr; }
+      #hud-pointing { display: none; }
+      #hud-radec    { display: none; }
     }
 
-    .obs-panel {
-      background: rgba(0, 12, 28, 0.85);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(0, 229, 255, 0.18);
-      border-radius: 4px; display: flex; flex-direction: column;
-      position: relative; overflow: hidden;
-      transition: border-color 0.4s ease, box-shadow 0.4s ease;
-    }
-    .obs-panel-title {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.56rem; font-weight: 700; letter-spacing: 0.18em;
-      color: #00e5ff; padding: 8px 14px 6px;
-      border-bottom: 1px solid rgba(0,229,255,0.12);
-      text-transform: uppercase;
-      display: flex; align-items: center; gap: 6px;
-      flex-shrink: 0; cursor: pointer;
-    }
-    .obs-panel-title::before {
-      content: '•• '; color: #00e5ff; font-family: 'Share Tech Mono', monospace;
-      font-size: 0.68rem; letter-spacing: 0; margin-right: 3px;
-      text-shadow: 0 0 10px rgba(0,229,255,0.6);
-    }
-    .obs-panel-body { padding: 12px 14px; display: flex; flex-direction: column; flex: 1; }
-
-    /* Instruction text */
-    .instruction-text {
-      font-size: 0.68rem; margin-bottom: 10px; display: block;
-      line-height: 1.5; border-bottom: 1px solid rgba(0,229,255,0.08);
-      padding-bottom: 8px; font-family: 'Rajdhani', sans-serif;
-    }
-    .step-title { color: #ffcc00; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Orbitron', sans-serif; }
-    .step-detail { color: rgba(140,190,240,0.7); font-weight: normal; margin-left: 4px; }
-
-    /* Telemetry cells */
-    .obs-telem-cell {
-      background: rgba(0,0,0,0.35); border: 1px solid rgba(0,229,255,0.15);
-      border-radius: 3px; padding: 8px 10px; margin-bottom: 6px;
-    }
-    .obs-telem-label {
-      font-family: 'Orbitron', sans-serif; font-size: 0.4rem; letter-spacing: 0.14em;
-      color: rgba(121,134,168,0.9); margin-bottom: 3px; text-transform: uppercase;
-    }
-    .obs-telem-value {
-      font-family: 'Orbitron', sans-serif; font-size: 1.7rem; font-weight: 900; line-height: 1;
-      color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.4);
-    }
-    .obs-telem-value.green { color: #00e676; text-shadow: 0 0 10px rgba(0,230,118,0.4); }
-    .obs-telem-value.amber { color: #4A90D9; text-shadow: 0 0 10px rgba(74,144,217,0.4); }
-
-    /* Data rows */
-    .m-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
-    .m-row:last-child { border-bottom: none; }
-    .m-key { color: rgba(121,134,168,0.9); font-size: 0.63rem; letter-spacing: 0.05em; }
-    .m-val { color: var(--text, #e8eaf6); font-size: 0.78rem; }
-
-    /* Visibility chip */
-    .vis-chip {
-      display: inline-block; padding: 4px 12px; border-radius: 2px;
-      font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.68rem;
-      letter-spacing: 0.12em;
-      background: rgba(0,230,118,0.1); color: #00e676;
-      border: 1px solid rgba(0,230,118,0.4); margin-bottom: 8px;
-    }
-    .vis-chip.below { background: rgba(239,83,80,0.1); color: #ef5350; border-color: rgba(239,83,80,0.4); }
-    #panel-summary.obs-visible { border-color: rgba(0,230,118,0.5); box-shadow: 0 0 20px rgba(0,230,118,0.07); }
-
-    /* Sky plot */
-    #sky-plot-container {
-      width: 100%; aspect-ratio: 1; border-radius: 50%;
-      background: radial-gradient(circle at center, #080c1a 0%, #010106 100%);
-      border: 1px solid rgba(0,229,255,0.18); position: relative;
-      min-height: 320px;
-    }
-
-    /* Sky panel header extras */
-    .sky-header-extras { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    #sky-toggle-btn {
-      font-family: 'Orbitron', sans-serif; font-size: 0.46rem;
-      letter-spacing: 0.1em; padding: 2px 8px; border-radius: 2px;
-      border: 1px solid rgba(0,229,255,0.4); color: #00e5ff;
-      background: rgba(0,229,255,0.08); cursor: pointer; transition: background 0.2s;
-    }
-    #sky-toggle-btn:hover { background: rgba(0,229,255,0.18); }
-    #sky-toggle-btn.active { background: rgba(0,229,255,0.22); color: #fff; }
-
-    /* Info icon + tooltip */
-    .sky-info-wrap { position: relative; display: flex; align-items: center; }
-    .sky-info-icon {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 14px; height: 14px; border-radius: 50%;
-      border: 1px solid rgba(255,167,38,0.5); color: #ffa726;
-      font-size: 0.5rem; font-family: 'Orbitron', sans-serif;
-      cursor: pointer; transition: border-color 0.15s, color 0.15s; flex-shrink: 0;
-    }
-    .sky-info-icon:hover, .sky-info-icon.open { border-color: #ffcc00; color: #ffcc00; }
-    .sky-tooltip {
-      display: none; position: absolute;
-      top: calc(100% + 8px); right: 0; z-index: 200;
-      width: 260px; background: rgba(4,8,22,0.98);
-      border: 1px solid rgba(0,229,255,0.4); border-radius: 5px;
-      box-shadow: 0 0 24px rgba(0,229,255,0.1), 0 8px 28px rgba(0,0,0,0.7);
-      padding: 12px 14px; font-family: 'Share Tech Mono', monospace;
-      font-size: 0.6rem; line-height: 1.55; color: rgba(255,255,255,0.75);
-    }
-    .sky-tooltip.open { display: block; }
-    .sky-tooltip .tt-title { font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.14em; color: #00e5ff; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid rgba(0,229,255,0.2); }
-    .sky-tooltip .tt-row { margin-bottom: 5px; }
-    .sky-tooltip .tt-row strong { color: #ffcc00; }
-
-    /* Collapse button (mobile only) */
-    .panel-collapse-btn {
-      display: none; margin-left: auto; background: none; border: none; cursor: pointer;
-      color: rgba(255,167,38,0.7); font-size: 0.9rem; line-height: 1;
-      padding: 0 4px; flex-shrink: 0; transition: color 0.2s, transform 0.25s;
-    }
-    .panel-collapse-btn:hover { color: #ffcc00; }
-    .panel-collapse-btn.collapsed { transform: rotate(-90deg); }
-
-    /* Sky fullscreen overlay */
-    #sky-fullscreen-overlay {
-      display: none; position: fixed; inset: 0; z-index: 1001;
-      background: rgba(0,0,0,0.92); align-items: center; justify-content: center;
-    }
-    #sky-fullscreen-overlay.open { display: flex; }
-    #sky-fullscreen-inner {
-      width: min(92vw, 92vh); aspect-ratio: 1;
-      background: radial-gradient(circle at center, #080c1a 0%, #010106 100%);
-      border: 1px solid rgba(0,229,255,0.3); border-radius: 50%; position: relative;
-    }
-    #sky-fullscreen-inner svg { width: 100%; height: 100%; }
-    #sky-fullscreen-close {
-      position: absolute; top: -24px; right: -24px;
-      background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.4);
-      color: #00e5ff; border-radius: 50%; width: 28px; height: 28px;
-      font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
-    }
-
-    /* ── Mobile ─────────────────────────────────────────────── */
-    @media (max-width: 767px) {
-      .obs-grid { grid-template-columns: 1fr; padding: 0 10px 16px; gap: 10px; }
-      .panel-collapse-btn { display: flex; align-items: center; }
-      .obs-panel.collapsed .obs-panel-body { display: none; }
-      .loc-bar { flex-wrap: wrap; gap: 5px; padding: 5px 12px; }
-      .loc-coord { max-width: 55vw; }
-      #loc-next-pass { border-left: none; padding-left: 0; font-size: 0.59rem; width: 100%; }
-      #mission-hero { margin: 8px 10px; padding: 10px 14px; }
-      #mission-map-panel { margin: 0 10px 12px; }
-      #mission-map-canvas-wrap { height: 260px; }
-      #sky-plot-container { cursor: pointer; min-height: 260px; }
-      #sky-plot-container::after {
-        content: 'TAP TO ENLARGE'; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-        font-size: 0.52rem; color: rgba(0,229,255,0.4); font-family: 'Orbitron', sans-serif;
-        letter-spacing: 0.1em; pointer-events: none;
-      }
-      .sky-tooltip.open {
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-        right: auto; width: min(88vw, 320px); max-height: 80vh; overflow-y: auto; z-index: 500;
-      }
-      #mission-map-overlay { gap: 8px; }
-    }
+    /* accessibility pulse */
+    @keyframes pulse-amber { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .pulse-amber { animation: pulse-amber 1.8s ease-in-out infinite; color: #ffcc00; }
   </style>
 </head>
 <body>
 
-  <!-- ══ STICKY NAV ══════════════════════════════════════════ -->
+  <!-- ══ STICKY NAV ═══════════════════════════════════════════════ -->
   <div id="obs-sticky">
     <header class="obs-header">
       <div class="obs-brand">ARTEMIS II <span>OBSERVER</span></div>
@@ -353,308 +344,298 @@
         <a href="observer.html" class="active">OBSERVER</a>
       </div>
     </header>
-
-    <div class="loc-bar">
-      <button class="loc-btn" onclick="document.getElementById('manual-loc-form').style.display='flex'">&#9881; LOCATION</button>
-      <div class="loc-info">
-        <span class="loc-coord" id="ui-loc-status">CANBERRA DSN (TIDBINBILLA)</span>
-        <span class="loc-darkness" id="ui-darkness-state">—</span>
-        <a href="#panel-windows" style="text-decoration:none;color:inherit;"><span id="loc-next-pass"></span></a>
-      </div>
-    </div>
-
-    <div id="loc-prime" class="hidden">
-      <span>&#9888;</span>
-      <span>BROWSER PERMISSION REQUIRED. Click <strong>Allow</strong> when prompted, or enter coordinates manually.</span>
-    </div>
-
-    <div id="manual-loc-form">
-      <span>MANUAL ENTRY:</span>
-      <input type="number" id="in-lat" placeholder="Latitude" step="any" value="-35.4014">
-      <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817">
-      <button id="btn-apply-loc">APPLY</button>
-      <button id="btn-clear-loc" style="background:transparent;border:1px solid rgba(255,80,80,0.4);color:#ff5050;padding:4px 12px;font-family:inherit;cursor:pointer;border-radius:2px;">CLEAR</button>
-    </div>
   </div>
 
-  <!-- ══ HERO ════════════════════════════════════════════════ -->
-  <div id="mission-hero">
-    <h2>What is Observer Mode?</h2>
-    <p>The Artemis II Observer transforms NASA's deep-space telemetry into a local sky guide.
-    While the mission dashboard shows where Orion is in space, this page calculates exactly
-    where to point your telescope from your coordinates on Earth.</p>
-    <p id="hero-awaiting" class="pulse-amber">&#8592; Awaiting your location to begin calculations.</p>
-  </div>
+  <!-- ══ GUIDED PAGE ══════════════════════════════════════════════ -->
+  <div class="guided-page">
 
-  <!-- ══ MISSION MAP — 3D (full-width) ═══════════════════════ -->
-  <div id="mission-map-panel">
-    <div id="mission-map-title">
-      MISSION MAP — J2000 TRAJECTORY
-      <span class="map-subtitle">INTERACTIVE · DRAG TO ROTATE</span>
-    </div>
-    <div id="mission-map-canvas-wrap">
-      <canvas id="mission-map-canvas"></canvas>
-      <div id="mission-map-overlay">
-        <div class="map-stat">
-          <div class="map-stat-label">DIST FROM EARTH</div>
-          <div class="map-stat-val" id="map-dist">—</div>
-        </div>
-        <div class="map-stat">
-          <div class="map-stat-label">VELOCITY</div>
-          <div class="map-stat-val" id="map-vel">—</div>
-        </div>
-        <div class="map-stat">
-          <div class="map-stat-label">SHADOW STATE</div>
-          <div class="map-stat-val" id="map-shadow">—</div>
-        </div>
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- STEP 1: GEAR SETUP                                         -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="section-gear">
+      <div class="section-header amber" style="border-bottom-color:rgba(255,204,0,0.15); margin-bottom:12px;">
+        <span class="sh-icon">⚙</span>
+        <span class="sh-title">Step 1 — Your Setup</span>
+        <span class="sh-subtitle">Enter your location and telescope specs</span>
       </div>
-    </div>
-  </div>
 
-  <!-- ══ TELEMETRY GRID ═══════════════════════════════════════ -->
-  <div class="obs-grid">
+      <div class="gear-grid">
 
-    <!-- PANEL 0: EQUIPMENT PROFILE -->
-    <div class="obs-panel" id="panel-hardware">
-      <div class="obs-panel-title" onclick="togglePanel('panel-hardware')">
-        EQUIPMENT PROFILE
-        <button class="panel-collapse-btn" aria-label="Toggle">&#9660;</button>
-      </div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Hardware Setup.</span> <span class="step-detail">Enter your optics and sensor specs for precise targeting.</span></span>
-        <div class="m-row">
-          <span class="m-key">APERTURE (mm)</span>
-          <input type="number" id="in-aperture" value="203.2" step="0.1" style="width:80px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,229,255,0.2);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 6px;border-radius:2px;">
+        <!-- Location -->
+        <div class="gear-group">
+          <div class="gear-label">📍 Observer Location</div>
+          <div class="loc-inline">
+            <input type="number" id="in-lat" placeholder="Latitude"  step="any" value="-35.4014">
+            <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817">
+            <button id="btn-apply-loc">APPLY</button>
+            <button id="btn-clear-loc">CLEAR</button>
+          </div>
+          <div class="gear-loc-name" id="ui-loc-status">CANBERRA DSN (TIDBINBILLA)</div>
         </div>
-        <div class="m-row">
-          <span class="m-key">FOCAL LENGTH (mm)</span>
-          <input type="number" id="in-focal-length" value="1420" step="1" style="width:80px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,229,255,0.2);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 6px;border-radius:2px;">
+
+        <!-- Optics -->
+        <div class="gear-group">
+          <div class="gear-label">🔭 Telescope Optics</div>
+          <div class="gear-row">
+            <div style="flex:1;">
+              <div style="font-size:0.55rem;color:rgba(255,204,0,0.5);margin-bottom:3px;">FOCAL LENGTH (mm)</div>
+              <input type="number" id="in-focal-length" class="gear-input" value="1420" step="1">
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.55rem;color:rgba(255,204,0,0.5);margin-bottom:3px;">APERTURE (mm)</div>
+              <input type="number" id="in-aperture" class="gear-input" value="203.2" step="0.1">
+            </div>
+          </div>
         </div>
-        <div class="m-row">
-          <span class="m-key">PIXEL SIZE (um)</span>
-          <input type="number" id="in-pixel-size" value="3.76" step="0.01" style="width:80px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,229,255,0.2);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 6px;border-radius:2px;">
-        </div>
-        <div class="m-row">
-          <span class="m-key">PLANNED EXPOSURE (s)</span>
-          <input type="number" id="in-planned-exp" value="30.0" step="1" style="width:80px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,229,255,0.2);color:#ffa726;font-family:inherit;font-size:0.75rem;padding:2px 6px;border-radius:2px;">
-        </div>
-        <div class="m-row" style="border-bottom:none; margin-top:4px;">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.63rem; color:#ffa726;">
-            <input type="checkbox" id="in-hyperstar" style="width:14px; height:14px;">
-            <span style="font-family:'Orbitron',sans-serif; letter-spacing:0.05em;">HYPERSTAR MODE (f/1.9)</span>
+
+        <!-- Camera -->
+        <div class="gear-group">
+          <div class="gear-label">📷 Camera Sensor</div>
+          <div class="gear-row">
+            <div style="flex:1;">
+              <div style="font-size:0.55rem;color:rgba(255,204,0,0.5);margin-bottom:3px;">PIXEL SIZE (µm)</div>
+              <input type="number" id="in-pixel-size" class="gear-input" value="3.76" step="0.01">
+            </div>
+            <div style="flex:1;">
+              <div style="font-size:0.55rem;color:rgba(255,204,0,0.5);margin-bottom:3px;">EXPOSURE (s)</div>
+              <input type="number" id="in-planned-exp" class="gear-input" value="30" step="1" style="color:#ffa726;">
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:0.62rem;color:#ffa726;margin-top:6px;cursor:pointer;">
+            <input type="checkbox" id="in-hyperstar" style="width:13px;height:13px;"> HYPERSTAR MODE (f/1.9)
           </label>
         </div>
-        <div class="obs-telem-cell" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
-          <div>
-            <div class="obs-telem-label">PLATE SCALE</div>
-            <div class="obs-telem-value" id="ui-plate-scale" style="font-size:1.1rem;">0.548</div>
-          </div>
-          <div style="text-align:right;">
-            <div class="obs-telem-label">DETECTION CONFIDENCE</div>
-            <div class="obs-telem-value" id="ui-confidence" style="font-size:1.1rem; color:#ffa726;">—</div>
-          </div>
-        </div>
-        <div style="margin-top:10px; font-size:0.52rem; color:rgba(255,255,255,0.35); font-family:'Orbitron',sans-serif; letter-spacing:0.05em;">
-          QUICK SPECS:
-          <a href="#" onclick="window.applyPreset(1420, 203.2); return false;" style="color:#00e5ff; text-decoration:none; margin-right:12px; border-bottom:1px solid rgba(0,229,255,0.3);">SCT 8" + 0.7x</a>
-          <a href="#" onclick="window.applyPreset(390, 203.2); return false;" style="color:#00e5ff; text-decoration:none; border-bottom:1px solid rgba(0,229,255,0.3);">HYPERSTAR (f/1.9)</a>
-        </div>
-      </div>
-    </div>
 
-    <!-- PANEL 1: OBSERVATION SUMMARY -->
-    <div class="obs-panel" id="panel-summary">
-      <div class="obs-panel-title" onclick="togglePanel('panel-summary')">
-        OBSERVATION SUMMARY
-        <span class="sky-header-extras">
-          <span class="sky-info-wrap">
-            <span class="sky-info-icon" id="risk-info-btn" style="border-color:rgba(239,83,80,0.5); color:#ef5350;">!</span>
-            <div class="sky-tooltip" id="risk-tooltip" style="border-color:rgba(239,83,80,0.5);">
-              <div class="tt-title" style="color:#ef5350;">MISSION RISKS & REFLECTIVITY</div>
-              <div class="tt-row"><strong>THERMAL MANAGEMENT:</strong> Orion's brightness may drop during PTC rolls.</div>
-              <div class="tt-row"><strong>TRAJECTORY LATENCY:</strong> Real-time burns may deviate from pre-launch ephemeris.</div>
+      </div><!-- /.gear-grid -->
+
+      <!-- Resolution summary -->
+      <div id="resolution-summary">
+        <span class="res-label">System Resolution:</span>
+        <span class="res-value" id="ui-res-arcsec">—</span>
+        <span class="res-label">arcsec/pixel</span>
+        <span class="res-label" style="margin-left:8px;">Detection confidence:</span>
+        <span class="res-value" id="ui-confidence" style="color:#00e5ff;">—</span>
+        <span class="res-badge" id="ui-res-badge">—</span>
+      </div>
+    </div><!-- /#section-gear -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- STEP 2: THE VISUAL MAP                                     -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="section-sky">
+      <div class="section-header cyan">
+        <span class="sh-icon">🌐</span>
+        <span class="sh-title">Step 2 — Your Sky Right Now</span>
+        <span class="sh-subtitle" id="ui-darkness-state">—</span>
+      </div>
+
+      <div id="sky-hud-wrap">
+        <div id="sky-hud-inner">
+          <div id="sky-plot-container">
+            <canvas id="three-canvas"></canvas>
+            <canvas id="eyepiece-canvas"></canvas>
+          </div>
+        </div>
+
+        <!-- HUD: TOP LEFT — visibility status -->
+        <div class="sky-hud-label" id="hud-status">
+          <div class="hud-key">STATUS</div>
+          <div class="hud-val" id="hud-status-val">LOADING</div>
+          <div class="hud-sub" id="hud-status-sub">—</div>
+        </div>
+
+        <!-- HUD: TOP RIGHT — altitude / azimuth -->
+        <div class="sky-hud-label" id="hud-pointing">
+          <div class="hud-key">ALTITUDE</div>
+          <div class="hud-val green" id="hud-alt">—</div>
+          <div class="hud-key" style="margin-top:6px;">DIRECTION</div>
+          <div class="hud-val amber" id="hud-dir">—</div>
+        </div>
+
+        <!-- HUD: BOTTOM LEFT — RA/Dec -->
+        <div class="sky-hud-label" id="hud-radec">
+          <div class="hud-key">RA (J2000)</div>
+          <div class="hud-val" style="font-size:0.72rem;" id="hud-ra">—</div>
+          <div class="hud-key" style="margin-top:5px;">DEC (J2000)</div>
+          <div class="hud-val" style="font-size:0.72rem;" id="hud-dec">—</div>
+        </div>
+
+        <!-- HUD: BOTTOM RIGHT — distance -->
+        <div class="sky-hud-label" id="hud-direction">
+          <div class="hud-key">DISTANCE</div>
+          <div class="hud-val" style="font-size:0.8rem;" id="hud-dist">—</div>
+          <div class="hud-sub" id="hud-dist-sub">—</div>
+        </div>
+
+        <!-- View toggle buttons -->
+        <div class="sky-controls">
+          <button id="eyepiece-toggle-btn" class="sky-ctrl-btn amber-btn">🔭 EYEPIECE</button>
+          <button id="sky-toggle-btn" class="sky-ctrl-btn">🌍 3D VIEW</button>
+        </div>
+      </div><!-- /#sky-hud-wrap -->
+    </div><!-- /#section-sky -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- STEP 3: STATUS VERDICTS                                    -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="section-verdicts">
+      <div class="section-header cyan">
+        <span class="sh-icon">📡</span>
+        <span class="sh-title">Step 3 — Imaging Strategy</span>
+        <span class="sh-subtitle">Human-readable conditions for your session</span>
+      </div>
+
+      <div class="verdict-grid">
+
+        <!-- VISIBILITY verdict -->
+        <div class="verdict-card" id="vc-visibility">
+          <div class="verdict-icon" id="vc-vis-icon">🔭</div>
+          <div class="verdict-title">VISIBILITY</div>
+          <div class="verdict-main" id="vc-vis-main">CALCULATING...</div>
+          <div class="verdict-detail" id="vc-vis-detail">Waiting for telemetry</div>
+        </div>
+
+        <!-- BRIGHTNESS verdict -->
+        <div class="verdict-card" id="vc-brightness">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px;">
+            <div id="mag-big">—</div>
+            <div>
+              <div class="verdict-title">APPARENT MAGNITUDE</div>
+              <div class="verdict-main" id="vc-mag-main">LOADING...</div>
             </div>
-          </span>
-          <button class="panel-collapse-btn" aria-label="Toggle">&#9660;</button>
-        </span>
-      </div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Step 1: View Status.</span> <span class="step-detail">If the bar turns GREEN, Orion is above the horizon now.</span></span>
-        <div style="font-size:0.58rem;color:rgba(121,134,168,0.9);margin-bottom:4px;font-family:'Orbitron',sans-serif;letter-spacing:0.1em;">CURRENT STATUS:</div>
-        <div class="vis-chip" id="ui-vis-chip">LOADING...</div>
-        <div class="obs-telem-cell" style="margin-top:6px;">
-          <div class="obs-telem-label">APPARENT MAGNITUDE</div>
-          <div class="obs-telem-value" id="ui-mag">—</div>
-        </div>
-        <div style="margin-top:12px;">
-          <div class="obs-telem-label">FLIGHT PROGRESS</div>
-          <div id="ui-timeline-track" style="height:4px; background:rgba(74,144,217,0.12); position:relative; margin:8px 0; border-radius:2px;">
-            <div id="ui-timeline-progress" style="position:absolute; left:0; top:0; height:100%; background:#00e5ff; width:0%; border-radius:2px; transition: width 1s linear;"></div>
-            <div style="position:absolute; top:8px; left:0;    font-size:0.33rem; color:rgba(0,229,255,0.5);">HEO</div>
-            <div style="position:absolute; top:8px; left:25%;  font-size:0.33rem; color:rgba(0,229,255,0.5);">PROX</div>
-            <div style="position:absolute; top:8px; left:50%;  font-size:0.33rem; color:rgba(0,229,255,0.5);">TLI</div>
-            <div style="position:absolute; top:8px; left:75%;  font-size:0.33rem; color:rgba(0,229,255,0.5);">FLYBY</div>
           </div>
-          <div id="prox-ops-alert" style="display:none; margin-top:8px; padding:6px; background:rgba(255,167,38,0.12); border:1px solid #ffa726; color:#ffa726; font-size:0.52rem; text-align:center; font-family:'Orbitron',sans-serif; letter-spacing:0.05em; border-radius:2px;">
-            SIGNIFICANT TARGET: PROXIMITY OPERATIONS ACTIVE
+          <div class="verdict-detail" id="vc-mag-detail">Calculating brightness...</div>
+        </div>
+
+        <!-- SKY CONDITIONS -->
+        <div class="verdict-card" id="vc-sky">
+          <div class="verdict-icon" id="vc-sky-icon">🌙</div>
+          <div class="verdict-title">SKY CONDITIONS</div>
+          <div class="verdict-main" id="vc-sky-main">LOADING...</div>
+          <div class="verdict-detail" id="vc-sky-detail">Checking sun & moon...</div>
+        </div>
+
+        <!-- DETECTION POTENTIAL -->
+        <div class="verdict-card" id="vc-detection">
+          <div class="verdict-icon">📊</div>
+          <div class="verdict-title">DETECTION POTENTIAL</div>
+          <div id="detection-bar-wrap">
+            <div id="detection-bar-fill"></div>
+          </div>
+          <div class="detection-label">
+            <span>0% (INVISIBLE)</span>
+            <span id="detection-pct">—</span>
+            <span>100% (CERTAIN)</span>
+          </div>
+          <div class="verdict-detail" id="vc-det-detail" style="margin-top:8px;">
+            Based on pixel span relative to 0.1px detection floor.
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- PANEL 2: LIVE POINTING -->
-    <div class="obs-panel" id="panel-pointing">
-      <div class="obs-panel-title" onclick="togglePanel('panel-pointing')">
-        LIVE POINTING
-        <button class="panel-collapse-btn" aria-label="Toggle">&#9660;</button>
-      </div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Step 2: Aim Telescope.</span> <span class="step-detail">Enter these numbers into your mount to find the ship.</span></span>
-        <div class="obs-telem-cell">
-          <div class="obs-telem-label">ALTITUDE &deg;</div>
-          <div class="obs-telem-value green" id="ui-alt">—</div>
+        <!-- TRACKING -->
+        <div class="verdict-card" id="vc-tracking">
+          <div class="verdict-icon">⏱</div>
+          <div class="verdict-title">TRACKING & EXPOSURE</div>
+          <div class="verdict-main" id="vc-track-main">—</div>
+          <div class="verdict-detail" id="vc-track-detail">—</div>
         </div>
-        <div class="obs-telem-cell">
-          <div class="obs-telem-label">AZIMUTH &deg;</div>
-          <div class="obs-telem-value amber" id="ui-az">—</div>
-        </div>
-        <div style="flex-grow:1;"></div>
-        <div class="m-row"><span class="m-key">RA (J2000)</span><span class="m-val" id="ui-ra">—</span></div>
-        <div class="m-row"><span class="m-key">DEC (J2000)</span><span class="m-val" id="ui-dec">—</span></div>
-      </div>
-    </div>
 
-    <!-- PANEL 3: LOCAL SKY PLANISPHERE -->
-    <div class="obs-panel" id="panel-sky">
-      <div class="obs-panel-title" onclick="togglePanel('panel-sky')">
-        LOCAL SKY &mdash; PLANISPHERE
-        <span class="sky-header-extras">
-          <button id="eyepiece-toggle-btn" style="font-family:'Orbitron',sans-serif;font-size:0.46rem;letter-spacing:0.1em;padding:2px 8px;border-radius:2px;border:1px solid rgba(255,167,38,0.4);color:#ffa726;background:rgba(255,167,38,0.07);cursor:pointer;margin-right:4px;">TELESCOPE VIEW</button>
-          <button id="sky-toggle-btn">3D VIEW</button>
-          <span class="sky-info-wrap">
-            <span class="sky-info-icon" id="sky-info-btn">i</span>
-            <div class="sky-tooltip" id="sky-tooltip">
-              <div class="tt-title">HOW TO READ THIS MAP</div>
-              <div class="tt-row"><strong>CENTER (+):</strong> The point directly above your head (Zenith).</div>
-              <div class="tt-row"><strong>OUTER RING:</strong> Your horizon line.</div>
-              <div class="tt-row"><strong>&#128994; GREEN DOT:</strong> Orion is above the horizon — look here!</div>
-              <div class="tt-row"><strong>&#128308; RED DOT:</strong> Orion is below the horizon.</div>
-              <div class="tt-row"><strong>&#9898; WHITE DOT:</strong> The Moon — use as a landmark.</div>
-              <div class="tt-row"><strong>DASHED LINE:</strong> Path Orion takes over the next 60 minutes.</div>
-            </div>
-          </span>
-          <button class="panel-collapse-btn" aria-label="Toggle">&#9660;</button>
-        </span>
+        <!-- MOON -->
+        <div class="verdict-card" id="vc-moon">
+          <div class="verdict-icon" id="vc-moon-icon">🌕</div>
+          <div class="verdict-title">LUNAR INTERFERENCE</div>
+          <div class="verdict-main" id="vc-moon-main">—</div>
+          <div class="verdict-detail" id="vc-moon-detail">—</div>
+        </div>
+
+      </div><!-- /.verdict-grid -->
+    </div><!-- /#section-verdicts -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- STEP 4: UPCOMING PASSES                                    -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="section-passes">
+      <div class="section-header muted">
+        <span class="sh-icon">📅</span>
+        <span class="sh-title">Step 4 — Upcoming Passes</span>
+        <span class="sh-subtitle">Next dark-sky opportunities from your location</span>
       </div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Step 3: Orientation.</span> <span class="step-detail">Face North. Match the dots on this map to the Moon and the ship in the real sky.</span></span>
-        <div id="sky-plot-container" style="position:relative;">
-          <!-- SVG injected by JS for 2D -->
-          <canvas id="three-canvas" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; border-radius:50%;"></canvas>
-          <canvas id="eyepiece-canvas" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; border-radius:50%;"></canvas>
+      <div id="win-cards">
+        <div style="font-family:'Share Tech Mono',monospace;opacity:0.3;font-size:0.72rem;text-align:center;padding:20px;">
+          SCANNING TELEMETRY...
         </div>
       </div>
     </div>
 
-    <!-- PANEL 4: LOCAL CONDITIONS -->
-    <div class="obs-panel collapsed" id="panel-cond">
-      <div class="obs-panel-title" onclick="togglePanel('panel-cond')">
-        LOCAL CONDITIONS
-        <button class="panel-collapse-btn collapsed" aria-label="Toggle">&#9660;</button>
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- MISSION MAP 3D                                             -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="mission-map-panel">
+      <div id="mission-map-title">
+        MISSION MAP — J2000 TRAJECTORY
+        <span class="map-subtitle">DRAG TO ROTATE · SCROLL TO ZOOM</span>
       </div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Environment Check.</span> <span class="step-detail">Bright Moon or Twilight makes this dim ship harder to find.</span></span>
-        <div class="m-row"><span class="m-key">SUN ALTITUDE</span><span class="m-val" id="ui-sun-alt">—</span></div>
-        <div class="m-row"><span class="m-key">MOON ALTITUDE</span><span class="m-val" id="ui-moon-alt">—</span></div>
-        <div class="m-row"><span class="m-key">MOON PHASE</span><span class="m-val" id="ui-moon-phase">—</span></div>
-        <div class="m-row"><span class="m-key">ORION PHASE ANGLE</span><span class="m-val" id="ui-orion-phase">—</span></div>
-        <div class="m-row" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.04); padding-top:10px;">
-          <span class="m-key">IMAGING THRESHOLD</span>
-          <span class="m-val" style="color:#00e5ff;">-12° (NAUTICAL)</span>
+      <div id="mission-map-canvas-wrap">
+        <canvas id="mission-map-canvas"></canvas>
+        <div id="mission-map-overlay">
+          <div class="map-stat"><div class="map-stat-label">DIST FROM EARTH</div><div class="map-stat-val" id="map-dist">—</div></div>
+          <div class="map-stat"><div class="map-stat-label">VELOCITY</div><div class="map-stat-val" id="map-vel">—</div></div>
+          <div class="map-stat"><div class="map-stat-label">SHADOW STATE</div><div class="map-stat-val" id="map-shadow">—</div></div>
         </div>
       </div>
     </div>
 
-    <!-- PANEL 5: RANGE & ANGULAR MOTION -->
-    <div class="obs-panel collapsed" id="panel-range">
-      <div class="obs-panel-title" onclick="togglePanel('panel-range')">
-        RANGE &amp; ANGULAR MOTION
-        <button class="panel-collapse-btn collapsed" aria-label="Toggle">&#9660;</button>
-      </div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Tracking.</span> <span class="step-detail">Higher speeds mean you need to adjust your telescope more often.</span></span>
-        <div class="m-row"><span class="m-key">TOPOCENTRIC DIST</span><span class="m-val" id="ui-dist">—</span></div>
-        <div class="m-row"><span class="m-key">ANGULAR SPEED</span><span class="m-val" id="ui-rate">—</span></div>
-        <div class="m-row" style="margin-top:auto;"><span class="m-key" style="font-size:0.52rem;opacity:0.5;">* DERIVED FROM 60S INTERPOLATION</span></div>
-      </div>
-    </div>
+  </div><!-- /.guided-page -->
 
-    <!-- PANEL 6: IMAGING ASSIST -->
-    <div class="obs-panel collapsed" id="panel-imaging">
-      <div class="obs-panel-title" onclick="togglePanel('panel-imaging')">
-        IMAGING ASSIST
-        <button class="panel-collapse-btn collapsed" aria-label="Toggle">&#9660;</button>
-      </div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Camera Tune.</span> <span class="step-detail">Set your exposure shorter than the 'Max' limit to avoid a blurry photo.</span></span>
-        <div class="m-row"><span class="m-key">TRACK RATE</span><span class="m-val" id="ui-track-rate">—</span></div>
-        <div style="font-size:0.52rem;color:rgba(121,134,168,0.8);margin-top:-3px;margin-bottom:5px;">arcsec/sec</div>
-        <div class="m-row"><span class="m-key">MAX UNTRACKED EXP</span><span class="m-val" id="ui-max-exp" style="color:#ffa726;">—</span></div>
-        <div style="font-size:0.52rem;color:rgba(121,134,168,0.8);margin-top:-3px;margin-bottom:5px;">seconds (2&Prime; smear limit)</div>
-        <div class="m-row"><span class="m-key">OBSERVATION DIFFICULTY</span><span class="m-val" id="ui-difficulty" style="color:#00e5ff;">—</span></div>
-        <div style="font-size:0.52rem;color:rgba(121,134,168,0.8);margin-top:-3px;margin-bottom:8px;">based on apparent magnitude</div>
-        <div class="obs-telem-cell" style="background:rgba(0,229,255,0.04);border-color:rgba(0,229,255,0.2);">
-          <div class="obs-telem-label">EXPECTED PIXEL SPAN</div>
-          <div class="obs-telem-value" id="ui-pixel-span" style="font-size:1.4rem;color:#00e5ff;">—</div>
-          <div style="font-size:0.43rem;color:rgba(0,229,255,0.55);text-transform:uppercase;margin-top:2px;">estimated pixels on sensor (19m wingspan)</div>
-        </div>
-        <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
-          <div class="obs-telem-cell" style="background:rgba(255,204,0,0.04); border-color:rgba(255,204,0,0.22); margin-bottom:0;">
-            <div class="obs-telem-label" style="color:#ffa726;">REC. EXPOSURE START</div>
-            <div class="obs-telem-value" id="ui-exp-start" style="font-size:1.2rem; color:#ffa726;">—</div>
-            <div style="font-size:0.43rem; color:rgba(255,167,38,0.55); text-transform:uppercase; margin-top:2px;">(transit time - 45 seconds)</div>
-          </div>
-          <button id="btn-export-stellarium" class="loc-btn" style="padding:6px; border-color:rgba(0,229,255,0.4); color:#00e5ff; font-size:0.52rem;">STELLARIUM DATA (.inc)</button>
-        </div>
-      </div>
-    </div>
+  <!-- Hidden legacy elements kept for JS compatibility -->
+  <div id="ui-vis-chip"       style="display:none;"></div>
+  <div id="ui-alt"            style="display:none;"></div>
+  <div id="ui-az"             style="display:none;"></div>
+  <div id="ui-ra"             style="display:none;"></div>
+  <div id="ui-dec"            style="display:none;"></div>
+  <div id="ui-mag"            style="display:none;"></div>
+  <div id="ui-sun-alt"        style="display:none;"></div>
+  <div id="ui-moon-alt"       style="display:none;"></div>
+  <div id="ui-moon-phase"     style="display:none;"></div>
+  <div id="ui-orion-phase"    style="display:none;"></div>
+  <div id="ui-dist"           style="display:none;"></div>
+  <div id="ui-rate"           style="display:none;"></div>
+  <div id="ui-track-rate"     style="display:none;"></div>
+  <div id="ui-max-exp"        style="display:none;"></div>
+  <div id="ui-difficulty"     style="display:none;"></div>
+  <div id="ui-pixel-span"     style="display:none;"></div>
+  <div id="ui-plate-scale"    style="display:none;"></div>
+  <div id="ui-exp-start"      style="display:none;"></div>
+  <div id="ui-timeline-progress" style="display:none;"></div>
+  <div id="prox-ops-alert"    style="display:none;"></div>
+  <div id="heatmap-container" style="display:none;"></div>
+  <div id="manual-loc-form"   style="display:none;"></div>
+  <div id="loc-prime"         style="display:none;"></div>
+  <div id="hero-awaiting"     style="display:none;"></div>
+  <div id="loc-next-pass"     style="display:none;"></div>
+  <div id="sky-fullscreen-overlay" style="display:none;"></div>
+  <div id="sky-fullscreen-inner" style="display:none;"></div>
+  <div id="sky-tooltip"       style="display:none;"></div>
+  <div id="panel-summary"     style="display:none;"></div>
 
-    <!-- PANEL 7: GLOBAL VISIBILITY HEATMAP -->
-    <div class="obs-panel" id="panel-global">
-      <div class="obs-panel-title" onclick="togglePanel('panel-global')">GLOBAL VISIBILITY HEATMAP</div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Global Network.</span> <span class="step-detail">Blue areas show where Orion is currently &gt;15° altitude in total darkness.</span></span>
-        <div id="heatmap-container" style="width:100%; aspect-ratio:2; background:rgba(0,0,0,0.3); border:1px solid rgba(0,229,255,0.15); position:relative; overflow:hidden; border-radius:3px;"></div>
-      </div>
-    </div>
-
-    <!-- PANEL 8: VIEWING WINDOWS -->
-    <div class="obs-panel" id="panel-windows">
-      <div class="obs-panel-title" onclick="togglePanel('panel-windows')">CONTIGUOUS VIEWING WINDOWS</div>
-      <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Scheduling.</span> <span class="step-detail">Next 3 opportunities to see Orion based on your optics and sky conditions.</span></span>
-        <div id="win-cards" style="display:flex; flex-direction:column; gap:8px;">
-          <div style="font-family:'Share Tech Mono',monospace; opacity:0.3; font-size:0.68rem; text-align:center; padding:12px;">SCANNING TELEMETRY...</div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /.obs-grid -->
-
-  <!-- Sky fullscreen overlay (mobile tap-to-enlarge) -->
-  <div id="sky-fullscreen-overlay">
-    <div id="sky-fullscreen-inner">
-      <button id="sky-fullscreen-close" onclick="document.getElementById('sky-fullscreen-overlay').classList.remove('open')">&times;</button>
-    </div>
-  </div>
-
-  <!-- ══ SCRIPTS ════════════════════════════════════════════ -->
+  <!-- ══ SCRIPTS ════════════════════════════════════════════════ -->
   <script src="js/shared.js"></script>
   <script src="js/mission-ephemeris.js"></script>
   <script src="js/mission-events.js"></script>
   <script src="js/orion-model.js"></script>
   <script src="js/observer-astro.js"></script>
   <script src="js/observer-ui.js"></script>
+  <script>
+    // ── HUD glue: wire new gear section inputs to the existing JS ──
+    // The APPLY/CLEAR buttons in #section-gear fire the same handlers
+    // registered in observer-ui.js via #btn-apply-loc and #btn-clear-loc.
+    // Nothing extra needed — IDs match.
 
+    // Sky controls wired inline below once DOM is ready.
+    document.addEventListener('DOMContentLoaded', () => {
+      // Keep the old #btn-apply-loc handler in observer-ui.js working —
+      // it already reads #in-lat / #in-lon which are now in the gear section.
+    });
+  </script>
 </body>
 </html>

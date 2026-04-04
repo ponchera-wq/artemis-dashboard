@@ -775,6 +775,233 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update mission map 3D if running
         updateMissionMap(metSec, o);
+
+        // ── GUIDED HUD & VERDICTS ──────────────────────────────────────
+        updateGuidedHUD(m, o);
+    }
+
+    // ── Guided HUD updater ─────────────────────────────────────────────
+    function azToDirection(az) {
+        const dirs = ['North','NNE','NE','ENE','East','ESE','SE','SSE',
+                      'South','SSW','SW','WSW','West','WNW','NW','NNW'];
+        return dirs[Math.round(az / 22.5) % 16];
+    }
+
+    function updateGuidedHUD(m, or) {
+        const isAbove  = or.altitude > 0;
+        const isSunlit = or.shadowState === 'sunlit' || or.shadowState === 'penumbra';
+        const isVis    = isAbove && isSunlit;
+
+        // ── HUD status chip ──────────────────────────────────────────
+        const hudStatusVal = document.getElementById('hud-status-val');
+        const hudStatusSub = document.getElementById('hud-status-sub');
+        if (hudStatusVal) {
+            if (!isAbove) {
+                hudStatusVal.textContent = 'BELOW HORIZON';
+                hudStatusVal.className = 'hud-val red';
+                if (hudStatusSub) { hudStatusSub.textContent = `${Math.abs(or.altitude).toFixed(1)}° below`; }
+            } else if (!isSunlit) {
+                hudStatusVal.textContent = 'IN SHADOW';
+                hudStatusVal.className = 'hud-val amber';
+                if (hudStatusSub) { hudStatusSub.textContent = or.shadowState.toUpperCase(); }
+            } else {
+                hudStatusVal.textContent = 'VISIBLE NOW';
+                hudStatusVal.className = 'hud-val green';
+                if (hudStatusSub) { hudStatusSub.textContent = `${or.altitude.toFixed(1)}° altitude`; }
+            }
+        }
+
+        // ── HUD pointing ──────────────────────────────────────────────
+        const hudAlt = document.getElementById('hud-alt');
+        const hudDir = document.getElementById('hud-dir');
+        if (hudAlt) hudAlt.textContent = or.altitude.toFixed(1) + '°';
+        if (hudDir && or.azimuth != null) {
+            const dir = azToDirection(or.azimuth);
+            hudDir.textContent = `${dir} (${or.azimuth.toFixed(0)}°)`;
+        }
+
+        // ── HUD RA/Dec ────────────────────────────────────────────────
+        const hudRa  = document.getElementById('hud-ra');
+        const hudDec = document.getElementById('hud-dec');
+        if (hudRa)  hudRa.textContent  = hoursToHms(or.raHours);
+        if (hudDec) hudDec.textContent = degToDms(or.decDeg);
+
+        // ── HUD Distance ──────────────────────────────────────────────
+        const hudDist    = document.getElementById('hud-dist');
+        const hudDistSub = document.getElementById('hud-dist-sub');
+        if (hudDist && or.distanceKm) {
+            const ld = or.distanceKm / 384400;
+            hudDist.textContent = Math.round(or.distanceKm).toLocaleString() + ' km';
+            if (hudDistSub) hudDistSub.textContent = ld.toFixed(3) + ' lunar distances';
+        }
+
+        // ── Resolution summary ────────────────────────────────────────
+        const resEl    = document.getElementById('ui-res-arcsec');
+        const badgeEl  = document.getElementById('ui-res-badge');
+        const confEl   = document.getElementById('ui-confidence');
+        if (or.angularSpeedDegMin != null && confidenceDisp) {
+            const conf = window.ObserverAstro.calculateDetectionConfidence(or.pixelSpan);
+            if (confEl)   { confEl.textContent = conf; confEl.style.color = conf === 'High' ? '#00e676' : (conf === 'Moderate' ? '#ffa726' : '#ef5350'); }
+        }
+        if (plateScaleDisp && resEl) resEl.textContent = plateScaleDisp.textContent || '—';
+        if (badgeEl && confidenceDisp) {
+            const confText = confidenceDisp.textContent || '';
+            badgeEl.textContent = confText.toUpperCase();
+            badgeEl.className = 'res-badge ' + (confText === 'High' ? 'optimal' : confText === 'Moderate' ? 'good' : 'poor');
+        }
+
+        // ── Verdict: VISIBILITY ───────────────────────────────────────
+        const vcVisMain   = document.getElementById('vc-vis-main');
+        const vcVisDet    = document.getElementById('vc-vis-detail');
+        const vcVisIcon   = document.getElementById('vc-vis-icon');
+        const vcVisCard   = document.getElementById('vc-visibility');
+        if (vcVisMain) {
+            if (!isAbove) {
+                vcVisMain.textContent = 'BELOW THE HORIZON';
+                vcVisMain.className   = 'verdict-main red';
+                if (vcVisDet)  vcVisDet.textContent  = `Set by ${Math.abs(or.altitude).toFixed(1)}°. Use the pass schedule below for the next opportunity.`;
+                if (vcVisIcon) vcVisIcon.textContent  = '🌑';
+                if (vcVisCard) vcVisCard.className     = 'verdict-card red-card';
+            } else if (or.shadowState === 'umbra') {
+                vcVisMain.textContent = 'IN SHADOW — INVISIBLE';
+                vcVisMain.className   = 'verdict-main red';
+                if (vcVisDet)  vcVisDet.textContent  = 'Orion is in Earth\'s umbra. No sunlight is hitting the spacecraft — it cannot be seen optically.';
+                if (vcVisIcon) vcVisIcon.textContent  = '🌑';
+                if (vcVisCard) vcVisCard.className     = 'verdict-card red-card';
+            } else {
+                vcVisMain.textContent = 'ABOVE HORIZON — LOOK NOW';
+                vcVisMain.className   = 'verdict-main green';
+                if (vcVisDet)  vcVisDet.textContent  = `Currently ${or.altitude.toFixed(1)}° above your horizon. Face ${azToDirection(or.azimuth)} and point your telescope there.`;
+                if (vcVisIcon) vcVisIcon.textContent  = '✅';
+                if (vcVisCard) vcVisCard.className     = 'verdict-card green-card';
+            }
+        }
+
+        // ── Verdict: MAGNITUDE ────────────────────────────────────────
+        const magBig    = document.getElementById('mag-big');
+        const vcMagMain = document.getElementById('vc-mag-main');
+        const vcMagDet  = document.getElementById('vc-mag-detail');
+        const vcBright  = document.getElementById('vc-brightness');
+        if (magBig && or.magnitude != null) {
+            const mag = or.magnitude;
+            magBig.textContent = mag.toFixed(1);
+            let magMain, magDet, magClass, cardClass;
+            if (mag < 7) {
+                magMain = 'NAKED EYE VISIBLE'; magClass = 'green'; cardClass = 'green-card';
+                magDet  = `Bright enough to see without any optics on a dark night. Binoculars will show it easily.`;
+            } else if (mag < 11) {
+                magMain = 'BINOCULARS NEEDED'; magClass = 'amber'; cardClass = 'amber-card';
+                magDet  = `Too faint for naked eye but visible with 7×50 binoculars on a dark night.`;
+            } else if (mag < 13) {
+                magMain = 'SMALL TELESCOPE NEEDED'; magClass = 'amber'; cardClass = 'amber-card';
+                magDet  = `Requires a 100–200mm telescope in dark skies. Use short exposures.`;
+            } else {
+                magMain = 'OBJECT IS FAINT (Requires Telescope)'; magClass = 'red'; cardClass = 'amber-card';
+                magDet  = `Magnitude ${mag.toFixed(1)} — requires a 200mm+ telescope with camera. Camera stacking recommended.`;
+            }
+            if (vcMagMain) { vcMagMain.textContent = magMain; vcMagMain.className = 'verdict-main ' + magClass; }
+            if (vcMagDet)  vcMagDet.textContent  = magDet;
+            if (vcBright)  vcBright.className    = 'verdict-card ' + cardClass;
+            magBig.style.color = magClass === 'green' ? '#00e676' : magClass === 'amber' ? '#ffcc00' : '#ef5350';
+        }
+
+        // ── Verdict: SKY CONDITIONS ───────────────────────────────────
+        const vcSkyMain = document.getElementById('vc-sky-main');
+        const vcSkyDet  = document.getElementById('vc-sky-detail');
+        const vcSkyIcon = document.getElementById('vc-sky-icon');
+        const vcSkyCard = document.getElementById('vc-sky');
+        if (vcSkyMain && m.sun) {
+            const sunAlt = m.sun.altitude;
+            let skyMain, skyDet, skyClass, skyIcon, skyCard;
+            if (sunAlt > -0.83) {
+                skyMain = 'SKY TOO BRIGHT (Wait for Night)'; skyClass = 'red'; skyCard = 'red-card';
+                skyIcon = '☀️'; skyDet = `Sun is ${sunAlt.toFixed(1)}° above horizon. At least -12° is needed for useful imaging.`;
+            } else if (sunAlt > -12) {
+                skyMain = 'TWILIGHT — LIMITED IMAGING'; skyClass = 'amber'; skyCard = 'amber-card';
+                skyIcon = '🌅'; skyDet = `Astronomical twilight. Sky background is brightening — short exposures only. Wait ${Math.abs(sunAlt - (-18)).toFixed(0)} min more for full dark.`;
+            } else {
+                skyMain = 'FULL ASTRONOMICAL DARK'; skyClass = 'green'; skyCard = 'green-card';
+                skyIcon = '🌑'; skyDet = `Sun is ${Math.abs(sunAlt).toFixed(1)}° below horizon — excellent dark sky conditions for imaging.`;
+            }
+            if (vcSkyMain) { vcSkyMain.textContent = skyMain; vcSkyMain.className = 'verdict-main ' + skyClass; }
+            if (vcSkyDet)  vcSkyDet.textContent  = skyDet;
+            if (vcSkyIcon) vcSkyIcon.textContent  = skyIcon;
+            if (vcSkyCard) vcSkyCard.className    = 'verdict-card ' + skyCard;
+        }
+
+        // ── Verdict: DETECTION POTENTIAL ─────────────────────────────
+        const barFill   = document.getElementById('detection-bar-fill');
+        const detPct    = document.getElementById('detection-pct');
+        const vcDetDet  = document.getElementById('vc-det-detail');
+        if (barFill && or.pixelSpan != null) {
+            // 0.1px floor → 100% at 2.0px span
+            const raw = Math.min(100, Math.max(0, (or.pixelSpan / 2.0) * 100));
+            const pct = or.pixelSpan < 0.1 ? 0 : raw;
+            barFill.style.width = pct + '%';
+            if (detPct) detPct.textContent = pct.toFixed(0) + '%';
+            if (barFill) {
+                barFill.style.background = pct < 20
+                    ? 'linear-gradient(90deg,#ef5350,#ffa726)'
+                    : pct < 60
+                    ? 'linear-gradient(90deg,#ffa726,#ffcc00)'
+                    : 'linear-gradient(90deg,#00e5ff,#00e676)';
+            }
+            if (vcDetDet) {
+                if (or.pixelSpan < 0.1) {
+                    vcDetDet.textContent = `Below the 0.1px detection floor — spacecraft not resolvable with current setup at this range.`;
+                } else {
+                    vcDetDet.textContent = `Estimated ${or.pixelSpan.toFixed(2)}px span on sensor (19m wingspan at ${Math.round(or.distanceKm).toLocaleString()} km).`;
+                }
+            }
+        }
+
+        // ── Verdict: TRACKING ─────────────────────────────────────────
+        const vcTrackMain = document.getElementById('vc-track-main');
+        const vcTrackDet  = document.getElementById('vc-track-detail');
+        if (vcTrackMain && or.angularSpeedDegMin != null) {
+            const img = window.ObserverAstro.calculateImagingAssistance(or.angularSpeedDegMin, or.magnitude);
+            const maxExp = img.maxExpSec;
+            const plan   = parseFloat(document.getElementById('in-planned-exp')?.value) || 30;
+            if (maxExp != null) {
+                const tooLong = plan > maxExp;
+                vcTrackMain.textContent  = tooLong ? `EXPOSURE TOO LONG — Reduce to ${maxExp.toFixed(0)}s` : `${maxExp.toFixed(0)}s MAX UNTRACKED EXPOSURE`;
+                vcTrackMain.className    = 'verdict-main ' + (tooLong ? 'red' : 'green');
+                if (vcTrackDet) vcTrackDet.textContent = `Angular speed: ${img.trackRateArcsecSec.toFixed(2)} arcsec/sec. Your planned ${plan}s exposure ${tooLong ? 'will blur — reduce it.' : 'is within the smear limit.'}`;
+            } else {
+                vcTrackMain.textContent = 'TRACKING DATA UNAVAILABLE';
+                vcTrackMain.className   = 'verdict-main amber';
+            }
+        }
+
+        // ── Verdict: MOON ─────────────────────────────────────────────
+        const vcMoonMain = document.getElementById('vc-moon-main');
+        const vcMoonDet  = document.getElementById('vc-moon-detail');
+        const vcMoonIcon = document.getElementById('vc-moon-icon');
+        if (vcMoonMain && m.moon) {
+            const moonPct  = m.moon.phaseFraction * 100;
+            const moonAlt  = m.moon.altitude;
+            let moonMain, moonDet, moonIcon;
+            if (moonPct > 85 && moonAlt > 0) {
+                moonMain = `FULL MOON INTERFERENCE`; moonIcon = '🌕';
+                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated and ${moonAlt.toFixed(0)}° above horizon — will significantly wash out faint detail.`;
+            } else if (moonPct > 50 && moonAlt > 0) {
+                moonMain = `PARTIAL MOON — SOME IMPACT`; moonIcon = '🌔';
+                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated at ${moonAlt.toFixed(0)}°. Keep Orion away from the Moon in frame.`;
+            } else if (moonAlt <= 0) {
+                moonMain = `MOON BELOW HORIZON — IDEAL`; moonIcon = '🌑';
+                moonDet  = `No lunar interference. Dark sky conditions currently favourable.`;
+            } else {
+                moonMain = `CRESCENT MOON — MINIMAL IMPACT`; moonIcon = '🌙';
+                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated. Low interference for tonight's session.`;
+            }
+            vcMoonMain.textContent = moonMain; vcMoonMain.className = 'verdict-main cyan';
+            if (vcMoonDet)  vcMoonDet.textContent  = moonDet;
+            if (vcMoonIcon) vcMoonIcon.textContent  = moonIcon;
+        }
+
+        // ── Darkness state sub-header ─────────────────────────────────
+        const darkEl = document.getElementById('ui-darkness-state');
+        // already updated by existing tick code; just styled sub-header reads it
     }
 
     // Call interval and initial kickoff
