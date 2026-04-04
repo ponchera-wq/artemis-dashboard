@@ -365,12 +365,27 @@
         <div class="gear-group">
           <div class="gear-label">📍 Observer Location</div>
           <div class="loc-inline">
-            <input type="number" id="in-lat" placeholder="Latitude"  step="any" value="-35.4014">
-            <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817">
-            <button id="btn-apply-loc">APPLY</button>
-            <button id="btn-clear-loc">CLEAR</button>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div style="font-size:0.48rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;">LATITUDE</div>
+              <input type="number" id="in-lat" placeholder="Latitude"  step="any" value="-35.4014">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div style="font-size:0.48rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;">LONGITUDE</div>
+              <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div style="font-size:0.48rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;">ELEVATION (m)</div>
+              <input type="number" id="in-elev" placeholder="Elev m" step="1" value="549" style="width:80px;">
+            </div>
+            <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end;">
+              <button id="btn-apply-loc">APPLY</button>
+              <button id="btn-clear-loc">CLEAR</button>
+            </div>
           </div>
           <div class="gear-loc-name" id="ui-loc-status">CANBERRA DSN (TIDBINBILLA)</div>
+          <div id="elev-badge" style="display:none;margin-top:5px;font-family:'Orbitron',sans-serif;font-size:0.42rem;letter-spacing:0.14em;padding:3px 10px;border-radius:3px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.3);color:#00e5ff;width:fit-content;">
+            🔭 THIN ATMOSPHERE — HIGH TRANSPARENCY
+          </div>
         </div>
 
         <!-- Optics -->

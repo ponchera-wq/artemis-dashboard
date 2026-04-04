@@ -379,26 +379,87 @@ document.addEventListener("DOMContentLoaded", () => {
         if (heroAwaiting) heroAwaiting.style.display = 'none';
     }
 
+    // ── Elevation API fetch (open-elevation.com) ───────────────────────
+    async function fetchElevation(lat, lon) {
+        try {
+            const res = await fetch(`https://api.open-elevation.com/api/v1/lookup?locations=${lat.toFixed(6)},${lon.toFixed(6)}`);
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.results?.[0]?.elevation ?? null;
+        } catch {
+            return null;
+        }
+    }
+
+    // ── Apply location with elevation ────────────────────────────────────
+    async function applyLocation(lat, lon, elevOverride) {
+        obsLat = lat;
+        obsLon = lon;
+        isReady = true;
+        // Update input fields to reflect the applied values
+        const inLatEl  = document.getElementById('in-lat');
+        const inLonEl  = document.getElementById('in-lon');
+        const inElevEl = document.getElementById('in-elev');
+        if (inLatEl)  inLatEl.value  = lat.toFixed(6);
+        if (inLonEl)  inLonEl.value  = lon.toFixed(6);
+        // Show syncing if we need to fetch elevation
+        const statusEl = document.getElementById('ui-loc-status');
+        if (elevOverride != null) {
+            obsAlt = elevOverride;
+            if (inElevEl) inElevEl.value = Math.round(elevOverride);
+        } else {
+            if (statusEl) { statusEl.textContent = 'SYNCING ELEVATION...'; statusEl.style.color = '#ffa726'; }
+            const elev = await fetchElevation(lat, lon);
+            if (elev != null) {
+                obsAlt = elev;
+                if (inElevEl) inElevEl.value = Math.round(elev);
+            }
+        }
+        // Update thin-atmosphere badge
+        updateElevBadge(obsAlt);
+        // Trigger immediate redraw
+        coverageCountdown = 1;
+        windowScanCountdown = 0;
+        // Update location label
+        setLocationResolved(`LAT: ${lat.toFixed(4)}° / LON: ${lon.toFixed(4)}° / ${Math.round(obsAlt)}m`);
+        const place = await getPlaceName(lat, lon);
+        if (place) {
+            setLocationResolved(`${place}  (${lat.toFixed(2)}°, ${lon.toFixed(2)}°) ${Math.round(obsAlt)}m`);
+        }
+    }
+
+    function updateElevBadge(alt) {
+        const badge = document.getElementById('elev-badge');
+        if (badge) badge.style.display = (alt > 1000) ? 'block' : 'none';
+    }
+    // set initial badge state
+    updateElevBadge(obsAlt);
+
+    // ── Wire in-elev input to obsAlt live ───────────────────────────────
+    const inElevEl = document.getElementById('in-elev');
+    if (inElevEl) {
+        inElevEl.addEventListener('change', () => {
+            const v = parseFloat(inElevEl.value);
+            if (!isNaN(v)) { obsAlt = v; updateElevBadge(v); }
+        });
+    }
+
     // Manual Entry bind
     document.getElementById('btn-apply-loc').addEventListener('click', async () => {
-        const latVal = parseFloat(document.getElementById('in-lat').value);
-        const lonVal = parseFloat(document.getElementById('in-lon').value);
+        const latVal  = parseFloat(document.getElementById('in-lat').value);
+        const lonVal  = parseFloat(document.getElementById('in-lon').value);
+        const elevVal = parseFloat(document.getElementById('in-elev')?.value);
         if (!isNaN(latVal) && !isNaN(lonVal)) {
-            obsLat = latVal;
-            obsLon = lonVal;
-            manForm.style.display = "none";
-            isReady = true;
-            setLocationResolved(`LAT: ${obsLat.toFixed(4)}° / LON: ${obsLon.toFixed(4)}°`);
-            const place = await getPlaceName(obsLat, obsLon);
-            if (place) {
-                setLocationResolved(`${place}  (${obsLat.toFixed(2)}°, ${obsLon.toFixed(2)}°)`);
-            }
+            const elevOverride = !isNaN(elevVal) ? elevVal : null;
+            await applyLocation(latVal, lonVal, elevOverride);
         }
     });
 
     document.getElementById('btn-clear-loc').addEventListener('click', () => {
-        document.getElementById('in-lat').value = '';
-        document.getElementById('in-lon').value = '';
+        document.getElementById('in-lat').value  = '';
+        document.getElementById('in-lon').value  = '';
+        const inElevClear = document.getElementById('in-elev');
+        if (inElevClear) inElevClear.value = '';
         obsLat = null;
         obsLon = null;
         isReady = false;
@@ -1462,6 +1523,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Kick off mission map after short delay (textures need DOM to be ready)
     setTimeout(initMissionMap, 300);
+
+    // ── Coverage Map Click-to-Teleport ────────────────────────────────
+    (function wireCoverageClick() {
+        const cvs = document.getElementById('coverage-canvas');
+        if (!cvs) return;
+        cvs.style.cursor = 'crosshair';
+        cvs.addEventListener('click', async (e) => {
+            const rect = cvs.getBoundingClientRect();
+            const px = e.clientX - rect.left;
+            const py = e.clientY - rect.top;
+            const W  = rect.width;
+            const H  = rect.height;
+            if (W === 0 || H === 0) return;
+            // Equirectangular inverse: pixel → decimal lat/lon
+            const lon = (px / W) * 360 - 180;
+            const lat = 90 - (py / H) * 180;
+            const clampedLat = Math.max(-90, Math.min(90, Math.round(lat * 10000) / 10000));
+            const clampedLon = Math.max(-180, Math.min(180, Math.round(lon * 10000) / 10000));
+            // Show syncing state immediately
+            const statusEl = document.getElementById('ui-loc-status');
+            if (statusEl) { statusEl.textContent = 'SYNCING...'; statusEl.style.color = '#ffa726'; }
+            // Fetch elevation + apply
+            await applyLocation(clampedLat, clampedLon, null);
+        });
+    })();
 
     // ── 3D Isometric Sky Dome ─────────────────────────────────────────
     function draw3DDome(o, alt, az, moonAlt, moonAz) {
