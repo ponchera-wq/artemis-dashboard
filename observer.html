@@ -193,7 +193,55 @@
       box-shadow: 0 0 20px rgba(0,230,118,0.08);
     }
 
-    /* ── Location name truncation ─────────────────────────── */
+    /* ── Sky panel extras: info tooltip + 3D toggle ─────── */
+    .sky-header-extras {
+      margin-left: auto; display: flex; align-items: center; gap: 8px;
+    }
+    /* 3D/2D toggle */
+    #sky-toggle-btn {
+      font-family: 'Orbitron', sans-serif; font-size: 0.48rem;
+      letter-spacing: 0.1em; padding: 2px 8px; border-radius: 2px;
+      border: 1px solid rgba(0,229,255,0.4); color: #00e5ff;
+      background: rgba(0,229,255,0.08); cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+    #sky-toggle-btn:hover { background: rgba(0,229,255,0.2); }
+    #sky-toggle-btn.active { background: rgba(0,229,255,0.25); color: #fff; }
+    /* (i) info icon */
+    .sky-info-wrap { position: relative; display: flex; align-items: center; }
+    .sky-info-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1px solid rgba(0,229,255,0.35); color: rgba(0,229,255,0.6);
+      font-size: 0.5rem; font-family: 'Orbitron', sans-serif;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
+      flex-shrink: 0;
+    }
+    .sky-info-icon:hover, .sky-info-icon.open { border-color: rgba(0,229,255,0.8); color: #00e5ff; }
+    /* Tooltip box */
+    .sky-tooltip {
+      display: none; position: absolute;
+      top: calc(100% + 8px); right: 0; z-index: 200;
+      width: 260px;
+      background: rgba(5,10,25,0.97);
+      border: 1px solid rgba(0,229,255,0.45);
+      border-radius: 5px;
+      box-shadow: 0 0 24px rgba(0,229,255,0.12), 0 8px 28px rgba(0,0,0,0.7);
+      padding: 12px 14px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      line-height: 1.55;
+      color: rgba(255,255,255,0.75);
+    }
+    .sky-tooltip.open { display: block; }
+    .sky-tooltip .tt-title {
+      font-family: 'Orbitron', sans-serif; font-size: 0.5rem;
+      letter-spacing: 0.14em; color: #00e5ff; margin-bottom: 8px;
+      padding-bottom: 5px; border-bottom: 1px solid rgba(0,229,255,0.2);
+    }
+    .sky-tooltip .tt-row { margin-bottom: 5px; }
+    .sky-tooltip .tt-row strong { color: #ffcc00; }
+
     #ui-loc-status {
       max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
@@ -320,7 +368,24 @@
 
     <!-- PANEL 3: SKY PLOT -->
     <div class="obs-panel" id="panel-sky">
-      <div class="obs-panel-title">LOCAL SKY &mdash; PLANISPHERE</div>
+      <div class="obs-panel-title">
+        LOCAL SKY &mdash; PLANISPHERE
+        <span class="sky-header-extras">
+          <button id="sky-toggle-btn">3D VIEW</button>
+          <span class="sky-info-wrap">
+            <span class="sky-info-icon" id="sky-info-btn">i</span>
+            <div class="sky-tooltip" id="sky-tooltip">
+              <div class="tt-title">HOW TO READ THIS MAP</div>
+              <div class="tt-row"><strong>CENTER (+):</strong> The point directly above your head (Zenith).</div>
+              <div class="tt-row"><strong>OUTER RING:</strong> Your horizon line. Objects cross this to become visible.</div>
+              <div class="tt-row"><strong>&#128994; GREEN DOT:</strong> Orion is above the horizon &mdash; look here!</div>
+              <div class="tt-row"><strong>&#128308; RED DOT:</strong> Orion is below the horizon (other side of Earth).</div>
+              <div class="tt-row"><strong>&#9898; WHITE DOT:</strong> The Moon &mdash; use as a landmark.</div>
+              <div class="tt-row"><strong>DASHED LINE:</strong> Path Orion will take over the next 60 minutes.</div>
+            </div>
+          </span>
+        </span>
+      </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Step 3: Orientation.</span> <span class="step-detail">Face North. Match the dots on this map to the Moon and the ship in the real sky.</span></span>
         <div id="sky-plot-container"><!-- SVG injected by JS --></div>
