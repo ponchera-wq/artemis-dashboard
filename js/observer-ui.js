@@ -320,13 +320,13 @@ document.addEventListener("DOMContentLoaded", () => {
         
         // Sun elevation state
         if (m.sun.altitude > 0) {
-            darkState.textContent = "DAYLIGHT (NOT VISIBLE)";
-            darkState.style.color = "#7986a8";
+            darkState.textContent = "DAYLIGHT — NOT VISIBLE";
+            darkState.style.color = "#ff5050";
         } else if (m.sun.altitude > -18) {
-            darkState.textContent = "TWILIGHT";
-            darkState.style.color = "#ffb74d";
+            darkState.textContent = "TWILIGHT — NOT DARK";
+            darkState.style.color = "#ff5050";
         } else {
-            darkState.textContent = "TRUE NIGHT";
+            darkState.textContent = "TRUE NIGHT ✓";
             darkState.style.color = "#00e676";
         }
 
