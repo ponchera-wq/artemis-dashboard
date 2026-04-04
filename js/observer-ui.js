@@ -180,49 +180,51 @@ document.addEventListener("DOMContentLoaded", () => {
         return `${Math.floor(mins / 60)}h ${mins % 60}m`;
     }
 
-    // Summary panel DOM refs
+    // Location bar Next Pass slot
+    const locNextPass    = document.getElementById('loc-next-pass');
     const summaryPanel   = document.getElementById('panel-summary');
-    const summaryCard    = document.getElementById('summary-next-pass');
-    const uiNextTime     = document.getElementById('ui-next-time');
-    const uiNextPeak     = document.getElementById('ui-next-peak');
-    const uiNextMag      = document.getElementById('ui-next-mag');
-    const uiNextDur      = document.getElementById('ui-next-dur');
 
     function renderWindows(wins) {
-        // Update the summary panel's Next Pass card
-        if (summaryCard) {
-            if (!wins || wins.length === 0) {
-                summaryCard.className = 'next-pass-card no-pass';
-                if (uiNextTime) uiNextTime.textContent = 'None in 24h';
-                if (uiNextPeak) uiNextPeak.textContent = '—';
-                if (uiNextMag)  uiNextMag.textContent  = 'Mag —';
-                if (uiNextDur)  uiNextDur.textContent  = '—';
-            } else {
-                const w = wins[0];
-                const durMs  = w.endMs - w.startMs;
-                const magStr = w.peakMag != null ? `Mag ${w.peakMag.toFixed(1)}` : 'Mag —';
-                summaryCard.className = 'next-pass-card';
-                if (uiNextTime) uiNextTime.textContent = fmtLocalTime(w.startMs);
-                if (uiNextPeak) uiNextPeak.textContent = `⬆ peak ${w.peakAlt.toFixed(1)}°`;
-                if (uiNextMag)  uiNextMag.textContent  = `✦ ${magStr}`;
-                if (uiNextDur)  uiNextDur.textContent  = fmtDuration(durMs);
-            }
+        if (!locNextPass) return;
+        if (!wins || wins.length === 0) {
+            locNextPass.textContent = '';
+            return;
         }
+        const w = wins[0];
+        const nowMs = Date.now();
+        const diffMs = w.startMs - nowMs;
+        const inHours = Math.floor(diffMs / 3600000);
+        const inMins  = Math.floor((diffMs % 3600000) / 60000);
+        const countStr = diffMs > 0 ? ` (in ${inHours > 0 ? inHours + 'h ' : ''}${inMins}m)` : ' (NOW)';
+        locNextPass.textContent = `NEXT PASS: ${fmtLocalTime(w.startMs)}${countStr} • Peak ${w.peakAlt.toFixed(0)}°`;
     }
 
-    // SVG Sky Plot Drawer — with 60-minute projected path, Moon, and labels
+    // SVG Sky Plot — Planisphere with dashed rings, degree labels, zenith marker
     function drawPlot(alt, az, metSec, nowMs, moonAlt, moonAz) {
-        const R = 45; // horizon ring radius in SVG units
-        let svg = `<svg viewBox="0 0 100 100" style="width:100%;height:100%;font-family:'Share Tech Mono', monospace;">
-            <circle cx="50" cy="50" r="${R}" fill="none" stroke="rgba(74,144,217,0.35)" stroke-width="0.7"/>
-            <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(74,144,217,0.2)" stroke-width="0.5"/>
-            <circle cx="50" cy="50" r="15" fill="none" stroke="rgba(74,144,217,0.2)" stroke-width="0.5"/>
-            <line x1="50" y1="3" x2="50" y2="97" stroke="rgba(74,144,217,0.2)" stroke-width="0.5"/>
-            <line x1="3" y1="50" x2="97" y2="50" stroke="rgba(74,144,217,0.2)" stroke-width="0.5"/>
-            <text x="50" y="2.5" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="middle" dominant-baseline="hanging">N</text>
-            <text x="98" y="52" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="end" dominant-baseline="middle">E</text>
-            <text x="50" y="98" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="middle" dominant-baseline="auto">S</text>
-            <text x="2" y="52" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="start" dominant-baseline="middle">W</text>
+        const R = 45;
+        // Ring radii represent:  R=45 → 0° horizon, R=30 → 30° alt, R=15 → 60° alt, centre = 90° zenith
+        let svg = `<svg viewBox="0 0 100 100" style="width:100%;height:100%;font-family:'Share Tech Mono',monospace;">
+            <!-- Horizon ring (solid) -->
+            <circle cx="50" cy="50" r="${R}" fill="none" stroke="rgba(0,229,255,0.35)" stroke-width="0.8"/>
+            <!-- 30° altitude ring (dashed) -->
+            <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(0,229,255,0.2)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <!-- 60° altitude ring (dashed) -->
+            <circle cx="50" cy="50" r="15" fill="none" stroke="rgba(0,229,255,0.2)" stroke-width="0.5" stroke-dasharray="2 4"/>
+            <!-- Crosshairs -->
+            <line x1="50" y1="3" x2="50" y2="97" stroke="rgba(0,229,255,0.15)" stroke-width="0.4"/>
+            <line x1="3" y1="50" x2="97" y2="50" stroke="rgba(0,229,255,0.15)" stroke-width="0.4"/>
+            <!-- Cardinal labels -->
+            <text x="50" y="2" font-size="5" fill="#00e5ff" font-weight="bold" text-anchor="middle" dominant-baseline="hanging">N</text>
+            <text x="98" y="52" font-size="5" fill="#00e5ff" font-weight="bold" text-anchor="end" dominant-baseline="middle">E</text>
+            <text x="50" y="99" font-size="5" fill="#00e5ff" font-weight="bold" text-anchor="middle" dominant-baseline="auto">S</text>
+            <text x="2" y="52" font-size="5" fill="#00e5ff" font-weight="bold" text-anchor="start" dominant-baseline="middle">W</text>
+            <!-- Degree labels at 30° and 60° rings (NE diagonal) -->
+            <text x="71.2" y="28.8" font-size="2.8" fill="rgba(0,229,255,0.45)" text-anchor="start">30°</text>
+            <text x="60.6" y="39.4" font-size="2.8" fill="rgba(0,229,255,0.45)" text-anchor="start">60°</text>
+            <!-- Zenith crosshair + label -->
+            <line x1="48" y1="50" x2="52" y2="50" stroke="rgba(0,229,255,0.5)" stroke-width="0.6"/>
+            <line x1="50" y1="48" x2="50" y2="52" stroke="rgba(0,229,255,0.5)" stroke-width="0.6"/>
+            <text x="52" y="49" font-size="2.2" fill="rgba(0,229,255,0.4)" text-anchor="start">ZENITH</text>
         `;
 
         // ── Legend (top-right corner of plot) ───────────────────────────────────
@@ -344,7 +346,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Paint Pointing & Mag
         magDisp.textContent = o.magnitude != null ? o.magnitude.toFixed(1) : "—";
-        magDisp.className = o.magnitude == null || !isVis ? "m-primary dim" : "m-primary";
 
         altDisp.textContent = o.altitude.toFixed(2) + "°";
         azDisp.textContent = o.azimuth.toFixed(2) + "°";
