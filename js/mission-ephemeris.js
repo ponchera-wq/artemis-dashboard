@@ -82,6 +82,8 @@
       speedKms: lerpScalar(pLo.speedKms, pHi.speedKms, f),
       metSec: metSec,
       inDataRange: true,
+      earthSign: (pHi.distEarthKm >= pLo.distEarthKm) ? '+' : '-',
+      moonSign: (pHi.distMoonKm >= pLo.distMoonKm) ? '+' : '-'
     };
   }
 

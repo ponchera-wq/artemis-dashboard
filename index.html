@@ -120,69 +120,83 @@ display:flex;align-items:center;gap:3px;">
       <div class="phase-bar" id="phase-bar"></div>
     </div>
 
-    <!-- Distance from Earth -->
-    <div class="tb-telem" id="telem-earth">
-      <div class="telem-label">🌍 DISTANCE FROM EARTH</div>
-      <div class="telem-val-row">
-        <div class="telem-value" id="tv-earth">—</div>
-        <div class="telem-unit" id="tu-earth">KM</div>
-      </div>
-      <div id="earth-annotation" style="font-family:var(--font-mono);font-size:0.36rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
-      <div class="stat-sub" id="stat-earth-analogy"></div>
-      <div class="earth-extras">
-        <div class="earth-extra-row">
-          <span class="earth-extra-lbl">TOTAL</span>
-          <span class="earth-extra-val" id="stat-odometer">—</span>
+    <!-- Position Stacked (Earth & Moon) -->
+    <div class="tb-telem" id="telem-position" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:6px; padding: 2px 4px;">
+      <div id="telem-earth" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px;">🌍 DISTANCE FROM EARTH</div>
+        <div class="telem-val-row" style="align-items:baseline;">
+          <div class="telem-value" id="tv-earth" style="font-size:0.95rem; line-height:1;">—</div>
+          <div class="telem-unit" id="tu-earth" style="font-size:0.45rem; margin-left:4px;">KM</div>
         </div>
-        <div class="earth-extra-sub" id="stat-odometer-sub"></div>
-        <div class="earth-extra-row apollo-tint">
-          <span class="earth-extra-lbl">APOLLO 13</span>
-          <span class="earth-extra-val" id="stat-apollo13">—</span>
+        <div class="stat-sub" id="stat-earth-analogy" style="font-size:0.4rem;"></div>
+      </div>
+      
+      <div style="height:1px; width:60%; background:var(--border); margin:0 auto;"></div>
+
+      <div id="telem-moon" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px;">🌕 DISTANCE FROM MOON</div>
+        <div class="telem-val-row" style="align-items:baseline;">
+          <div class="telem-value" id="tv-moon" style="font-size:0.95rem; line-height:1;">—</div>
+          <div class="telem-unit" id="tu-moon" style="font-size:0.45rem; margin-left:4px;">KM</div>
         </div>
-        <div class="earth-extra-sub apollo-tint" id="stat-apollo13-sub"></div>
+        <div id="moon-annotation" style="font-family:var(--font-mono);font-size:0.38rem;color:var(--text-dim);letter-spacing:0.04em;"></div>
       </div>
     </div>
 
-    <!-- Distance from Moon -->
-    <div class="tb-telem" id="telem-moon">
-      <div class="telem-label">🌕 DISTANCE FROM MOON</div>
-      <div class="telem-val-row">
-        <div class="telem-value" id="tv-moon">—</div>
-        <div class="telem-unit" id="tu-moon">KM</div>
+    <!-- Traveled & Apollo 13 Info -->
+    <div class="tb-telem" id="telem-info" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:6px; padding: 2px 4px;">
+      <div id="telem-odometer" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em;">TOTAL TRAVELED</div>
+        <div class="telem-val-row" style="align-items:baseline;">
+          <div class="telem-value" id="stat-odometer" style="font-size:0.95rem; line-height:1; color:var(--cyan); text-shadow:0 0 10px rgba(0,229,255,0.4);">—</div>
+          <div class="telem-unit" style="font-size:0.45rem; margin-left:4px; color:var(--cyan);">KM</div>
+        </div>
+        <div class="stat-sub" id="stat-odometer-sub" style="font-size:0.38rem; text-align:center;"></div>
       </div>
-      <div id="moon-annotation" style="font-family:var(--font-mono);font-size:0.36rem;color:var(--text-dim);letter-spacing:0.04em;margin-top:1px;"></div>
-    </div>
+      
+      <div style="height:1px; width:60%; background:var(--border); margin:0 auto;"></div>
 
-    <!-- Orion Speed -->
-    <div class="tb-telem" id="telem-speed">
-      <div class="telem-label">🚀 ORION SPEED</div>
-      <div class="telem-val-row">
-        <div class="telem-value" id="tv-speed">—</div>
-        <div class="telem-unit" id="tu-speed">KM/H</div>
+      <div id="telem-apollo" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em;">APOLLO 13</div>
+        <div class="telem-val-row" style="align-items:baseline;">
+          <div class="telem-value" id="stat-apollo13" style="font-size:0.95rem; line-height:1; color:#ffd740; text-shadow:0 0 10px rgba(255,215,64,0.4);">—</div>
+          <div class="telem-unit" style="font-size:0.45rem; margin-left:4px; color:#ffd740;">KM</div>
+        </div>
+        <div class="stat-sub" id="stat-apollo13-sub" style="font-size:0.38rem; text-align:center; color:rgba(255,215,64,0.6);"></div>
       </div>
-      <div id="telem-badge" class="telem-badge-est">EST</div>
-      <div id="telem-update-time" style="position:absolute;bottom:20px;right:7px;font-family:var(--font-mono);font-size:0.30rem;color:rgba(74,144,217,0.45);letter-spacing:0.05em;pointer-events:none;"></div>
     </div>
 
-    <!-- Perilune countdown -->
-    <div class="tb-telem stat-block" id="perilune-block">
-      <div class="stat-label">LUNAR FLYBY</div>
-      <div class="stat-value" id="perilune-countdown">--:--:--</div>
-      <div class="stat-sub" id="perilune-dist">CLOSEST APPROACH: ~6,583 KM</div>
+    <!-- Velocity (Speed & G-Force) -->
+    <div class="tb-telem" id="telem-velocity" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:8px;">
+      <div id="telem-speed" style="display:flex; flex-direction:column; align-items:center; position:relative;">
+        <div class="telem-label">🚀 ORION SPEED</div>
+        <div class="telem-val-row">
+          <div class="telem-value" id="tv-speed">—</div>
+          <div class="telem-unit" id="tu-speed">KM/H</div>
+        </div>
+        <div id="telem-badge" class="telem-badge-est" style="position:absolute; top:-2px; right:-20px;">EST</div>
+      </div>
+      
+      <div id="gforce-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(74,144,217,0.1); padding-top:6px; width:80%;">
+        <div class="stat-label" style="font-size:0.3rem;">G-FORCE</div>
+        <div class="stat-value" id="stat-gforce" style="font-size:0.65rem;">—</div>
+        <div class="stat-sub" id="stat-gforce-sub" style="font-size:0.35rem;">APPARENT ACCELERATION</div>
+      </div>
     </div>
 
-    <!-- Splashdown countdown -->
-    <div class="tb-telem stat-block" id="splashdown-block">
-      <div class="stat-label">SPLASHDOWN</div>
-      <div class="stat-value" id="splashdown-countdown">--:--:--</div>
-      <div class="stat-sub" id="splashdown-date">11 APR · 00:06 UTC</div>
-    </div>
+    <!-- Milestones (Lunar Flyby & Splashdown) -->
+    <div class="tb-telem stat-block" id="telem-milestones" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:8px;">
+      <div id="perilune-block" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="stat-label">LUNAR FLYBY</div>
+        <div class="stat-value" id="perilune-countdown">--:--:--</div>
+        <div class="stat-sub" id="perilune-dist">CLOSEST APPROACH: ~6,583 KM</div>
+      </div>
 
-    <!-- G-Force -->
-    <div class="tb-telem stat-block" id="gforce-block">
-      <div class="stat-label">G-FORCE</div>
-      <div class="stat-value" id="stat-gforce">—</div>
-      <div class="stat-sub" id="stat-gforce-sub">APPARENT ACCELERATION</div>
+      <div id="splashdown-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(74,144,217,0.1); padding-top:6px; width:80%;">
+        <div class="stat-label">SPLASHDOWN</div>
+        <div class="stat-value" id="splashdown-countdown" style="font-size:0.9rem;">--:--:--</div>
+        <div class="stat-sub" id="splashdown-date">11 APR · 00:06 UTC</div>
+      </div>
     </div>
 
     <!-- Controls box -->
@@ -295,12 +309,12 @@ display:flex;align-items:center;gap:3px;">
         </div>
         <div class="to-extra-item">
           <div class="to-extra-label">TOTAL DISTANCE</div>
-          <div class="to-extra-val" id="to-odometer">—</div>
+          <div class="to-extra-val"><span id="to-odometer">—</span> KM</div>
           <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-odometer-sub"></div>
         </div>
         <div class="to-extra-item">
           <div class="to-extra-label">APOLLO 13 AT MET</div>
-          <div class="to-extra-val" id="to-apollo13">—</div>
+          <div class="to-extra-val"><span id="to-apollo13">—</span> KM</div>
           <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-apollo13-sub"></div>
         </div>
         <div class="to-extra-item">

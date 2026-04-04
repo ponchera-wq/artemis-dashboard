@@ -1671,22 +1671,21 @@
       /* Countdown blocks: grid layout in tablet range so they're not clipped */
       #top-bar {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr 1fr;
         grid-template-areas:
-          "met     met     met"
-          "phase   phase   phase"
-          "earth   moon    speed"
-          "perilune perilune splashdown";
+          "met        met"
+          "phase      phase"
+          "position   info"
+          "velocity   milestones";
         height: auto;
       }
       #top-bar > * + * { border-left: none; }
-      #tb-met          { grid-area: met;        border-bottom: 1px solid var(--border); flex: none; width: auto; }
-      #tb-phase        { grid-area: phase;      border-bottom: 1px solid var(--border); flex: none; }
-      #telem-earth     { grid-area: earth;      border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; }
-      #telem-moon      { grid-area: moon;       border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; }
-      #telem-speed     { grid-area: speed;      border-bottom: 1px solid var(--border); flex: none; }
-      #perilune-block  { grid-area: perilune;   border-right: 1px solid var(--border); flex: none; }
-      #splashdown-block{ grid-area: splashdown; flex: none; }
+      #tb-met           { grid-area: met;        border-bottom: 1px solid var(--border); flex: none; width: auto; }
+      #tb-phase         { grid-area: phase;      border-bottom: 1px solid var(--border); flex: none; }
+      #telem-position   { grid-area: position;   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; }
+      #telem-info       { grid-area: info;       border-bottom: 1px solid var(--border); flex: none; }
+      #telem-velocity   { grid-area: velocity;   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; }
+      #telem-milestones { grid-area: milestones; border-bottom: 1px solid var(--border); flex: none; }
       #tb-controls     { display: none; }
     }
 
@@ -1713,21 +1712,19 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
-          "met      met"
-          "phase    phase"
-          "earth    moon"
-          "speed    perilune"
-          "splashdown splashdown";
+          "met        met"
+          "phase      phase"
+          "position   info"
+          "velocity   milestones";
         height: auto; flex-shrink: 0;
       }
       #top-bar > * + * { border-left: none; }
-      #tb-met          { grid-area: met;        border-bottom: 1px solid var(--border); padding: 8px 12px; flex: none; width: auto; }
-      #tb-phase        { grid-area: phase;      border-bottom: 1px solid var(--border); padding: 6px 12px; flex: none; }
-      #telem-earth     { grid-area: earth;      border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
-      #telem-moon      { grid-area: moon;       border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
-      #telem-speed     { grid-area: speed;      border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
-      #perilune-block  { grid-area: perilune;   border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
-      #splashdown-block{ grid-area: splashdown; flex: none; padding: 8px; }
+      #tb-met           { grid-area: met;        border-bottom: 1px solid var(--border); padding: 8px 12px; flex: none; width: auto; }
+      #tb-phase         { grid-area: phase;      border-bottom: 1px solid var(--border); padding: 6px 12px; flex: none; }
+      #telem-position   { grid-area: position;   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
+      #telem-info       { grid-area: info;       border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
+      #telem-velocity   { grid-area: velocity;   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
+      #telem-milestones { grid-area: milestones; border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
       #tb-controls     { display: none; }
 
       #met-display { font-size: clamp(1rem, 7vw, 1.5rem); }

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#08080e;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artemis II — Observer Mode</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* OBSERVER SPECIFIC LAYOUT — DO NOT MODIFY STYLES.CSS */
+    body { margin: 0; padding: 0; font-family: 'Share Tech Mono', monospace; color: #ccc; }
+    
+    /* Header & Toggle */
+    .obs-header {
+      display: flex; justify-content: space-between; align-items: center; 
+      padding: 12px 20px; background: rgba(5,10,20,0.9);
+      border-bottom: 1px solid rgba(0,255,170,0.2);
+    }
+    .obs-brand { font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 700; color: #fff; letter-spacing: 0.1em; }
+    .obs-brand span { color: #00ffaa; text-shadow: 0 0 10px rgba(0,255,170,0.5); }
+    .obs-toggle { display: flex; border: 1px solid rgba(74,144,217,0.3); border-radius: 4px; overflow: hidden; }
+    .obs-toggle a { 
+      padding: 6px 16px; text-decoration: none; color: #7986a8; 
+      font-size: 0.75rem; font-weight: bold; background: rgba(0,0,0,0.5);
+    }
+    .obs-toggle a.active { background: rgba(0,255,170,0.15); color: #00ffaa; }
+
+    /* Location Bar */
+    .loc-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 20px; background: rgba(10,20,35,0.8);
+      border-bottom: 1px solid rgba(74,144,217,0.15); font-size: 0.8rem;
+    }
+    .loc-info { display: flex; gap: 15px; align-items: center; }
+    .loc-coord { color: #a8d4ff; }
+    .loc-darkness { color: #ffb74d; }
+    .loc-btn {
+      background: transparent; border: 1px solid rgba(74,144,217,0.4); 
+      color: #74a0da; padding: 4px 10px; cursor: pointer; border-radius: 2px;
+      font-family: inherit; font-size: 0.7rem; letter-spacing: 0.05em;
+    }
+    .loc-btn:hover { background: rgba(74,144,217,0.1); color: #fff; }
+
+    /* Manual Entry Form */
+    #manual-loc-form {
+      display: none; padding: 15px 20px; background: rgba(20,10,5,0.9);
+      border-bottom: 1px solid #ff9800; font-size: 0.8rem; color: #ffb74d;
+      align-items: center; gap: 10px;
+    }
+    #manual-loc-form input {
+      background: #000; border: 1px solid #ff9800; color: #fff;
+      padding: 4px 8px; width: 90px; font-family: inherit;
+    }
+    #manual-loc-form button {
+      background: #ff9800; color: #000; border: none; padding: 5px 12px;
+      font-family: inherit; font-weight: bold; cursor: pointer;
+    }
+
+    /* 6-Panel CSS Grid */
+    .obs-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;
+      padding: 20px; max-width: 1400px; margin: 0 auto;
+    }
+    .obs-panel {
+      background: rgba(5,10,20,0.6); border: 1px solid rgba(74,144,217,0.15);
+      border-radius: 4px; padding: 15px; display: flex; flex-direction: column;
+      position: relative; overflow: hidden;
+    }
+    .obs-panel-title {
+      font-size: 0.65rem; color: #7986a8; letter-spacing: 0.15em;
+      border-bottom: 1px solid rgba(74,144,217,0.2); padding-bottom: 8px;
+      margin-bottom: 12px; text-transform: uppercase;
+    }
+
+    /* Metrics Values */
+    .m-primary { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; color: #00ffaa; text-shadow: 0 0 12px rgba(0,255,170,0.3); line-height: 1.1; }
+    .m-primary.dim { color: #555; text-shadow: none; }
+    .m-sub { font-size: 0.7rem; color: #a8d4ff; margin-top: 5px; }
+    .m-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .m-row:last-child { border-bottom: none; }
+    .m-key { color: #7986a8; font-size: 0.7rem; letter-spacing: 0.05em; }
+    .m-val { color: #fff; font-size: 0.85rem; }
+
+    /* Visibility Chip */
+    .vis-chip { display: inline-block; padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.8rem; background: rgba(0,255,170,0.15); color: #00ffaa; border: 1px solid #00ffaa; margin-bottom: 15px; }
+    .vis-chip.below { background: rgba(255,80,80,0.15); color: #ff5050; border-color: #ff5050; }
+
+    /* SVG Polar Plot container */
+    #sky-plot-container {
+      width: 100%; aspect-ratio: 1; border-radius: 50%;
+      background: radial-gradient(circle at center, #0a1128 0%, #000 100%);
+      border: 1px solid rgba(74,144,217,0.3); position: relative;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="obs-header">
+    <div class="obs-brand">ARTEMIS II <span>OBSERVER</span></div>
+    <div class="obs-toggle">
+      <a href="index.html">MISSION</a>
+      <a href="observer.html" class="active">OBSERVER</a>
+    </div>
+  </header>
+
+  <!-- LOCATION BAR -->
+  <div class="loc-bar">
+    <div class="loc-info">
+      <span class="loc-coord" id="ui-loc-status">ACQUIRING LOCATION...</span>
+      <span class="loc-darkness" id="ui-darkness-state">—</span>
+    </div>
+    <button class="loc-btn" onclick="document.getElementById('manual-loc-form').style.display='flex'">CHANGE LOCATION</button>
+  </div>
+
+  <!-- MANUAL LOCATION FORM -->
+  <div id="manual-loc-form">
+    <span>MANUAL ENTRY:</span>
+    <input type="number" id="in-lat" placeholder="Latitude °" step="any">
+    <input type="number" id="in-lon" placeholder="Longitude °" step="any">
+    <button id="btn-apply-loc">APPLY DETAILED COORDS</button>
+  </div>
+
+  <!-- PANELS GRID -->
+  <div class="obs-grid">
+    <!-- ROW 1 -->
+    <!-- PANEL 1: VISIBILITY -->
+    <div class="obs-panel" id="panel-vis">
+      <div class="obs-panel-title">VISIBILITY STATUS</div>
+      <div class="vis-chip" id="ui-vis-chip">—</div>
+      <div class="m-sub">APPARENT MAGNITUDE</div>
+      <div class="m-primary" id="ui-mag">—</div>
+    </div>
+
+    <!-- PANEL 2: POINTING -->
+    <div class="obs-panel" id="panel-pointing">
+      <div class="obs-panel-title">LIVE POINTING</div>
+      <div class="m-sub" style="margin-top:0;">ALTITUDE °</div>
+      <div class="m-primary" id="ui-alt">—</div>
+      <div class="m-sub" style="margin-top:10px;">AZIMUTH °</div>
+      <div class="m-primary" style="color:#4A90D9;text-shadow:0 0 10px rgba(74,144,217,0.3);" id="ui-az">—</div>
+      
+      <div style="flex-grow:1;"></div>
+      <div class="m-row">
+        <span class="m-key">RA (J2000)</span>
+        <span class="m-val" id="ui-ra">—</span>
+      </div>
+      <div class="m-row">
+        <span class="m-key">DEC (J2000)</span>
+        <span class="m-val" id="ui-dec">—</span>
+      </div>
+    </div>
+
+    <!-- PANEL 3: SKY PLOT -->
+    <div class="obs-panel" id="panel-sky">
+      <div class="obs-panel-title">LOCAL SKY</div>
+      <div id="sky-plot-container">
+        <!-- SVG injected by JS -->
+      </div>
+    </div>
+
+    <!-- ROW 2 -->
+    <!-- PANEL 4: CONDITIONS -->
+    <div class="obs-panel" id="panel-cond">
+      <div class="obs-panel-title">LOCAL CONDITIONS</div>
+      <div class="m-row">
+        <span class="m-key">SUN ALTITUDE</span>
+        <span class="m-val" id="ui-sun-alt">—</span>
+      </div>
+      <div class="m-row">
+        <span class="m-key">MOON ALTITUDE</span>
+        <span class="m-val" id="ui-moon-alt">—</span>
+      </div>
+      <div class="m-row">
+        <span class="m-key">MOON PHASE</span>
+        <span class="m-val" id="ui-moon-phase">—</span>
+      </div>
+      <div class="m-row">
+        <span class="m-key">ORION PHASE ANGLE</span>
+        <span class="m-val" id="ui-orion-phase">—</span>
+      </div>
+    </div>
+
+    <!-- PANEL 5: RANGE & MOTION -->
+    <div class="obs-panel" id="panel-range">
+      <div class="obs-panel-title">RANGE & ANGULAR MOTION</div>
+      <div class="m-row">
+        <span class="m-key">TOPOCENTRIC DIST</span>
+        <span class="m-val" id="ui-dist">—</span>
+      </div>
+      <div class="m-row">
+        <span class="m-key">ANGULAR SPEED</span>
+        <span class="m-val" id="ui-rate">—</span>
+      </div>
+      <div class="m-row" style="margin-top:auto;">
+        <span class="m-key" style="color:var(--text-dim);font-size:0.6rem;">* AVERAGE ESTIMATED RATE / HR</span>
+      </div>
+    </div>
+
+    <!-- PANEL 6: BEST WINDOWS -->
+    <div class="obs-panel" id="panel-win">
+      <div class="obs-panel-title">VIEWING WINDOWS</div>
+      <div style="font-size:0.8rem;color:#7986a8;text-align:center;margin-top:20px;">
+        PREDICTION ENGINE UNAVAILABLE<br>
+        <span style="font-size:0.6rem;opacity:0.6;">(Feature flagged for Phase 2)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT LOAD ORDER -->
+  <script src="js/shared.js"></script>
+  <script src="js/mission-ephemeris.js"></script>
+  <script src="js/mission-events.js"></script>
+  <script src="js/observer-astro.js"></script>
+  <script src="js/observer-ui.js"></script>
+
+</body>
+</html>

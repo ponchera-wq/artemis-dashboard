@@ -126,8 +126,8 @@ function tickTelem() {
     tuSpeed.textContent = 'KM/H';
   }
 
-  var eStr = fmt.format(earthVal);
-  var mStr = fmt.format(moonVal);
+  var eStr = (state.earthSign || '') + (state.earthSign ? ' ' : '') + fmt.format(earthVal);
+  var mStr = (state.moonSign || '') + (state.moonSign ? ' ' : '') + fmt.format(moonVal);
   var sStr = fmt.format(speedVal);
 
   if (tvEarth.textContent !== eStr) { tvEarth.textContent = eStr; flashEl(tvEarth); }
@@ -143,7 +143,7 @@ function tickTelem() {
     var odoKm = window.computeOdometer(metSec);
     var odoEl = document.getElementById('stat-odometer');
     var odoSubEl = document.getElementById('stat-odometer-sub');
-    if (odoEl) odoEl.textContent = Math.round(odoKm).toLocaleString() + ' km';
+    if (odoEl) odoEl.textContent = Math.round(odoKm).toLocaleString();
     if (odoSubEl) odoSubEl.textContent = (odoKm / 40075).toFixed(1) + '\u00d7 Earth circumference';
   }
 
@@ -152,7 +152,7 @@ function tickTelem() {
   var currentKm = state.distEarthKm;
   var a13El = document.getElementById('stat-apollo13');
   var a13SubEl = document.getElementById('stat-apollo13-sub');
-  if (a13El) a13El.textContent = Math.round(a13km).toLocaleString() + ' km';
+  if (a13El) a13El.textContent = Math.round(a13km).toLocaleString();
   if (a13SubEl) {
     var diff = currentKm - a13km;
     var sign = diff >= 0 ? '+' : '';

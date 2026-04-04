@@ -1,0 +1,168 @@
+/**
+ * observer-astro.js
+ * Core astrodynamics and mathematical logic for Artemis II Observer Mode.
+ * Constraints implemented: No manual spherical trig (except WGS84), astronomy-engine pipeline used,
+ * interpolated angular speed, and Lambertian magnitude estimation.
+ */
+
+window.ObserverAstro = (function() {
+    // Standard WGS84 / Ephemeris constants
+    const WGS84_A = 6378.137; // km
+    const WGS84_F = 1.0 / 298.257223563;
+    const WGS84_b = WGS84_A * (1.0 - WGS84_F);
+    const WGS84_e2 = 1.0 - (WGS84_b * WGS84_b) / (WGS84_A * WGS84_A);
+    const AU_KM = 149597870.7;
+
+    /**
+     * Calculates Topocentric vector, RA/Dec and Alt/Az using astronomy-engine.
+     */
+    function getTopocentricPosition(metSec, date, lat, lon, altMeters) {
+        if (!window.MissionEphemeris || !window.Astronomy) return null;
+        
+        // 1. Retrieve Orion's EME2000 (ECI) position
+        const state = window.MissionEphemeris.getState(metSec);
+        if (!state) return null;
+        const orionX = state.pos.x;
+        const orionY = state.pos.y;
+        const orionZ = state.pos.z;
+
+        // 2. Compute observer's ECEF position using WGS84
+        const latRad = lat * Math.PI / 180;
+        const lonRad = lon * Math.PI / 180;
+        const sinLat = Math.sin(latRad);
+        const cosLat = Math.cos(latRad);
+        const sinLon = Math.sin(lonRad);
+        const cosLon = Math.cos(lonRad);
+
+        const N = WGS84_A / Math.sqrt(1.0 - WGS84_e2 * sinLat * sinLat);
+        const h_km = altMeters / 1000.0;
+
+        const X_ecef = (N + h_km) * cosLat * cosLon;
+        const Y_ecef = (N + h_km) * cosLat * sinLon;
+        const Z_ecef = (N * (1.0 - WGS84_e2) + h_km) * sinLat;
+
+        // 3. Rotate Observer ECEF to EME2000 using GMST
+        const gmstHours = window.Astronomy.SiderealTime(date);
+        const gmstRad = (gmstHours * 15.0) * Math.PI / 180.0;
+        const sinGmst = Math.sin(gmstRad);
+        const cosGmst = Math.cos(gmstRad);
+
+        const obsEciX = X_ecef * cosGmst - Y_ecef * sinGmst;
+        const obsEciY = X_ecef * sinGmst + Y_ecef * cosGmst;
+        const obsEciZ = Z_ecef;
+
+        // 4. Topocentric ECI Vector
+        const topoX = orionX - obsEciX;
+        const topoY = orionY - obsEciY;
+        const topoZ = orionZ - obsEciZ;
+        const distanceKm = Math.sqrt(topoX * topoX + topoY * topoY + topoZ * topoZ);
+
+        // 5. Convert to local Alt/Az and RA/Dec
+        // Astronomy-engine expects vectors in AU
+        const vecTopo = new window.Astronomy.Vector(topoX / AU_KM, topoY / AU_KM, topoZ / AU_KM, date);
+        const eq = window.Astronomy.EquatorFromVector(vecTopo);
+        const observer = new window.Astronomy.Observer(lat, lon, altMeters);
+        const hor = window.Astronomy.Horizon(date, observer, eq.ra, eq.dec, 'normal');
+
+        return {
+            topoVecAu: vecTopo,
+            distanceKm: distanceKm,
+            ra: eq.ra,       // hours
+            dec: eq.dec,     // degrees
+            alt: hor.altitude, // degrees
+            az: hor.azimuth,   // degrees
+            observerObj: observer
+        };
+    }
+
+    return {
+        /**
+         * Main function computing all metrics for Observer view
+         */
+        calculateMetrics: function(metSec, referenceDateMs, lat, lon, altMeters) {
+            const date = new Date(referenceDateMs);
+            const pos = getTopocentricPosition(metSec, date, lat, lon, altMeters);
+            if (!pos) return null;
+
+            // 1. Magnitude Estimation
+            // H = 2.0 (Conservative baseline size for spacecraft)
+            const H = 2.0;
+
+            // Sun Vector computation
+            let numMagnitude = null;
+            let phaseAngleRads = 0;
+            const sunEq = window.Astronomy.Equator('Sun', date, pos.observerObj, true, true);
+            
+            if (sunEq && sunEq.vec) {
+                // Vector Obsever -> Target
+                const v_ob = pos.topoVecAu;
+                
+                // Vector Target -> Sun
+                const v_so_x = sunEq.vec.x - v_ob.x;
+                const v_so_y = sunEq.vec.y - v_ob.y;
+                const v_so_z = sunEq.vec.z - v_ob.z;
+
+                const r_sun_au = Math.sqrt(v_so_x*v_so_x + v_so_y*v_so_y + v_so_z*v_so_z);
+                const r_obs_au = Math.sqrt(v_ob.x*v_ob.x + v_ob.y*v_ob.y + v_ob.z*v_ob.z);
+
+                const dot = v_so_x * (-v_ob.x) + v_so_y * (-v_ob.y) + v_so_z * (-v_ob.z);
+                phaseAngleRads = Math.acos(Math.max(-1, Math.min(1, dot / (r_sun_au * r_obs_au))));
+
+                // Lambertian phase angle penalty
+                const p = (Math.sin(phaseAngleRads) + (Math.PI - phaseAngleRads) * Math.cos(phaseAngleRads)) / Math.PI;
+
+                if (p > 0) {
+                    numMagnitude = H + 5.0 * Math.log10(r_sun_au * r_obs_au) - 2.5 * Math.log10(p);
+                }
+            }
+
+            // 2. Angular Speed Estimation
+            // Sample t and t+60. Note: Due to 20-minute gap ephemeris, this is an interpolated average.
+            let angularSpeedDegSec = 0;
+            const tNextDate = new Date(referenceDateMs + 60000);
+            const posNext = getTopocentricPosition(metSec + 60, tNextDate, lat, lon, altMeters);
+            if (posNext) {
+                const vec1 = pos.topoVecAu;
+                const vec2 = posNext.topoVecAu;
+                const d1 = Math.sqrt(vec1.x*vec1.x + vec1.y*vec1.y + vec1.z*vec1.z);
+                const d2 = Math.sqrt(vec2.x*vec2.x + vec2.y*vec2.y + vec2.z*vec2.z);
+                
+                const dot12 = vec1.x*vec2.x + vec1.y*vec2.y + vec1.z*vec2.z;
+                const angleRads = Math.acos(Math.max(-1, Math.min(1, dot12 / (d1 * d2))));
+                const angleDeg = angleRads * 180.0 / Math.PI;
+                angularSpeedDegSec = angleDeg / 60.0;
+            }
+
+            // 3. Sun & Moon local positions using astronomy-engine exclusively
+            const sunHor = window.Astronomy.Horizon(date, pos.observerObj, sunEq.ra, sunEq.dec, 'normal');
+            
+            const moonEq = window.Astronomy.Equator('Moon', date, pos.observerObj, true, true);
+            const moonHor = window.Astronomy.Horizon(date, pos.observerObj, moonEq.ra, moonEq.dec, 'normal');
+            const moonIllum = window.Astronomy.Illumination('Moon', date);
+
+            return {
+                orion: {
+                    altitude: pos.alt,
+                    azimuth: pos.az,
+                    raHours: pos.ra,
+                    decDeg: pos.dec,
+                    distanceKm: pos.distanceKm,
+                    magnitude: numMagnitude,
+                    angularSpeedHz: angularSpeedDegSec * 3600.0, // deg/hr
+                    angularSpeedDegSec: angularSpeedDegSec,
+                    phaseAngleDeg: phaseAngleRads * 180.0 / Math.PI
+                },
+                sun: {
+                    altitude: sunHor.altitude,
+                    azimuth: sunHor.azimuth
+                },
+                moon: {
+                    altitude: moonHor.altitude,
+                    azimuth: moonHor.azimuth,
+                    phaseFraction: moonIllum ? moonIllum.phase_fraction : null,
+                    phaseAngleDeg: moonIllum ? moonIllum.phase_angle : null
+                }
+            };
+        }
+    };
+})();
