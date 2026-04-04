@@ -4,6 +4,17 @@
  * Geolocation binding, DOM update loop, and SVG plot.
  */
 
+// ── Site Defaults ─────────────────────────────────────────────────────────
+const DEFAULT_LAT       = -35.4014;  // Canberra DSN / Tidbinbilla
+const DEFAULT_LON       =  148.9817;
+const DEFAULT_ELEV      =  549;      // Metres AMSL
+const DEFAULT_SITE_NAME = 'Canberra DSN (Tidbinbilla)';
+
+// ── Hardware Defaults ─────────────────────────────────────────────────────
+const DEFAULT_FOCAL_LENGTH = 1420;   // mm  (SCT 8" + 0.7x reducer)
+const DEFAULT_APERTURE     = 203.2;  // mm
+const DEFAULT_PIXEL_SIZE   = 3.76;   // µm
+
 let isDrag = false;
 let o = {};
 let renderer, scene, camera, orionGroup, stars, earthMesh, trajectoryLine, shadowCone;
@@ -15,9 +26,9 @@ const EARTH_R_KM = 6371;
 const S_SCALE = 1/EARTH_R_KM;
 
 document.addEventListener("DOMContentLoaded", () => {
-    let obsLat = -35.4014; // Default: Canberra DSN (Tidbinbilla)
-    let obsLon = 148.9817;
-    let obsAlt = 549; // Meters AMSL
+    let obsLat = DEFAULT_LAT;
+    let obsLon = DEFAULT_LON;
+    let obsAlt = DEFAULT_ELEV;
     let isReady = true; 
     let useEyepiece = false;
 
@@ -231,9 +242,9 @@ document.addEventListener("DOMContentLoaded", () => {
         const cfg = window.ObserverAstro.getHardwareConfig();
         // Force SCT Standard if first run
         if (!localStorage.getItem('artemis_observer_hw')) {
-            cfg.telescopeFocalLength = 1420;
-            cfg.cameraPixelSize = 3.76;
-            cfg.apertureMm = 203.2;
+            cfg.telescopeFocalLength = DEFAULT_FOCAL_LENGTH;
+            cfg.cameraPixelSize      = DEFAULT_PIXEL_SIZE;
+            cfg.apertureMm           = DEFAULT_APERTURE;
             window.ObserverAstro.setHardwareConfig(cfg);
         }
 
@@ -351,8 +362,8 @@ document.addEventListener("DOMContentLoaded", () => {
         manForm.style.display = "flex";
     }
 
-    // Set Canberra default label immediately — geolocation may override it
-    setLocationResolved(`CANBERRA DSN (TIDBINBILLA) (-35.40°, 148.98°)`);
+    // Set default label immediately — geolocation may override it
+    setLocationResolved(`${DEFAULT_SITE_NAME} (${DEFAULT_LAT}°, ${DEFAULT_LON}°)`);
 
     // Geolocation Init
     if (navigator.geolocation) {
