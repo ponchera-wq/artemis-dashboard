@@ -298,7 +298,7 @@
 
     el.innerHTML =
       '<div class="dsn-links">' +
-        links.map(l => linkCardHTML(l, !isLive)).join('') +
+        links.slice(0, 1).map(l => linkCardHTML(l, !isLive)).join('') +
       '</div>' +
       networkHTML(links);
   }

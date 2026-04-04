@@ -53,12 +53,54 @@
     .section-header .sh-subtitle {
       font-family: 'Rajdhani', sans-serif; font-size: 0.75rem; opacity: 0.55; margin-left: auto;
     }
-    .section-header.amber .sh-title { color: #ffcc00; }
-    .section-header.amber .sh-icon  { color: #ffcc00; }
+    .section-header.amber .sh-title { color: var(--amber); }
+    .section-header.amber .sh-icon  { color: var(--amber); }
     .section-header.cyan  .sh-title { color: #00e5ff; }
     .section-header.cyan  .sh-icon  { color: #00e5ff; }
     .section-header.muted .sh-title { color: #4A90D9; }
     .section-header.muted .sh-icon  { color: #4A90D9; }
+
+    /* ── Help Icon ── */
+    .sh-help-icon {
+      font-family: 'Rajdhani', sans-serif; font-size: 0.5rem; font-weight: 700;
+      width: 15px; height: 15px; border: 1px solid var(--amber); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: help; color: var(--amber); opacity: 0.6; transition: opacity 0.2s;
+      margin-left: 8px;
+    }
+    .sh-help-icon:hover { opacity: 1; box-shadow: 0 0 6px rgba(255,167,38,0.3); }
+
+    /* ── Collapsible Logic (Mobile-First or Adaptive) ── */
+    .section-header { cursor: pointer; position: relative; user-select: none; }
+    .panel-collapse-btn {
+      margin-left: auto; width: 24px; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      color: var(--amber); opacity: 0.6;
+    }
+    .panel-collapse-btn::after {
+      content: '\25be'; font-size: 1.2rem;
+    }
+    .section-header.is-collapsed .panel-collapse-btn { transform: rotate(-90deg); }
+    .section-header:hover .panel-collapse-btn { opacity: 1; }
+
+    .sh-toggle { display: none; } /* Hide the old [+] indicator */
+
+    .section-body {
+      overflow: hidden; max-height: 4000px;
+      padding: 20px; transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), padding 0.45s ease, opacity 0.4s ease;
+      opacity: 1; margin-bottom: 20px;
+    }
+    .section-body.collapsed {
+      max-height: 0; padding-top: 0; padding-bottom: 0; opacity: 0;
+      pointer-events: none; margin-bottom: 0;
+    }
+
+    /* ── Status Color-Coding ── */
+    .status-red    { color: #ef5350 !important; text-shadow: 0 0 8px rgba(239,83,80,0.4); }
+    .status-yellow { color: #ffa726 !important; text-shadow: 0 0 8px rgba(255,167,38,0.4); }
+    .status-green  { color: #00e676 !important; text-shadow: 0 0 8px rgba(0,230,118,0.4); }
+    .status-label { font-size: 0.55rem; letter-spacing: 1px; font-weight: 700; }
 
     /* ════════════════════════════════════════════════════════════ */
     /* SECTION 1: GEAR SETUP (AMBER)                               */
@@ -81,11 +123,11 @@
       letter-spacing: 0.14em; color: rgba(255,204,0,0.7); text-transform: uppercase;
     }
     .gear-input {
-      background: rgba(0,0,0,0.5); border: 1px solid rgba(255,204,0,0.3); color: #ffe;
+      background: rgba(0,0,0,0.5); border: 1px solid rgba(255,167,38,0.3); color: #ffe;
       font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; padding: 7px 10px;
       border-radius: 3px; width: 100%; transition: border-color 0.2s;
     }
-    .gear-input:focus { outline: none; border-color: rgba(255,204,0,0.7); }
+    .gear-input:focus { outline: none; border-color: var(--amber); }
     .gear-row { display: flex; gap: 8px; align-items: center; }
     .gear-row .gear-input { flex: 1; }
 
@@ -108,13 +150,13 @@
       font-family: 'Orbitron', sans-serif; font-size: 0.46rem; letter-spacing: 0.08em;
       padding: 5px 10px; border-radius: 3px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
     }
-    #btn-apply-loc { background: rgba(255,204,0,0.15); border: 1px solid rgba(255,204,0,0.5); color: #ffcc00; }
-    #btn-apply-loc:hover { background: rgba(255,204,0,0.28); }
+    #btn-apply-loc { background: rgba(255,167,38,0.15); border: 1px solid rgba(255,167,38,0.5); color: var(--amber); }
+    #btn-apply-loc:hover { background: rgba(255,167,38,0.28); }
     #btn-clear-loc  { background: transparent; border: 1px solid rgba(239,83,80,0.4); color: #ef5350; }
     #btn-clear-loc:hover  { background: rgba(239,83,80,0.1); }
 
     .gear-loc-name {
-      font-size: 0.72rem; color: #00e5ff; font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem; color: var(--amber); font-family: 'Share Tech Mono', monospace;
       padding-top: 4px; min-height: 1em;
     }
 
@@ -235,6 +277,33 @@
     .verdict-card.amber-card { border-color: rgba(255,167,38,0.3); }
 
     .verdict-icon { font-size: 1.4rem; margin-bottom: 6px; }
+
+    /* ── Mobile Layout Fixes ─ < 768px ───────────────────────────── */
+    @media (max-width: 767px) {
+      .guided-page { padding: 0 10px 40px; }
+      .gear-grid { grid-template-columns: 1fr; gap: 20px; }
+      .loc-inline { grid-template-columns: 1fr 1fr; }
+      .loc-inline > div:nth-child(3) { grid-column: span 2; }
+      .loc-inline > div:last-child { grid-column: span 2; justify-content: stretch; }
+      .loc-inline button { flex: 1; padding: 12px; font-size: 0.6rem; }
+      
+      #sky-hud-wrap { padding-top: 100%; border-radius: 0; border-left: none; border-right: none; }
+      .sky-hud-label { padding: 6px 10px; min-width: unset; }
+      .hud-val { font-size: 0.75rem; }
+      .hud-key { font-size: 0.32rem; }
+      
+      .verdict-grid { grid-template-columns: 1fr; }
+      .section-body { padding: 16px 12px; }
+      
+      /* Make interactive elements Amber */
+      .sh-help-icon { color: var(--amber); border-color: rgba(255,167,38,0.5); }
+      #ui-loc-status { color: var(--amber); }
+      .gear-input { border-color: rgba(255,167,38,0.25); }
+      .gear-input:focus { border-color: var(--amber); }
+
+      /* Visual tweak for the 3D map on mobile */
+      #sky-plot-container { width: 95%; }
+    }
     .verdict-title {
       font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.16em;
       color: rgba(0,229,255,0.6); text-transform: uppercase; margin-bottom: 4px;
@@ -381,11 +450,12 @@
     <!-- STEP 1: GEAR SETUP                                         -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div id="section-gear">
-      <div class="section-header amber" data-target="gear-body" style="border-bottom-color:rgba(255,204,0,0.15); margin-bottom:0;">
+      <div class="section-header amber" data-target="gear-body" style="border-bottom-color:rgba(255,167,38,0.15); margin-bottom:0;">
         <span class="sh-icon">⚙</span>
         <span class="sh-title">Step 1 — Your Setup</span>
         <span class="sh-subtitle">Enter your location and telescope specs</span>
         <span class="sh-toggle">[–]</span>
+        <span class="panel-collapse-btn"></span>
       </div>
       <div class="section-body" id="gear-body" style="margin-top:12px;">
 
@@ -473,15 +543,19 @@
         <span class="sh-icon">🌐</span>
         <span class="sh-title">Step 2 — Your Sky Right Now</span>
         <span class="sh-subtitle" id="ui-darkness-state">—</span>
+        <span class="sh-help-icon" title="View 3D orbit or telescope eyepiece simulation">?</span>
         <span class="sh-toggle">[–]</span>
+        <span class="panel-collapse-btn"></span>
       </div>
       <div class="section-body" id="sky-body">
 
       <div id="sky-hud-wrap">
         <div id="sky-hud-inner">
           <div id="sky-plot-container">
-            <canvas id="three-canvas"></canvas>
-            <canvas id="eyepiece-canvas"></canvas>
+            <canvas id="three-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%;"></canvas>
+            <canvas id="eyepiece-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%;"></canvas>
+            <!-- Crosshair overlay for eyepiece -->
+            <canvas id="eyepiece-crosshair" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
           </div>
         </div>
 
@@ -532,7 +606,9 @@
         <span class="sh-icon">📡</span>
         <span class="sh-title">Step 3 — Imaging Strategy</span>
         <span class="sh-subtitle">Human-readable conditions for your session</span>
+        <span class="sh-help-icon" title="Verdict cards show real-time visibility assessments">?</span>
         <span class="sh-toggle">[–]</span>
+        <span class="panel-collapse-btn"></span>
       </div>
       <div class="section-body" id="verdicts-body">
 
@@ -619,7 +695,9 @@
         <span class="sh-icon">🌍</span>
         <span class="sh-title">Global Mission Coverage</span>
         <span class="sh-subtitle">Ground track · Visibility footprint · Day/Night terminator</span>
+        <span class="sh-help-icon" title="Map follows Orion (SSP) - click to set location">?</span>
         <span class="sh-toggle">[–]</span>
+        <span class="panel-collapse-btn"></span>
       </div>
       <div class="section-body" id="coverage-body">
       <div style="position:relative; background:rgba(0,8,20,0.9); border:1px solid rgba(0,229,255,0.18); border-radius:6px; overflow:hidden;">
@@ -636,9 +714,9 @@
         </div>
         <!-- Map legend -->
         <div style="position:absolute; bottom:8px; left:12px; display:flex; gap:14px; pointer-events:none; flex-wrap:wrap;">
-          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:rgba(0,229,255,0.7); display:flex; align-items:center; gap:5px;"><span style="width:12px;height:2px;border-top:2px dashed #00e5ff; display:inline-block;"></span>GROUND TRACK (4h)</span>
-          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:rgba(0,229,255,0.5); display:flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,229,255,0.6);background:rgba(0,229,255,0.1);display:inline-block;"></span>VISIBILITY FOOTPRINT</span>
-          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#ffcc00; display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#ffcc00;display:inline-block;"></span>YOUR LOCATION</span>
+          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#ffcc00; display:flex; align-items:center; gap:5px;"><span style="width:12px;height:2px;border-top:2px dashed #ffcc00; display:inline-block;"></span>PATH</span>
+          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#00e5ff; display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#00e5ff;display:inline-block;"></span>POSITION</span>
+          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#4A90D9; display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#4A90D9;display:inline-block;"></span>YOU</span>
         </div>
       </div><!-- map inner -->
       </div><!-- /.section-body -->
@@ -650,6 +728,7 @@
         <span class="sh-title">Step 4 — Upcoming Passes</span>
         <span class="sh-subtitle">Next dark-sky opportunities from your location</span>
         <span class="sh-toggle">[–]</span>
+        <span class="panel-collapse-btn"></span>
       </div>
       <div class="section-body" id="passes-body">
       <div id="win-cards">

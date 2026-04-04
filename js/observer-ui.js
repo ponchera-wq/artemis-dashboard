@@ -42,18 +42,37 @@ document.addEventListener("DOMContentLoaded", () => {
     })();
 
     // ── Collapsible section panels ────────────────────────────────────
+    function togglePanel(hdr, forceCollapse = null) {
+        const bodyId = hdr.getAttribute('data-target');
+        const body   = document.getElementById(bodyId);
+        if (!body) return;
+
+        const isCurrentlyCollapsed = body.classList.contains('collapsed');
+        const shouldCollapse = (forceCollapse !== null) ? forceCollapse : !isCurrentlyCollapsed;
+
+        if (shouldCollapse) {
+            body.classList.add('collapsed');
+            hdr.classList.add('is-collapsed');
+        } else {
+            body.classList.remove('collapsed');
+            hdr.classList.remove('is-collapsed');
+        }
+    }
+
     document.querySelectorAll('.section-header[data-target]').forEach(hdr => {
         hdr.addEventListener('click', (e) => {
-            // Don't collapse if the user clicks a button inside the header
+            // Don't collapse if the user clicks a button or input inside the header
             if (e.target.closest('button, a, input')) return;
-            const bodyId = hdr.getAttribute('data-target');
-            const body   = document.getElementById(bodyId);
-            const toggle = hdr.querySelector('.sh-toggle');
-            if (!body) return;
-            const collapsed = body.classList.toggle('collapsed');
-            hdr.classList.toggle('is-collapsed', collapsed);
-            if (toggle) toggle.textContent = collapsed ? '[+]' : '[–]';
+            togglePanel(hdr);
         });
+    });
+
+    // Initial state: Only Live Pointing (sky-body) and Observation Summary (verdicts-body) are expanded
+    document.querySelectorAll('.section-header[data-target]').forEach(hdr => {
+        const target = hdr.getAttribute('data-target');
+        if (target !== 'sky-body' && target !== 'verdicts-body') {
+            togglePanel(hdr, true); // Force collapse others
+        }
     });
 
     // DOM Elements
@@ -1053,6 +1072,18 @@ document.addEventListener("DOMContentLoaded", () => {
         if (sunLon > 180) sunLon -= 360;
         const sunLat = sunDecDeg;
 
+        // ── 4. Orion current SSP (Position) ──────────────────────────
+        const st = window.MissionEphemeris.getState(metSec);
+        let sspLat = 0, sspLon = 0;
+        if (st && st.orion) {
+            const { x, y, z } = st.orion;
+            const r = Math.sqrt(x*x + y*y + z*z);
+            sspLat = Math.asin(Math.max(-1, Math.min(1, z / r))) * 180 / Math.PI;
+            const ra = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+            sspLon = ((ra - gmstDeg) % 360 + 360) % 360;
+            if (sspLon > 180) sspLon -= 360; // NORMALIZE SSP LON to fix "2 Orions" ghosting
+        }
+
         // Terminator: for each lon, lat = atan(-cos(lon-sunLon)/tan(sunLat))
         function termLat(lon) {
             const sl = Math.abs(sunLat) < 0.5 ? (sunLat >= 0 ? 0.5 : -0.5) : sunLat;
@@ -1087,10 +1118,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ctx.stroke();
 
         // ── 4. Orion SSP & visibility footprint ─────────────────────
-        const raDeg = or.raHours * 15;
-        let sspLon  = ((raDeg - gmstDeg) % 360 + 360) % 360;
-        if (sspLon > 180) sspLon -= 360;
-        const sspLat = or.decDeg;
+        // (sspLon/sspLat already calculated above with normalization)
 
         // Great-circle footprint: radius = 90° (visible when < 90° from SSP)
         const phi0 = sspLat * Math.PI / 180;
@@ -1140,7 +1168,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 trackPts.push([tLon, dec, step]);
             }
             // Draw track as dashed line (handle anti-meridian)
-            ctx.strokeStyle = '#00e5ff';
+            ctx.strokeStyle = '#ffcc00'; // Orange = Path
             ctx.lineWidth = 1.5;
             ctx.setLineDash([4, 5]);
             ctx.globalAlpha = 0.7;
@@ -1163,58 +1191,57 @@ document.addEventListener("DOMContentLoaded", () => {
                 const alpha = 0.15 + (1 - i / trackPts.length) * 0.35;
                 ctx.beginPath();
                 ctx.arc(tx(trackPts[i][0]), ty(trackPts[i][1]), 2, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(0,229,255,${alpha})`;
+                ctx.fillStyle = `rgba(255,204,0,${alpha})`; // Orange dots for path
                 ctx.fill();
             }
         }
 
-        // ── 6. Orion SSP marker ──────────────────────────────────────
+        // ── 6. Orion SSP marker (Orange Dot) ───────────────────────
         const sx = tx(sspLon), sy = ty(sspLat);
-        // Pulsing outer ring
+        // Outer glow
         ctx.beginPath();
-        ctx.arc(sx, sy, 8, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(0,229,255,0.25)';
+        const pulse = 6 + Math.sin(Date.now() * 0.004) * 2;
+        ctx.arc(sx, sy, pulse + 2, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,204,0,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // Solid Cyan dot
+        ctx.beginPath();
+        ctx.arc(sx, sy, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#00e5ff'; // Cyan = Position
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
         ctx.lineWidth = 1;
         ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(sx, sy, 5, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0,180,255,0.2)';
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(sx, sy, 3, 0, Math.PI * 2);
-        ctx.fillStyle = '#00e5ff';
-        ctx.fill();
         // Label
         ctx.fillStyle = '#00e5ff';
-        ctx.font = `bold ${Math.round(W * 0.018)}px "Share Tech Mono", monospace`;
-        ctx.fillText('ORION', sx + 6, sy - 5);
+        ctx.font = `bold ${Math.round(W * 0.018)}px "Orbitron", sans-serif`;
+        ctx.fillText('ORION (SSP)', sx + 8, sy - 5);
 
-        // ── 7. Observer location marker ──────────────────────────────
-        if (obsLat != null && obsLon != null) {
-            const ox = tx(obsLon), oy = ty(obsLat);
-            // Check line-of-sight: angle between observer and SSP
-            const phi1 = obsLat * Math.PI / 180, phi2 = sspLat * Math.PI / 180;
-            const dLam = (obsLon - sspLon) * Math.PI / 180;
-            const cosAngle = Math.sin(phi1)*Math.sin(phi2) + Math.cos(phi1)*Math.cos(phi2)*Math.cos(dLam);
-            const los = cosAngle > 0; // > 0 means separation < 90°
+        // ── 7. Your Location (Blue Dot) ───────────────────────────
+        const ux = tx(obsLon), uy = ty(obsLat);
+        ctx.beginPath();
+        ctx.arc(ux, uy, 5.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#4A90D9'; // Blue = You (Site)
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        // Label
+        ctx.fillStyle = '#4A90D9';
+        ctx.font = `bold ${Math.round(W * 0.016)}px "Orbitron", sans-serif`;
+        ctx.fillText('YOU', ux + 8, uy + 12);
 
-            ctx.beginPath();
-            ctx.arc(ox, oy, 5, 0, Math.PI * 2);
-            ctx.fillStyle = los ? '#ffcc00' : 'rgba(255,204,0,0.35)';
-            ctx.fill();
-            ctx.strokeStyle = los ? '#fff' : 'rgba(255,255,255,0.2)';
-            ctx.lineWidth = 1;
-            ctx.stroke();
-            ctx.fillStyle = '#ffcc00';
-            ctx.font = `${Math.round(W * 0.016)}px "Share Tech Mono", monospace`;
-            ctx.fillText('YOU', ox + 7, oy + 4);
+        // HUD update: Line of Sight and SSP labels
+        const phi1 = obsLat * Math.PI / 180, phi2 = sspLat * Math.PI / 180;
+        const dLam = (obsLon - sspLon) * Math.PI / 180;
+        const cosAngle = Math.sin(phi1)*Math.sin(phi2) + Math.cos(phi1)*Math.cos(phi2)*Math.cos(dLam);
+        const hasLOS = cosAngle > 0;
 
-            // Update HUD labels
-            const losEl = document.getElementById('cov-los');
-            if (losEl) {
-                losEl.textContent = los ? '✓ YES' : '✗ NO';
-                losEl.style.color = los ? '#00e676' : '#ef5350';
-            }
+        const losEl = document.getElementById('cov-los');
+        if (losEl) {
+            losEl.textContent = hasLOS ? '✓ YES' : '✗ NO';
+            losEl.style.color   = hasLOS ? '#00e676' : '#ef5350';
         }
         const sspEl = document.getElementById('cov-ssp');
         if (sspEl) {
@@ -1307,21 +1334,21 @@ document.addEventListener("DOMContentLoaded", () => {
         if (vcVisMain) {
             if (!isAbove) {
                 vcVisMain.textContent = 'BELOW THE HORIZON';
-                vcVisMain.className   = 'verdict-main red';
-                if (vcVisDet)  vcVisDet.textContent  = `Set by ${Math.abs(or.altitude).toFixed(1)}°. Use the pass schedule below for the next opportunity.`;
+                vcVisMain.className   = 'verdict-main status-red';
+                if (vcVisDet)  vcVisDet.textContent  = `Set by ${Math.abs(or.altitude).toFixed(1)}°. Spacecraft is currently obstructed by the Earth.`;
                 if (vcVisIcon) vcVisIcon.textContent  = '🌑';
                 if (vcVisCard) vcVisCard.className     = 'verdict-card red-card';
             } else if (or.shadowState === 'umbra') {
-                vcVisMain.textContent = 'IN SHADOW — INVISIBLE';
-                vcVisMain.className   = 'verdict-main red';
-                if (vcVisDet)  vcVisDet.textContent  = 'Orion is in Earth\'s umbra. No sunlight is hitting the spacecraft — it cannot be seen optically.';
+                vcVisMain.textContent = 'IN SHADOW — NO SUNLIGHT';
+                vcVisMain.className   = 'verdict-main status-red';
+                if (vcVisDet)  vcVisDet.textContent  = 'Orion is in the Earth\'s shadow. It reflects no sunlight and is effectively invisible to optical telescopes.';
                 if (vcVisIcon) vcVisIcon.textContent  = '🌑';
                 if (vcVisCard) vcVisCard.className     = 'verdict-card red-card';
             } else {
-                vcVisMain.textContent = 'ABOVE HORIZON — LOOK NOW';
-                vcVisMain.className   = 'verdict-main green';
-                if (vcVisDet)  vcVisDet.textContent  = `Currently ${or.altitude.toFixed(1)}° above your horizon. Face ${azToDirection(or.azimuth)} and point your telescope there.`;
-                if (vcVisIcon) vcVisIcon.textContent  = '✅';
+                vcVisMain.textContent = 'SUNLIT — OPTIMAL VIEW';
+                vcVisMain.className   = 'verdict-main status-green';
+                if (vcVisDet)  vcVisDet.textContent  = `Spacecraft is sunlit and ${or.altitude.toFixed(1)}° high. Direct optical observation is possible.`;
+                if (vcVisIcon) vcVisIcon.textContent  = '☀️';
                 if (vcVisCard) vcVisCard.className     = 'verdict-card green-card';
             }
         }
@@ -1362,15 +1389,16 @@ document.addEventListener("DOMContentLoaded", () => {
         if (vcSkyMain && m.sun) {
             const sunAlt = m.sun.altitude;
             let skyMain, skyDet, skyClass, skyIcon, skyCard;
-            if (sunAlt > -0.83) {
-                skyMain = 'SKY TOO BRIGHT (Wait for Night)'; skyClass = 'red'; skyCard = 'red-card';
-                skyIcon = '☀️'; skyDet = `Sun is ${sunAlt.toFixed(1)}° above horizon. At least -12° is needed for useful imaging.`;
-            } else if (sunAlt > -12) {
-                skyMain = 'TWILIGHT — LIMITED IMAGING'; skyClass = 'amber'; skyCard = 'amber-card';
-                skyIcon = '🌅'; skyDet = `Astronomical twilight. Sky background is brightening — short exposures only. Wait ${Math.abs(sunAlt - (-18)).toFixed(0)} min more for full dark.`;
+            // logic: Red if Sun Alt > -12° (Too Bright); Green if Sun Alt < -18°.
+            if (sunAlt > -12) {
+                skyMain = 'SKY TOO BRIGHT'; skyClass = 'status-red'; skyCard = 'red-card';
+                skyIcon = '☀️'; skyDet = `Sun is ${sunAlt.toFixed(1)}° above horizon. Night imaging requires sun to be below -12°.`;
+            } else if (sunAlt > -18) {
+                skyMain = 'TWILIGHT — SUBOPTIMAL'; skyClass = 'status-yellow'; skyCard = 'amber-card';
+                skyIcon = '🌅'; skyDet = `Astronomical twilight. Sky is still partially illuminated. Full dark is below -18°.`;
             } else {
-                skyMain = 'FULL ASTRONOMICAL DARK'; skyClass = 'green'; skyCard = 'green-card';
-                skyIcon = '🌑'; skyDet = `Sun is ${Math.abs(sunAlt).toFixed(1)}° below horizon — excellent dark sky conditions for imaging.`;
+                skyMain = 'OPTIMAL DARKNESS'; skyClass = 'status-green'; skyCard = 'green-card';
+                skyIcon = '🌌'; skyDet = `Sun is ${Math.abs(sunAlt).toFixed(1)}° below horizon. Perfect dark-sky conditions.`;
             }
             if (vcSkyMain) { vcSkyMain.textContent = skyMain; vcSkyMain.className = 'verdict-main ' + skyClass; }
             if (vcSkyDet)  vcSkyDet.textContent  = skyDet;
@@ -1382,25 +1410,29 @@ document.addEventListener("DOMContentLoaded", () => {
         const barFill   = document.getElementById('detection-bar-fill');
         const detPct    = document.getElementById('detection-pct');
         const vcDetDet  = document.getElementById('vc-det-detail');
+        const vcDetCard = document.getElementById('vc-detection');
         if (barFill && or.pixelSpan != null) {
-            // 0.1px floor → 100% at 2.0px span
-            const raw = Math.min(100, Math.max(0, (or.pixelSpan / 2.0) * 100));
-            const pct = or.pixelSpan < 0.1 ? 0 : raw;
+            const px = or.pixelSpan;
+            // logic: Red if < 0.15px; Yellow if 0.15–0.3px; Green if > 0.3px
+            const raw = Math.min(100, Math.max(0, (px / 0.5) * 100)); // 0.5px = 100% for bar scale
+            const pct = px < 0.05 ? 0 : raw;
             barFill.style.width = pct + '%';
             if (detPct) detPct.textContent = pct.toFixed(0) + '%';
+            
+            let detClass, detLabel;
+            if (px < 0.15) {
+                detClass = 'status-red'; detLabel = 'VERY DIFFICULT';
+            } else if (px < 0.3) {
+                detClass = 'status-yellow'; detLabel = 'CHALLENGING';
+            } else {
+                detClass = 'status-green'; detLabel = 'OPTIMAL';
+            }
+            
             if (barFill) {
-                barFill.style.background = pct < 20
-                    ? 'linear-gradient(90deg,#ef5350,#ffa726)'
-                    : pct < 60
-                    ? 'linear-gradient(90deg,#ffa726,#ffcc00)'
-                    : 'linear-gradient(90deg,#00e5ff,#00e676)';
+                barFill.style.background = px < 0.15 ? '#ef5350' : px < 0.3 ? '#ffa726' : '#00e676';
             }
             if (vcDetDet) {
-                if (or.pixelSpan < 0.1) {
-                    vcDetDet.textContent = `Below the 0.1px detection floor — spacecraft not resolvable with current setup at this range.`;
-                } else {
-                    vcDetDet.textContent = `Estimated ${or.pixelSpan.toFixed(2)}px span on sensor (19m wingspan at ${Math.round(or.distanceKm).toLocaleString()} km).`;
-                }
+                vcDetDet.innerHTML = `<span class="${detClass}">${detLabel}</span> — ${px.toFixed(3)}px projected sensor span.`;
             }
         }
 
@@ -1426,26 +1458,34 @@ document.addEventListener("DOMContentLoaded", () => {
         const vcMoonMain = document.getElementById('vc-moon-main');
         const vcMoonDet  = document.getElementById('vc-moon-detail');
         const vcMoonIcon = document.getElementById('vc-moon-icon');
+        const vcMoonCard = document.getElementById('vc-moon');
         if (vcMoonMain && m.moon) {
             const moonPct  = m.moon.phaseFraction * 100;
             const moonAlt  = m.moon.altitude;
-            let moonMain, moonDet, moonIcon;
-            if (moonPct > 85 && moonAlt > 0) {
-                moonMain = `FULL MOON INTERFERENCE`; moonIcon = '🌕';
-                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated and ${moonAlt.toFixed(0)}° above horizon — will significantly wash out faint detail.`;
-            } else if (moonPct > 50 && moonAlt > 0) {
-                moonMain = `PARTIAL MOON — SOME IMPACT`; moonIcon = '🌔';
-                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated at ${moonAlt.toFixed(0)}°. Keep Orion away from the Moon in frame.`;
-            } else if (moonAlt <= 0) {
-                moonMain = `MOON BELOW HORIZON — IDEAL`; moonIcon = '🌑';
-                moonDet  = `No lunar interference. Dark sky conditions currently favourable.`;
+            const moonSep  = or.moonSeparationDeg ?? 90;
+            
+            let moonMain, moonDet, moonIcon, moonClass;
+            
+            // New logic: Red if Moon > 85% AND Sep < 30°. Green if < 40% or Sep > 60°.
+            if (moonPct > 85 && moonSep < 30 && moonAlt > 0) {
+                moonMain = `CRITICAL MOON INTERFERENCE`; moonIcon = '🌕'; moonClass = 'status-red';
+                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated and only ${moonSep.toFixed(1)}° from Orion. Optical imaging effectively impossible.`;
+            } else if (moonPct > 85 && moonAlt > 0) {
+                moonMain = `FULL MOON INTERFERENCE`; moonIcon = '🌕'; moonClass = 'status-yellow';
+                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated. High sky background brightness expected.`;
+            } else if (moonPct < 40 || moonSep > 60 || moonAlt <= 0) {
+                moonMain = `MOON CLEAR — OPTIMAL`; moonIcon = moonAlt <= 0 ? '🌑' : '🌙'; moonClass = 'status-green';
+                moonDet  = moonAlt <= 0 ? `Moon is below the horizon. Dark sky conditions are ideal.` : `Minimal interference from Moon (${moonPct.toFixed(0)}% / ${moonSep.toFixed(0)}° away).`;
             } else {
-                moonMain = `CRESCENT MOON — MINIMAL IMPACT`; moonIcon = '🌙';
-                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated. Low interference for tonight's session.`;
+                moonMain = `PARTIAL MOON IMPACT`; moonIcon = '🌔'; moonClass = 'status-yellow';
+                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated at ${moonSep.toFixed(0)}° separation. Faint detail will be degraded.`;
             }
-            vcMoonMain.textContent = moonMain; vcMoonMain.className = 'verdict-main cyan';
+            
+            vcMoonMain.textContent = moonMain; 
+            vcMoonMain.className = 'verdict-main ' + moonClass;
             if (vcMoonDet)  vcMoonDet.textContent  = moonDet;
-            if (vcMoonIcon) vcMoonIcon.textContent  = moonIcon;
+            if (vcMoonIcon) vcMoonIcon.textContent = moonIcon;
+            if (vcMoonCard) vcMoonCard.className = 'verdict-card ' + (moonClass === 'status-red' ? 'red-card' : moonClass === 'status-green' ? 'green-card' : 'amber-card');
         }
 
         // ── Darkness state sub-header ─────────────────────────────────
@@ -1847,54 +1887,80 @@ document.addEventListener("DOMContentLoaded", () => {
     window.initEyepiece = function() {
         if (renderer) return; // already init
         const canvas = document.getElementById('eyepiece-canvas');
-        if (!canvas) return;
-        
+        if (!canvas || !window.THREE) return;
+
+        // Canvas is display:none at init — read size from parent element
+        const parent = canvas.parentElement;
+        const epW = (parent && parent.clientWidth  > 10 ? parent.clientWidth  : 400);
+        const epH = (parent && parent.clientHeight > 10 ? parent.clientHeight : 400);
+
         scene = new THREE.Scene();
-        camera = new THREE.PerspectiveCamera(1.0, 1.0, 0.1, 2000); // 1-degree FOV
-        
-        renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-        
-        // Starfield
-        const starCount = 4000;
+        camera = new THREE.PerspectiveCamera(2.0, epW / epH, 1, 5000); // narrowing FOV
+        camera.position.set(0, 0, 500); // requested default
+        camera.lookAt(0, 0, 0);
+
+        renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(epW, epH);
+
+        // Starfield — sphere of points around origin
+        const starCount = 5000;
         const starGeo = new THREE.BufferGeometry();
         const starPos = new Float32Array(starCount * 3);
-        for(let i=0; i<starCount; i++) {
+        for (let i = 0; i < starCount; i++) {
             const theta = Math.random() * Math.PI * 2;
-            const phi = Math.acos(Math.random() * 2 - 1);
+            const phi   = Math.acos(2 * Math.random() - 1);
             const r = 1500;
-            starPos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+            starPos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
             starPos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
             starPos[i*3+2] = r * Math.cos(phi);
         }
         starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.7, sizeAttenuation: false });
-        stars = new THREE.Points(starGeo, starMat);
+        stars = new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 1.2, sizeAttenuation: false }));
         scene.add(stars);
-        
-        // Light
-        const sunLight = new THREE.DirectionalLight(0xffffff, 1.2);
-        sunLight.position.set(5, 3, 5);
-        scene.add(sunLight);
-        scene.add(new THREE.AmbientLight(0x222244, 0.5));
-        
-        // Orion Model
+
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const epSun = new THREE.DirectionalLight(0xffffff, 1.2);
+        epSun.position.set(50, 30, 50);
+        scene.add(epSun);
+
+        // Orion model (tiny representation at origin)
         if (window.createOrionModel) {
             orionGroup = window.createOrionModel(THREE);
-            orionGroup.scale.set(0.1, 0.1, 0.1); // model is small
+            orionGroup.scale.set(0.08, 0.08, 0.08);
+            orionGroup.position.set(0, 0, 0);
             scene.add(orionGroup);
         }
-        
+
+        // Cyan target crosshair overlay drawn on a 2D canvas on top
+        function drawCrosshair() {
+            const ov = document.getElementById('eyepiece-crosshair');
+            if (!ov) return;
+            const ctx2 = ov.getContext('2d');
+            const w = ov.width = ov.clientWidth || epW;
+            const h = ov.height = ov.clientHeight || epH;
+            ctx2.clearRect(0, 0, w, h);
+            const cx = w / 2, cy = h / 2, r = Math.min(w, h) * 0.06;
+            ctx2.strokeStyle = 'rgba(0,229,255,0.85)';
+            ctx2.lineWidth = 1;
+            ctx2.beginPath(); ctx2.moveTo(cx - r * 2.5, cy); ctx2.lineTo(cx - r * 0.5, cy); ctx2.stroke();
+            ctx2.beginPath(); ctx2.moveTo(cx + r * 0.5, cy); ctx2.lineTo(cx + r * 2.5, cy); ctx2.stroke();
+            ctx2.beginPath(); ctx2.moveTo(cx, cy - r * 2.5); ctx2.lineTo(cx, cy - r * 0.5); ctx2.stroke();
+            ctx2.beginPath(); ctx2.moveTo(cx, cy + r * 0.5); ctx2.lineTo(cx, cy + r * 2.5); ctx2.stroke();
+            ctx2.beginPath(); ctx2.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx2.strokeStyle = 'rgba(0,229,255,0.5)'; ctx2.stroke();
+        }
+        drawCrosshair();
+
         function animate() {
-            if (useEyepiece) {
-                requestAnimationFrame(animate);
-                renderer.render(scene, camera);
-                if (orionGroup) orionGroup.rotation.y += 0.005;
-            }
+            requestAnimationFrame(animate); // always keep loop alive
+            if (!useEyepiece) return;       // skip render when not active
+            renderer.render(scene, camera);
+            if (orionGroup) orionGroup.rotation.y += 0.004;
         }
         animate();
-    }
+    };
 
     function updateEyepiece(raHours, decDeg, altitude) {
         if (!camera) return;
@@ -1916,32 +1982,32 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // ── PRO: High-Fidelity 3D Engine ──────────────────────────────────
     window.initThreeJS = function() {
         if (t_renderer) return;
         const canvas = document.getElementById('three-canvas');
-        if (!canvas) return;
+        if (!canvas || !window.THREE) return;
 
         t_scene = new THREE.Scene();
 
-        t_renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
-        t_renderer.setPixelRatio(window.devicePixelRatio);
-        const cRect = canvas.getBoundingClientRect();
-        const cW = (cRect.width  > 0 ? cRect.width  : canvas.parentElement.clientWidth)  || 350;
-        const cH = (cRect.height > 0 ? cRect.height : canvas.parentElement.clientHeight) || 350;
+        t_renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        t_renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        // Canvas is display:none at init — read from parent
+        const parent = canvas.parentElement;
+        const cW = (parent && parent.clientWidth  > 10 ? parent.clientWidth  : 400);
+        const cH = (parent && parent.clientHeight > 10 ? parent.clientHeight : 400);
         t_renderer.setSize(cW, cH);
 
-        t_camera = new THREE.PerspectiveCamera(45, cW / cH, 0.1, 2000);
-        t_camera.position.set(8, 6, 8);
+        t_camera = new THREE.PerspectiveCamera(45, cW / cH, 1.0, 5000);
+        t_camera.position.set(0, 0, 500); // requested default
         t_camera.lookAt(0, 0, 0);
 
         // Earth
         const loader = new THREE.TextureLoader();
         const eGeo = new THREE.SphereGeometry(1, 64, 64);
-        const eMat = new THREE.MeshPhongMaterial({ 
+        const eMat = new THREE.MeshPhongMaterial({
             color: 0xffffff,
-            map: loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
-            bumpMap: loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+            map:         loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
+            bumpMap:     loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
             bumpScale: 0.05,
             specularMap: loader.load('https://unpkg.com/three-globe/example/img/earth-water-mask.png'),
             specular: new THREE.Color('grey')
@@ -1953,18 +2019,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const starGeo = new THREE.BufferGeometry();
         const starPts = [];
         for (let i = 0; i < 5000; i++) {
-            starPts.push((Math.random() - 0.5) * 1500, (Math.random() - 0.5) * 1500, (Math.random() - 0.5) * 1500);
+            starPts.push((Math.random()-0.5)*1500,(Math.random()-0.5)*1500,(Math.random()-0.5)*1500);
         }
         starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPts, 3));
-        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, sizeAttenuation: false });
-        t_scene.add(new THREE.Points(starGeo, starMat));
+        t_scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.8, sizeAttenuation: false })));
 
-        // Trajectory Line
-        if (window.MissionEphemeris.points) {
+        // Trajectory
+        if (window.MissionEphemeris && window.MissionEphemeris.points) {
             const pts = window.MissionEphemeris.points.map(p => new THREE.Vector3(p.orion.x * S_SCALE, p.orion.y * S_SCALE, p.orion.z * S_SCALE));
-            const tGeo = new THREE.BufferGeometry().setFromPoints(pts);
-            const tMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.6 });
-            t_traj = new THREE.Line(tGeo, tMat);
+            t_traj = new THREE.Line(
+                new THREE.BufferGeometry().setFromPoints(pts),
+                new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.6 })
+            );
             t_scene.add(t_traj);
         }
 
@@ -1975,38 +2041,48 @@ document.addEventListener("DOMContentLoaded", () => {
             t_scene.add(t_orion);
         }
 
-        // Shadow Cone (Umbra)
-        const sGeo = new THREE.CylinderGeometry(1.0, 0.6, 25, 32);
-        const sMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 });
-        t_shadow = new THREE.Mesh(sGeo, sMat);
+        // Shadow Cone
+        t_shadow = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.0, 0.6, 25, 32),
+            new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.45 })
+        );
         t_scene.add(t_shadow);
 
-        // Lighting
-        t_scene.add(new THREE.AmbientLight(0x404040, 0.6));
-        t_sun = new THREE.DirectionalLight(0xffffff, 1.4);
+        // Lighting — strong enough to see the Earth
+        t_scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        t_sun = new THREE.DirectionalLight(0xfff5e0, 1.4);
+        t_sun.position.set(100, 50, 100);
         t_scene.add(t_sun);
 
+        // Resize handler
+        function onResize3D() {
+            const p = canvas.parentElement;
+            const nW = (p && p.clientWidth  > 10 ? p.clientWidth  : 400);
+            const nH = (p && p.clientHeight > 10 ? p.clientHeight : 400);
+            t_renderer.setSize(nW, nH);
+            t_camera.aspect = nW / nH;
+            t_camera.updateProjectionMatrix();
+        }
+        window.addEventListener('resize', onResize3D);
+
+        let t_loopAlive = false;
         function t_animate() {
-            if (!use3D) {
-                // Stop loop if not needed
-                return;
-            }
-            requestAnimationFrame(t_animate);
+            requestAnimationFrame(t_animate); // keep loop alive always
+            if (!use3D) return;              // skip render when toggled off
+            t_loopAlive = true;
             t_renderer.render(t_scene, t_camera);
-            
             if (t_earth) t_earth.rotation.y += 0.0003;
             if (t_orion) t_orion.rotation.y += 0.005;
-
-            // Simple orbit camera if not dragging
             if (!isDrag) {
                 const time = Date.now() * 0.0001;
                 t_camera.position.x = 8 * Math.sin(time);
                 t_camera.position.z = 8 * Math.cos(time);
-                t_camera.lookAt(0,0,0);
+                t_camera.lookAt(0, 0, 0);
             }
         }
         t_animate();
     };
+
 
     function updateThreeJS(met, orionData) {
         if (!t_orion || !use3D) return;

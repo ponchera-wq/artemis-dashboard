@@ -85,7 +85,7 @@
           <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite"></span>
           <span id="viewer-num-mobile">—</span> WATCHING
         </div>
-        <a href="observer.html" class="ref-observer-btn" title="Open backyard telescope tracking tool">🔭 OBSERVER</a>
+        <a href="observer.html" class="ref-observer-btn" title="Open backyard telescope tracking tool">🔭 OBSERVER MODE</a>
       </div>
       <div id="ref-share-row">
         <button onclick="navigator.clipboard.writeText(window.location.href).then(function(){var b=document.getElementById('ref-ct');b.textContent='COPIED!';setTimeout(function(){b.textContent='LINK'},1500)})"
@@ -213,7 +213,7 @@
       <div id="perilune-block" style="display:flex; flex-direction:column; align-items:center;">
         <div class="stat-label">LUNAR FLYBY</div>
         <div class="stat-value" id="perilune-countdown">--:--:--</div>
-        <div class="stat-sub" id="perilune-dist">CLOSEST APPROACH: ~6,583 KM</div>
+        <div class="stat-sub" id="perilune-dist">CLOSEST APPROACH: ~6,556 KM</div>
       </div>
 
       <div id="splashdown-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(74,144,217,0.1); padding-top:6px; width:80%;">
@@ -229,9 +229,9 @@
         style="font-size:0.42rem;padding:3px 10px;letter-spacing:0.12em;white-space:nowrap;width:100%;" title="Expand telemetry">&#x26F6; EXPAND</button>
       <button id="unit-toggle" title="Switch units"
         style="color:var(--amber);border:1px solid rgba(255,167,38,0.5);background:none;font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.08em;padding:3px 9px;cursor:pointer;white-space:nowrap;width:100%;">KM · MILES</button>
-      <a href="observer.html"
-        style="display:block;width:100%;text-align:center;font-family:var(--font-ui);font-size:0.42rem;letter-spacing:0.1em;padding:3px 9px;border:1px solid rgba(0,229,255,0.35);color:#00e5ff;background:rgba(0,229,255,0.07);border-radius:2px;cursor:pointer;text-decoration:none;white-space:nowrap;"
-        title="Open backyard telescope tracking tool">&#x1F52D; OBSERVER</a>
+      <a href="observer.html" class="ref-observer-btn"
+        style="display:flex;width:100%;justify-content:center;font-family:var(--font-ui);font-size:0.42rem;letter-spacing:0.1em;padding:3px 9px;border:1px solid rgba(255,167,38,0.5);color:var(--amber);background:rgba(255,167,38,0.12);border-radius:2px;cursor:pointer;text-decoration:none;white-space:nowrap;margin-top:4px;"
+        title="Open backyard telescope tracking tool">🔭 OBSERVER MODE</a>
     </div>
   </div>
 
@@ -324,7 +324,7 @@
         <div class="to-extra-item">
           <div class="to-extra-label">LUNAR FLYBY</div>
           <div class="to-extra-val" id="to-perilune">--:--:--</div>
-          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;">CLOSEST APPROACH: ~6,583 KM</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;">CLOSEST APPROACH: ~6,556 KM</div>
         </div>
         <div class="to-extra-item">
           <div class="to-extra-label">SPLASHDOWN</div>
