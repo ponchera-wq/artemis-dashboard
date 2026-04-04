@@ -114,9 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const skyInfoBtn   = document.getElementById('sky-info-btn');
     const skyTooltip   = document.getElementById('sky-tooltip');
 
-    if (locStatus) {
-        setLocationResolved(`CANBERRA DSN (TIDBINBILLA) (-35.40°, 148.98°)`);
-    }
+    // Default label — will be set after geolocation resolves or falls back
     
     if (skyToggleBtn) {
         skyToggleBtn.addEventListener('click', (e) => {
@@ -346,6 +344,9 @@ document.addEventListener("DOMContentLoaded", () => {
         manForm.style.display = "flex";
     }
 
+    // Set Canberra default label immediately — geolocation may override it
+    setLocationResolved(`CANBERRA DSN (TIDBINBILLA) (-35.40°, 148.98°)`);
+
     // Geolocation Init
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (pos) => {
@@ -360,11 +361,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 setLocationResolved(`${place}  (${obsLat.toFixed(2)}°, ${obsLon.toFixed(2)}°)`);
             }
         }, (err) => {
-            console.warn('Geolocation denied or unavailable.', err);
-            haltAndRequireLocation();
+            // Geolocation denied — keep Canberra defaults, hide the priming strip
+            console.warn('Geolocation denied — using Canberra DSN defaults.', err);
+            if (locPrime) locPrime.classList.add('hidden');
+            if (heroAwaiting) heroAwaiting.style.display = 'none';
         });
     } else {
-        haltAndRequireLocation();
+        // No geolocation API — keep Canberra defaults silently
+        if (locPrime) locPrime.classList.add('hidden');
+        if (heroAwaiting) heroAwaiting.style.display = 'none';
     }
 
     // Manual Entry bind
@@ -621,7 +626,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const L_UTC = (window.LAUNCH_UTC && window.LAUNCH_UTC.getTime) ? window.LAUNCH_UTC.getTime() : 0;
         const metSec = (nowMs - L_UTC) / 1000;
 
-        const m = window.ObserverAstro.calculateMetrics(metSec, nowMs, obsLat, obsLon, obsAlt);
+        let m;
+        try {
+            m = window.ObserverAstro.calculateMetrics(metSec, nowMs, obsLat, obsLon, obsAlt);
+        } catch(err) {
+            console.error('[tick] calculateMetrics crashed:', err);
+            return;
+        }
 
         if (!m) {
             handleNoData();
