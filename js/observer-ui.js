@@ -76,6 +76,16 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    document.getElementById('btn-clear-loc').addEventListener('click', () => {
+        document.getElementById('in-lat').value = '';
+        document.getElementById('in-lon').value = '';
+        obsLat = null;
+        obsLon = null;
+        isReady = false;
+        locStatus.textContent = "LOCATION REQUIRED";
+        locStatus.style.color = "#ff5050";
+    });
+
     // Fallbacks
     function handleNoData() {
         visChip.textContent = "AWAITING DATA";
