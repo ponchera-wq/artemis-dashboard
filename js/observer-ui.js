@@ -169,23 +169,41 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // SVG Sky Plot Drawer — with 60-minute projected path
-    function drawPlot(alt, az, metSec, nowMs) {
+    // SVG Sky Plot Drawer — with 60-minute projected path, Moon, and labels
+    function drawPlot(alt, az, metSec, nowMs, moonAlt, moonAz) {
         const R = 45; // horizon ring radius in SVG units
         let svg = `<svg viewBox="0 0 100 100" style="width:100%;height:100%;font-family:'Share Tech Mono', monospace;">
-            <circle cx="50" cy="50" r="${R}" fill="none" stroke="rgba(74,144,217,0.2)"/>
-            <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(74,144,217,0.1)"/>
-            <circle cx="50" cy="50" r="15" fill="none" stroke="rgba(74,144,217,0.1)"/>
-            <line x1="50" y1="5" x2="50" y2="95" stroke="rgba(74,144,217,0.1)"/>
-            <line x1="5" y1="50" x2="95" y2="50" stroke="rgba(74,144,217,0.1)"/>
-            <text x="50" y="4" font-size="3" fill="#7986a8" text-anchor="middle">N</text>
-            <text x="96" y="51" font-size="3" fill="#7986a8" text-anchor="start">E</text>
-            <text x="50" y="99" font-size="3" fill="#7986a8" text-anchor="middle">S</text>
-            <text x="4" y="51" font-size="3" fill="#7986a8" text-anchor="end">W</text>
+            <circle cx="50" cy="50" r="${R}" fill="none" stroke="rgba(74,144,217,0.35)" stroke-width="0.7"/>
+            <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(74,144,217,0.2)" stroke-width="0.5"/>
+            <circle cx="50" cy="50" r="15" fill="none" stroke="rgba(74,144,217,0.2)" stroke-width="0.5"/>
+            <line x1="50" y1="3" x2="50" y2="97" stroke="rgba(74,144,217,0.2)" stroke-width="0.5"/>
+            <line x1="3" y1="50" x2="97" y2="50" stroke="rgba(74,144,217,0.2)" stroke-width="0.5"/>
+            <text x="50" y="2.5" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="middle" dominant-baseline="hanging">N</text>
+            <text x="98" y="52" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="end" dominant-baseline="middle">E</text>
+            <text x="50" y="98" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="middle" dominant-baseline="auto">S</text>
+            <text x="2" y="52" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="start" dominant-baseline="middle">W</text>
         `;
 
-        // Build projected path: sample t+10m, t+20m, ... t+60m
-        // Uses the global obsLat/obsLon/obsAlt captured in closure
+        // ── Moon dot ──────────────────────────────────────────────────────────
+        if (moonAlt != null && moonAz != null) {
+            const moonRad = (moonAz - 90) * Math.PI / 180;
+            let mR, mX, mY;
+            if (moonAlt >= 0) {
+                mR = ((90 - moonAlt) / 90) * R;
+            } else {
+                mR = R; // pin to edge
+            }
+            mX = 50 + mR * Math.cos(moonRad);
+            mY = 50 + mR * Math.sin(moonRad);
+            const moonOp = moonAlt >= 0 ? '0.85' : '0.25';
+            svg += `<circle cx="${mX.toFixed(2)}" cy="${mY.toFixed(2)}" r="4" fill="#ddd" opacity="${moonOp}" filter="drop-shadow(0 0 3px #fff)"/>`;
+            // 'M' label — offset above-right
+            const lX = Math.min(97, Math.max(3, mX + 5));
+            const lY = Math.min(97, Math.max(3, mY - 4));
+            svg += `<text x="${lX.toFixed(1)}" y="${lY.toFixed(1)}" font-size="4" fill="#ddd" opacity="${moonOp}" text-anchor="start">Moon</text>`;
+        }
+
+        // ── Projected path (dashed, next 60 min) ─────────────────────────────
         const PATH_STEPS = 6;
         const STEP_SEC = 10 * 60;
         const pathPoints = [];
@@ -194,20 +212,13 @@ document.addEventListener("DOMContentLoaded", () => {
             for (let i = 1; i <= PATH_STEPS; i++) {
                 const fMs  = nowMs + i * STEP_SEC * 1000;
                 const fMet = metSec + i * STEP_SEC;
-                const m = window.ObserverAstro.calculateMetrics(fMet, fMs, obsLat, obsLon, obsAlt);
-                if (!m) continue;
-                const fAlt = m.orion.altitude;
-                const fAz  = m.orion.azimuth;
-                const rad  = (fAz - 90) * Math.PI / 180;
-                let r, cx, cy;
-                if (fAlt >= 0) {
-                    r  = ((90 - fAlt) / 90) * R;
-                } else {
-                    r  = R; // clamp to edge if below horizon
-                }
-                cx = 50 + r * Math.cos(rad);
-                cy = 50 + r * Math.sin(rad);
-                pathPoints.push(`${cx.toFixed(2)},${cy.toFixed(2)}`);
+                const fm = window.ObserverAstro.calculateMetrics(fMet, fMs, obsLat, obsLon, obsAlt);
+                if (!fm) continue;
+                const fAlt = fm.orion.altitude;
+                const fAz  = fm.orion.azimuth;
+                const fRad = (fAz - 90) * Math.PI / 180;
+                const fR   = fAlt >= 0 ? ((90 - fAlt) / 90) * R : R;
+                pathPoints.push(`${(50 + fR * Math.cos(fRad)).toFixed(2)},${(50 + fR * Math.sin(fRad)).toFixed(2)}`);
             }
         }
 
@@ -215,13 +226,16 @@ document.addEventListener("DOMContentLoaded", () => {
             svg += `<polyline points="${pathPoints.join(' ')}" fill="none" stroke="rgba(0,255,170,0.35)" stroke-width="0.8" stroke-dasharray="2,1.5"/>`;
         }
 
-        // Current position dot
+        // ── Orion / spacecraft dot + label ────────────────────────────────────
         const radNow = (az - 90) * Math.PI / 180;
         if (alt >= 0) {
             const r  = ((90 - alt) / 90) * R;
             const px = 50 + r * Math.cos(radNow);
             const py = 50 + r * Math.sin(radNow);
             svg += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="2.5" fill="#00ffaa" opacity="1" filter="drop-shadow(0 0 3px #00ffaa)"/>`;
+            const lX = Math.min(96, Math.max(3, px + 3.5));
+            const lY = Math.min(97, Math.max(3, py - 3));
+            svg += `<text x="${lX.toFixed(1)}" y="${lY.toFixed(1)}" font-size="3.5" fill="#00ffaa" text-anchor="start">Orion</text>`;
         } else {
             const px = 50 + R * Math.cos(radNow);
             const py = 50 + R * Math.sin(radNow);
@@ -297,8 +311,8 @@ document.addEventListener("DOMContentLoaded", () => {
         distDisp.textContent = Math.round(o.distanceKm).toLocaleString() + " KM";
         rateDisp.textContent = o.angularSpeedDegMin != null ? o.angularSpeedDegMin.toFixed(4) + " °/min" : "—";
 
-        // SVG plotting (pass metSec + nowMs for path projection)
-        drawPlot(o.altitude, o.azimuth, metSec, nowMs);
+        // SVG plotting — pass moon alt/az from the metrics object
+        drawPlot(o.altitude, o.azimuth, metSec, nowMs, m.moon.altitude, m.moon.azimuth);
 
         // Imaging Assist
         if (o.angularSpeedDegMin != null) {

@@ -81,14 +81,23 @@
     }
     /* Step-by-step instruction text */
     .instruction-text {
-      color: #ffcc00;
-      font-size: 0.95rem;
-      font-weight: bold;
+      font-size: 0.9rem;
       margin-bottom: 8px;
       display: block;
-      line-height: 1.45;
-      border-bottom: 1px solid rgba(255,204,0,0.15);
+      line-height: 1.5;
+      border-bottom: 1px solid rgba(255,204,0,0.12);
       padding-bottom: 8px;
+    }
+    .step-title {
+      color: #ffcc00;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .step-detail {
+      color: rgba(255,255,255,0.6);
+      font-weight: normal;
+      font-style: italic;
     }
 
     /* Metrics Values */
@@ -160,7 +169,8 @@
     <!-- PANEL 1: OBSERVATION SUMMARY (merged Visibility + Next Pass) -->
     <div class="obs-panel" id="panel-summary">
       <div class="obs-panel-title">OBSERVATION SUMMARY</div>
-      <span class="instruction-text">Step 1: CHECK STATUS. If Green, go outside. If Red, use the &lsquo;Next Pass&rsquo; timer to plan your night.</span>
+      <span class="instruction-text"><span class="step-title">Step 1: View Status.</span> <span class="step-detail">Look at the bar below. If it turns GREEN, Orion is visible now.</span></span>
+      <div style="font-size:0.7rem;color:#888;margin-bottom:4px;">CURRENT STATUS:</div>
       <div class="vis-chip" id="ui-vis-chip">—</div>
       <div class="m-sub">APPARENT MAGNITUDE</div>
       <div class="m-primary" id="ui-mag">—</div>
@@ -179,7 +189,7 @@
     <!-- PANEL 2: POINTING -->
     <div class="obs-panel" id="panel-pointing">
       <div class="obs-panel-title">LIVE POINTING</div>
-      <span class="instruction-text">Step 2: AIM TELESCOPE. Enter these numbers into your mount or read your gauges to find the ship.</span>
+      <span class="instruction-text"><span class="step-title">Step 2: Aim Telescope.</span> <span class="step-detail">Enter these numbers into your mount or read your gauges to find the ship.</span></span>
       <div class="m-sub" style="margin-top:0;">ALTITUDE &deg;</div>
       <div class="m-primary" id="ui-alt">—</div>
       <div class="m-sub" style="margin-top:10px;">AZIMUTH &deg;</div>
@@ -198,7 +208,7 @@
     <!-- PANEL 3: SKY PLOT -->
     <div class="obs-panel" id="panel-sky">
       <div class="obs-panel-title">LOCAL SKY</div>
-      <span class="instruction-text">Step 3: ORIENTATION. Face North. This map shows where the ship is relative to your horizon.</span>
+      <span class="instruction-text"><span class="step-title">Step 3: Orientation.</span> <span class="step-detail">Face North. Match the dots on this map to the Moon and the ship in the real sky.</span></span>
       <div id="sky-plot-container"><!-- SVG injected by JS --></div>
     </div>
 
@@ -207,7 +217,7 @@
     <!-- PANEL 4: CONDITIONS -->
     <div class="obs-panel" id="panel-cond">
       <div class="obs-panel-title">LOCAL CONDITIONS</div>
-      <span class="instruction-text">ENVIRONMENT CHECK. Bright Moon or Twilight makes this dim ship harder to find.</span>
+      <span class="instruction-text"><span class="step-title">Environment Check.</span> <span class="step-detail">Bright Moon or Twilight makes this dim ship harder to find.</span></span>
       <div class="m-row">
         <span class="m-key">SUN ALTITUDE</span>
         <span class="m-val" id="ui-sun-alt">—</span>
@@ -229,7 +239,7 @@
     <!-- PANEL 5: RANGE & MOTION -->
     <div class="obs-panel" id="panel-range">
       <div class="obs-panel-title">RANGE &amp; ANGULAR MOTION</div>
-      <span class="instruction-text">TRACKING. Higher speeds mean you need to adjust your telescope more often.</span>
+      <span class="instruction-text"><span class="step-title">Tracking.</span> <span class="step-detail">Higher speeds mean you need to adjust your telescope more often.</span></span>
       <div class="m-row">
         <span class="m-key">TOPOCENTRIC DIST</span>
         <span class="m-val" id="ui-dist">—</span>
@@ -246,7 +256,7 @@
     <!-- PANEL 6: IMAGING ASSIST (bottom-right) -->
     <div class="obs-panel" id="panel-imaging">
       <div class="obs-panel-title">IMAGING ASSIST</div>
-      <span class="instruction-text">CAMERA TUNE. Set your exposure shorter than the &lsquo;Max&rsquo; limit to avoid a blurry photo.</span>
+      <span class="instruction-text"><span class="step-title">Camera Tune.</span> <span class="step-detail">Set your exposure shorter than the 'Max' limit to avoid a blurry photo.</span></span>
       <div class="m-row">
         <span class="m-key">TRACK RATE</span>
         <span class="m-val" id="ui-track-rate">—</span>
