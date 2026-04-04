@@ -32,6 +32,21 @@ document.addEventListener("DOMContentLoaded", () => {
     let isReady = true; 
     let useEyepiece = false;
 
+    // ── Collapsible section panels ────────────────────────────────────
+    document.querySelectorAll('.section-header[data-target]').forEach(hdr => {
+        hdr.addEventListener('click', (e) => {
+            // Don't collapse if the user clicks a button inside the header
+            if (e.target.closest('button, a, input')) return;
+            const bodyId = hdr.getAttribute('data-target');
+            const body   = document.getElementById(bodyId);
+            const toggle = hdr.querySelector('.sh-toggle');
+            if (!body) return;
+            const collapsed = body.classList.toggle('collapsed');
+            hdr.classList.toggle('is-collapsed', collapsed);
+            if (toggle) toggle.textContent = collapsed ? '[+]' : '[–]';
+        });
+    });
+
     // DOM Elements
     const locStatus = document.getElementById('ui-loc-status');
     const darkState = document.getElementById('ui-darkness-state');

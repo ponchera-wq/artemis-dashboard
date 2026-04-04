@@ -73,12 +73,12 @@
     .gear-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px; align-items: start;
+      gap: 12px; align-items: start;
     }
-    .gear-group { display: flex; flex-direction: column; gap: 8px; }
+    .gear-group { display: flex; flex-direction: column; gap: 5px; }
     .gear-label {
-      font-family: 'Orbitron', sans-serif; font-size: 0.44rem;
-      letter-spacing: 0.16em; color: rgba(255,204,0,0.7); text-transform: uppercase; margin-bottom: 2px;
+      font-family: 'Orbitron', sans-serif; font-size: 0.42rem;
+      letter-spacing: 0.14em; color: rgba(255,204,0,0.7); text-transform: uppercase;
     }
     .gear-input {
       background: rgba(0,0,0,0.5); border: 1px solid rgba(255,204,0,0.3); color: #ffe;
@@ -89,19 +89,24 @@
     .gear-row { display: flex; gap: 8px; align-items: center; }
     .gear-row .gear-input { flex: 1; }
 
-    /* Location pull inside gear section */
     .loc-inline {
-      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: 1fr 1fr 80px auto;
+      gap: 6px; align-items: end;
     }
+    .loc-inline > div { display: flex; flex-direction: column; gap: 2px; }
     .loc-inline input {
       background: rgba(0,0,0,0.5); border: 1px solid rgba(255,204,0,0.3); color: #ffe;
-      font-family: 'Share Tech Mono', monospace; font-size: 0.82rem; padding: 7px 8px;
-      border-radius: 3px; width: 110px; transition: border-color 0.2s;
+      font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; padding: 5px 7px;
+      border-radius: 3px; width: 100%; transition: border-color 0.2s;
     }
     .loc-inline input:focus { outline: none; border-color: rgba(255,204,0,0.7); }
+    .loc-inline > div:last-child { /* button column */
+      display: flex; flex-direction: row; gap: 5px;
+    }
     .loc-inline button {
-      font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.1em;
-      padding: 7px 14px; border-radius: 3px; cursor: pointer; transition: all 0.2s;
+      font-family: 'Orbitron', sans-serif; font-size: 0.46rem; letter-spacing: 0.08em;
+      padding: 5px 10px; border-radius: 3px; cursor: pointer; transition: all 0.2s; white-space: nowrap;
     }
     #btn-apply-loc { background: rgba(255,204,0,0.15); border: 1px solid rgba(255,204,0,0.5); color: #ffcc00; }
     #btn-apply-loc:hover { background: rgba(255,204,0,0.28); }
@@ -331,6 +336,29 @@
     /* accessibility pulse */
     @keyframes pulse-amber { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
     .pulse-amber { animation: pulse-amber 1.8s ease-in-out infinite; color: #ffcc00; }
+
+    /* ── Collapsible Sections ─────────────────────────────────────── */
+    .section-header { cursor: pointer; user-select: none; }
+    .section-header:hover .sh-toggle { opacity: 1; }
+    .sh-toggle {
+      margin-left: auto; font-family: 'Share Tech Mono', monospace;
+      font-size: 0.65rem; color: rgba(0,229,255,0.45); opacity: 0.7;
+      transition: opacity 0.15s, color 0.15s; flex-shrink: 0;
+    }
+    .section-header.amber .sh-toggle { color: rgba(255,204,0,0.45); }
+    .section-header.muted .sh-toggle { color: rgba(74,144,217,0.45); }
+    .section-body {
+      overflow: hidden;
+      max-height: 2000px; /* large enough */
+      transition: max-height 0.3s ease, opacity 0.25s ease;
+      opacity: 1;
+    }
+    .section-body.collapsed {
+      max-height: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .section-header.is-collapsed .sh-toggle { color: rgba(0,229,255,0.7); }
   </style>
 </head>
 <body>
@@ -353,11 +381,13 @@
     <!-- STEP 1: GEAR SETUP                                         -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div id="section-gear">
-      <div class="section-header amber" style="border-bottom-color:rgba(255,204,0,0.15); margin-bottom:12px;">
+      <div class="section-header amber" data-target="gear-body" style="border-bottom-color:rgba(255,204,0,0.15); margin-bottom:0;">
         <span class="sh-icon">⚙</span>
         <span class="sh-title">Step 1 — Your Setup</span>
         <span class="sh-subtitle">Enter your location and telescope specs</span>
+        <span class="sh-toggle">[–]</span>
       </div>
+      <div class="section-body" id="gear-body" style="margin-top:12px;">
 
       <div class="gear-grid">
 
@@ -365,19 +395,19 @@
         <div class="gear-group">
           <div class="gear-label">📍 Observer Location</div>
           <div class="loc-inline">
-            <div style="display:flex;flex-direction:column;gap:2px;">
-              <div style="font-size:0.48rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;">LATITUDE</div>
+            <div>
+              <div style="font-size:0.45rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;margin-bottom:2px;">LATITUDE</div>
               <input type="number" id="in-lat" placeholder="Latitude"  step="any" value="-35.4014">
             </div>
-            <div style="display:flex;flex-direction:column;gap:2px;">
-              <div style="font-size:0.48rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;">LONGITUDE</div>
+            <div>
+              <div style="font-size:0.45rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;margin-bottom:2px;">LONGITUDE</div>
               <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817">
             </div>
-            <div style="display:flex;flex-direction:column;gap:2px;">
-              <div style="font-size:0.48rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;">ELEVATION (m)</div>
-              <input type="number" id="in-elev" placeholder="Elev m" step="1" value="549" style="width:80px;">
+            <div>
+              <div style="font-size:0.45rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;margin-bottom:2px;">ELEV (m)</div>
+              <input type="number" id="in-elev" placeholder="549" step="1" value="549">
             </div>
-            <div style="display:flex;flex-direction:column;gap:4px;justify-content:flex-end;">
+            <div style="display:flex;flex-direction:row;gap:5px;align-items:flex-end;">
               <button id="btn-apply-loc">APPLY</button>
               <button id="btn-clear-loc">CLEAR</button>
             </div>
@@ -432,17 +462,20 @@
         <span class="res-value" id="ui-confidence" style="color:#00e5ff;">—</span>
         <span class="res-badge" id="ui-res-badge">—</span>
       </div>
+      </div><!-- /.section-body -->
     </div><!-- /#section-gear -->
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- STEP 2: THE VISUAL MAP                                     -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div id="section-sky">
-      <div class="section-header cyan">
+      <div class="section-header cyan" data-target="sky-body">
         <span class="sh-icon">🌐</span>
         <span class="sh-title">Step 2 — Your Sky Right Now</span>
         <span class="sh-subtitle" id="ui-darkness-state">—</span>
+        <span class="sh-toggle">[–]</span>
       </div>
+      <div class="section-body" id="sky-body">
 
       <div id="sky-hud-wrap">
         <div id="sky-hud-inner">
@@ -488,17 +521,20 @@
           <button id="sky-toggle-btn" class="sky-ctrl-btn">🌍 3D VIEW</button>
         </div>
       </div><!-- /#sky-hud-wrap -->
+      </div><!-- /.section-body -->
     </div><!-- /#section-sky -->
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- STEP 3: STATUS VERDICTS                                    -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div id="section-verdicts">
-      <div class="section-header cyan">
+      <div class="section-header cyan" data-target="verdicts-body">
         <span class="sh-icon">📡</span>
         <span class="sh-title">Step 3 — Imaging Strategy</span>
         <span class="sh-subtitle">Human-readable conditions for your session</span>
+        <span class="sh-toggle">[–]</span>
       </div>
+      <div class="section-body" id="verdicts-body">
 
       <div class="verdict-grid">
 
@@ -564,17 +600,20 @@
         </div>
 
       </div><!-- /.verdict-grid -->
+      </div><!-- /.section-body -->
     </div><!-- /#section-verdicts -->
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- GLOBAL COVERAGE MAP                                        -->
     <!-- ═══════════════════════════════════════════════════════════ -->
     <div id="section-coverage" style="margin-top:24px;">
-      <div class="section-header cyan">
+      <div class="section-header cyan" data-target="coverage-body">
         <span class="sh-icon">🌍</span>
         <span class="sh-title">Global Mission Coverage</span>
         <span class="sh-subtitle">Ground track · Visibility footprint · Day/Night terminator</span>
+        <span class="sh-toggle">[–]</span>
       </div>
+      <div class="section-body" id="coverage-body">
       <div style="position:relative; background:rgba(0,8,20,0.9); border:1px solid rgba(0,229,255,0.18); border-radius:6px; overflow:hidden;">
         <!-- Canvas fills the panel -->
         <canvas id="coverage-canvas" style="width:100%; height:280px; display:block;"></canvas>
@@ -593,21 +632,25 @@
           <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:rgba(0,229,255,0.5); display:flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,229,255,0.6);background:rgba(0,229,255,0.1);display:inline-block;"></span>VISIBILITY FOOTPRINT</span>
           <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#ffcc00; display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#ffcc00;display:inline-block;"></span>YOUR LOCATION</span>
         </div>
-      </div>
-    </div>
+      </div><!-- map inner -->
+      </div><!-- /.section-body -->
+    </div><!-- /#section-coverage -->
 
     <div id="section-passes">
-      <div class="section-header muted">
+      <div class="section-header muted" data-target="passes-body">
         <span class="sh-icon">📅</span>
         <span class="sh-title">Step 4 — Upcoming Passes</span>
         <span class="sh-subtitle">Next dark-sky opportunities from your location</span>
+        <span class="sh-toggle">[–]</span>
       </div>
+      <div class="section-body" id="passes-body">
       <div id="win-cards">
         <div style="font-family:'Share Tech Mono',monospace;opacity:0.3;font-size:0.72rem;text-align:center;padding:20px;">
           SCANNING TELEMETRY...
         </div>
-      </div>
-    </div>
+      </div><!-- #win-cards -->
+      </div><!-- /.section-body -->
+    </div><!-- /#section-passes -->
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- MISSION MAP 3D                                             -->
