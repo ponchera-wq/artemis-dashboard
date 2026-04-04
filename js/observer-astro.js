@@ -97,7 +97,7 @@ window.ObserverAstro = (function() {
      */
     function getShadowState(date, orionEci) {
         if (!window.Astronomy) return { state: 'sunlit', factor: 1.0 };
-        const sunVecAu = window.Astronomy.GeoVector('Sun', date);
+        const sunVecAu = window.Astronomy.GeoVector('Sun', date, true);
         if (!sunVecAu) return { state: 'sunlit', factor: 1.0 };
 
         const sunX = sunVecAu.x * AU_KM;
@@ -404,7 +404,7 @@ window.ObserverAstro = (function() {
 
         getSunPos: function(date) {
             if (!window.Astronomy) return null;
-            const sunVecAu = window.Astronomy.GeoVector('Sun', date);
+            const sunVecAu = window.Astronomy.GeoVector('Sun', date, true);
             if (!sunVecAu) return null;
             return { x: sunVecAu.x * AU_KM, y: sunVecAu.y * AU_KM, z: sunVecAu.z * AU_KM };
         },
