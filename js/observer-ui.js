@@ -41,6 +41,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Viewing Windows panel
     const winPanel = document.getElementById('win-cards');
 
+    // Imaging Assist
+    const trackRateDisp  = document.getElementById('ui-track-rate');
+    const maxExpDisp     = document.getElementById('ui-max-exp');
+    const difficultyDisp = document.getElementById('ui-difficulty');
+
     // Window scan runs every 60 ticks (1 per minute) — it's a 73-step loop so we throttle
     let windowScanCountdown = 0;
 
@@ -165,8 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }).join('');
     }
 
-    // SVG Sky Plot Drawer
-    function drawPlot(alt, az) {
+    // SVG Sky Plot Drawer — with 60-minute projected path
+    function drawPlot(alt, az, metSec, nowMs) {
         const R = 45; // horizon ring radius in SVG units
         let svg = `<svg viewBox="0 0 100 100" style="width:100%;height:100%;font-family:'Share Tech Mono', monospace;">
             <circle cx="50" cy="50" r="${R}" fill="none" stroke="rgba(74,144,217,0.2)"/>
@@ -180,19 +185,47 @@ document.addEventListener("DOMContentLoaded", () => {
             <text x="4" y="51" font-size="3" fill="#7986a8" text-anchor="end">W</text>
         `;
 
-        // Az in SVG: North=top, rotate clockwise. Map az to SVG angle: 0°N → up → subtract 90°.
-        const rad = (az - 90) * Math.PI / 180;
+        // Build projected path: sample t+10m, t+20m, ... t+60m
+        // Uses the global obsLat/obsLon/obsAlt captured in closure
+        const PATH_STEPS = 6;
+        const STEP_SEC = 10 * 60;
+        const pathPoints = [];
 
+        if (window.ObserverAstro && window.MissionEphemeris && metSec != null) {
+            for (let i = 1; i <= PATH_STEPS; i++) {
+                const fMs  = nowMs + i * STEP_SEC * 1000;
+                const fMet = metSec + i * STEP_SEC;
+                const m = window.ObserverAstro.calculateMetrics(fMet, fMs, obsLat, obsLon, obsAlt);
+                if (!m) continue;
+                const fAlt = m.orion.altitude;
+                const fAz  = m.orion.azimuth;
+                const rad  = (fAz - 90) * Math.PI / 180;
+                let r, cx, cy;
+                if (fAlt >= 0) {
+                    r  = ((90 - fAlt) / 90) * R;
+                } else {
+                    r  = R; // clamp to edge if below horizon
+                }
+                cx = 50 + r * Math.cos(rad);
+                cy = 50 + r * Math.sin(rad);
+                pathPoints.push(`${cx.toFixed(2)},${cy.toFixed(2)}`);
+            }
+        }
+
+        if (pathPoints.length >= 2) {
+            svg += `<polyline points="${pathPoints.join(' ')}" fill="none" stroke="rgba(0,255,170,0.35)" stroke-width="0.8" stroke-dasharray="2,1.5"/>`;
+        }
+
+        // Current position dot
+        const radNow = (az - 90) * Math.PI / 180;
         if (alt >= 0) {
-            // Above horizon: map 90°→center, 0°→edge
-            const r = ((90 - alt) / 90) * R;
-            const px = 50 + r * Math.cos(rad);
-            const py = 50 + r * Math.sin(rad);
+            const r  = ((90 - alt) / 90) * R;
+            const px = 50 + r * Math.cos(radNow);
+            const py = 50 + r * Math.sin(radNow);
             svg += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="2.5" fill="#00ffaa" opacity="1" filter="drop-shadow(0 0 3px #00ffaa)"/>`;
         } else {
-            // Below horizon: pin to the outer edge at the correct azimuth, dimmed
-            const px = 50 + R * Math.cos(rad);
-            const py = 50 + R * Math.sin(rad);
+            const px = 50 + R * Math.cos(radNow);
+            const py = 50 + R * Math.sin(radNow);
             svg += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="2.5" fill="#ff5050" opacity="0.3" filter="drop-shadow(0 0 2px #ff5050)"/>`;
         }
 
@@ -263,8 +296,16 @@ document.addEventListener("DOMContentLoaded", () => {
         distDisp.textContent = Math.round(o.distanceKm).toLocaleString() + " KM";
         rateDisp.textContent = o.angularSpeedDegMin != null ? o.angularSpeedDegMin.toFixed(4) + " °/min" : "—";
 
-        // SVG plotting
-        drawPlot(o.altitude, o.azimuth);
+        // SVG plotting (pass metSec + nowMs for path projection)
+        drawPlot(o.altitude, o.azimuth, metSec, nowMs);
+
+        // Imaging Assist
+        if (o.angularSpeedDegMin != null) {
+            const img = window.ObserverAstro.calculateImagingAssistance(o.angularSpeedDegMin, o.magnitude);
+            if (trackRateDisp)  trackRateDisp.textContent  = img.trackRateArcsecSec.toFixed(3);
+            if (maxExpDisp)     maxExpDisp.textContent      = img.maxExpSec != null ? img.maxExpSec.toFixed(1) + ' s' : '—';
+            if (difficultyDisp) difficultyDisp.textContent  = img.difficultyLabel;
+        }
 
         // Viewing Windows — scan once per minute (throttled)
         windowScanCountdown--;

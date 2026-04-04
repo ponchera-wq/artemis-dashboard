@@ -273,6 +273,40 @@ window.ObserverAstro = (function() {
             }
 
             return windows;
+        },
+
+        /**
+         * Imaging assistance parameters derived from angular motion and magnitude.
+         *
+         * MaxExp = 2.0 arcsec / trackRate(arcsec/sec)
+         *   trackRate = angularSpeedDegMin * 3600 / 60  (deg/min → arcsec/sec)
+         *
+         * @param {number} angularSpeedDegMin  Angular speed in degrees per minute
+         * @param {number|null} magnitude      Apparent magnitude (null if unavailable)
+         * @returns {object} { trackRateArcsecSec, maxExpSec, difficultyLabel }
+         */
+        calculateImagingAssistance: function(angularSpeedDegMin, magnitude) {
+            // Track rate: deg/min → arcsec/sec  (×3600 for deg→arcsec, ÷60 for min→sec)
+            const trackRateArcsecSec = angularSpeedDegMin * 3600.0 / 60.0;
+
+            // Max untracked exposure before target smears > 2 arcsec
+            const maxExpSec = trackRateArcsecSec > 0
+                ? 2.0 / trackRateArcsecSec
+                : null;
+
+            // Signal-to-Noise category based on magnitude
+            let difficultyLabel;
+            if (magnitude == null) {
+                difficultyLabel = '—';
+            } else if (magnitude < 12) {
+                difficultyLabel = 'Easy';
+            } else if (magnitude <= 14) {
+                difficultyLabel = 'Moderate';
+            } else {
+                difficultyLabel = 'Challenging / Large Aperture';
+            }
+
+            return { trackRateArcsecSec, maxExpSec, difficultyLabel };
         }
     };
 })();

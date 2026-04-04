@@ -163,7 +163,7 @@
     </div>
 
     <!-- ROW 2 -->
-    <!-- PANEL 4: CONDITIONS -->
+    <!-- PANEL 4: CONDITIONS + IMAGING ASSIST -->
     <div class="obs-panel" id="panel-cond">
       <div class="obs-panel-title">LOCAL CONDITIONS</div>
       <div class="m-row">
@@ -196,7 +196,7 @@
         <span class="m-val" id="ui-rate">—</span>
       </div>
       <div class="m-row" style="margin-top:auto;">
-        <span class="m-key" style="color:var(--text-dim);font-size:0.6rem;">* AVERAGE ESTIMATED RATE / HR</span>
+        <span class="m-key" style="color:var(--text-dim);font-size:0.6rem;">* DERIVED FROM 60S INTERPOLATION</span>
       </div>
     </div>
 
@@ -205,6 +205,28 @@
       <div class="obs-panel-title">VIEWING WINDOWS — NEXT 24H</div>
       <div id="win-cards" style="overflow-y:auto;flex:1;">
         <div style="font-size:0.75rem;color:#7986a8;text-align:center;padding:20px 0;">SCANNING…</div>
+      </div>
+    </div>
+
+    <!-- PANEL 7: IMAGING ASSIST — full width row 3 -->
+    <div class="obs-panel" id="panel-imaging" style="grid-column: span 3;">
+      <div class="obs-panel-title">IMAGING ASSIST</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:15px;">
+        <div>
+          <div class="m-key" style="margin-bottom:6px;">TRACK RATE</div>
+          <div class="m-val" id="ui-track-rate" style="font-size:1.1rem;color:#fff;">—</div>
+          <div class="m-key" style="margin-top:3px;font-size:0.55rem;">arcsec/sec</div>
+        </div>
+        <div>
+          <div class="m-key" style="margin-bottom:6px;">MAX UNTRACKED EXP</div>
+          <div class="m-val" id="ui-max-exp" style="font-size:1.1rem;color:#ffb74d;">—</div>
+          <div class="m-key" style="margin-top:3px;font-size:0.55rem;">seconds (2″ smear limit)</div>
+        </div>
+        <div>
+          <div class="m-key" style="margin-bottom:6px;">OBSERVATION DIFFICULTY</div>
+          <div class="m-val" id="ui-difficulty" style="font-size:1.1rem;color:#a8d4ff;">—</div>
+          <div class="m-key" style="margin-top:3px;font-size:0.55rem;">based on apparent magnitude</div>
+        </div>
       </div>
     </div>
   </div>
