@@ -34,12 +34,30 @@ window.computeOdometer = function(metSec) {
   var pts = MissionEphemeris.points;
   if (!pts || pts.length < 2) return 0;
   var total = 0;
-  for (var i = 1; i < pts.length; i++) {
+  var lastPt = pts[0];
+  var i;
+  for (i = 1; i < pts.length; i++) {
     if (pts[i].metSec > metSec) break;
     var dx = pts[i].orion.x - pts[i-1].orion.x;
     var dy = pts[i].orion.y - pts[i-1].orion.y;
     var dz = pts[i].orion.z - pts[i-1].orion.z;
     total += Math.sqrt(dx*dx + dy*dy + dz*dz);
+    lastPt = pts[i];
+  }
+  
+  // Linearly interpolate the final leg if we broke out before hitting the exact waypoint
+  if (i < pts.length && lastPt.metSec < metSec) {
+    var p0 = pts[i-1];
+    var p1 = pts[i];
+    var f = (metSec - p0.metSec) / (p1.metSec - p0.metSec);
+    var ix = p0.orion.x + (p1.orion.x - p0.orion.x) * f;
+    var iy = p0.orion.y + (p1.orion.y - p0.orion.y) * f;
+    var iz = p0.orion.z + (p1.orion.z - p0.orion.z) * f;
+    
+    var fdx = ix - p0.orion.x;
+    var fdy = iy - p0.orion.y;
+    var fdz = iz - p0.orion.z;
+    total += Math.sqrt(fdx*fdx + fdy*fdy + fdz*fdz);
   }
   return total; // km
 };
