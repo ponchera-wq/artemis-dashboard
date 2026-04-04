@@ -8,6 +8,9 @@ let isDrag = false;
 let o = {};
 let renderer, scene, camera, orionGroup, stars, earthMesh, trajectoryLine, shadowCone;
 let t_scene, t_camera, t_renderer, t_earth, t_traj, t_orion, t_shadow, t_sun;
+// Mission Map (dedicated full-width 3D panel)
+let mm_renderer, mm_scene, mm_camera, mm_earth, mm_traj, mm_orion, mm_shadow, mm_sun;
+let mm_isDrag = false, mm_dragStart = null, mm_azimuth = 0.4, mm_elevation = 0.5, mm_radius = 8;
 const EARTH_R_KM = 6371;
 const S_SCALE = 1/EARTH_R_KM;
 
@@ -62,6 +65,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const timelineProgress = document.getElementById('ui-timeline-progress');
     const proxOpsAlert     = document.getElementById('prox-ops-alert');
     const heatmapCtr       = document.getElementById('heatmap-container');
+    // Mission Map overlay stats
+    const mapDist   = document.getElementById('map-dist');
+    const mapVel    = document.getElementById('map-vel');
+    const mapShadow = document.getElementById('map-shadow');
 
     // Hardware Profile Inputs
     const inAperture     = document.getElementById('in-aperture');
@@ -748,10 +755,203 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         
         updateMissionTimeline(metSec);
+
+        // ── Mission Map overlay stat updates ──────────────────────────
+        if (mapDist && o.distanceKm) {
+            mapDist.textContent = Math.round(o.distanceKm).toLocaleString() + ' km';
+        }
+        if (mapVel && window.MissionEphemeris) {
+            const st = window.MissionEphemeris.getState(metSec);
+            if (st && st.orion) {
+                const spd = Math.sqrt(st.orion.vx**2 + st.orion.vy**2 + st.orion.vz**2);
+                mapVel.textContent = spd.toFixed(2) + ' km/s';
+            }
+        }
+        if (mapShadow && o.shadowState) {
+            const shadowLabels = { sunlit: 'SUNLIT', penumbra: 'PENUMBRA', umbra: 'UMBRA' };
+            mapShadow.textContent = shadowLabels[o.shadowState] || o.shadowState.toUpperCase();
+            mapShadow.style.color = o.shadowState === 'umbra' ? '#ef5350' : (o.shadowState === 'penumbra' ? '#ffa726' : '#00e676');
+        }
+
+        // Update mission map 3D if running
+        updateMissionMap(metSec, o);
     }
 
     // Call interval and initial kickoff
     setInterval(tick, 1000);
+    tick(); // fire immediately
+
+    // ── Mission Map — Dedicated Full-Width 3D Panel ───────────────────
+    function initMissionMap() {
+        if (mm_renderer) return;
+        const canvas = document.getElementById('mission-map-canvas');
+        if (!canvas || !window.THREE) return;
+
+        mm_scene = new THREE.Scene();
+
+        const wrap = canvas.parentElement;
+        const W = wrap.clientWidth  || 800;
+        const H = wrap.clientHeight || 420;
+
+        mm_renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+        mm_renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        mm_renderer.setSize(W, H);
+
+        mm_camera = new THREE.PerspectiveCamera(40, W / H, 0.01, 2000);
+        mm_camera.position.set(8, 4, 8);
+        mm_camera.lookAt(0, 0, 0);
+
+        // Starfield
+        const starGeo = new THREE.BufferGeometry();
+        const starPts = [];
+        for (let i = 0; i < 6000; i++) {
+            starPts.push((Math.random()-0.5)*1200,(Math.random()-0.5)*1200,(Math.random()-0.5)*1200);
+        }
+        starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPts, 3));
+        mm_scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.6, sizeAttenuation: false })));
+
+        // Earth
+        const eGeo = new THREE.SphereGeometry(1, 64, 64);
+        const loader = new THREE.TextureLoader();
+        const eMat = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            map: loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
+            bumpMap: loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+            bumpScale: 0.04,
+            specularMap: loader.load('https://unpkg.com/three-globe/example/img/earth-water-mask.png'),
+            specular: new THREE.Color(0x111118)
+        });
+        mm_earth = new THREE.Mesh(eGeo, eMat);
+        mm_scene.add(mm_earth);
+
+        // Atmosphere glow ring
+        const atmGeo = new THREE.SphereGeometry(1.02, 48, 48);
+        const atmMat = new THREE.MeshBasicMaterial({ color: 0x1a4a9a, transparent: true, opacity: 0.12, side: THREE.BackSide });
+        mm_scene.add(new THREE.Mesh(atmGeo, atmMat));
+
+        // Trajectory line
+        if (window.MissionEphemeris && window.MissionEphemeris.points) {
+            const pts = window.MissionEphemeris.points.map(p =>
+                new THREE.Vector3(p.orion.x * S_SCALE, p.orion.y * S_SCALE, p.orion.z * S_SCALE)
+            );
+            const tGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const tMat = new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.55 });
+            mm_traj = new THREE.Line(tGeo, tMat);
+            mm_scene.add(mm_traj);
+        }
+
+        // Orion marker
+        const mGeo = new THREE.SphereGeometry(0.04, 12, 12);
+        const mMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+        mm_orion = new THREE.Mesh(mGeo, mMat);
+        mm_scene.add(mm_orion);
+
+        // Glow ring around Orion
+        const gGeo = new THREE.SphereGeometry(0.07, 12, 12);
+        const gMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.2, side: THREE.BackSide });
+        mm_orion.add(new THREE.Mesh(gGeo, gMat));
+
+        // Shadow cone (Earth umbra approximation)
+        const sGeo = new THREE.CylinderGeometry(0.98, 0.5, 30, 32, 1, true);
+        const sMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        mm_shadow = new THREE.Mesh(sGeo, sMat);
+        mm_shadow.rotation.z = Math.PI / 2; // align along X axis initially
+        mm_scene.add(mm_shadow);
+
+        // Lighting
+        mm_sun = new THREE.DirectionalLight(0xfff5e0, 1.5);
+        mm_scene.add(mm_sun);
+        mm_scene.add(new THREE.AmbientLight(0x1a1a2e, 0.6));
+
+        // Drag-to-orbit controls
+        canvas.style.cursor = 'grab';
+        canvas.addEventListener('mousedown', e => {
+            mm_isDrag = true;
+            mm_dragStart = { x: e.clientX, y: e.clientY, az: mm_azimuth, el: mm_elevation };
+            canvas.style.cursor = 'grabbing';
+        });
+        window.addEventListener('mousemove', e => {
+            if (!mm_isDrag || !mm_dragStart) return;
+            const dx = (e.clientX - mm_dragStart.x) * 0.008;
+            const dy = (e.clientY - mm_dragStart.y) * 0.005;
+            mm_azimuth   = mm_dragStart.az + dx;
+            mm_elevation = Math.max(-1.4, Math.min(1.4, mm_dragStart.el - dy));
+        });
+        window.addEventListener('mouseup', () => { mm_isDrag = false; canvas.style.cursor = 'grab'; });
+        canvas.addEventListener('wheel', e => {
+            mm_radius = Math.max(2, Math.min(25, mm_radius + e.deltaY * 0.01));
+            e.preventDefault();
+        }, { passive: false });
+
+        // Touch controls
+        let mm_lastTouch = null;
+        canvas.addEventListener('touchstart', e => {
+            mm_lastTouch = e.touches[0]; mm_dragStart = { az: mm_azimuth, el: mm_elevation };
+        }, { passive: true });
+        canvas.addEventListener('touchmove', e => {
+            if (!mm_lastTouch || !mm_dragStart) return;
+            const dx = (e.touches[0].clientX - mm_lastTouch.clientX) * 0.006;
+            const dy = (e.touches[0].clientY - mm_lastTouch.clientY) * 0.004;
+            mm_azimuth   = mm_dragStart.az + dx;
+            mm_elevation = Math.max(-1.4, Math.min(1.4, mm_dragStart.el - dy));
+            mm_lastTouch = e.touches[0];
+            mm_dragStart = { az: mm_azimuth, el: mm_elevation };
+        }, { passive: true });
+
+        // Resize handler
+        function onResize() {
+            const nW = wrap.clientWidth  || 800;
+            const nH = wrap.clientHeight || 420;
+            mm_renderer.setSize(nW, nH);
+            mm_camera.aspect = nW / nH;
+            mm_camera.updateProjectionMatrix();
+        }
+        window.addEventListener('resize', onResize);
+
+        // Animation loop
+        function mmAnimate() {
+            requestAnimationFrame(mmAnimate);
+            // Slow auto-rotate when not dragging
+            if (!mm_isDrag) mm_azimuth += 0.0004;
+            // Orbit camera
+            const x = mm_radius * Math.cos(mm_elevation) * Math.sin(mm_azimuth);
+            const y = mm_radius * Math.sin(mm_elevation);
+            const z = mm_radius * Math.cos(mm_elevation) * Math.cos(mm_azimuth);
+            mm_camera.position.set(x, y, z);
+            mm_camera.lookAt(0, 0, 0);
+            // Slow Earth rotation
+            if (mm_earth) mm_earth.rotation.y += 0.0002;
+            mm_renderer.render(mm_scene, mm_camera);
+        }
+        mmAnimate();
+    }
+
+    function updateMissionMap(metSec, orionData) {
+        if (!mm_renderer || !mm_scene) return;
+        // Position Orion marker
+        if (mm_orion && window.MissionEphemeris) {
+            const st = window.MissionEphemeris.getState(metSec);
+            if (st && st.orion) {
+                mm_orion.position.set(st.orion.x * S_SCALE, st.orion.y * S_SCALE, st.orion.z * S_SCALE);
+            }
+        }
+        // Update sun direction & shadow cone
+        const sunPos = window.ObserverAstro ? window.ObserverAstro.getSunPos(new Date()) : null;
+        if (sunPos && mm_sun) {
+            const sv = new THREE.Vector3(sunPos.x, sunPos.y, sunPos.z).normalize();
+            mm_sun.position.copy(sv.clone().multiplyScalar(200));
+            // Shadow cone points away from sun
+            if (mm_shadow) {
+                const sd = sv.clone().negate();
+                mm_shadow.position.copy(sd.multiplyScalar(15));
+                mm_shadow.lookAt(0, 0, 0);
+                mm_shadow.rotateX(Math.PI / 2);
+            }
+        }
+    }
+
+    // Kick off mission map after short delay (textures need DOM to be ready)
+    setTimeout(initMissionMap, 300);
 
     // ── 3D Isometric Sky Dome ─────────────────────────────────────────
     function draw3DDome(o, alt, az, moonAlt, moonAz) {

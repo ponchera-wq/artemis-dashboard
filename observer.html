@@ -1,461 +1,461 @@
 <!DOCTYPE html>
-<html lang="en" style="background:#08080e;">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Artemis II — Observer Mode</title>
+  <meta name="description" content="Artemis II Observer Mode — real-time local sky pointing, visibility windows, and 3D mission map for backyard astronomers.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="stylesheet" href="css/styles.css">
   <style>
-    /* ── Global reset ──────────────────────────────────────────── */
+    /* ── Reset ──────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
 
-    /* OBSERVER MODE — inherits CSS vars from styles.css */
+    html { background: #08080e; }
+
     body {
       margin: 0; padding: 0;
       font-family: 'Share Tech Mono', monospace;
       color: var(--text, #e8eaf6);
       background: #08080e;
-      /* Scanline overlay matching main dashboard */
-      position: relative;
+      overflow-y: auto;
       overflow-x: hidden;
+      min-height: 100vh;
       max-width: 100vw;
     }
+
+    /* Scanline overlay */
     body::after {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
       background: repeating-linear-gradient(
         0deg, transparent, transparent 3px,
-        rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px
+        rgba(0,0,0,0.06) 3px, rgba(0,0,0,0.06) 4px
       );
     }
 
-    /* ── Header ─────────────────────────────────────────── */
+    /* ── Sticky Nav Stack ───────────────────────────────────── */
+    #obs-sticky {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: #0a0a14;
+    }
+
     .obs-header {
       display: flex; justify-content: space-between; align-items: center;
       padding: 10px 20px;
-      background: var(--bg-panel, #0d0d18);
-      border-bottom: 1px solid var(--border, rgba(74,144,217,0.22));
+      border-bottom: 1px solid rgba(74,144,217,0.2);
     }
     .obs-brand {
-      font-family: 'Orbitron', sans-serif; font-size: 1.1rem;
+      font-family: 'Orbitron', sans-serif; font-size: 1.05rem;
       font-weight: 900; color: #fff; letter-spacing: 0.12em;
     }
     .obs-brand span { color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
-    .obs-toggle { display: flex; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+    .obs-toggle { display: flex; border: 1px solid rgba(74,144,217,0.3); border-radius: 3px; overflow: hidden; }
     .obs-toggle a {
-      padding: 5px 15px; text-decoration: none; color: var(--text-dim, #7986a8);
-      font-size: 0.65rem; font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em;
-      background: rgba(0,0,0,0.4);
+      padding: 5px 15px; text-decoration: none; color: rgba(121,134,168,0.9);
+      font-size: 0.62rem; font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em;
+      background: rgba(0,0,0,0.4); transition: all 0.2s;
     }
     .obs-toggle a.active { background: rgba(0,229,255,0.1); color: #00e5ff; }
 
-    /* ── Location Bar ────────────────────────────────────── */
+    /* Location Bar */
     .loc-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 6px 20px;
-      background: var(--bg-panel, #0d0d18);
-      border-bottom: 1px solid var(--border, rgba(74,144,217,0.22));
-      font-size: 0.7rem; gap: 12px;
+      display: flex; align-items: center;
+      padding: 5px 20px;
+      border-bottom: 1px solid rgba(74,144,217,0.15);
+      font-size: 0.68rem; gap: 10px; flex-wrap: wrap;
     }
-    .loc-info { display: flex; gap: 14px; align-items: center; flex: 1; min-width: 0; }
-    .loc-coord { color: #00e5ff; font-family: 'Share Tech Mono', monospace; }
-    .loc-darkness { font-family: 'Share Tech Mono', monospace; font-size: 0.68rem; }
-    /* Next Pass injected inline in the bar */
+    .loc-info { display: flex; gap: 12px; align-items: center; flex: 1; min-width: 0; }
+    .loc-coord { color: #00e5ff; font-family: 'Share Tech Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 38vw; }
+    .loc-darkness { font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; white-space: nowrap; }
     #loc-next-pass {
-      font-family: 'Share Tech Mono', monospace; font-size: 0.68rem;
-      color: #00e5ff; padding-left: 14px;
-      border-left: 2px solid rgba(0,229,255,0.4);
+      font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+      color: #00e5ff; padding-left: 12px;
+      border-left: 2px solid rgba(0,229,255,0.35);
       white-space: nowrap; flex-shrink: 0;
     }
     .loc-btn {
-      background: transparent;
-      border: 1px solid rgba(255,167,38,0.45);
-      color: #ffa726;
-      padding: 3px 10px; cursor: pointer; border-radius: 2px;
-      font-family: 'Orbitron', sans-serif; font-size: 0.55rem; letter-spacing: 0.08em;
-      flex-shrink: 0;
+      background: transparent; border: 1px solid rgba(255,167,38,0.45);
+      color: #ffa726; padding: 3px 10px; cursor: pointer; border-radius: 2px;
+      font-family: 'Orbitron', sans-serif; font-size: 0.52rem; letter-spacing: 0.08em;
+      flex-shrink: 0; transition: background 0.2s;
     }
     .loc-btn:hover { background: rgba(255,167,38,0.12); color: #ffcc00; }
 
-    /* ── Manual Entry Form ───────────────────────────────── */
+    /* Priming strip */
+    #loc-prime {
+      padding: 6px 20px; background: rgba(255,204,0,0.06);
+      border-bottom: 1px solid rgba(255,204,0,0.2); font-size: 0.68rem;
+      color: #ffcc00; display: flex; align-items: center; gap: 10px;
+    }
+    #loc-prime.hidden { display: none; }
+
+    /* Manual form */
     #manual-loc-form {
-      display: none; padding: 12px 20px;
-      background: rgba(13,13,24,0.95);
-      border-bottom: 1px solid rgba(255,167,38,0.35);
-      font-size: 0.75rem; color: var(--amber, #ffa726);
-      align-items: center; gap: 10px;
+      display: none; padding: 10px 20px;
+      background: rgba(13,13,24,0.98);
+      border-bottom: 1px solid rgba(255,167,38,0.3);
+      font-size: 0.73rem; color: #ffa726;
+      align-items: center; gap: 10px; flex-wrap: wrap;
     }
     #manual-loc-form input {
       background: rgba(0,0,0,0.6); border: 1px solid rgba(74,144,217,0.4); color: #fff;
-      padding: 4px 8px; width: 90px; font-family: inherit; border-radius: 2px;
+      padding: 4px 8px; width: 100px; font-family: inherit; border-radius: 2px;
     }
     #manual-loc-form button {
       background: rgba(74,144,217,0.15); color: #00e5ff;
       border: 1px solid rgba(0,229,255,0.3); padding: 4px 12px;
-      font-family: 'Orbitron', sans-serif; font-size: 0.6rem;
+      font-family: 'Orbitron', sans-serif; font-size: 0.58rem;
       letter-spacing: 0.08em; cursor: pointer; border-radius: 2px;
     }
 
-    /* ── Grid ────────────────────────────────────────────── */
+    /* ── Mission Hero ───────────────────────────────────────── */
+    #mission-hero {
+      background: rgba(255,204,0,0.04); border-left: 3px solid #ffcc00;
+      padding: 12px 20px; margin: 12px 20px; border-radius: 3px;
+    }
+    #mission-hero h2 {
+      color: #ffcc00; margin: 0 0 6px 0; font-size: 0.82rem;
+      text-transform: uppercase; font-family: 'Orbitron', sans-serif;
+      letter-spacing: 0.14em;
+    }
+    #mission-hero p {
+      color: rgba(0,229,255,0.6); font-size: 0.72rem; line-height: 1.6; margin: 0;
+      font-family: 'Share Tech Mono', monospace;
+    }
+    #hero-awaiting { margin-top: 6px; font-size: 0.68rem; display: none; }
+    @keyframes pulse-amber { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+    .pulse-amber { animation: pulse-amber 1.8s ease-in-out infinite; color: #ffcc00; }
+
+    /* ── MISSION MAP (3D Full-Width Panel) ─────────────────── */
+    #mission-map-panel {
+      margin: 0 20px 16px;
+      background: rgba(0,8,20,0.9);
+      border: 1px solid rgba(0,229,255,0.2);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #mission-map-title {
+      font-family: 'Orbitron', sans-serif; font-size: 0.58rem; font-weight: 700;
+      letter-spacing: 0.18em; color: #00e5ff;
+      padding: 8px 14px 6px;
+      border-bottom: 1px solid rgba(0,229,255,0.15);
+      text-transform: uppercase; display: flex; align-items: center; gap: 7px;
+    }
+    #mission-map-title::before {
+      content: '•• '; color: #00e5ff; font-family: 'Share Tech Mono', monospace;
+      font-size: 0.7rem; letter-spacing: 0; text-shadow: 0 0 10px rgba(0,229,255,0.6);
+    }
+    #mission-map-title .map-subtitle {
+      margin-left: auto; font-size: 0.5rem; color: rgba(0,229,255,0.5); letter-spacing: 0.08em;
+    }
+    #mission-map-canvas-wrap {
+      width: 100%; height: 420px; position: relative; background: #00020a;
+    }
+    #mission-map-canvas {
+      width: 100%; height: 100%; display: block;
+    }
+    #mission-map-overlay {
+      position: absolute; bottom: 10px; left: 14px; right: 14px;
+      display: flex; gap: 16px; pointer-events: none;
+    }
+    .map-stat {
+      background: rgba(0,0,0,0.55); border: 1px solid rgba(0,229,255,0.18);
+      border-radius: 3px; padding: 5px 10px;
+    }
+    .map-stat-label { font-family: 'Orbitron', sans-serif; font-size: 0.38rem; letter-spacing: 0.14em; color: rgba(0,229,255,0.6); }
+    .map-stat-val { font-family: 'Orbitron', sans-serif; font-size: 0.75rem; font-weight: 700; color: #00e5ff; }
+
+    /* ── Main Data Grid ─────────────────────────────────────── */
     .obs-grid {
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); 
-      gap: 12px;
-      padding: 12px 16px; 
-      max-width: 1600px; 
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 16px;
+      padding: 0 20px 20px;
+      max-width: 1600px;
       margin: 0 auto;
     }
+
     .obs-panel {
-      background: rgba(0, 15, 30, 0.8);
-      backdrop-filter: blur(12px);
-      border: 1px solid var(--border, rgba(0, 229, 255, 0.2));
+      background: rgba(0, 12, 28, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(0, 229, 255, 0.18);
       border-radius: 4px; display: flex; flex-direction: column;
       position: relative; overflow: hidden;
       transition: border-color 0.4s ease, box-shadow 0.4s ease;
     }
-    /* Dashboard-style panel header — Orbitron, dot prefix, top border accent */
     .obs-panel-title {
       font-family: 'Orbitron', sans-serif;
-      font-size: 0.58rem; font-weight: 700; letter-spacing: 0.18em;
-      color: var(--cyan, #00e5ff);
-      padding: 8px 14px 6px;
-      border-bottom: 1px solid var(--border);
+      font-size: 0.56rem; font-weight: 700; letter-spacing: 0.18em;
+      color: #00e5ff; padding: 8px 14px 6px;
+      border-bottom: 1px solid rgba(0,229,255,0.12);
       text-transform: uppercase;
-      display: flex; align-items: center; gap: 7px;
-      flex-shrink: 0;
-      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      flex-shrink: 0; cursor: pointer;
     }
     .obs-panel-title::before {
-      content: '•• ';
-      color: var(--cyan, #00e5ff);
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.7rem;
-      letter-spacing: 0;
-      margin-right: 4px;
+      content: '•• '; color: #00e5ff; font-family: 'Share Tech Mono', monospace;
+      font-size: 0.68rem; letter-spacing: 0; margin-right: 3px;
       text-shadow: 0 0 10px rgba(0,229,255,0.6);
     }
     .obs-panel-body { padding: 12px 14px; display: flex; flex-direction: column; flex: 1; }
 
-    /* ── Instruction text ────────────────────────────────── */
+    /* Instruction text */
     .instruction-text {
-      font-size: 0.7rem; margin-bottom: 10px; display: block;
-      line-height: 1.5; border-bottom: 1px solid rgba(0,229,255,0.1);
+      font-size: 0.68rem; margin-bottom: 10px; display: block;
+      line-height: 1.5; border-bottom: 1px solid rgba(0,229,255,0.08);
       padding-bottom: 8px; font-family: 'Rajdhani', sans-serif;
     }
-    .step-title {
-      color: #ffcc00; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Orbitron', sans-serif;
-    }
-    .step-detail {
-      color: rgba(140, 190, 240, 0.7);
-      font-weight: normal; margin-left: 4px;
-    }
+    .step-title { color: #ffcc00; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; font-family: 'Orbitron', sans-serif; }
+    .step-detail { color: rgba(140,190,240,0.7); font-weight: normal; margin-left: 4px; }
 
-    /* ── Telemetry cells ─────────────────────────────────── */
+    /* Telemetry cells */
     .obs-telem-cell {
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(0,229,255,0.15);
       border-radius: 3px; padding: 8px 10px; margin-bottom: 6px;
     }
     .obs-telem-label {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.42rem; letter-spacing: 0.14em;
-      color: var(--text-dim, #7986a8); margin-bottom: 3px;
-      text-transform: uppercase;
+      font-family: 'Orbitron', sans-serif; font-size: 0.4rem; letter-spacing: 0.14em;
+      color: rgba(121,134,168,0.9); margin-bottom: 3px; text-transform: uppercase;
     }
     .obs-telem-value {
-      font-family: 'Orbitron', sans-serif;
-      font-size: 1.7rem; font-weight: 900; line-height: 1;
+      font-family: 'Orbitron', sans-serif; font-size: 1.7rem; font-weight: 900; line-height: 1;
       color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.4);
     }
     .obs-telem-value.green { color: #00e676; text-shadow: 0 0 10px rgba(0,230,118,0.4); }
     .obs-telem-value.amber { color: #4A90D9; text-shadow: 0 0 10px rgba(74,144,217,0.4); }
 
-    /* Smaller data rows */
+    /* Data rows */
     .m-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
     .m-row:last-child { border-bottom: none; }
-    .m-key { color: var(--text-dim, #7986a8); font-size: 0.65rem; letter-spacing: 0.05em; }
-    .m-val { color: var(--text, #e8eaf6); font-size: 0.8rem; }
+    .m-key { color: rgba(121,134,168,0.9); font-size: 0.63rem; letter-spacing: 0.05em; }
+    .m-val { color: var(--text, #e8eaf6); font-size: 0.78rem; }
 
-    /* ── Visibility chip ─────────────────────────────────── */
+    /* Visibility chip */
     .vis-chip {
       display: inline-block; padding: 4px 12px; border-radius: 2px;
-      font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.7rem;
+      font-family: 'Orbitron', sans-serif; font-weight: 700; font-size: 0.68rem;
       letter-spacing: 0.12em;
       background: rgba(0,230,118,0.1); color: #00e676;
       border: 1px solid rgba(0,230,118,0.4); margin-bottom: 8px;
     }
-    .vis-chip.below {
-      background: rgba(239,83,80,0.1); color: #ef5350;
-      border-color: rgba(239,83,80,0.4);
-    }
+    .vis-chip.below { background: rgba(239,83,80,0.1); color: #ef5350; border-color: rgba(239,83,80,0.4); }
+    #panel-summary.obs-visible { border-color: rgba(0,230,118,0.5); box-shadow: 0 0 20px rgba(0,230,118,0.07); }
 
-    /* ── SVG Polar Plot container ─────────────────────────── */
+    /* Sky plot */
     #sky-plot-container {
       width: 100%; aspect-ratio: 1; border-radius: 50%;
       background: radial-gradient(circle at center, #080c1a 0%, #010106 100%);
-      border: 1px solid rgba(0,229,255,0.2); position: relative;
-      min-height: 350px;
+      border: 1px solid rgba(0,229,255,0.18); position: relative;
+      min-height: 320px;
     }
 
-    /* Summary panel glow when Orion is visible */
-    #panel-summary.obs-visible {
-      border-color: rgba(0,230,118,0.5);
-      box-shadow: 0 0 20px rgba(0,230,118,0.08);
-    }
-
-    /* ── Sky panel extras: info tooltip + 3D toggle ─────── */
-    .sky-header-extras {
-      margin-left: auto; display: flex; align-items: center; gap: 8px;
-    }
-    /* 3D/2D toggle */
+    /* Sky panel header extras */
+    .sky-header-extras { margin-left: auto; display: flex; align-items: center; gap: 8px; }
     #sky-toggle-btn {
-      font-family: 'Orbitron', sans-serif; font-size: 0.48rem;
+      font-family: 'Orbitron', sans-serif; font-size: 0.46rem;
       letter-spacing: 0.1em; padding: 2px 8px; border-radius: 2px;
       border: 1px solid rgba(0,229,255,0.4); color: #00e5ff;
-      background: rgba(0,229,255,0.08); cursor: pointer;
-      transition: background 0.2s, color 0.2s;
+      background: rgba(0,229,255,0.08); cursor: pointer; transition: background 0.2s;
     }
-    #sky-toggle-btn:hover { background: rgba(0,229,255,0.2); }
-    #sky-toggle-btn.active { background: rgba(0,229,255,0.25); color: #fff; }
-    /* (i) info icon */
+    #sky-toggle-btn:hover { background: rgba(0,229,255,0.18); }
+    #sky-toggle-btn.active { background: rgba(0,229,255,0.22); color: #fff; }
+
+    /* Info icon + tooltip */
     .sky-info-wrap { position: relative; display: flex; align-items: center; }
     .sky-info-icon {
       display: inline-flex; align-items: center; justify-content: center;
       width: 14px; height: 14px; border-radius: 50%;
       border: 1px solid rgba(255,167,38,0.5); color: #ffa726;
       font-size: 0.5rem; font-family: 'Orbitron', sans-serif;
-      cursor: pointer; transition: border-color 0.15s, color 0.15s;
-      flex-shrink: 0;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s; flex-shrink: 0;
     }
     .sky-info-icon:hover, .sky-info-icon.open { border-color: #ffcc00; color: #ffcc00; }
-    /* Tooltip box */
     .sky-tooltip {
       display: none; position: absolute;
       top: calc(100% + 8px); right: 0; z-index: 200;
-      width: 260px;
-      background: rgba(5,10,25,0.97);
-      border: 1px solid rgba(0,229,255,0.45);
-      border-radius: 5px;
-      box-shadow: 0 0 24px rgba(0,229,255,0.12), 0 8px 28px rgba(0,0,0,0.7);
-      padding: 12px 14px;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 0.62rem;
-      line-height: 1.55;
-      color: rgba(255,255,255,0.75);
+      width: 260px; background: rgba(4,8,22,0.98);
+      border: 1px solid rgba(0,229,255,0.4); border-radius: 5px;
+      box-shadow: 0 0 24px rgba(0,229,255,0.1), 0 8px 28px rgba(0,0,0,0.7);
+      padding: 12px 14px; font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem; line-height: 1.55; color: rgba(255,255,255,0.75);
     }
     .sky-tooltip.open { display: block; }
-    .sky-tooltip .tt-title {
-      font-family: 'Orbitron', sans-serif; font-size: 0.5rem;
-      letter-spacing: 0.14em; color: #00e5ff; margin-bottom: 8px;
-      padding-bottom: 5px; border-bottom: 1px solid rgba(0,229,255,0.2);
-    }
+    .sky-tooltip .tt-title { font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.14em; color: #00e5ff; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid rgba(0,229,255,0.2); }
     .sky-tooltip .tt-row { margin-bottom: 5px; }
     .sky-tooltip .tt-row strong { color: #ffcc00; }
-    /* Mobile: render tooltip as a fixed centred modal instead of dropdown */
-    @media (max-width: 767px) {
-      .sky-tooltip.open {
-        position: fixed; top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        right: auto; width: min(88vw, 320px);
-        max-height: 80vh; overflow-y: auto;
-        z-index: 500;
-      }
-    }
 
-    #ui-loc-status {
-      max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    /* ── Location priming strip ───────────────────────────── */
-    #loc-prime {
-      padding: 7px 20px; background: rgba(255,204,0,0.06);
-      border-bottom: 1px solid rgba(255,204,0,0.2); font-size: 0.7rem;
-      color: #ffcc00; display: flex; align-items: center; gap: 10px;
-    }
-    #loc-prime.hidden { display: none; }
-
-    /* ── Hero banner ──────────────────────────────────────── */
-    #mission-hero {
-      background: rgba(255,204,0,0.04); border-left: 3px solid #ffcc00;
-      padding: 14px 20px; margin: 8px 16px; border-radius: 3px;
-    }
-    #mission-hero h2 {
-      color: #ffcc00; margin: 0 0 8px 0; font-size: 0.85rem;
-      text-transform: uppercase; font-family: 'Orbitron', sans-serif;
-      letter-spacing: 0.14em;
-    }
-    #mission-hero p {
-      color: rgba(0,229,255,0.6); font-size: 0.75rem; line-height: 1.6; margin: 0;
-      font-family: 'Share Tech Mono', monospace;
-    }
-    #hero-awaiting { margin-top: 8px; font-size: 0.7rem; display: none; }
-
-    @keyframes pulse-amber {
-      0%, 100% { opacity: 0.4; } 50% { opacity: 1; }
-    }
-    .pulse-amber { animation: pulse-amber 1.8s ease-in-out infinite; color: #ffcc00; }
-
-    /* ── Collapse toggle button (hidden on desktop) ─────── */
+    /* Collapse button (mobile only) */
     .panel-collapse-btn {
-      display: none;
-      margin-left: auto;
-      background: none; border: none; cursor: pointer;
+      display: none; margin-left: auto; background: none; border: none; cursor: pointer;
       color: rgba(255,167,38,0.7); font-size: 0.9rem; line-height: 1;
-      padding: 0 4px; flex-shrink: 0;
-      transition: color 0.2s, transform 0.25s;
+      padding: 0 4px; flex-shrink: 0; transition: color 0.2s, transform 0.25s;
     }
     .panel-collapse-btn:hover { color: #ffcc00; }
     .panel-collapse-btn.collapsed { transform: rotate(-90deg); }
 
-    /* Mobile: sky fullscreen tap-to-enlarge */
+    /* Sky fullscreen overlay */
     #sky-fullscreen-overlay {
-      display: none; position: fixed; inset: 0; z-index: 1000;
+      display: none; position: fixed; inset: 0; z-index: 1001;
       background: rgba(0,0,0,0.92); align-items: center; justify-content: center;
     }
     #sky-fullscreen-overlay.open { display: flex; }
     #sky-fullscreen-inner {
       width: min(92vw, 92vh); aspect-ratio: 1;
       background: radial-gradient(circle at center, #080c1a 0%, #010106 100%);
-      border: 1px solid rgba(0,229,255,0.3); border-radius: 50%;
-      position: relative;
+      border: 1px solid rgba(0,229,255,0.3); border-radius: 50%; position: relative;
     }
     #sky-fullscreen-inner svg { width: 100%; height: 100%; }
     #sky-fullscreen-close {
       position: absolute; top: -24px; right: -24px;
       background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.4);
       color: #00e5ff; border-radius: 50%; width: 28px; height: 28px;
-      font-size: 0.8rem; cursor: pointer; display: flex;
-      align-items: center; justify-content: center;
+      font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
 
-    /* ── Mobile layout ─────────────────────────────────── */
+    /* ── Mobile ─────────────────────────────────────────────── */
     @media (max-width: 767px) {
-      .obs-grid {
-        grid-template-columns: 1fr;
-        padding: 8px 10px;
-        gap: 10px;
-      }
-      /* Show collapse button */
+      .obs-grid { grid-template-columns: 1fr; padding: 0 10px 16px; gap: 10px; }
       .panel-collapse-btn { display: flex; align-items: center; }
-      /* Sky plot: square and tappable on mobile */
-      #sky-plot-container {
-        cursor: pointer;
-      }
-      #sky-plot-container::after {
-        content: 'TAP TO ENLARGE';
-        position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-        font-size: 0.55rem; color: rgba(0,229,255,0.45);
-        font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em;
-        pointer-events: none;
-      }
-      /* Collapsed panel body */
       .obs-panel.collapsed .obs-panel-body { display: none; }
-      /* Mobile loc bar: stack on narrow screens */
-      .loc-bar { flex-wrap: wrap; gap: 6px; }
-      #ui-loc-status { max-width: 70vw; }
-      #loc-next-pass { border-left: none; padding-left: 0; font-size: 0.62rem; }
-      /* Hero smaller on mobile */
-      #mission-hero { margin: 6px 10px; padding: 10px 14px; }
+      .loc-bar { flex-wrap: wrap; gap: 5px; padding: 5px 12px; }
+      .loc-coord { max-width: 55vw; }
+      #loc-next-pass { border-left: none; padding-left: 0; font-size: 0.59rem; width: 100%; }
+      #mission-hero { margin: 8px 10px; padding: 10px 14px; }
+      #mission-map-panel { margin: 0 10px 12px; }
+      #mission-map-canvas-wrap { height: 260px; }
+      #sky-plot-container { cursor: pointer; min-height: 260px; }
+      #sky-plot-container::after {
+        content: 'TAP TO ENLARGE'; position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+        font-size: 0.52rem; color: rgba(0,229,255,0.4); font-family: 'Orbitron', sans-serif;
+        letter-spacing: 0.1em; pointer-events: none;
+      }
+      .sky-tooltip.open {
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+        right: auto; width: min(88vw, 320px); max-height: 80vh; overflow-y: auto; z-index: 500;
+      }
+      #mission-map-overlay { gap: 8px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- HEADER -->
-  <header class="obs-header">
-    <div class="obs-brand">ARTEMIS II <span>OBSERVER</span></div>
-    <div class="obs-toggle">
-      <a href="index.html">MISSION</a>
-      <a href="observer.html" class="active">OBSERVER</a>
+  <!-- ══ STICKY NAV ══════════════════════════════════════════ -->
+  <div id="obs-sticky">
+    <header class="obs-header">
+      <div class="obs-brand">ARTEMIS II <span>OBSERVER</span></div>
+      <div class="obs-toggle">
+        <a href="index.html">MISSION</a>
+        <a href="observer.html" class="active">OBSERVER</a>
+      </div>
+    </header>
+
+    <div class="loc-bar">
+      <button class="loc-btn" onclick="document.getElementById('manual-loc-form').style.display='flex'">&#9881; LOCATION</button>
+      <div class="loc-info">
+        <span class="loc-coord" id="ui-loc-status">CANBERRA DSN (TIDBINBILLA)</span>
+        <span class="loc-darkness" id="ui-darkness-state">—</span>
+        <a href="#panel-windows" style="text-decoration:none;color:inherit;"><span id="loc-next-pass"></span></a>
+      </div>
     </div>
-  </header>
 
-  <!-- LOCATION BAR -->
-  <div class="loc-bar">
-    <button class="loc-btn" onclick="document.getElementById('manual-loc-form').style.display='flex'">&#9881; LOCATION</button>
-    <div class="loc-info">
-      <span class="loc-coord" id="ui-loc-status">ACQUIRING LOCATION...</span>
-      <span class="loc-darkness" id="ui-darkness-state">—</span>
-      <a href="#panel-windows" style="text-decoration:none; color:inherit;"><span id="loc-next-pass"></span></a>
+    <div id="loc-prime" class="hidden">
+      <span>&#9888;</span>
+      <span>BROWSER PERMISSION REQUIRED. Click <strong>Allow</strong> when prompted, or enter coordinates manually.</span>
+    </div>
+
+    <div id="manual-loc-form">
+      <span>MANUAL ENTRY:</span>
+      <input type="number" id="in-lat" placeholder="Latitude" step="any" value="-35.4014">
+      <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817">
+      <button id="btn-apply-loc">APPLY</button>
+      <button id="btn-clear-loc" style="background:transparent;border:1px solid rgba(255,80,80,0.4);color:#ff5050;padding:4px 12px;font-family:inherit;cursor:pointer;border-radius:2px;">CLEAR</button>
     </div>
   </div>
 
-  <!-- LOCATION PRIMING STRIP -->
-  <div id="loc-prime">
-    <span>&#9888;</span>
-    <span>BROWSER PERMISSION REQUIRED. Click <strong>Allow</strong> when prompted for your location.
-    Otherwise, enter coordinates manually below.</span>
-  </div>
-
-  <!-- MANUAL LOCATION FORM -->
-  <div id="manual-loc-form">
-    <span>MANUAL ENTRY:</span>
-    <input type="number" id="in-lat" placeholder="Latitude" step="any" value="-35.4014">
-    <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817">
-    <button id="btn-apply-loc">APPLY</button>
-    <button id="btn-clear-loc" style="background:transparent;border:1px solid rgba(255,80,80,0.4);color:#ff5050;padding:5px 12px;font-family:inherit;cursor:pointer;">CLEAR</button>
-  </div>
-
-  <!-- MISSION HERO EXPLAINER -->
+  <!-- ══ HERO ════════════════════════════════════════════════ -->
   <div id="mission-hero">
     <h2>What is Observer Mode?</h2>
-    <p>The Artemis II Observer transforms NASA's deep-space telemetry into a local guide for your backyard.
-    While the main dashboard shows where Orion is in space, this page calculates exactly where to point
-    your telescope from your specific coordinates on Earth. Use the steps below to find, track, and
-    photograph the spacecraft during its journey to the Moon.</p>
+    <p>The Artemis II Observer transforms NASA's deep-space telemetry into a local sky guide.
+    While the mission dashboard shows where Orion is in space, this page calculates exactly
+    where to point your telescope from your coordinates on Earth.</p>
     <p id="hero-awaiting" class="pulse-amber">&#8592; Awaiting your location to begin calculations.</p>
   </div>
 
-  <!-- PANELS GRID -->
+  <!-- ══ MISSION MAP — 3D (full-width) ═══════════════════════ -->
+  <div id="mission-map-panel">
+    <div id="mission-map-title">
+      MISSION MAP — J2000 TRAJECTORY
+      <span class="map-subtitle">INTERACTIVE · DRAG TO ROTATE</span>
+    </div>
+    <div id="mission-map-canvas-wrap">
+      <canvas id="mission-map-canvas"></canvas>
+      <div id="mission-map-overlay">
+        <div class="map-stat">
+          <div class="map-stat-label">DIST FROM EARTH</div>
+          <div class="map-stat-val" id="map-dist">—</div>
+        </div>
+        <div class="map-stat">
+          <div class="map-stat-label">VELOCITY</div>
+          <div class="map-stat-val" id="map-vel">—</div>
+        </div>
+        <div class="map-stat">
+          <div class="map-stat-label">SHADOW STATE</div>
+          <div class="map-stat-val" id="map-shadow">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ TELEMETRY GRID ═══════════════════════════════════════ -->
   <div class="obs-grid">
-    <!-- ROW 1 -->
 
     <!-- PANEL 0: EQUIPMENT PROFILE -->
-    <div class="obs-panel" id="panel-hardware" data-panel-id="panel-hardware">
+    <div class="obs-panel" id="panel-hardware">
       <div class="obs-panel-title" onclick="togglePanel('panel-hardware')">
         EQUIPMENT PROFILE
-        <button class="panel-collapse-btn" data-for="panel-hardware" aria-label="Toggle">&#9660;</button>
+        <button class="panel-collapse-btn" aria-label="Toggle">&#9660;</button>
       </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Hardware Setup.</span> <span class="step-detail">Enter your optics and sensor specs for precise targeting.</span></span>
         <div class="m-row">
           <span class="m-key">APERTURE (mm)</span>
-          <input type="number" id="in-aperture" value="203.2" step="0.1" style="width:70px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 5px;">
+          <input type="number" id="in-aperture" value="203.2" step="0.1" style="width:80px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,229,255,0.2);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 6px;border-radius:2px;">
         </div>
         <div class="m-row">
           <span class="m-key">FOCAL LENGTH (mm)</span>
-          <input type="number" id="in-focal-length" value="1420" step="1" style="width:70px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 5px;">
+          <input type="number" id="in-focal-length" value="1420" step="1" style="width:80px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,229,255,0.2);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 6px;border-radius:2px;">
         </div>
         <div class="m-row">
           <span class="m-key">PIXEL SIZE (um)</span>
-          <input type="number" id="in-pixel-size" value="3.76" step="0.01" style="width:70px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 5px;">
+          <input type="number" id="in-pixel-size" value="3.76" step="0.01" style="width:80px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,229,255,0.2);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 6px;border-radius:2px;">
         </div>
         <div class="m-row">
           <span class="m-key">PLANNED EXPOSURE (s)</span>
-          <input type="number" id="in-planned-exp" value="30.0" step="1" style="width:70px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:#ffa726;font-family:inherit;font-size:0.75rem;padding:2px 5px;">
+          <input type="number" id="in-planned-exp" value="30.0" step="1" style="width:80px;background:rgba(0,0,0,0.45);border:1px solid rgba(0,229,255,0.2);color:#ffa726;font-family:inherit;font-size:0.75rem;padding:2px 6px;border-radius:2px;">
         </div>
         <div class="m-row" style="border-bottom:none; margin-top:4px;">
-          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.65rem; color:#ffa726;">
-            <input type="checkbox" id="in-hyperstar" style="width:14px; height:14px;"> 
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.63rem; color:#ffa726;">
+            <input type="checkbox" id="in-hyperstar" style="width:14px; height:14px;">
             <span style="font-family:'Orbitron',sans-serif; letter-spacing:0.05em;">HYPERSTAR MODE (f/1.9)</span>
           </label>
         </div>
         <div class="obs-telem-cell" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
           <div>
             <div class="obs-telem-label">PLATE SCALE</div>
-            <div class="obs-telem-value" id="ui-plate-scale" style="font-size:1.1rem;">0.545</div>
+            <div class="obs-telem-value" id="ui-plate-scale" style="font-size:1.1rem;">0.548</div>
           </div>
           <div style="text-align:right;">
             <div class="obs-telem-label">DETECTION CONFIDENCE</div>
-            <div class="obs-telem-value" id="ui-confidence" style="font-size:1.1rem; color:#ffa726;">MODERATE</div>
+            <div class="obs-telem-value" id="ui-confidence" style="font-size:1.1rem; color:#ffa726;">—</div>
           </div>
         </div>
-        <div style="margin-top:10px; font-size:0.55rem; color:rgba(255,255,255,0.4); font-family:'Orbitron',sans-serif; letter-spacing:0.05em;">
-          QUICK SPECS: 
+        <div style="margin-top:10px; font-size:0.52rem; color:rgba(255,255,255,0.35); font-family:'Orbitron',sans-serif; letter-spacing:0.05em;">
+          QUICK SPECS:
           <a href="#" onclick="window.applyPreset(1420, 203.2); return false;" style="color:#00e5ff; text-decoration:none; margin-right:12px; border-bottom:1px solid rgba(0,229,255,0.3);">SCT 8" + 0.7x</a>
           <a href="#" onclick="window.applyPreset(390, 203.2); return false;" style="color:#00e5ff; text-decoration:none; border-bottom:1px solid rgba(0,229,255,0.3);">HYPERSTAR (f/1.9)</a>
         </div>
@@ -463,7 +463,7 @@
     </div>
 
     <!-- PANEL 1: OBSERVATION SUMMARY -->
-    <div class="obs-panel" id="panel-summary" data-panel-id="panel-summary">
+    <div class="obs-panel" id="panel-summary">
       <div class="obs-panel-title" onclick="togglePanel('panel-summary')">
         OBSERVATION SUMMARY
         <span class="sky-header-extras">
@@ -471,47 +471,45 @@
             <span class="sky-info-icon" id="risk-info-btn" style="border-color:rgba(239,83,80,0.5); color:#ef5350;">!</span>
             <div class="sky-tooltip" id="risk-tooltip" style="border-color:rgba(239,83,80,0.5);">
               <div class="tt-title" style="color:#ef5350;">MISSION RISKS & REFLECTIVITY</div>
-              <div class="tt-row"><strong>THERMAL MANAGEMENT:</strong> Orion's brightness may drop if it rotates to manage passive thermal control (PTC).</div>
-              <div class="tt-row"><strong>TRAJECTORY LATENCY:</strong> Real-time burns may cause deviations from pre-launch ephemeris. Check for updates.</div>
+              <div class="tt-row"><strong>THERMAL MANAGEMENT:</strong> Orion's brightness may drop during PTC rolls.</div>
+              <div class="tt-row"><strong>TRAJECTORY LATENCY:</strong> Real-time burns may deviate from pre-launch ephemeris.</div>
             </div>
           </span>
-          <button class="panel-collapse-btn" data-for="panel-summary" aria-label="Toggle">&#9660;</button>
+          <button class="panel-collapse-btn" aria-label="Toggle">&#9660;</button>
         </span>
       </div>
       <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Step 1: View Status.</span> <span class="step-detail">Look at the bar below. If it turns GREEN, Orion is visible now.</span></span>
-        <div style="font-size:0.6rem;color:var(--text-dim,#7986a8);margin-bottom:4px;font-family:'Orbitron',sans-serif;letter-spacing:0.1em;">CURRENT STATUS:</div>
-        <div class="vis-chip" id="ui-vis-chip">—</div>
+        <span class="instruction-text"><span class="step-title">Step 1: View Status.</span> <span class="step-detail">If the bar turns GREEN, Orion is above the horizon now.</span></span>
+        <div style="font-size:0.58rem;color:rgba(121,134,168,0.9);margin-bottom:4px;font-family:'Orbitron',sans-serif;letter-spacing:0.1em;">CURRENT STATUS:</div>
+        <div class="vis-chip" id="ui-vis-chip">LOADING...</div>
         <div class="obs-telem-cell" style="margin-top:6px;">
           <div class="obs-telem-label">APPARENT MAGNITUDE</div>
           <div class="obs-telem-value" id="ui-mag">—</div>
         </div>
-        <!-- Mission Timeline (v1.1) -->
         <div style="margin-top:12px;">
           <div class="obs-telem-label">FLIGHT PROGRESS</div>
-          <div id="ui-timeline-track" style="height:4px; background:rgba(74,144,217,0.15); position:relative; margin:8px 0; border-radius:2px;">
-            <div id="ui-timeline-progress" style="position:absolute; left:0; top:0; height:100%; background:#00e5ff; width:0%; border-radius:2px;"></div>
-            <!-- Labels -->
-            <div style="position:absolute; top:8px; left:0; font-size:0.35rem; color:rgba(0,229,255,0.5);">HEO</div>
-            <div style="position:absolute; top:8px; left:25%; font-size:0.35rem; color:rgba(0,229,255,0.5);">PROX</div>
-            <div style="position:absolute; top:8px; left:50%; font-size:0.35rem; color:rgba(0,229,255,0.5);">TLI</div>
-            <div style="position:absolute; top:8px; left:75%; font-size:0.35rem; color:rgba(0,229,255,0.5);">FLYBY</div>
+          <div id="ui-timeline-track" style="height:4px; background:rgba(74,144,217,0.12); position:relative; margin:8px 0; border-radius:2px;">
+            <div id="ui-timeline-progress" style="position:absolute; left:0; top:0; height:100%; background:#00e5ff; width:0%; border-radius:2px; transition: width 1s linear;"></div>
+            <div style="position:absolute; top:8px; left:0;    font-size:0.33rem; color:rgba(0,229,255,0.5);">HEO</div>
+            <div style="position:absolute; top:8px; left:25%;  font-size:0.33rem; color:rgba(0,229,255,0.5);">PROX</div>
+            <div style="position:absolute; top:8px; left:50%;  font-size:0.33rem; color:rgba(0,229,255,0.5);">TLI</div>
+            <div style="position:absolute; top:8px; left:75%;  font-size:0.33rem; color:rgba(0,229,255,0.5);">FLYBY</div>
           </div>
-          <div id="prox-ops-alert" style="display:none; margin-top:12px; padding:6px; background:rgba(255,167,38,0.15); border:1px solid #ffa726; color:#ffa726; font-size:0.55rem; text-align:center; font-family:'Orbitron',sans-serif; letter-spacing:0.05em; border-radius:2px;">
+          <div id="prox-ops-alert" style="display:none; margin-top:8px; padding:6px; background:rgba(255,167,38,0.12); border:1px solid #ffa726; color:#ffa726; font-size:0.52rem; text-align:center; font-family:'Orbitron',sans-serif; letter-spacing:0.05em; border-radius:2px;">
             SIGNIFICANT TARGET: PROXIMITY OPERATIONS ACTIVE
           </div>
         </div>
       </div>
     </div>
 
-    <!-- PANEL 2: POINTING -->
-    <div class="obs-panel" id="panel-pointing" data-panel-id="panel-pointing">
+    <!-- PANEL 2: LIVE POINTING -->
+    <div class="obs-panel" id="panel-pointing">
       <div class="obs-panel-title" onclick="togglePanel('panel-pointing')">
         LIVE POINTING
-        <button class="panel-collapse-btn" data-for="panel-pointing" aria-label="Toggle">&#9660;</button>
+        <button class="panel-collapse-btn" aria-label="Toggle">&#9660;</button>
       </div>
       <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Step 2: Aim Telescope.</span> <span class="step-detail">Enter these numbers into your mount or read your gauges to find the ship.</span></span>
+        <span class="instruction-text"><span class="step-title">Step 2: Aim Telescope.</span> <span class="step-detail">Enter these numbers into your mount to find the ship.</span></span>
         <div class="obs-telem-cell">
           <div class="obs-telem-label">ALTITUDE &deg;</div>
           <div class="obs-telem-value green" id="ui-alt">—</div>
@@ -521,37 +519,31 @@
           <div class="obs-telem-value amber" id="ui-az">—</div>
         </div>
         <div style="flex-grow:1;"></div>
-        <div class="m-row">
-          <span class="m-key">RA (J2000)</span>
-          <span class="m-val" id="ui-ra">—</span>
-        </div>
-        <div class="m-row">
-          <span class="m-key">DEC (J2000)</span>
-          <span class="m-val" id="ui-dec">—</span>
-        </div>
+        <div class="m-row"><span class="m-key">RA (J2000)</span><span class="m-val" id="ui-ra">—</span></div>
+        <div class="m-row"><span class="m-key">DEC (J2000)</span><span class="m-val" id="ui-dec">—</span></div>
       </div>
     </div>
 
-    <!-- PANEL 3: SKY PLOT -->
-    <div class="obs-panel" id="panel-sky" data-panel-id="panel-sky">
+    <!-- PANEL 3: LOCAL SKY PLANISPHERE -->
+    <div class="obs-panel" id="panel-sky">
       <div class="obs-panel-title" onclick="togglePanel('panel-sky')">
         LOCAL SKY &mdash; PLANISPHERE
         <span class="sky-header-extras">
-          <button id="eyepiece-toggle-btn" style="border-color:#ffa726; color:#ffa726; margin-right:8px;">TELESCOPE VIEW</button>
+          <button id="eyepiece-toggle-btn" style="font-family:'Orbitron',sans-serif;font-size:0.46rem;letter-spacing:0.1em;padding:2px 8px;border-radius:2px;border:1px solid rgba(255,167,38,0.4);color:#ffa726;background:rgba(255,167,38,0.07);cursor:pointer;margin-right:4px;">TELESCOPE VIEW</button>
           <button id="sky-toggle-btn">3D VIEW</button>
           <span class="sky-info-wrap">
             <span class="sky-info-icon" id="sky-info-btn">i</span>
             <div class="sky-tooltip" id="sky-tooltip">
               <div class="tt-title">HOW TO READ THIS MAP</div>
               <div class="tt-row"><strong>CENTER (+):</strong> The point directly above your head (Zenith).</div>
-              <div class="tt-row"><strong>OUTER RING:</strong> Your horizon line. Objects cross this to become visible.</div>
-              <div class="tt-row"><strong>&#128994; GREEN DOT:</strong> Orion is above the horizon &mdash; look here!</div>
-              <div class="tt-row"><strong>&#128308; RED DOT:</strong> Orion is below the horizon (other side of Earth).</div>
-              <div class="tt-row"><strong>&#9898; WHITE DOT:</strong> The Moon &mdash; use as a landmark.</div>
-              <div class="tt-row"><strong>DASHED LINE:</strong> Path Orion will take over the next 60 minutes.</div>
+              <div class="tt-row"><strong>OUTER RING:</strong> Your horizon line.</div>
+              <div class="tt-row"><strong>&#128994; GREEN DOT:</strong> Orion is above the horizon — look here!</div>
+              <div class="tt-row"><strong>&#128308; RED DOT:</strong> Orion is below the horizon.</div>
+              <div class="tt-row"><strong>&#9898; WHITE DOT:</strong> The Moon — use as a landmark.</div>
+              <div class="tt-row"><strong>DASHED LINE:</strong> Path Orion takes over the next 60 minutes.</div>
             </div>
           </span>
-          <button class="panel-collapse-btn" data-for="panel-sky" aria-label="Toggle">&#9660;</button>
+          <button class="panel-collapse-btn" aria-label="Toggle">&#9660;</button>
         </span>
       </div>
       <div class="obs-panel-body">
@@ -564,126 +556,90 @@
       </div>
     </div>
 
-    <!-- ROW 2 -->
-
-    <!-- PANEL 4: CONDITIONS -->
-    <div class="obs-panel collapsed" id="panel-cond" data-panel-id="panel-cond">
+    <!-- PANEL 4: LOCAL CONDITIONS -->
+    <div class="obs-panel collapsed" id="panel-cond">
       <div class="obs-panel-title" onclick="togglePanel('panel-cond')">
         LOCAL CONDITIONS
-        <button class="panel-collapse-btn collapsed" data-for="panel-cond" aria-label="Toggle">&#9660;</button>
+        <button class="panel-collapse-btn collapsed" aria-label="Toggle">&#9660;</button>
       </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Environment Check.</span> <span class="step-detail">Bright Moon or Twilight makes this dim ship harder to find.</span></span>
-        <div class="m-row">
-          <span class="m-key">SUN ALTITUDE</span>
-          <span class="m-val" id="ui-sun-alt">—</span>
-        </div>
-        <div class="m-row">
-          <span class="m-key">MOON ALTITUDE</span>
-          <span class="m-val" id="ui-moon-alt">—</span>
-        </div>
-        <div class="m-row">
-          <span class="m-key">MOON PHASE</span>
-          <span class="m-val" id="ui-moon-phase">—</span>
-        </div>
-        <div class="m-row">
-          <span class="m-key">ORION PHASE ANGLE</span>
-          <span class="m-val" id="ui-orion-phase">—</span>
-        </div>
-        <div class="m-row" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
+        <div class="m-row"><span class="m-key">SUN ALTITUDE</span><span class="m-val" id="ui-sun-alt">—</span></div>
+        <div class="m-row"><span class="m-key">MOON ALTITUDE</span><span class="m-val" id="ui-moon-alt">—</span></div>
+        <div class="m-row"><span class="m-key">MOON PHASE</span><span class="m-val" id="ui-moon-phase">—</span></div>
+        <div class="m-row"><span class="m-key">ORION PHASE ANGLE</span><span class="m-val" id="ui-orion-phase">—</span></div>
+        <div class="m-row" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.04); padding-top:10px;">
           <span class="m-key">IMAGING THRESHOLD</span>
           <span class="m-val" style="color:#00e5ff;">-12° (NAUTICAL)</span>
         </div>
       </div>
     </div>
 
-    <!-- PANEL 5: RANGE & MOTION -->
-    <div class="obs-panel collapsed" id="panel-range" data-panel-id="panel-range">
+    <!-- PANEL 5: RANGE & ANGULAR MOTION -->
+    <div class="obs-panel collapsed" id="panel-range">
       <div class="obs-panel-title" onclick="togglePanel('panel-range')">
         RANGE &amp; ANGULAR MOTION
-        <button class="panel-collapse-btn collapsed" data-for="panel-range" aria-label="Toggle">&#9660;</button>
+        <button class="panel-collapse-btn collapsed" aria-label="Toggle">&#9660;</button>
       </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Tracking.</span> <span class="step-detail">Higher speeds mean you need to adjust your telescope more often.</span></span>
-        <div class="m-row">
-          <span class="m-key">TOPOCENTRIC DIST</span>
-          <span class="m-val" id="ui-dist">—</span>
-        </div>
-        <div class="m-row">
-          <span class="m-key">ANGULAR SPEED</span>
-          <span class="m-val" id="ui-rate">—</span>
-        </div>
-        <div class="m-row" style="margin-top:auto;">
-          <span class="m-key" style="font-size:0.55rem;opacity:0.5;">* DERIVED FROM 60S INTERPOLATION</span>
-        </div>
+        <div class="m-row"><span class="m-key">TOPOCENTRIC DIST</span><span class="m-val" id="ui-dist">—</span></div>
+        <div class="m-row"><span class="m-key">ANGULAR SPEED</span><span class="m-val" id="ui-rate">—</span></div>
+        <div class="m-row" style="margin-top:auto;"><span class="m-key" style="font-size:0.52rem;opacity:0.5;">* DERIVED FROM 60S INTERPOLATION</span></div>
       </div>
     </div>
 
     <!-- PANEL 6: IMAGING ASSIST -->
-    <div class="obs-panel collapsed" id="panel-imaging" data-panel-id="panel-imaging">
+    <div class="obs-panel collapsed" id="panel-imaging">
       <div class="obs-panel-title" onclick="togglePanel('panel-imaging')">
         IMAGING ASSIST
-        <button class="panel-collapse-btn collapsed" data-for="panel-imaging" aria-label="Toggle">&#9660;</button>
+        <button class="panel-collapse-btn collapsed" aria-label="Toggle">&#9660;</button>
       </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Camera Tune.</span> <span class="step-detail">Set your exposure shorter than the 'Max' limit to avoid a blurry photo.</span></span>
-        <div class="m-row">
-          <span class="m-key">TRACK RATE</span>
-          <span class="m-val" id="ui-track-rate">—</span>
-        </div>
-        <div style="font-size:0.55rem;color:var(--text-dim,#7986a8);margin-top:-3px;margin-bottom:5px;">arcsec/sec</div>
-        <div class="m-row">
-          <span class="m-key">MAX UNTRACKED EXP</span>
-          <span class="m-val" id="ui-max-exp" style="color:#ffa726;">—</span>
-        </div>
-        <div style="font-size:0.55rem;color:var(--text-dim,#7986a8);margin-top:-3px;margin-bottom:5px;">seconds (2&Prime; smear limit)</div>
-        <div class="m-row">
-          <span class="m-key">OBSERVATION DIFFICULTY</span>
-          <span class="m-val" id="ui-difficulty" style="color:#00e5ff;">—</span>
-        </div>
-        <div style="font-size:0.55rem;color:var(--text-dim,#7986a8);margin-top:-3px;margin-bottom:8px;">based on apparent magnitude</div>
-
-        <div class="obs-telem-cell" style="background:rgba(0,229,255,0.05);border-color:rgba(0,229,255,0.25);">
+        <div class="m-row"><span class="m-key">TRACK RATE</span><span class="m-val" id="ui-track-rate">—</span></div>
+        <div style="font-size:0.52rem;color:rgba(121,134,168,0.8);margin-top:-3px;margin-bottom:5px;">arcsec/sec</div>
+        <div class="m-row"><span class="m-key">MAX UNTRACKED EXP</span><span class="m-val" id="ui-max-exp" style="color:#ffa726;">—</span></div>
+        <div style="font-size:0.52rem;color:rgba(121,134,168,0.8);margin-top:-3px;margin-bottom:5px;">seconds (2&Prime; smear limit)</div>
+        <div class="m-row"><span class="m-key">OBSERVATION DIFFICULTY</span><span class="m-val" id="ui-difficulty" style="color:#00e5ff;">—</span></div>
+        <div style="font-size:0.52rem;color:rgba(121,134,168,0.8);margin-top:-3px;margin-bottom:8px;">based on apparent magnitude</div>
+        <div class="obs-telem-cell" style="background:rgba(0,229,255,0.04);border-color:rgba(0,229,255,0.2);">
           <div class="obs-telem-label">EXPECTED PIXEL SPAN</div>
           <div class="obs-telem-value" id="ui-pixel-span" style="font-size:1.4rem;color:#00e5ff;">—</div>
-          <div style="font-size:0.45rem;color:rgba(0,229,255,0.6);text-transform:uppercase;margin-top:2px;">estimated pixels on sensor (19m wingspan)</div>
+          <div style="font-size:0.43rem;color:rgba(0,229,255,0.55);text-transform:uppercase;margin-top:2px;">estimated pixels on sensor (19m wingspan)</div>
         </div>
-
-        <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
-          <div class="obs-telem-cell" style="background:rgba(255,204,0,0.05); border-color:rgba(255,204,0,0.25); margin-bottom:0px;">
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+          <div class="obs-telem-cell" style="background:rgba(255,204,0,0.04); border-color:rgba(255,204,0,0.22); margin-bottom:0;">
             <div class="obs-telem-label" style="color:#ffa726;">REC. EXPOSURE START</div>
             <div class="obs-telem-value" id="ui-exp-start" style="font-size:1.2rem; color:#ffa726;">—</div>
-            <div style="font-size:0.45rem; color:rgba(255,167,38,0.6); text-transform:uppercase; margin-top:2px;">(transit time - 45 seconds)</div>
+            <div style="font-size:0.43rem; color:rgba(255,167,38,0.55); text-transform:uppercase; margin-top:2px;">(transit time - 45 seconds)</div>
           </div>
-          <button id="btn-export-stellarium" class="loc-btn" style="flex:1; padding:6px; border-color:rgba(0,229,255,0.4); color:#00e5ff;">STELLARIUM DATA (.inc)</button>
+          <button id="btn-export-stellarium" class="loc-btn" style="padding:6px; border-color:rgba(0,229,255,0.4); color:#00e5ff; font-size:0.52rem;">STELLARIUM DATA (.inc)</button>
         </div>
       </div>
     </div>
 
-    <!-- PANEL 7: GLOBAL COVERAGE -->
-    <div class="obs-panel" id="panel-global" data-panel-id="panel-global">
+    <!-- PANEL 7: GLOBAL VISIBILITY HEATMAP -->
+    <div class="obs-panel" id="panel-global">
       <div class="obs-panel-title" onclick="togglePanel('panel-global')">GLOBAL VISIBILITY HEATMAP</div>
       <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Global Network.</span> <span class="step-detail">Blue areas show where Orion is currently >15° altitude in total darkness.</span></span>
-        <div id="heatmap-container" style="width:100%; aspect-ratio:2; background:rgba(0,0,0,0.3); border:1px solid var(--border); position:relative; overflow:hidden; border-radius:3px;">
-          <!-- SVG World Map Overlay injected by JS -->
-        </div>
+        <span class="instruction-text"><span class="step-title">Global Network.</span> <span class="step-detail">Blue areas show where Orion is currently &gt;15° altitude in total darkness.</span></span>
+        <div id="heatmap-container" style="width:100%; aspect-ratio:2; background:rgba(0,0,0,0.3); border:1px solid rgba(0,229,255,0.15); position:relative; overflow:hidden; border-radius:3px;"></div>
       </div>
     </div>
 
-    <!-- PANEL 8: WINDOW SCAN -->
-    <div class="obs-panel" id="panel-windows" data-panel-id="panel-windows">
+    <!-- PANEL 8: VIEWING WINDOWS -->
+    <div class="obs-panel" id="panel-windows">
       <div class="obs-panel-title" onclick="togglePanel('panel-windows')">CONTIGUOUS VIEWING WINDOWS</div>
       <div class="obs-panel-body">
-        <span class="instruction-text"><span class="step-title">Scheduling.</span> <span class="step-detail">Next 3 opportunities to see Orion based on local optics constraints.</span></span>
+        <span class="instruction-text"><span class="step-title">Scheduling.</span> <span class="step-detail">Next 3 opportunities to see Orion based on your optics and sky conditions.</span></span>
         <div id="win-cards" style="display:flex; flex-direction:column; gap:8px;">
-          <!-- Cards injected by JS -->
-          <div style="font-family:'Share Tech Mono',monospace; opacity:0.3; font-size:0.7rem; text-align:center; padding:12px;">SCANNING TELEMETRY...</div>
+          <div style="font-family:'Share Tech Mono',monospace; opacity:0.3; font-size:0.68rem; text-align:center; padding:12px;">SCANNING TELEMETRY...</div>
         </div>
       </div>
     </div>
 
-  </div>
+  </div><!-- /.obs-grid -->
 
   <!-- Sky fullscreen overlay (mobile tap-to-enlarge) -->
   <div id="sky-fullscreen-overlay">
@@ -692,7 +648,7 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOAD ORDER -->
+  <!-- ══ SCRIPTS ════════════════════════════════════════════ -->
   <script src="js/shared.js"></script>
   <script src="js/mission-ephemeris.js"></script>
   <script src="js/mission-events.js"></script>
