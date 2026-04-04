@@ -289,12 +289,12 @@
 
   <!-- LOCATION BAR -->
   <div class="loc-bar">
+    <button class="loc-btn" onclick="document.getElementById('manual-loc-form').style.display='flex'">&#9881; LOCATION</button>
     <div class="loc-info">
       <span class="loc-coord" id="ui-loc-status">ACQUIRING LOCATION...</span>
       <span class="loc-darkness" id="ui-darkness-state">—</span>
+      <span id="loc-next-pass"></span>
     </div>
-    <span id="loc-next-pass"></span>
-    <button class="loc-btn" onclick="document.getElementById('manual-loc-form').style.display='flex'">&#9881; LOCATION</button>
   </div>
 
   <!-- LOCATION PRIMING STRIP -->
