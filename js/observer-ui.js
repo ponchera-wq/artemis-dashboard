@@ -38,9 +38,9 @@ document.addEventListener("DOMContentLoaded", () => {
     // Preload Blue Marble
     (() => {
         const img = new Image();
-        img.onload = () => { coverageBluemarble = img; };
+        img.onload = () => { if (img.complete) coverageBluemarble = img; };
         img.crossOrigin = 'anonymous';
-        img.src = 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
+        img.src = 'https://unpkg.com/three-globe@2.45.1/example/img/earth-blue-marble.jpg';
     })();
 
     // ── Collapsible section panels ────────────────────────────────────
@@ -69,10 +69,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Initial state: Only Live Pointing (sky-body) and Observation Summary (verdicts-body) are expanded
+    // Initial state: Step 1 (Gear), Step 2 (Sky), and Step 3 (Verdicts) are expanded
     document.querySelectorAll('.section-header[data-target]').forEach(hdr => {
         const target = hdr.getAttribute('data-target');
-        if (target !== 'sky-body' && target !== 'verdicts-body') {
+        if (target !== 'sky-body' && target !== 'verdicts-body' && target !== 'gear-body') {
             togglePanel(hdr, true); // Force collapse others
         }
     });
@@ -1528,12 +1528,13 @@ document.addEventListener("DOMContentLoaded", () => {
         // Earth
         const eGeo = new THREE.SphereGeometry(1, 64, 64);
         const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
         const eMat = new THREE.MeshPhongMaterial({
             color: 0xffffff,
-            map: loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
-            bumpMap: loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+            map: loader.load('https://unpkg.com/three-globe@2.45.1/example/img/earth-blue-marble.jpg'),
+            bumpMap: loader.load('https://unpkg.com/three-globe@2.45.1/example/img/earth-topology.png'),
             bumpScale: 0.04,
-            specularMap: loader.load('https://unpkg.com/three-globe/example/img/earth-water-mask.png'),
+            specularMap: loader.load('https://unpkg.com/three-globe@2.45.1/example/img/earth-water.png'),
             specular: new THREE.Color(0x111118)
         });
         mm_earth = new THREE.Mesh(eGeo, eMat);
@@ -2019,13 +2020,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Earth
         const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
         const eGeo = new THREE.SphereGeometry(1, 64, 64);
         const eMat = new THREE.MeshPhongMaterial({
             color: 0xffffff,
-            map:         loader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg'),
-            bumpMap:     loader.load('https://unpkg.com/three-globe/example/img/earth-topology.png'),
+            map:         loader.load('https://unpkg.com/three-globe@2.45.1/example/img/earth-blue-marble.jpg'),
+            bumpMap:     loader.load('https://unpkg.com/three-globe@2.45.1/example/img/earth-topology.png'),
             bumpScale: 0.05,
-            specularMap: loader.load('https://unpkg.com/three-globe/example/img/earth-water-mask.png'),
+            specularMap: loader.load('https://unpkg.com/three-globe@2.45.1/example/img/earth-water.png'),
             specular: new THREE.Color('grey')
         });
         t_earth = new THREE.Mesh(eGeo, eMat);

@@ -469,6 +469,21 @@
 
   <!-- ══ GUIDED PAGE ══════════════════════════════════════════════ -->
   <div class="guided-page">
+    
+    <!-- ══ INSPIRATION & SOURCE CREDIT ══════════════════════════════ -->
+    <div id="section-inspiration" style="margin-bottom:12px;">
+      <div class="section-header muted" data-target="inspiration-body" style="padding:10px 0 6px;">
+        <span class="sh-icon" style="font-size:0.9rem;">🎗</span>
+        <span class="sh-title" style="font-size:0.54rem;">•• INSPIRATION & SOURCE CREDIT</span>
+        <span class="sh-toggle">[–]</span>
+        <span class="panel-collapse-btn"></span>
+      </div>
+      <div class="section-body collapsed" id="inspiration-body" style="padding:12px 18px; background:rgba(74,144,217,0.03); border:1px solid rgba(74,144,217,0.1); border-radius:4px;">
+        <div style="font-family:'Rajdhani', sans-serif; font-size:0.75rem; color:rgba(232,234,246,0.8); line-height:1.5;">
+          This application is a 'vibe code' project translating the astrophotography calculations and logic developed by <strong>Shawn Gano</strong> into a live web dashboard. For the original Python scripts and complete Artemis II imaging guide, visit <a href='https://www.gano.name/shawn/artemis2/' target='_blank' style='color:#00e5ff; text-decoration:none;'>gano.name/shawn/artemis2</a> or watch the <a href='https://youtu.be/GqiRlgBeyWY' target='_blank' style='color:#00e5ff; text-decoration:none;'>overview video</a>.
+        </div>
+      </div>
+    </div>
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- STEP 1: GEAR SETUP                                         -->
@@ -478,6 +493,7 @@
         <span class="sh-icon">⚙</span>
         <span class="sh-title">Step 1 — Your Setup <span id="ui-loc-header-name" style="font-size:0.52rem; color:var(--amber); margin-left:10px; opacity:0.8; letter-spacing:0.05em;">[Loading...]</span></span>
         <span class="sh-subtitle">Enter your location and telescope specs</span>
+        <span class="sh-help-icon" title="To determine if your camera can resolve the spacecraft, the system calculates its angular size. Field tests with geosynchronous satellites demonstrate that the target must occupy at least 0.1 pixels on your sensor to be detectable in a long exposure[cite: 104, 106, 107]." style="border-color:rgba(255,167,38,0.5); color:#ffa726;">(i)</span>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
@@ -491,11 +507,11 @@
           <div class="loc-inline">
             <div>
               <div style="font-size:0.45rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;margin-bottom:2px;">LATITUDE</div>
-              <input type="number" id="in-lat" placeholder="Latitude"  step="any" value="-35.4014">
+              <input type="number" id="in-lat" placeholder="Latitude"  step="any" value="-35.4014" style="width:110px;">
             </div>
             <div>
               <div style="font-size:0.45rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;margin-bottom:2px;">LONGITUDE</div>
-              <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817">
+              <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9817" style="width:110px;">
             </div>
             <div>
               <div style="font-size:0.45rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;margin-bottom:2px;">ELEV (m)</div>
@@ -543,9 +559,9 @@
       </div><!-- /.gear-grid -->
 
       <!-- Action Buttons -->
-      <div style="margin-top:20px;">
-        <button id="btn-apply-loc" class="btn-block-lg btn-amber-solid">Apply Setup Changes</button>
-        <button id="btn-clear-loc" class="btn-block-lg btn-outline-muted" style="height:38px; font-size:0.5rem; opacity:0.8;">Clear Form</button>
+      <div style="margin-top:20px; display:flex; gap:10px;">
+        <button id="btn-apply-loc" class="btn-amber-solid" style="height:45px; flex:1; display:inline-flex; align-items:center; justify-content:center; font-size:0.65rem; letter-spacing:0.12em; text-transform:uppercase;">Apply Setup Changes</button>
+        <button id="btn-clear-loc" class="btn-outline-muted" style="height:45px; width:120px; display:inline-flex; align-items:center; justify-content:center; font-size:0.5rem; opacity:0.8; text-transform:uppercase;">Clear Form</button>
       </div>
 
       <!-- Resolution summary -->
@@ -559,6 +575,38 @@
       </div>
       </div><!-- /.section-body -->
     </div><!-- /#section-gear -->
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- GLOBAL COVERAGE MAP (Relocated)                            -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="section-coverage" style="margin-top:12px;">
+      <div class="section-header cyan" data-target="coverage-body">
+        <span class="sh-icon">🌍</span>
+        <span class="sh-title">Global Mission Coverage</span>
+        <span class="sh-subtitle">Ground track · Visibility footprint · Day/Night terminator</span>
+        <span class="sh-help-icon" title="Map follows Orion (SSP) - click to set location">?</span>
+        <span class="sh-toggle">[–]</span>
+        <span class="panel-collapse-btn"></span>
+      </div>
+      <div class="section-body" id="coverage-body">
+      
+      <div style="color:#ffcc00; font-size:0.65rem; margin-bottom:8px; font-family:'Orbitron', sans-serif;">TARGET ACQUISITION: Click anywhere on the map to extract elevation and coordinates, or use manual entry above.</div>
+
+      <div style="position:relative; background:rgba(0,8,20,0.9); border:1px solid rgba(0,229,255,0.18); border-radius:6px; overflow:hidden;">
+        <!-- Canvas fills the panel -->
+        <canvas id="coverage-canvas" style="width:100%; height:280px; display:block;"></canvas>
+        <!-- HUD labels overlay -->
+        <div style="position:absolute; top:10px; left:12px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:6px 10px; pointer-events:none;">
+          <div style="font-family:'Orbitron',sans-serif; font-size:0.36rem; letter-spacing:0.16em; color:rgba(0,229,255,0.55); margin-bottom:2px;">LINE OF SIGHT</div>
+          <div id="cov-los" style="font-family:'Orbitron',sans-serif; font-size:0.7rem; font-weight:700; color:#00e5ff;">—</div>
+        </div>
+        <div style="position:absolute; top:10px; right:12px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:6px 10px; pointer-events:none; text-align:right;">
+          <div style="font-family:'Orbitron',sans-serif; font-size:0.36rem; letter-spacing:0.16em; color:rgba(0,229,255,0.55); margin-bottom:2px;">SUB-SATELLITE POINT</div>
+          <div id="cov-ssp" style="font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:#00e5ff;">—</div>
+        </div>
+      </div><!-- map inner -->
+      </div><!-- /.section-body -->
+    </div><!-- /#section-coverage -->
 
     <!-- ═══════════════════════════════════════════════════════════ -->
     <!-- STEP 2: THE VISUAL MAP                                     -->
@@ -648,7 +696,7 @@
         <span class="sh-icon">📡</span>
         <span class="sh-title">Step 3 — Imaging Strategy</span>
         <span class="sh-subtitle">Human-readable conditions for your session</span>
-        <span class="sh-help-icon" title="Verdict cards show real-time visibility assessments">?</span>
+        <span class="sh-help-icon" title="Visibility requires four conditions: Target altitude > 15° , target is sunlit , and local sky is in Astronomical Twilight (-12° Sun altitude). Expect the spacecraft to appear as a streak of light in long exposures, similar to a satellite trail[cite: 48]." style="border-color:rgba(255,167,38,0.5); color:#ffa726;">(i)</span>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
@@ -728,36 +776,6 @@
         </div><!-- /.verdict-grid -->
       </div><!-- /.section-body -->
     </div><!-- /#section-verdicts -->
-
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- GLOBAL COVERAGE MAP                                        -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <div id="section-coverage" style="margin-top:24px;">
-      <div class="section-header cyan" data-target="coverage-body">
-        <span class="sh-icon">🌍</span>
-        <span class="sh-title">Global Mission Coverage</span>
-        <span class="sh-subtitle">Ground track · Visibility footprint · Day/Night terminator</span>
-        <span class="sh-help-icon" title="Map follows Orion (SSP) - click to set location">?</span>
-        <span class="sh-toggle">[–]</span>
-        <span class="panel-collapse-btn"></span>
-      </div>
-      <div class="section-body" id="coverage-body">
-      <div style="position:relative; background:rgba(0,8,20,0.9); border:1px solid rgba(0,229,255,0.18); border-radius:6px; overflow:hidden;">
-        <!-- Canvas fills the panel -->
-        <canvas id="coverage-canvas" style="width:100%; height:280px; display:block;"></canvas>
-        <!-- HUD labels overlay -->
-        <div style="position:absolute; top:10px; left:12px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:6px 10px; pointer-events:none;">
-          <div style="font-family:'Orbitron',sans-serif; font-size:0.36rem; letter-spacing:0.16em; color:rgba(0,229,255,0.55); margin-bottom:2px;">LINE OF SIGHT</div>
-          <div id="cov-los" style="font-family:'Orbitron',sans-serif; font-size:0.7rem; font-weight:700; color:#00e5ff;">—</div>
-        </div>
-        <div style="position:absolute; top:10px; right:12px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:6px 10px; pointer-events:none; text-align:right;">
-          <div style="font-family:'Orbitron',sans-serif; font-size:0.36rem; letter-spacing:0.16em; color:rgba(0,229,255,0.55); margin-bottom:2px;">SUB-SATELLITE POINT</div>
-          <div id="cov-ssp" style="font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:#00e5ff;">—</div>
-        </div>
-        </div>
-      </div><!-- map inner -->
-      </div><!-- /.section-body -->
-    </div><!-- /#section-coverage -->
 
     <div id="section-passes">
       <div class="section-header muted" data-target="passes-body">
