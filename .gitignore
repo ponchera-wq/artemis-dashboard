@@ -23,3 +23,8 @@ npm-debug.log*
 # Large files
 a2-reference-guide-012825.pdf
 data/skyfield-data/
+
+# Automation
+automation/
+node_modules/
+*.webm
