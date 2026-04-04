@@ -21,10 +21,10 @@ window.ObserverAstro = (function() {
         
         // 1. Retrieve Orion's EME2000 (ECI) position
         const state = window.MissionEphemeris.getState(metSec);
-        if (!state) return null;
-        const orionX = state.pos.x;
-        const orionY = state.pos.y;
-        const orionZ = state.pos.z;
+        if (!state || !state.orion) return null;
+        const orionX = state.orion.x;
+        const orionY = state.orion.y;
+        const orionZ = state.orion.z;
 
         // 2. Compute observer's ECEF position using WGS84
         const latRad = lat * Math.PI / 180;
