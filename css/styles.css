@@ -2782,7 +2782,8 @@ body.ref-modal-active {
     /* ════════════════════════════════════════════════════════════ */
     #ref-nav-toggle, .ref-share-btn, .ref-observer-btn, #sa-share button, 
     .yt-expand-btn, .news-tab, .tl-filter, .sw-info-btn, #sw-explain-link,
-    .sh-toggle, .panel-collapse-btn, .sh-help-icon, #unit-toggle {
+    .sh-toggle, .panel-collapse-btn, .sh-help-icon, #unit-toggle,
+    .dsn-info-btn, .info-btn, .help-icon, .gear-loc-name {
       transition: all 0.2s ease-in-out;
     }
 
@@ -2800,10 +2801,13 @@ body.ref-modal-active {
     }
 
     /* Info icons and help buttons */
-    .sw-info-btn, .sw-explain-link, .sh-help-icon {
+    .sw-info-btn, .sw-explain-link, .sh-help-icon, .dsn-info-btn, .info-btn, .help-icon {
       color: var(--amber) !important;
       border-color: rgba(255,167,38,0.4) !important;
+      cursor: pointer;
     }
+    
+    .gear-loc-name { color: var(--amber) !important; }
 
     /* Panel expand/collapse */
     .yt-expand-btn, .panel-expand, .sh-toggle, .panel-collapse-btn {
