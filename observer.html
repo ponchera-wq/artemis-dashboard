@@ -131,6 +131,34 @@
     .next-pass-time { font-family: 'Orbitron', sans-serif; font-size: 1.05rem; color: #fff; margin-bottom: 4px; }
     .next-pass-sub { display: flex; gap: 12px; flex-wrap: wrap; }
     .next-pass-sub span { font-size: 0.7rem; }
+
+    /* Location name — clamp to one line with ellipsis on mobile */
+    #ui-loc-status {
+      max-width: 55vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    /* Location priming strip */
+    #loc-prime {
+      padding: 8px 20px; background: rgba(255,204,0,0.07);
+      border-bottom: 1px solid rgba(255,204,0,0.2); font-size: 0.75rem;
+      color: #ffcc00; display: flex; align-items: center; gap: 10px;
+    }
+    #loc-prime.hidden { display: none; }
+
+    /* Hero banner */
+    #mission-hero {
+      background: rgba(255,204,0,0.05); border-left: 4px solid #ffcc00;
+      padding: 20px; margin: 0 20px 20px 20px; border-radius: 4px;
+    }
+    #mission-hero h2 { color: #ffcc00; margin: 0 0 10px 0; font-size: 1.1rem; text-transform: uppercase; font-family: 'Orbitron', sans-serif; }
+    #mission-hero p { color: rgba(255,255,255,0.7); font-size: 0.85rem; line-height: 1.6; margin: 0; }
+    #hero-awaiting { margin-top: 10px; font-size: 0.75rem; display: none; }
+
+    @keyframes pulse-amber {
+      0%, 100% { opacity: 0.5; }
+      50%       { opacity: 1; }
+    }
+    .pulse-amber { animation: pulse-amber 1.8s ease-in-out infinite; color: #ffcc00; }
   </style>
 </head>
 <body>
@@ -153,13 +181,30 @@
     <button class="loc-btn" onclick="document.getElementById('manual-loc-form').style.display='flex'">CHANGE LOCATION</button>
   </div>
 
+  <!-- LOCATION PRIMING STRIP -->
+  <div id="loc-prime">
+    <span>&#9888;</span>
+    <span>BROWSER PERMISSION REQUIRED. Click <strong>Allow</strong> when prompted for your location.
+    Otherwise, enter coordinates manually below.</span>
+  </div>
+
   <!-- MANUAL LOCATION FORM -->
   <div id="manual-loc-form">
     <span>MANUAL ENTRY:</span>
-    <input type="number" id="in-lat" placeholder="Latitude °" step="any" value="-35.3997">
-    <input type="number" id="in-lon" placeholder="Longitude °" step="any" value="148.9708">
+    <input type="number" id="in-lat" placeholder="Latitude" step="any" value="-35.3997">
+    <input type="number" id="in-lon" placeholder="Longitude" step="any" value="148.9708">
     <button id="btn-apply-loc">APPLY</button>
     <button id="btn-clear-loc" style="background:transparent;border:1px solid rgba(255,80,80,0.4);color:#ff5050;padding:5px 12px;font-family:inherit;cursor:pointer;">CLEAR</button>
+  </div>
+
+  <!-- MISSION HERO EXPLAINER -->
+  <div id="mission-hero">
+    <h2>What is Observer Mode?</h2>
+    <p>The Artemis II Observer transforms NASA's deep-space telemetry into a local guide for your backyard.
+    While the main dashboard shows where Orion is in space, this page calculates exactly where to point
+    your telescope from your specific coordinates on Earth. Use the steps below to find, track, and
+    photograph the spacecraft during its journey to the Moon.</p>
+    <p id="hero-awaiting" class="pulse-amber">&#8592; Awaiting your location to begin calculations.</p>
   </div>
 
   <!-- PANELS GRID -->

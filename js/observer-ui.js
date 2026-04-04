@@ -49,24 +49,63 @@ document.addEventListener("DOMContentLoaded", () => {
     // Window scan runs every 60 ticks (1 per minute) — it's a 73-step loop so we throttle
     let windowScanCountdown = 0;
 
+    // Priming / hero elements
+    const locPrime    = document.getElementById('loc-prime');
+    const heroAwaiting = document.getElementById('hero-awaiting');
+
+    // Show awaiting pulse until location is resolved
+    if (heroAwaiting) heroAwaiting.style.display = 'block';
+
+    function setLocationResolved(label) {
+        if (locPrime)    locPrime.classList.add('hidden');
+        if (heroAwaiting) heroAwaiting.style.display = 'none';
+        if (locStatus)   { locStatus.textContent = label; locStatus.style.color = '#a8d4ff'; }
+    }
+
+    function setLocationCleared() {
+        if (locPrime)    locPrime.classList.remove('hidden');
+        if (heroAwaiting) heroAwaiting.style.display = 'block';
+        if (locStatus)   { locStatus.textContent = 'LOCATION REQUIRED'; locStatus.style.color = '#ff5050'; }
+    }
+
+    // ── Reverse Geocoding (Nominatim) ────────────────────────────────────────
+    async function getPlaceName(lat, lon) {
+        try {
+            const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}`;
+            const res = await fetch(url, {
+                headers: { 'User-Agent': 'ArtemisII-Observer-Dashboard/1.0 (contact: artemisii-observer@users.noreply)' }
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            const addr = data.address || {};
+            const city = addr.city || addr.town || addr.suburb || addr.village || addr.county || '';
+            const country = addr.country || '';
+            return city ? `${city}, ${country}` : (country || null);
+        } catch {
+            return null;
+        }
+    }
+
     function haltAndRequireLocation() {
-        locStatus.textContent = "LOCATION REQUIRED";
-        locStatus.style.color = "#ff5050";
+        setLocationCleared();
         manForm.style.display = "flex";
     }
 
     // Geolocation Init
     if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
+        navigator.geolocation.getCurrentPosition(async (pos) => {
             obsLat = pos.coords.latitude;
             obsLon = pos.coords.longitude;
-            if (pos.coords.altitude != null) {
-                obsAlt = pos.coords.altitude;
-            }
-            locStatus.textContent = `LAT: ${obsLat.toFixed(4)}° / LON: ${obsLon.toFixed(4)}°`;
+            if (pos.coords.altitude != null) obsAlt = pos.coords.altitude;
+            // Show coords immediately, then upgrade to place name
+            setLocationResolved(`LAT: ${obsLat.toFixed(4)}° / LON: ${obsLon.toFixed(4)}°`);
             isReady = true;
+            const place = await getPlaceName(obsLat, obsLon);
+            if (place) {
+                setLocationResolved(`${place}  (${obsLat.toFixed(2)}°, ${obsLon.toFixed(2)}°)`);
+            }
         }, (err) => {
-            console.warn("Geolocation denied or unavailable.", err);
+            console.warn('Geolocation denied or unavailable.', err);
             haltAndRequireLocation();
         });
     } else {
@@ -74,16 +113,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Manual Entry bind
-    document.getElementById('btn-apply-loc').addEventListener('click', () => {
+    document.getElementById('btn-apply-loc').addEventListener('click', async () => {
         const latVal = parseFloat(document.getElementById('in-lat').value);
         const lonVal = parseFloat(document.getElementById('in-lon').value);
         if (!isNaN(latVal) && !isNaN(lonVal)) {
             obsLat = latVal;
             obsLon = lonVal;
-            locStatus.textContent = `LAT: ${obsLat.toFixed(4)}° / LON: ${obsLon.toFixed(4)}°`;
-            locStatus.style.color = "#a8d4ff";
             manForm.style.display = "none";
             isReady = true;
+            setLocationResolved(`LAT: ${obsLat.toFixed(4)}° / LON: ${obsLon.toFixed(4)}°`);
+            const place = await getPlaceName(obsLat, obsLon);
+            if (place) {
+                setLocationResolved(`${place}  (${obsLat.toFixed(2)}°, ${obsLon.toFixed(2)}°)`);
+            }
         }
     });
 
@@ -93,8 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         obsLat = null;
         obsLon = null;
         isReady = false;
-        locStatus.textContent = "LOCATION REQUIRED";
-        locStatus.style.color = "#ff5050";
+        setLocationCleared();
     });
 
     // Fallbacks
@@ -182,6 +223,16 @@ document.addEventListener("DOMContentLoaded", () => {
             <text x="98" y="52" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="end" dominant-baseline="middle">E</text>
             <text x="50" y="98" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="middle" dominant-baseline="auto">S</text>
             <text x="2" y="52" font-size="5" fill="#a8d4ff" font-weight="bold" text-anchor="start" dominant-baseline="middle">W</text>
+        `;
+
+        // ── Legend (top-right corner of plot) ───────────────────────────────────
+        svg += `
+            <circle cx="71" cy="6" r="2.5" fill="#ddd" opacity="0.8"/>
+            <text x="75" y="7.5" font-size="3" fill="#ddd" opacity="0.8" dominant-baseline="middle">Moon</text>
+            <circle cx="71" cy="13" r="2" fill="#00ffaa" opacity="0.9"/>
+            <text x="75" y="14.5" font-size="3" fill="#00ffaa" opacity="0.9" dominant-baseline="middle">Orion</text>
+            <line x1="68" y1="20" x2="74" y2="20" stroke="rgba(0,255,170,0.5)" stroke-width="0.8" stroke-dasharray="2,1.5"/>
+            <text x="75" y="21.5" font-size="3" fill="rgba(0,255,170,0.5)" dominant-baseline="middle">Path</text>
         `;
 
         // ── Moon dot ──────────────────────────────────────────────────────────
