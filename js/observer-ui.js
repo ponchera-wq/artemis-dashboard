@@ -76,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // DOM Elements
-    const locStatus = document.getElementById('ui-loc-status');
+    const locStatus = document.getElementById('ui-loc-header-name');
     const darkState = document.getElementById('ui-darkness-state');
     const manForm = document.getElementById('manual-loc-form');
     
@@ -199,7 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateSkyModeUI() {
         const eyepieceCanvas = document.getElementById('eyepiece-canvas');
         const threeCanvas = document.getElementById('three-canvas');
-        const svgElement = skyPlotCtr.querySelector('svg');
+        const skySvgWrap = document.getElementById('sky-svg-wrap');
 
         if (useEyepiece) {
             skyToggleBtn.classList.remove('active');
@@ -207,7 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
             eyepieceToggleBtn.classList.add('active');
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'block';
             if (threeCanvas) threeCanvas.style.display = 'none';
-            if (svgElement) svgElement.style.display = 'none';
+            if (skySvgWrap) skySvgWrap.style.display = 'none';
             initEyepiece();
         } else if (use3D) {
             eyepieceToggleBtn.classList.remove('active');
@@ -215,7 +215,7 @@ document.addEventListener("DOMContentLoaded", () => {
             skyToggleBtn.textContent = '2D MAP';
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'none';
             if (threeCanvas) threeCanvas.style.display = 'block';
-            if (svgElement) svgElement.style.display = 'none';
+            if (skySvgWrap) skySvgWrap.style.display = 'none';
             initThreeJS();
         } else {
             eyepieceToggleBtn.classList.remove('active');
@@ -223,7 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
             skyToggleBtn.textContent = '3D VIEW';
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'none';
             if (threeCanvas) threeCanvas.style.display = 'none';
-            if (svgElement) svgElement.style.display = 'block';
+            if (skySvgWrap) skySvgWrap.style.display = 'block';
         }
     }
 
@@ -373,13 +373,13 @@ document.addEventListener("DOMContentLoaded", () => {
     function setLocationResolved(label) {
         if (locPrime)    locPrime.classList.add('hidden');
         if (heroAwaiting) heroAwaiting.style.display = 'none';
-        if (locStatus)   { locStatus.textContent = label; locStatus.style.color = '#a8d4ff'; }
+        if (locStatus)   { locStatus.textContent = `[${label}]`; }
     }
 
     function setLocationCleared() {
         if (locPrime)    locPrime.classList.remove('hidden');
         if (heroAwaiting) heroAwaiting.style.display = 'block';
-        if (locStatus)   { locStatus.textContent = 'LOCATION REQUIRED'; locStatus.style.color = '#ff5050'; }
+        if (locStatus)   { locStatus.textContent = '[LOCATION REQUIRED]'; }
     }
 
     // ── Reverse Geocoding (Nominatim) ────────────────────────────────────────
@@ -716,16 +716,6 @@ document.addEventListener("DOMContentLoaded", () => {
             <text x="52" y="49" font-size="2.2" fill="rgba(0,229,255,0.4)" text-anchor="start">ZENITH</text>
         `;
 
-        // ── Legend (top-right corner of plot) ───────────────────────────────────
-        svg += `
-            <circle cx="71" cy="6" r="2.5" fill="#ddd" opacity="0.8"/>
-            <text x="75" y="7.5" font-size="3" fill="#ddd" opacity="0.8" dominant-baseline="middle">Moon</text>
-            <circle cx="71" cy="13" r="2" fill="#00ffaa" opacity="0.9"/>
-            <text x="75" y="14.5" font-size="3" fill="#00ffaa" opacity="0.9" dominant-baseline="middle">Orion</text>
-            <line x1="68" y1="20" x2="74" y2="20" stroke="rgba(0,255,170,0.5)" stroke-width="0.8" stroke-dasharray="2,1.5"/>
-            <text x="75" y="21.5" font-size="3" fill="rgba(0,255,170,0.5)" dominant-baseline="middle">Path</text>
-        `;
-
         // ── Moon dot ──────────────────────────────────────────────────────────
         if (moonAlt != null && moonAz != null) {
             const moonRad = (moonAz - 90) * Math.PI / 180;
@@ -794,7 +784,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         svg += `</svg>`;
-        skyPlotCtr.innerHTML = svg;
+        const skySvgWrap = document.getElementById('sky-svg-wrap');
+        if (skySvgWrap) skySvgWrap.innerHTML = svg;
     }
 
     // UI Ticker
@@ -1421,7 +1412,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             let detClass, detLabel;
             if (px < 0.15) {
-                detClass = 'status-red'; detLabel = 'VERY DIFFICULT';
+                detClass = 'status-red'; detLabel = 'EXTREMELY FAINT';
             } else if (px < 0.3) {
                 detClass = 'status-yellow'; detLabel = 'CHALLENGING';
             } else {
@@ -1433,6 +1424,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (vcDetDet) {
                 vcDetDet.innerHTML = `<span class="${detClass}">${detLabel}</span> — ${px.toFixed(3)}px projected sensor span.`;
+            }
+            if (vcDetCard) {
+                vcDetCard.className = 'verdict-card ' + (px < 0.15 ? 'red-card' : px < 0.3 ? 'amber-card' : 'green-card');
             }
         }
 
@@ -1471,8 +1465,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 moonMain = `CRITICAL MOON INTERFERENCE`; moonIcon = '🌕'; moonClass = 'status-red';
                 moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated and only ${moonSep.toFixed(1)}° from Orion. Optical imaging effectively impossible.`;
             } else if (moonPct > 85 && moonAlt > 0) {
-                moonMain = `FULL MOON INTERFERENCE`; moonIcon = '🌕'; moonClass = 'status-yellow';
-                moonDet  = `Moon is ${moonPct.toFixed(0)}% illuminated. High sky background brightness expected.`;
+                moonMain = `FULL MOON IMPACT`; moonIcon = '🌕'; moonClass = 'status-yellow';
             } else if (moonPct < 40 || moonSep > 60 || moonAlt <= 0) {
                 moonMain = `MOON CLEAR — OPTIMAL`; moonIcon = moonAlt <= 0 ? '🌑' : '🌙'; moonClass = 'status-green';
                 moonDet  = moonAlt <= 0 ? `Moon is below the horizon. Dark sky conditions are ideal.` : `Minimal interference from Moon (${moonPct.toFixed(0)}% / ${moonSep.toFixed(0)}° away).`;
@@ -1702,8 +1695,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const clampedLat = Math.max(-90, Math.min(90, Math.round(lat * 10000) / 10000));
             const clampedLon = Math.max(-180, Math.min(180, Math.round(lon * 10000) / 10000));
             // Show syncing state immediately
-            const statusEl = document.getElementById('ui-loc-status');
-            if (statusEl) { statusEl.textContent = 'SYNCING...'; statusEl.style.color = '#ffa726'; }
+            if (locStatus)   { locStatus.textContent = '[SYNCING...]'; }
             // Fetch elevation + apply
             await applyLocation(clampedLat, clampedLon, null);
         });
@@ -1896,7 +1888,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(2.0, epW / epH, 1, 5000); // narrowing FOV
-        camera.position.set(0, 0, 500); // requested default
+        camera.position.set(0, 0, 500); 
         camera.lookAt(0, 0, 0);
 
         renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
@@ -1998,7 +1990,7 @@ document.addEventListener("DOMContentLoaded", () => {
         t_renderer.setSize(cW, cH);
 
         t_camera = new THREE.PerspectiveCamera(45, cW / cH, 1.0, 5000);
-        t_camera.position.set(0, 0, 500); // requested default
+        t_camera.position.set(0, 0, 500); 
         t_camera.lookAt(0, 0, 0);
 
         // Earth

@@ -258,6 +258,30 @@
     /* SECTION 3: STATUS VERDICTS (CYAN)                           */
     /* ════════════════════════════════════════════════════════════ */
     #section-verdicts { margin-top: 24px; }
+    
+    /* Status indicators */
+    .status-red { color: #ef5350 !important; }
+    .status-yellow { color: #ffa726 !important; }
+    .status-green { color: #00e676 !important; }
+
+    /* Touch-friendly buttons */
+    .btn-block-lg {
+      display: block; width: 100%; height: 45px;
+      margin-top: 12px; font-family: 'Orbitron', sans-serif;
+      font-size: 0.6rem; font-weight: 700; letter-spacing: 0.15em;
+      cursor: pointer; border-radius: 4px; transition: all 0.2s;
+      text-transform: uppercase;
+    }
+    .btn-amber-solid {
+      background: rgba(255,167,38,0.12); border: 1px solid rgba(255,167,38,0.45);
+      color: #ffa726;
+    }
+    .btn-amber-solid:hover { background: rgba(255,167,38,0.2); border-color: #ffa726; box-shadow: 0 0 12px rgba(255,167,38,0.15); }
+    .btn-outline-muted {
+      background: none; border: 1px solid rgba(74,144,217,0.25);
+      color: rgba(74,144,217,0.6);
+    }
+    .btn-outline-muted:hover { background: rgba(74,144,217,0.08); border-color: rgba(74,144,217,0.5); color: #fff; }
 
     .verdict-grid {
       display: grid;
@@ -452,7 +476,7 @@
     <div id="section-gear">
       <div class="section-header amber" data-target="gear-body" style="border-bottom-color:rgba(255,167,38,0.15); margin-bottom:0;">
         <span class="sh-icon">⚙</span>
-        <span class="sh-title">Step 1 — Your Setup</span>
+        <span class="sh-title">Step 1 — Your Setup <span id="ui-loc-header-name" style="font-size:0.52rem; color:var(--amber); margin-left:10px; opacity:0.8; letter-spacing:0.05em;">[Loading...]</span></span>
         <span class="sh-subtitle">Enter your location and telescope specs</span>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
@@ -477,12 +501,7 @@
               <div style="font-size:0.45rem;color:rgba(255,204,0,0.5);letter-spacing:0.1em;margin-bottom:2px;">ELEV (m)</div>
               <input type="number" id="in-elev" placeholder="549" step="1" value="549">
             </div>
-            <div style="display:flex;flex-direction:row;gap:5px;align-items:flex-end;">
-              <button id="btn-apply-loc">APPLY</button>
-              <button id="btn-clear-loc">CLEAR</button>
-            </div>
           </div>
-          <div class="gear-loc-name" id="ui-loc-status">CANBERRA DSN (TIDBINBILLA)</div>
           <div id="elev-badge" style="display:none;margin-top:5px;font-family:'Orbitron',sans-serif;font-size:0.42rem;letter-spacing:0.14em;padding:3px 10px;border-radius:3px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.3);color:#00e5ff;width:fit-content;">
             🔭 THIN ATMOSPHERE — HIGH TRANSPARENCY
           </div>
@@ -523,6 +542,12 @@
 
       </div><!-- /.gear-grid -->
 
+      <!-- Action Buttons -->
+      <div style="margin-top:20px;">
+        <button id="btn-apply-loc" class="btn-block-lg btn-amber-solid">Apply Setup Changes</button>
+        <button id="btn-clear-loc" class="btn-block-lg btn-outline-muted" style="height:38px; font-size:0.5rem; opacity:0.8;">Clear Form</button>
+      </div>
+
       <!-- Resolution summary -->
       <div id="resolution-summary">
         <span class="res-label">System Resolution:</span>
@@ -551,9 +576,14 @@
 
       <div id="sky-hud-wrap">
         <div id="sky-hud-inner">
-          <div id="sky-plot-container">
+          <div id="sky-plot-container" style="position: absolute; inset:0;">
+            <!-- SVG Polar plot container -->
+            <div id="sky-svg-wrap" style="position: absolute; inset:0;"></div>
+            
+            <!-- Three.js Visualizers -->
             <canvas id="three-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%;"></canvas>
             <canvas id="eyepiece-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%;"></canvas>
+            
             <!-- Crosshair overlay for eyepiece -->
             <canvas id="eyepiece-crosshair" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
           </div>
@@ -712,11 +742,6 @@
           <div style="font-family:'Orbitron',sans-serif; font-size:0.36rem; letter-spacing:0.16em; color:rgba(0,229,255,0.55); margin-bottom:2px;">SUB-SATELLITE POINT</div>
           <div id="cov-ssp" style="font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:#00e5ff;">—</div>
         </div>
-        <!-- Map legend -->
-        <div style="position:absolute; bottom:8px; left:12px; display:flex; gap:14px; pointer-events:none; flex-wrap:wrap;">
-          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#ffcc00; display:flex; align-items:center; gap:5px;"><span style="width:12px;height:2px;border-top:2px dashed #ffcc00; display:inline-block;"></span>PATH</span>
-          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#00e5ff; display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#00e5ff;display:inline-block;"></span>POSITION</span>
-          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#4A90D9; display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#4A90D9;display:inline-block;"></span>YOU</span>
         </div>
       </div><!-- map inner -->
       </div><!-- /.section-body -->

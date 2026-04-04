@@ -151,7 +151,7 @@
       display: none;
       background: none;
       border: none;
-      color: rgba(120,150,185,0.7);
+      color: var(--amber);
       font-size: 1rem;
       cursor: pointer;
       flex-shrink: 0;
@@ -2777,3 +2777,65 @@ body.ref-modal-active {
     justify-content: flex-start;
   }
 }
+    /* ════════════════════════════════════════════════════════════ */
+    /* MISSION ORANGE POLISH (Request #3)                           */
+    /* ════════════════════════════════════════════════════════════ */
+    #ref-nav-toggle, .ref-share-btn, .ref-observer-btn, #sa-share button, 
+    .yt-expand-btn, .news-tab, .tl-filter, .sw-info-btn, #sw-explain-link,
+    .sh-toggle, .panel-collapse-btn, .sh-help-icon, #unit-toggle {
+      transition: all 0.2s ease-in-out;
+    }
+
+    #ref-nav-toggle { color: var(--amber) !important; }
+    .ref-share-btn { border-color: rgba(255,167,38,0.3) !important; color: var(--amber) !important; }
+    .ref-share-btn:hover { background: rgba(255,167,38,0.1) !important; border-color: var(--amber) !important; }
+    
+    .ref-observer-btn {
+      color: var(--amber) !important;
+      border-color: rgba(255,167,38,0.5) !important;
+    }
+    .ref-observer-btn:hover {
+      background: rgba(255,167,38,0.1) !important;
+      border-color: var(--amber) !important;
+    }
+
+    /* Info icons and help buttons */
+    .sw-info-btn, .sw-explain-link, .sh-help-icon {
+      color: var(--amber) !important;
+      border-color: rgba(255,167,38,0.4) !important;
+    }
+
+    /* Panel expand/collapse */
+    .yt-expand-btn, .panel-expand, .sh-toggle, .panel-collapse-btn {
+      color: var(--amber) !important;
+      opacity: 0.8;
+    }
+    .yt-expand-btn:hover, .sh-toggle:hover { opacity: 1; text-shadow: 0 0 8px rgba(255,167,38,0.4); }
+
+    /* Tabs and filters */
+    .news-tab.active, .tl-filter.active {
+      color: #fff !important;
+      background: rgba(255,167,38,0.25) !important;
+      border-color: var(--amber) !important;
+    }
+    .news-tab:hover, .tl-filter:hover {
+      border-color: var(--amber) !important;
+      color: var(--amber) !important;
+    }
+
+    /* Desktop Share buttons override */
+    #sa-share button {
+      border-color: rgba(255,167,38,0.2) !important;
+      color: var(--amber) !important;
+    }
+    #sa-share button:hover {
+      background: rgba(255,167,38,0.1) !important;
+      border-color: var(--amber) !important;
+    }
+    
+    /* Footer links */
+    .footer-link {
+      color: var(--amber) !important;
+      opacity: 0.7;
+    }
+    .footer-link:hover { opacity: 1; text-decoration: underline; }
