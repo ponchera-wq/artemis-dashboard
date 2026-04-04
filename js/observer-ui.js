@@ -778,6 +778,289 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // ── GUIDED HUD & VERDICTS ──────────────────────────────────────
         updateGuidedHUD(m, o);
+
+        // ── GLOBAL COVERAGE MAP (throttled every 15s) ─────────────────
+        coverageCountdown--;
+        if (coverageCountdown <= 0) {
+            coverageCountdown = 15;
+            drawCoverageMap(m, o, metSec, nowMs);
+        }
+    }
+
+    let coverageCountdown = 1; // fire on first tick
+
+    // ── Global Coverage Map ────────────────────────────────────────────
+    // Simplified continent polygons [lon, lat] — recognisable equirectangular outline
+    const COV_LANDS = [
+        // North America
+        [[-168,71],[-141,60],[-128,50],[-118,34],[-97,26],[-88,16],[-83,10],[-77,8],
+         [-62,11],[-67,47],[-83,43],[-76,44],[-63,46],[-55,46],[-57,51],[-65,62],[-86,68],[-142,70]],
+        // South America
+        [[-76,12],[-60,11],[-50,4],[-35,-5],[-35,-12],[-38,-15],[-40,-22],[-44,-24],
+         [-50,-30],[-52,-34],[-57,-34],[-63,-38],[-66,-44],[-66,-55],[-70,-51],[-70,-18],[-75,-10],[-78,0]],
+        // Greenland
+        [[-44,60],[-22,70],[-18,74],[-42,84],[-66,82],[-66,72],[-46,66]],
+        // Europe (simplified)
+        [[-10,36],[3,52],[8,58],[14,57],[26,65],[18,70],[14,57],[28,57],[38,42],
+         [36,42],[32,36],[27,37],[20,38],[14,38],[3,44],[0,44],[-2,36],[-10,36]],
+        // Africa + attached middle-east
+        [[-5,36],[10,36],[32,30],[37,12],[44,10],[51,12],[44,0],[40,-12],
+         [36,-22],[32,-30],[25,-34],[18,-34],[14,-28],[8,-5],[0,5],[-16,5],[-18,10],[-10,36]],
+        // Asia (merged Eurasia east)
+        [[28,42],[44,43],[50,42],[58,37],[62,24],[62,22],[78,8],[80,14],[80,28],
+         [88,22],[96,6],[104,1],[104,5],[110,12],[110,18],[121,24],[122,38],
+         [130,35],[131,34],[130,32],[120,24],[110,20],[100,5],[96,6],[88,22],
+         [80,28],[72,22],[62,22],[56,26],[50,28],[44,36],[40,28],[36,36],[28,42]],
+        // Japan
+        [[130,31],[131,34],[136,38],[141,43],[145,44],[140,38],[135,34],[130,31]],
+        // Australia
+        [[116,-22],[120,-34],[128,-34],[135,-34],[140,-38],[148,-38],
+         [152,-24],[148,-18],[136,-12],[130,-8],[122,-18],[116,-22]],
+        // New Zealand
+        [[166,-46],[170,-46],[172,-36],[166,-36],[166,-46]],
+    ];
+
+    function drawCoverageMap(m, or, metSec, nowMs) {
+        const canvas = document.getElementById('coverage-canvas');
+        if (!canvas || !window.Astronomy) return;
+        const W = canvas.clientWidth || 600;
+        const H = canvas.clientHeight || 280;
+        if (canvas.width !== W) canvas.width = W;
+        if (canvas.height !== H) canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        // Coordinate helpers
+        function tx(lon) { return (lon + 180) / 360 * W; }
+        function ty(lat) { return (90 - lat) / 180 * H; }
+
+        // Draw a [lon,lat][] polygon, skipping anti-meridian jumps
+        function drawPath(pts, close) {
+            if (!pts || pts.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(tx(pts[0][0]), ty(pts[0][1]));
+            for (let i = 1; i < pts.length; i++) {
+                if (Math.abs(pts[i][0] - pts[i-1][0]) > 180) {
+                    ctx.moveTo(tx(pts[i][0]), ty(pts[i][1]));
+                } else {
+                    ctx.lineTo(tx(pts[i][0]), ty(pts[i][1]));
+                }
+            }
+            if (close) ctx.closePath();
+        }
+
+        // ── 1. Ocean background ──────────────────────────────────────
+        ctx.fillStyle = '#020c1e';
+        ctx.fillRect(0, 0, W, H);
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(0,229,255,0.06)';
+        ctx.lineWidth = 0.5;
+        for (let lon = -180; lon <= 180; lon += 30) {
+            ctx.beginPath(); ctx.moveTo(tx(lon), 0); ctx.lineTo(tx(lon), H); ctx.stroke();
+        }
+        for (let lat = -90; lat <= 90; lat += 30) {
+            ctx.beginPath(); ctx.moveTo(0, ty(lat)); ctx.lineTo(W, ty(lat)); ctx.stroke();
+        }
+        // Equator brighter
+        ctx.strokeStyle = 'rgba(0,229,255,0.15)';
+        ctx.beginPath(); ctx.moveTo(0, ty(0)); ctx.lineTo(W, ty(0)); ctx.stroke();
+
+        // ── 2. Continent fills ───────────────────────────────────────
+        ctx.fillStyle = 'rgba(30,60,100,0.45)';
+        ctx.strokeStyle = 'rgba(80,140,200,0.35)';
+        ctx.lineWidth = 0.7;
+        for (const land of COV_LANDS) {
+            drawPath(land, true);
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // ── 3. Day/Night terminator & night shading ──────────────────
+        const date = new Date(nowMs);
+        const gmstDeg = ((window.Astronomy.SiderealTime(date) * 15) % 360 + 360) % 360;
+        // Sun SSP
+        const sunVec = window.Astronomy.GeoVector('Sun', date, true);
+        const sunEq  = window.Astronomy.EquatorFromVector(sunVec);
+        const sunRaDeg  = sunEq.ra * 15;
+        const sunDecDeg = sunEq.dec;
+        let sunLon = ((sunRaDeg - gmstDeg) % 360 + 360) % 360;
+        if (sunLon > 180) sunLon -= 360;
+        const sunLat = sunDecDeg;
+
+        // Terminator: for each lon, lat = atan(-cos(lon-sunLon)/tan(sunLat))
+        function termLat(lon) {
+            const sl = Math.abs(sunLat) < 0.5 ? (sunLat >= 0 ? 0.5 : -0.5) : sunLat;
+            const dLon = (lon - sunLon) * Math.PI / 180;
+            return Math.atan(-Math.cos(dLon) / Math.tan(sl * Math.PI / 180)) * 180 / Math.PI;
+        }
+
+        // Build terminator polyline (left to right)
+        const termPts = [];
+        for (let lon = -180; lon <= 181; lon++) {
+            const lat = Math.max(-90, Math.min(90, termLat(lon)));
+            termPts.push([Math.min(lon, 180), lat]);
+        }
+
+        // Night polygon: below terminator wave + the pole opposite to sun
+        ctx.beginPath();
+        ctx.moveTo(tx(termPts[0][0]), ty(termPts[0][1]));
+        for (const [ln, lt] of termPts) ctx.lineTo(tx(ln), ty(lt));
+        if (sunLat >= 0) {
+            ctx.lineTo(tx(180), ty(-90)); ctx.lineTo(tx(-180), ty(-90));
+        } else {
+            ctx.lineTo(tx(180), ty(90)); ctx.lineTo(tx(-180), ty(90));
+        }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(0,3,18,0.62)';
+        ctx.fill();
+
+        // Terminator line
+        drawPath(termPts, false);
+        ctx.strokeStyle = 'rgba(255,200,80,0.55)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // ── 4. Orion SSP & visibility footprint ─────────────────────
+        const raDeg = or.raHours * 15;
+        let sspLon  = ((raDeg - gmstDeg) % 360 + 360) % 360;
+        if (sspLon > 180) sspLon -= 360;
+        const sspLat = or.decDeg;
+
+        // Great-circle footprint: radius = 90° (visible when < 90° from SSP)
+        const phi0 = sspLat * Math.PI / 180;
+        const lam0 = sspLon * Math.PI / 180;
+        const footPts = [];
+        const STEPS = 180;
+        for (let i = 0; i <= STEPS; i++) {
+            const bear = (2 * Math.PI * i) / STEPS;
+            // With r = π/2: sin(lat) = cos(phi0)*cos(bear)
+            const phi = Math.asin(Math.max(-1, Math.min(1, Math.cos(phi0) * Math.cos(bear))));
+            const lam = lam0 + Math.atan2(Math.sin(bear) * Math.cos(phi0),
+                                          -Math.sin(phi0) * Math.sin(phi));
+            let fLon = lam * 180 / Math.PI;
+            fLon = ((fLon + 180) % 360 + 360) % 360 - 180;
+            footPts.push([fLon, phi * 180 / Math.PI]);
+        }
+
+        // Fill footprint (semi-transparent)
+        ctx.fillStyle = 'rgba(0,229,255,0.07)';
+        drawPath(footPts, true);
+        ctx.fill();
+        // Footprint border
+        ctx.strokeStyle = 'rgba(0,229,255,0.35)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        drawPath(footPts, false);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // ── 5. Ground track (4 hours ahead, 15-min steps) ────────────
+        if (window.MissionEphemeris) {
+            const trackPts = [];
+            for (let step = 0; step <= 16; step++) {
+                const dt   = step * 15 * 60;          // seconds
+                const fMs  = nowMs + dt * 1000;
+                const fMet = metSec + dt;
+                const fDate = new Date(fMs);
+                const st = window.MissionEphemeris.getState(fMet);
+                if (!st || !st.orion) continue;
+                const { x, y, z } = st.orion;
+                const r   = Math.sqrt(x*x + y*y + z*z);
+                const dec = Math.asin(Math.max(-1, Math.min(1, z / r))) * 180 / Math.PI;
+                const ra  = ((Math.atan2(y, x) * 180 / Math.PI) + 360) % 360;
+                const fGmst = ((window.Astronomy.SiderealTime(fDate) * 15) % 360 + 360) % 360;
+                let tLon = ((ra - fGmst) % 360 + 360) % 360;
+                if (tLon > 180) tLon -= 360;
+                trackPts.push([tLon, dec, step]);
+            }
+            // Draw track as dashed line (handle anti-meridian)
+            ctx.strokeStyle = '#00e5ff';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 5]);
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            let started = false;
+            for (let i = 0; i < trackPts.length; i++) {
+                const [ln, lt] = trackPts[i];
+                const cx = tx(ln), cy = ty(lt);
+                if (!started) { ctx.moveTo(cx, cy); started = true; }
+                else if (i > 0 && Math.abs(ln - trackPts[i-1][0]) > 180) {
+                    ctx.moveTo(cx, cy); // anti-meridian jump
+                } else { ctx.lineTo(cx, cy); }
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+
+            // Fade dots along track (future positions)
+            for (let i = 1; i < trackPts.length; i++) {
+                const alpha = 0.15 + (1 - i / trackPts.length) * 0.35;
+                ctx.beginPath();
+                ctx.arc(tx(trackPts[i][0]), ty(trackPts[i][1]), 2, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0,229,255,${alpha})`;
+                ctx.fill();
+            }
+        }
+
+        // ── 6. Orion SSP marker ──────────────────────────────────────
+        const sx = tx(sspLon), sy = ty(sspLat);
+        // Pulsing outer ring
+        ctx.beginPath();
+        ctx.arc(sx, sy, 8, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(0,229,255,0.25)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,180,255,0.2)';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#00e5ff';
+        ctx.fill();
+        // Label
+        ctx.fillStyle = '#00e5ff';
+        ctx.font = `bold ${Math.round(W * 0.018)}px "Share Tech Mono", monospace`;
+        ctx.fillText('ORION', sx + 6, sy - 5);
+
+        // ── 7. Observer location marker ──────────────────────────────
+        if (obsLat != null && obsLon != null) {
+            const ox = tx(obsLon), oy = ty(obsLat);
+            // Check line-of-sight: angle between observer and SSP
+            const phi1 = obsLat * Math.PI / 180, phi2 = sspLat * Math.PI / 180;
+            const dLam = (obsLon - sspLon) * Math.PI / 180;
+            const cosAngle = Math.sin(phi1)*Math.sin(phi2) + Math.cos(phi1)*Math.cos(phi2)*Math.cos(dLam);
+            const los = cosAngle > 0; // > 0 means separation < 90°
+
+            ctx.beginPath();
+            ctx.arc(ox, oy, 5, 0, Math.PI * 2);
+            ctx.fillStyle = los ? '#ffcc00' : 'rgba(255,204,0,0.35)';
+            ctx.fill();
+            ctx.strokeStyle = los ? '#fff' : 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.fillStyle = '#ffcc00';
+            ctx.font = `${Math.round(W * 0.016)}px "Share Tech Mono", monospace`;
+            ctx.fillText('YOU', ox + 7, oy + 4);
+
+            // Update HUD labels
+            const losEl = document.getElementById('cov-los');
+            if (losEl) {
+                losEl.textContent = los ? '✓ YES' : '✗ NO';
+                losEl.style.color = los ? '#00e676' : '#ef5350';
+            }
+        }
+        const sspEl = document.getElementById('cov-ssp');
+        if (sspEl) {
+            const latDir = sspLat >= 0 ? 'N' : 'S';
+            const lonDir = sspLon >= 0 ? 'E' : 'W';
+            sspEl.textContent = `${Math.abs(sspLat).toFixed(1)}°${latDir}  ${Math.abs(sspLon).toFixed(1)}°${lonDir}`;
+        }
+
+        // ── 8. Border ────────────────────────────────────────────────
+        ctx.strokeStyle = 'rgba(0,229,255,0.18)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, 0, W, H);
     }
 
     // ── Guided HUD updater ─────────────────────────────────────────────

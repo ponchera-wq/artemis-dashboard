@@ -552,8 +552,35 @@
     </div><!-- /#section-verdicts -->
 
     <!-- ═══════════════════════════════════════════════════════════ -->
-    <!-- STEP 4: UPCOMING PASSES                                    -->
+    <!-- GLOBAL COVERAGE MAP                                        -->
     <!-- ═══════════════════════════════════════════════════════════ -->
+    <div id="section-coverage" style="margin-top:24px;">
+      <div class="section-header cyan">
+        <span class="sh-icon">🌍</span>
+        <span class="sh-title">Global Mission Coverage</span>
+        <span class="sh-subtitle">Ground track · Visibility footprint · Day/Night terminator</span>
+      </div>
+      <div style="position:relative; background:rgba(0,8,20,0.9); border:1px solid rgba(0,229,255,0.18); border-radius:6px; overflow:hidden;">
+        <!-- Canvas fills the panel -->
+        <canvas id="coverage-canvas" style="width:100%; height:280px; display:block;"></canvas>
+        <!-- HUD labels overlay -->
+        <div style="position:absolute; top:10px; left:12px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:6px 10px; pointer-events:none;">
+          <div style="font-family:'Orbitron',sans-serif; font-size:0.36rem; letter-spacing:0.16em; color:rgba(0,229,255,0.55); margin-bottom:2px;">LINE OF SIGHT</div>
+          <div id="cov-los" style="font-family:'Orbitron',sans-serif; font-size:0.7rem; font-weight:700; color:#00e5ff;">—</div>
+        </div>
+        <div style="position:absolute; top:10px; right:12px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:6px 10px; pointer-events:none; text-align:right;">
+          <div style="font-family:'Orbitron',sans-serif; font-size:0.36rem; letter-spacing:0.16em; color:rgba(0,229,255,0.55); margin-bottom:2px;">SUB-SATELLITE POINT</div>
+          <div id="cov-ssp" style="font-family:'Share Tech Mono',monospace; font-size:0.65rem; color:#00e5ff;">—</div>
+        </div>
+        <!-- Map legend -->
+        <div style="position:absolute; bottom:8px; left:12px; display:flex; gap:14px; pointer-events:none; flex-wrap:wrap;">
+          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:rgba(0,229,255,0.7); display:flex; align-items:center; gap:5px;"><span style="width:12px;height:2px;border-top:2px dashed #00e5ff; display:inline-block;"></span>GROUND TRACK (4h)</span>
+          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:rgba(0,229,255,0.5); display:flex; align-items:center; gap:5px;"><span style="width:10px;height:10px;border-radius:50%;border:1px solid rgba(0,229,255,0.6);background:rgba(0,229,255,0.1);display:inline-block;"></span>VISIBILITY FOOTPRINT</span>
+          <span style="font-family:'Share Tech Mono',monospace; font-size:0.55rem; color:#ffcc00; display:flex; align-items:center; gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#ffcc00;display:inline-block;"></span>YOUR LOCATION</span>
+        </div>
+      </div>
+    </div>
+
     <div id="section-passes">
       <div class="section-header muted">
         <span class="sh-icon">📅</span>
