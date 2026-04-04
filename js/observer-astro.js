@@ -12,6 +12,22 @@ window.ObserverAstro = (function() {
     const WGS84_b = WGS84_A * (1.0 - WGS84_F);
     const WGS84_e2 = 1.0 - (WGS84_b * WGS84_b) / (WGS84_A * WGS84_A);
     const AU_KM = 149597870.7;
+    const RE_KM = 6378.137;
+    const RS_KM = 695700;
+
+    // Default Hardware Config (Shawn Gano Professional Standard)
+    let hardwareConfig = {
+        telescopeFocalLength: 1422, // mm (default SCT 8" with reducer or similar)
+        cameraPixelSize: 3.76,     // um (default IMX571/IMX183 standard)
+        apertureMm: 203.2,         // mm (8" aperture)
+        hyperstarMode: false       // f/1.9 toggle
+    };
+
+    // Load from persistence
+    try {
+        const saved = localStorage.getItem('artemis_observer_hw');
+        if (saved) Object.assign(hardwareConfig, JSON.parse(saved));
+    } catch (e) { console.error("HW Load failed", e); }
 
     /**
      * Calculates Topocentric vector, RA/Dec and Alt/Az using astronomy-engine.
@@ -71,8 +87,52 @@ window.ObserverAstro = (function() {
             dec: eq.dec,     // degrees
             alt: hor.altitude, // degrees
             az: hor.azimuth,   // degrees
-            observerObj: observer
+            observerObj: observer,
+            orionEci: { x: orionX, y: orionY, z: orionZ } // Captured ECI for shadow check
         };
+    }
+
+    /**
+     * Refined Conical Shadow calculation (Umbra vs Penumbra).
+     */
+    function getShadowState(date, orionEci) {
+        if (!window.Astronomy) return { state: 'sunlit', factor: 1.0 };
+        const sunVecAu = window.Astronomy.GeoVector('Sun', date);
+        if (!sunVecAu) return { state: 'sunlit', factor: 1.0 };
+
+        const sunX = sunVecAu.x * AU_KM;
+        const sunY = sunVecAu.y * AU_KM;
+        const sunZ = sunVecAu.z * AU_KM;
+        const rSun = Math.sqrt(sunX*sunX + sunY*sunY + sunZ*sunZ);
+        const sunUnit = { x: sunX / rSun, y: sunY / rSun, z: sunZ / rSun };
+
+        // Projection onto Earth-Sun line
+        const dot = orionEci.x * sunUnit.x + orionEci.y * sunUnit.y + orionEci.z * sunUnit.z;
+        if (dot > 0) return { state: 'sunlit', factor: 1.0 }; 
+
+        const rOrionSq = orionEci.x**2 + orionEci.y**2 + orionEci.z**2;
+        const distSq = rOrionSq - dot**2;
+        const r = Math.sqrt(Math.max(0, distSq));
+
+        const RE = 6371; // Earth radius (km)
+        const RS = 695700; // Sun radius (km)
+        const x = Math.abs(dot);
+        
+        // Umbra radius at distance x behind Earth
+        const rUmbra = RE - (RS - RE) * x / rSun;
+        // Penumbra radius at distance x behind Earth
+        const rPenumbra = RE + (RS + RE) * x / rSun;
+
+        if (r < rUmbra) return { state: 'umbra', factor: 0.0 };
+        if (r < rPenumbra) return { state: 'penumbra', factor: 0.5 };
+        return { state: 'sunlit', factor: 1.0 };
+    }
+
+    /**
+     * Binary sunlit check (legacy/simple)
+     */
+    function is_sunlit(date, orionEci) {
+        return getShadowState(date, orionEci).factor > 0;
     }
 
     return {
@@ -141,8 +201,28 @@ window.ObserverAstro = (function() {
             const sunHor = window.Astronomy.Horizon(date, pos.observerObj, sunEq.ra, sunEq.dec, 'normal');
             
             const moonEq = window.Astronomy.Equator('Moon', date, pos.observerObj, true, true);
-            const moonHor = window.Astronomy.Horizon(date, pos.observerObj, moonEq.ra, moonEq.dec, 'normal');
             const moonIllum = window.Astronomy.Illumination('Moon', date);
+
+            // 4. Hardware Dependent Metrics
+            let focalLength = hardwareConfig.telescopeFocalLength;
+            if (hardwareConfig.hyperstarMode) {
+                focalLength = hardwareConfig.apertureMm * 1.9;
+            }
+
+            const arcsecPerPixel = (hardwareConfig.cameraPixelSize / focalLength) * 206.265;
+            // Orion wingspan ~19m
+            const pixelSpanRaw = (pos.distanceKm > 0) 
+                ? (19.0 * focalLength) / (pos.distanceKm * hardwareConfig.cameraPixelSize)
+                : 0;
+            
+            // Apply 0.1px detection floor for empirical professional standard
+            const pixelSpan = pixelSpanRaw < 0.1 ? 0 : pixelSpanRaw;
+
+            const shadow = getShadowState(date, pos.orionEci);
+            
+            // Specular Glint Flag Strategy: Backlit (<15) or Forward Scatter (>165)
+            const phaseDeg = phaseAngleRads * 180.0 / Math.PI;
+            const glintPotential = (phaseDeg < 15 || phaseDeg > 165);
 
             return {
                 orion: {
@@ -154,7 +234,13 @@ window.ObserverAstro = (function() {
                     magnitude: numMagnitude,
                     angularSpeedDegMin: angularSpeedDegSec * 60.0, // deg/min
                     angularSpeedDegSec: angularSpeedDegSec,
-                    phaseAngleDeg: phaseAngleRads * 180.0 / Math.PI
+                    phaseAngleDeg: phaseDeg,
+                    isSunlit: shadow.factor > 0,
+                    shadowState: shadow.state,
+                    shadowFactor: shadow.factor,
+                    glintPotential: glintPotential,
+                    arcsecPerPixel: arcsecPerPixel,
+                    pixelSpan: pixelSpan
                 },
                 sun: {
                     altitude: sunHor.altitude,
@@ -188,10 +274,10 @@ window.ObserverAstro = (function() {
         calculateViewingWindows: function(lat, lon, nowMs, nowMetSec, altM = 0) {
             if (!window.MissionEphemeris || !window.Astronomy) return [];
 
-            const STEP_SEC   = 20 * 60;        // 20-minute steps (matches ephemeris resolution)
-            const STEPS      = 72;             // 72 × 20 min = 24 hours
+            const STEP_SEC   = 20 * 60;        // 20-minute steps
+            const STEPS      = 72;             // 24 hours
             const MIN_ALT    = 10;             // degrees
-            const MAX_SUN    = -6;             // civil twilight threshold
+            const MAX_SUN    = -12;            // Gano Standard: Astronomical Twilight 
             const MAX_WINDOWS = 3;
 
             const windows = [];
@@ -214,9 +300,9 @@ window.ObserverAstro = (function() {
                 const sunHor    = window.Astronomy.Horizon(stepDate, observer, sunEq.ra, sunEq.dec, 'normal');
                 const sunAlt    = sunHor.altitude;
 
-                // Phase angle: angle at spacecraft between Sun and Observer
-                // If phase angle < 90° the spacecraft is sunlit (not in Earth's shadow)
-                let isSunlit = false;
+                // Conical Shadow Check — Use factor-based lithness
+                const shadow = getShadowState(stepDate, pos.orionEci);
+                const isSunlit = shadow.factor > 0;
                 let mag = null;
                 if (sunEq.vec) {
                     const v_ob     = pos.topoVecAu;
@@ -227,9 +313,8 @@ window.ObserverAstro = (function() {
                     const r_ob     = Math.sqrt(v_ob.x**2 + v_ob.y**2 + v_ob.z**2);
                     const dot      = v_so_x * (-v_ob.x) + v_so_y * (-v_ob.y) + v_so_z * (-v_ob.z);
                     const phaseRad = Math.acos(Math.max(-1, Math.min(1, dot / (r_sun * r_ob))));
-                    isSunlit = phaseRad < Math.PI / 2;
 
-                    // Magnitude at this step (same formula as calculateMetrics)
+                    // Magnitude at this step
                     const p = (Math.sin(phaseRad) + (Math.PI - phaseRad) * Math.cos(phaseRad)) / Math.PI;
                     if (p > 0 && pos.distanceKm > 0) {
                         mag = 2.0 + 5.0 * Math.log10(pos.distanceKm / 1000.0) - 2.5 * Math.log10(p);
@@ -307,6 +392,26 @@ window.ObserverAstro = (function() {
             }
 
             return { trackRateArcsecSec, maxExpSec, difficultyLabel };
+        },
+
+        getDarkState: function(sunAlt) {
+            if (sunAlt > -0.83) return { label: "Daylight", optimal: false };
+            if (sunAlt > -6) return { label: "Civil Twilight", optimal: false };
+            if (sunAlt > -12) return { label: "Nautical Twilight", subLabel: "Sub-optimal: Skyglow Present", optimal: false };
+            return { label: "Astronomical Night", subLabel: "Optimal Dark Sky", optimal: true };
+        },
+
+        getHardwareConfig: () => hardwareConfig,
+        setHardwareConfig: (cfg) => {
+            Object.assign(hardwareConfig, cfg);
+            localStorage.setItem('artemis_observer_hw', JSON.stringify(hardwareConfig));
+        },
+
+        calculateDetectionConfidence: function(pixelSpan) {
+            if (pixelSpan <= 0) return 'Undetectable';
+            if (pixelSpan >= 0.3) return 'High';
+            if (pixelSpan >= 0.1) return 'Moderate';
+            return 'Low';
         }
     };
 })();

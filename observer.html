@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <link rel="stylesheet" href="css/styles.css">
   <style>
     /* OBSERVER MODE — inherits CSS vars from styles.css */
@@ -400,11 +401,65 @@
   <div class="obs-grid">
     <!-- ROW 1 -->
 
+    <!-- PANEL 0: EQUIPMENT PROFILE -->
+    <div class="obs-panel" id="panel-hardware" data-panel-id="panel-hardware">
+      <div class="obs-panel-title" onclick="togglePanel('panel-hardware')">
+        EQUIPMENT PROFILE
+        <button class="panel-collapse-btn" data-for="panel-hardware" aria-label="Toggle">&#9660;</button>
+      </div>
+      <div class="obs-panel-body">
+        <span class="instruction-text"><span class="step-title">Hardware Setup.</span> <span class="step-detail">Enter your optics and sensor specs for precise targeting.</span></span>
+        <div class="m-row">
+          <span class="m-key">APERTURE (mm)</span>
+          <input type="number" id="in-aperture" value="203.2" step="0.1" style="width:70px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 5px;">
+        </div>
+        <div class="m-row">
+          <span class="m-key">FOCAL LENGTH (mm)</span>
+          <input type="number" id="in-focal-length" value="1422" step="1" style="width:70px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 5px;">
+        </div>
+        <div class="m-row">
+          <span class="m-key">PIXEL SIZE (um)</span>
+          <input type="number" id="in-pixel-size" value="3.76" step="0.01" style="width:70px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:#fff;font-family:inherit;font-size:0.75rem;padding:2px 5px;">
+        </div>
+        <div class="m-row" style="border-bottom:none; margin-top:4px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.65rem; color:#ffa726;">
+            <input type="checkbox" id="in-hyperstar" style="width:14px; height:14px;"> 
+            <span style="font-family:'Orbitron',sans-serif; letter-spacing:0.05em;">HYPERSTAR MODE (f/1.9)</span>
+          </label>
+        </div>
+        <div class="obs-telem-cell" style="margin-top:10px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div class="obs-telem-label">PLATE SCALE</div>
+            <div class="obs-telem-value" id="ui-plate-scale" style="font-size:1.1rem;">0.545</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="obs-telem-label">DETECTION CONFIDENCE</div>
+            <div class="obs-telem-value" id="ui-confidence" style="font-size:1.1rem; color:#ffa726;">MODERATE</div>
+          </div>
+        </div>
+        <div style="margin-top:10px; font-size:0.55rem; color:rgba(255,255,255,0.4); font-family:'Orbitron',sans-serif; letter-spacing:0.05em;">
+          QUICK SPECS: 
+          <a href="#" onclick="window.applyPreset(1420, 203.2); return false;" style="color:#00e5ff; text-decoration:none; margin-right:12px; border-bottom:1px solid rgba(0,229,255,0.3);">SCT 8" + 0.7x</a>
+          <a href="#" onclick="window.applyPreset(390, 203.2); return false;" style="color:#00e5ff; text-decoration:none; border-bottom:1px solid rgba(0,229,255,0.3);">HYPERSTAR (f/1.9)</a>
+        </div>
+      </div>
+    </div>
+
     <!-- PANEL 1: OBSERVATION SUMMARY -->
     <div class="obs-panel" id="panel-summary" data-panel-id="panel-summary">
       <div class="obs-panel-title" onclick="togglePanel('panel-summary')">
         OBSERVATION SUMMARY
-        <button class="panel-collapse-btn" data-for="panel-summary" aria-label="Toggle">&#9660;</button>
+        <span class="sky-header-extras">
+          <span class="sky-info-wrap">
+            <span class="sky-info-icon" id="risk-info-btn" style="border-color:rgba(239,83,80,0.5); color:#ef5350;">!</span>
+            <div class="sky-tooltip" id="risk-tooltip" style="border-color:rgba(239,83,80,0.5);">
+              <div class="tt-title" style="color:#ef5350;">MISSION RISKS & REFLECTIVITY</div>
+              <div class="tt-row"><strong>THERMAL MANAGEMENT:</strong> Orion's brightness may drop if it rotates to manage passive thermal control (PTC).</div>
+              <div class="tt-row"><strong>TRAJECTORY LATENCY:</strong> Real-time burns may cause deviations from pre-launch ephemeris. Check for updates.</div>
+            </div>
+          </span>
+          <button class="panel-collapse-btn" data-for="panel-summary" aria-label="Toggle">&#9660;</button>
+        </span>
       </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Step 1: View Status.</span> <span class="step-detail">Look at the bar below. If it turns GREEN, Orion is visible now.</span></span>
@@ -413,6 +468,21 @@
         <div class="obs-telem-cell" style="margin-top:6px;">
           <div class="obs-telem-label">APPARENT MAGNITUDE</div>
           <div class="obs-telem-value" id="ui-mag">—</div>
+        </div>
+        <!-- Mission Timeline (v1.1) -->
+        <div style="margin-top:12px;">
+          <div class="obs-telem-label">FLIGHT PROGRESS</div>
+          <div id="ui-timeline-track" style="height:4px; background:rgba(74,144,217,0.15); position:relative; margin:8px 0; border-radius:2px;">
+            <div id="ui-timeline-progress" style="position:absolute; left:0; top:0; height:100%; background:#00e5ff; width:0%; border-radius:2px;"></div>
+            <!-- Labels -->
+            <div style="position:absolute; top:8px; left:0; font-size:0.35rem; color:rgba(0,229,255,0.5);">HEO</div>
+            <div style="position:absolute; top:8px; left:25%; font-size:0.35rem; color:rgba(0,229,255,0.5);">PROX</div>
+            <div style="position:absolute; top:8px; left:50%; font-size:0.35rem; color:rgba(0,229,255,0.5);">TLI</div>
+            <div style="position:absolute; top:8px; left:75%; font-size:0.35rem; color:rgba(0,229,255,0.5);">FLYBY</div>
+          </div>
+          <div id="prox-ops-alert" style="display:none; margin-top:12px; padding:6px; background:rgba(255,167,38,0.15); border:1px solid #ffa726; color:#ffa726; font-size:0.55rem; text-align:center; font-family:'Orbitron',sans-serif; letter-spacing:0.05em; border-radius:2px;">
+            SIGNIFICANT TARGET: PROXIMITY OPERATIONS ACTIVE
+          </div>
         </div>
       </div>
     </div>
@@ -450,6 +520,7 @@
       <div class="obs-panel-title" onclick="togglePanel('panel-sky')">
         LOCAL SKY &mdash; PLANISPHERE
         <span class="sky-header-extras">
+          <button id="eyepiece-toggle-btn" style="border-color:#ffa726; color:#ffa726; margin-right:8px;">TELESCOPE VIEW</button>
           <button id="sky-toggle-btn">3D VIEW</button>
           <span class="sky-info-wrap">
             <span class="sky-info-icon" id="sky-info-btn">i</span>
@@ -468,7 +539,10 @@
       </div>
       <div class="obs-panel-body">
         <span class="instruction-text"><span class="step-title">Step 3: Orientation.</span> <span class="step-detail">Face North. Match the dots on this map to the Moon and the ship in the real sky.</span></span>
-        <div id="sky-plot-container"><!-- SVG injected by JS --></div>
+        <div id="sky-plot-container" style="position:relative;">
+          <!-- SVG injected by JS -->
+          <canvas id="eyepiece-canvas" style="display:none; position:absolute; top:0; left:0; width:100%; height:100%; border-radius:50%;"></canvas>
+        </div>
       </div>
     </div>
 
@@ -497,6 +571,10 @@
         <div class="m-row">
           <span class="m-key">ORION PHASE ANGLE</span>
           <span class="m-val" id="ui-orion-phase">—</span>
+        </div>
+        <div class="m-row" style="margin-top:8px; border-top:1px solid rgba(255,255,255,0.05); padding-top:10px;">
+          <span class="m-key">IMAGING THRESHOLD</span>
+          <span class="m-val" style="color:#00e5ff;">-12° (NAUTICAL)</span>
         </div>
       </div>
     </div>
@@ -545,7 +623,33 @@
           <span class="m-key">OBSERVATION DIFFICULTY</span>
           <span class="m-val" id="ui-difficulty" style="color:#00e5ff;">—</span>
         </div>
-        <div style="font-size:0.55rem;color:var(--text-dim,#7986a8);margin-top:-3px;">based on apparent magnitude</div>
+        <div style="font-size:0.55rem;color:var(--text-dim,#7986a8);margin-top:-3px;margin-bottom:8px;">based on apparent magnitude</div>
+
+        <div class="obs-telem-cell" style="background:rgba(0,229,255,0.05);border-color:rgba(0,229,255,0.25);">
+          <div class="obs-telem-label">EXPECTED PIXEL SPAN</div>
+          <div class="obs-telem-value" id="ui-pixel-span" style="font-size:1.4rem;color:#00e5ff;">—</div>
+          <div style="font-size:0.45rem;color:rgba(0,229,255,0.6);text-transform:uppercase;margin-top:2px;">estimated pixels on sensor (19m wingspan)</div>
+        </div>
+
+        <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+          <div class="obs-telem-cell" style="background:rgba(255,204,0,0.05); border-color:rgba(255,204,0,0.25); margin-bottom:0px;">
+            <div class="obs-telem-label" style="color:#ffa726;">REC. EXPOSURE START</div>
+            <div class="obs-telem-value" id="ui-exp-start" style="font-size:1.2rem; color:#ffa726;">—</div>
+            <div style="font-size:0.45rem; color:rgba(255,167,38,0.6); text-transform:uppercase; margin-top:2px;">(transit time - 45 seconds)</div>
+          </div>
+          <button id="btn-export-stellarium" class="loc-btn" style="flex:1; padding:6px; border-color:rgba(0,229,255,0.4); color:#00e5ff;">STELLARIUM DATA (.inc)</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 7: GLOBAL COVERAGE -->
+    <div class="obs-panel" id="panel-global" data-panel-id="panel-global">
+      <div class="obs-panel-title" onclick="togglePanel('panel-global')">GLOBAL VISIBILITY HEATMAP</div>
+      <div class="obs-panel-body">
+        <span class="instruction-text"><span class="step-title">Global Network.</span> <span class="step-detail">Blue areas show where Orion is currently >15° altitude in total darkness.</span></span>
+        <div id="heatmap-container" style="width:100%; aspect-ratio:2; background:rgba(0,0,0,0.3); border:1px solid var(--border); position:relative; overflow:hidden; border-radius:3px;">
+          <!-- SVG World Map Overlay injected by JS -->
+        </div>
       </div>
     </div>
 
@@ -562,6 +666,7 @@
   <script src="js/shared.js"></script>
   <script src="js/mission-ephemeris.js"></script>
   <script src="js/mission-events.js"></script>
+  <script src="js/orion-model.js"></script>
   <script src="js/observer-astro.js"></script>
   <script src="js/observer-ui.js"></script>
 

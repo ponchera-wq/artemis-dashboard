@@ -115,6 +115,7 @@ window.computeGforce = function(metSec) {
 window.dashboardState = {
   useImperial: true,
   KM_TO_MI: 0.621371,
+  KM_TO_LD: 1 / 384400.0,
   usingLive: false,
   currentPhase: null,
   elapsed: 0,
