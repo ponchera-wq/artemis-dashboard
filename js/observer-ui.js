@@ -109,8 +109,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // SVG Sky Plot Drawer
     function drawPlot(alt, az) {
+        const R = 45; // horizon ring radius in SVG units
         let svg = `<svg viewBox="0 0 100 100" style="width:100%;height:100%;font-family:'Share Tech Mono', monospace;">
-            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(74,144,217,0.2)"/>
+            <circle cx="50" cy="50" r="${R}" fill="none" stroke="rgba(74,144,217,0.2)"/>
             <circle cx="50" cy="50" r="30" fill="none" stroke="rgba(74,144,217,0.1)"/>
             <circle cx="50" cy="50" r="15" fill="none" stroke="rgba(74,144,217,0.1)"/>
             <line x1="50" y1="5" x2="50" y2="95" stroke="rgba(74,144,217,0.1)"/>
@@ -121,13 +122,20 @@ document.addEventListener("DOMContentLoaded", () => {
             <text x="4" y="51" font-size="3" fill="#7986a8" text-anchor="end">W</text>
         `;
 
+        // Az in SVG: North=top, rotate clockwise. Map az to SVG angle: 0°N → up → subtract 90°.
+        const rad = (az - 90) * Math.PI / 180;
+
         if (alt >= 0) {
-            const rad = (az - 90) * Math.PI / 180;
-            const rBase = ((90 - alt) / 90) * 45;
-            const px = 50 + rBase * Math.cos(rad);
-            const py = 50 + rBase * Math.sin(rad);
-            
-            svg += `<circle cx="${px}" cy="${py}" r="2" fill="#00ffaa" filter="drop-shadow(0 0 3px #00ffaa)"/>`;
+            // Above horizon: map 90°→center, 0°→edge
+            const r = ((90 - alt) / 90) * R;
+            const px = 50 + r * Math.cos(rad);
+            const py = 50 + r * Math.sin(rad);
+            svg += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="2.5" fill="#00ffaa" opacity="1" filter="drop-shadow(0 0 3px #00ffaa)"/>`;
+        } else {
+            // Below horizon: pin to the outer edge at the correct azimuth, dimmed
+            const px = 50 + R * Math.cos(rad);
+            const py = 50 + R * Math.sin(rad);
+            svg += `<circle cx="${px.toFixed(2)}" cy="${py.toFixed(2)}" r="2.5" fill="#ff5050" opacity="0.3" filter="drop-shadow(0 0 2px #ff5050)"/>`;
         }
 
         svg += `</svg>`;
@@ -195,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Motion and Range
         distDisp.textContent = Math.round(o.distanceKm).toLocaleString() + " KM";
-        rateDisp.textContent = o.angularSpeedHz.toFixed(3) + " °/HR";
+        rateDisp.textContent = o.angularSpeedDegMin != null ? o.angularSpeedDegMin.toFixed(4) + " °/min" : "—";
 
         // SVG plotting
         drawPlot(o.altitude, o.azimuth);

@@ -86,33 +86,37 @@ window.ObserverAstro = (function() {
 
             // 1. Magnitude Estimation
             // H = 2.0 (Conservative baseline size for spacecraft)
+            // Formula: m = H + 5*log10(dist_km / 1000) + phasePenalty
+            // Reference distance is 1,000 km. At 210,000 km this yields ~+13 to +14.
             const H = 2.0;
+            const distKmForMag = pos.distanceKm;
 
-            // Sun Vector computation
+            // Sun Vector computation — phase angle only
             let numMagnitude = null;
             let phaseAngleRads = 0;
             const sunEq = window.Astronomy.Equator('Sun', date, pos.observerObj, true, true);
             
             if (sunEq && sunEq.vec) {
-                // Vector Obsever -> Target
+                // Observer->Target vector (AU)
                 const v_ob = pos.topoVecAu;
                 
-                // Vector Target -> Sun
+                // Target->Sun vector (AU)
                 const v_so_x = sunEq.vec.x - v_ob.x;
                 const v_so_y = sunEq.vec.y - v_ob.y;
                 const v_so_z = sunEq.vec.z - v_ob.z;
 
                 const r_sun_au = Math.sqrt(v_so_x*v_so_x + v_so_y*v_so_y + v_so_z*v_so_z);
-                const r_obs_au = Math.sqrt(v_ob.x*v_ob.x + v_ob.y*v_ob.y + v_ob.z*v_ob.z);
+                const r_ob_au  = Math.sqrt(v_ob.x*v_ob.x + v_ob.y*v_ob.y + v_ob.z*v_ob.z);
 
                 const dot = v_so_x * (-v_ob.x) + v_so_y * (-v_ob.y) + v_so_z * (-v_ob.z);
-                phaseAngleRads = Math.acos(Math.max(-1, Math.min(1, dot / (r_sun_au * r_obs_au))));
+                phaseAngleRads = Math.acos(Math.max(-1, Math.min(1, dot / (r_sun_au * r_ob_au))));
 
                 // Lambertian phase angle penalty
                 const p = (Math.sin(phaseAngleRads) + (Math.PI - phaseAngleRads) * Math.cos(phaseAngleRads)) / Math.PI;
 
-                if (p > 0) {
-                    numMagnitude = H + 5.0 * Math.log10(r_sun_au * r_obs_au) - 2.5 * Math.log10(p);
+                if (p > 0 && distKmForMag > 0) {
+                    // Distance term uses km, reference 1000 km — physically correct for spacecraft
+                    numMagnitude = H + 5.0 * Math.log10(distKmForMag / 1000.0) - 2.5 * Math.log10(p);
                 }
             }
 
@@ -148,7 +152,7 @@ window.ObserverAstro = (function() {
                     decDeg: pos.dec,
                     distanceKm: pos.distanceKm,
                     magnitude: numMagnitude,
-                    angularSpeedHz: angularSpeedDegSec * 3600.0, // deg/hr
+                    angularSpeedDegMin: angularSpeedDegSec * 60.0, // deg/min
                     angularSpeedDegSec: angularSpeedDegSec,
                     phaseAngleDeg: phaseAngleRads * 180.0 / Math.PI
                 },
