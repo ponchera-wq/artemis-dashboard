@@ -19,6 +19,8 @@ let isDrag = false;
 let o = {};
 let renderer, scene, camera, orionGroup, stars, earthMesh, trajectoryLine, shadowCone;
 let t_scene, t_camera, t_renderer, t_earth, t_traj, t_orion, t_shadow, t_sun;
+let t_sunArrow, t_sunLabel, t_shadowLabel, t_orionLabel;
+let t_isDrag = false, t_dragStart = null, t_azimuth = 0, t_elevation = 0, t_radius = 8;
 // Mission Map (dedicated full-width 3D panel)
 let mm_renderer, mm_scene, mm_camera, mm_earth, mm_traj, mm_orion, mm_shadow, mm_sun;
 let mm_isDrag = false, mm_dragStart = null, mm_azimuth = 0.4, mm_elevation = 0.5, mm_radius = 8;
@@ -200,6 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const eyepieceCanvas = document.getElementById('eyepiece-canvas');
         const threeCanvas = document.getElementById('three-canvas');
         const skySvgWrap = document.getElementById('sky-svg-wrap');
+        const legend3d = document.getElementById('sky-3d-legend');
 
         if (useEyepiece) {
             skyToggleBtn.classList.remove('active');
@@ -208,6 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'block';
             if (threeCanvas) threeCanvas.style.display = 'none';
             if (skySvgWrap) skySvgWrap.style.display = 'none';
+            if (legend3d) legend3d.style.display = 'none';
             initEyepiece();
         } else if (use3D) {
             eyepieceToggleBtn.classList.remove('active');
@@ -216,6 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'none';
             if (threeCanvas) threeCanvas.style.display = 'block';
             if (skySvgWrap) skySvgWrap.style.display = 'none';
+            if (legend3d) legend3d.style.display = 'block';
             initThreeJS();
         } else {
             eyepieceToggleBtn.classList.remove('active');
@@ -224,6 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'none';
             if (threeCanvas) threeCanvas.style.display = 'none';
             if (skySvgWrap) skySvgWrap.style.display = 'block';
+            if (legend3d) legend3d.style.display = 'none';
         }
     }
 
@@ -1954,6 +1960,24 @@ document.addEventListener("DOMContentLoaded", () => {
         animate();
     };
 
+    // Helper: Create Text Sprite for 3D Labels
+    function createTextSprite(text, color = '#00e5ff', fontSize = 64) {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 512; canvas.height = 128;
+        context.font = `bold ${fontSize}px "Orbitron", sans-serif`;
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillStyle = color;
+        context.fillText(text, canvas.width / 2, canvas.height / 2);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const material = new THREE.SpriteMaterial({ map: texture, transparent: true });
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(1.5, 0.375, 1);
+        return sprite;
+    }
+
     function updateEyepiece(raHours, decDeg, altitude) {
         if (!camera) return;
         // Position camera to look at RA/Dec
@@ -2046,6 +2070,41 @@ document.addEventListener("DOMContentLoaded", () => {
         t_sun.position.set(100, 50, 100);
         t_scene.add(t_sun);
 
+        // Sun Vector Indicator
+        t_sunArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 4, 0xffcc00, 0.5, 0.3);
+        t_scene.add(t_sunArrow);
+        t_sunLabel = createTextSprite("SUN DIRECTION", "#ffcc00", 40);
+        t_scene.add(t_sunLabel);
+
+        // Geometric Labels
+        t_shadowLabel = createTextSprite("EARTH SHADOW (UMBRA)", "rgba(255,255,255,0.4)", 36);
+        t_scene.add(t_shadowLabel);
+        t_orionLabel = createTextSprite("ARTEMIS II (ORION)", "#00e5ff", 42);
+        t_scene.add(t_orionLabel);
+
+        // Interaction (Drag & Zoom)
+        canvas.addEventListener('mousedown', e => {
+            t_isDrag = true;
+            t_dragStart = { x: e.clientX, y: e.clientY, az: t_azimuth, el: t_elevation };
+            canvas.style.cursor = 'grabbing';
+        });
+        window.addEventListener('mousemove', e => {
+            if (!t_isDrag || !t_dragStart) return;
+            const dx = (e.clientX - t_dragStart.x) * 0.008;
+            const dy = (e.clientY - t_dragStart.y) * 0.005;
+            t_azimuth   = t_dragStart.az + dx;
+            t_elevation = Math.max(-1.4, Math.min(1.4, t_dragStart.el - dy));
+        });
+        window.addEventListener('mouseup', () => { 
+            t_isDrag = false; 
+            canvas.style.cursor = 'auto'; 
+        });
+        canvas.addEventListener('wheel', e => {
+            // Zoom limit: radius >= 1.3 (Earth is 1.0)
+            t_radius = Math.max(1.3, Math.min(20, t_radius + e.deltaY * 0.005));
+            e.preventDefault();
+        }, { passive: false });
+
         // Resize handler
         function onResize3D() {
             const p = canvas.parentElement;
@@ -2065,12 +2124,14 @@ document.addEventListener("DOMContentLoaded", () => {
             t_renderer.render(t_scene, t_camera);
             if (t_earth) t_earth.rotation.y += 0.0003;
             if (t_orion) t_orion.rotation.y += 0.005;
-            if (!isDrag) {
-                const time = Date.now() * 0.0001;
-                t_camera.position.x = 8 * Math.sin(time);
-                t_camera.position.z = 8 * Math.cos(time);
-                t_camera.lookAt(0, 0, 0);
-            }
+            
+            // Camera Positioning
+            if (!t_isDrag) t_azimuth += 0.0004; // slow drift
+            const tx = t_radius * Math.cos(t_elevation) * Math.sin(t_azimuth);
+            const ty = t_radius * Math.sin(t_elevation);
+            const tz = t_radius * Math.cos(t_elevation) * Math.cos(t_azimuth);
+            t_camera.position.set(tx, ty, tz);
+            t_camera.lookAt(0, 0, 0);
         }
         t_animate();
     };
@@ -2093,14 +2154,52 @@ document.addEventListener("DOMContentLoaded", () => {
             t_shadow.position.copy(shadowDir.multiplyScalar(12.5));
             t_shadow.lookAt(0, 0, 0);
             t_shadow.rotateX(Math.PI/2);
+
+            // Update Sun Arrow & Label
+            if (t_sunArrow) t_sunArrow.setDirection(sunVec);
+            if (t_sunLabel) t_sunLabel.position.copy(sunVec.clone().multiplyScalar(5));
+            
+            // Update Shadow Label
+            if (t_shadowLabel) {
+                t_shadowLabel.position.copy(shadowDir.clone().multiplyScalar(10));
+            }
         }
 
-        // Update camera to orbit
-        if (!isDrag) { // using simplified orbit for now
-            const time = Date.now() * 0.0001;
-            t_camera.position.x = 10 * Math.sin(time);
-            t_camera.position.z = 10 * Math.cos(time);
-            t_camera.lookAt(0,0,0);
+        // Update Orion Label
+        if (t_orionLabel && orionData) {
+            const pos = new THREE.Vector3(orionData.x * S_SCALE, orionData.y * S_SCALE, orionData.z * S_SCALE);
+            t_orionLabel.position.copy(pos.clone().add(new THREE.Vector3(0, 0.4, 0)));
+            
+            const isUmbra = (o && o.shadowState === 'umbra');
+            const distKm = Math.round(orionData.distanceKm).toLocaleString();
+            let labelText = `ARTEMIS II (ORION)\nDist: ${distKm} km`;
+            if (isUmbra) labelText += "\n(IN SHADOW)";
+
+            // Update texture only if content changed to save performance
+            if (t_orionLabel.userData.lastText !== labelText) {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 512; canvas.height = 128;
+                context.font = `bold 42px "Orbitron", sans-serif`;
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillStyle = '#ffffff'; // Base color white, tinted by material
+                // Handle newlines
+                const lines = labelText.split('\n');
+                lines.forEach((line, i) => {
+                    context.fillText(line, canvas.width / 2, (canvas.height / 2) + (i - (lines.length-1)/2)*45);
+                });
+                
+                const tex = new THREE.CanvasTexture(canvas);
+                t_orionLabel.material.map.dispose();
+                t_orionLabel.material.map = tex;
+                t_orionLabel.material.needsUpdate = true;
+                t_orionLabel.userData.lastText = labelText;
+            }
+            
+            t_orionLabel.material.color.set(isUmbra ? '#ef5350' : '#00e5ff');
         }
+
+        // Camera auto-orbit removed, handled by t_animate now
     }
 });
