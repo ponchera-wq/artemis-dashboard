@@ -66,7 +66,7 @@
     #section-gear {
       background: rgba(255,204,0,0.03);
       border: 1px solid rgba(255,204,0,0.18);
-      border-radius: 6px; padding: 14px 18px; margin-top: 16px;
+      border-radius: 6px; padding: 20px 20px 16px; margin-top: 16px; margin-bottom: 25px;
     }
 
     /* Gear grid — 3 columns desktop, stack on mobile */
@@ -248,7 +248,7 @@
     .verdict-main.red   { color: #ef5350; }
     .verdict-detail {
       font-family: 'Share Tech Mono', monospace; font-size: 0.62rem;
-      color: rgba(255,255,255,0.45); line-height: 1.45;
+      color: rgba(255,255,255,0.45); line-height: 1.6;
     }
 
     /* Detection potential progress bar */
@@ -277,7 +277,7 @@
     /* ════════════════════════════════════════════════════════════ */
     /* SECTION 4: UPCOMING PASSES                                   */
     /* ════════════════════════════════════════════════════════════ */
-    #section-passes { margin-top: 24px; }
+    #section-passes { margin-top: 25px; margin-bottom: 25px; }
     #win-cards { display: flex; flex-direction: column; gap: 10px; }
     .win-card {
       background: rgba(0,8,20,0.8); border: 1px solid rgba(74,144,217,0.2);
@@ -599,7 +599,15 @@
           <div class="verdict-detail" id="vc-moon-detail">—</div>
         </div>
 
-      </div><!-- /.verdict-grid -->
+        <!-- WEATHER verdict -->
+        <div class="verdict-card" id="vc-weather">
+          <div class="verdict-icon" id="vc-weather-icon">🌡</div>
+          <div class="verdict-title">LOCAL WEATHER</div>
+          <div class="verdict-main" id="vc-weather-main">FETCHING...</div>
+          <div class="verdict-detail" id="vc-weather-detail">Checking cloud cover from Open-Meteo...</div>
+        </div>
+
+        </div><!-- /.verdict-grid -->
       </div><!-- /.section-body -->
     </div><!-- /#section-verdicts -->
 
@@ -666,6 +674,7 @@
           <div class="map-stat"><div class="map-stat-label">DIST FROM EARTH</div><div class="map-stat-val" id="map-dist">—</div></div>
           <div class="map-stat"><div class="map-stat-label">VELOCITY</div><div class="map-stat-val" id="map-vel">—</div></div>
           <div class="map-stat"><div class="map-stat-label">SHADOW STATE</div><div class="map-stat-val" id="map-shadow">—</div></div>
+          <div class="map-stat" style="margin-left:auto;"><div class="map-stat-label">MISSION PROGRESS</div><div class="map-stat-val" id="map-mission-progress" style="font-size:0.62rem;">—</div></div>
         </div>
       </div>
     </div>

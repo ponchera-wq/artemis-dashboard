@@ -276,10 +276,10 @@ window.ObserverAstro = (function() {
             if (!window.MissionEphemeris || !window.Astronomy) return [];
 
             const STEP_SEC   = 20 * 60;        // 20-minute steps
-            const STEPS      = 72;             // 24 hours
+            const STEPS      = 504;            // 7 days
             const MIN_ALT    = 10;             // degrees
             const MAX_SUN    = -12;            // Gano Standard: Astronomical Twilight 
-            const MAX_WINDOWS = 3;
+            const MAX_WINDOWS = 10;
 
             const windows = [];
             let currentWindow = null;

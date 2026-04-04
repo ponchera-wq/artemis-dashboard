@@ -31,6 +31,15 @@ document.addEventListener("DOMContentLoaded", () => {
     let obsAlt = DEFAULT_ELEV;
     let isReady = true; 
     let useEyepiece = false;
+    let cloudCoverPct = null;   // cached from Open-Meteo
+    let coverageBluemarble = null; // preloaded texture for 2D map
+    // Preload Blue Marble
+    (() => {
+        const img = new Image();
+        img.onload = () => { coverageBluemarble = img; };
+        img.crossOrigin = 'anonymous';
+        img.src = 'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg';
+    })();
 
     // ── Collapsible section panels ────────────────────────────────────
     document.querySelectorAll('.section-header[data-target]').forEach(hdr => {
@@ -405,6 +414,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (heroAwaiting) heroAwaiting.style.display = 'none';
     }
 
+    // ── Cloud cover fetch (Open-Meteo, free, no API key) ────────────────
+    async function fetchCloudCover(lat, lon) {
+        try {
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=cloud_cover&forecast_days=1`;
+            const res = await fetch(url);
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data.current?.cloud_cover ?? null;
+        } catch {
+            return null;
+        }
+    }
+
     // ── Elevation API fetch (open-elevation.com) ───────────────────────
     async function fetchElevation(lat, lon) {
         try {
@@ -443,6 +465,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         // Update thin-atmosphere badge
         updateElevBadge(obsAlt);
+        // Fetch cloud cover in background (non-blocking)
+        fetchCloudCover(lat, lon).then(cc => {
+            if (cc != null) {
+                cloudCoverPct = cc;
+                updateCloudVerdict(cc);
+            }
+        });
         // Trigger immediate redraw
         coverageCountdown = 1;
         windowScanCountdown = 0;
@@ -460,6 +489,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // set initial badge state
     updateElevBadge(obsAlt);
+
+    function updateCloudVerdict(cc) {
+        const el    = document.getElementById('vc-weather-main');
+        const det   = document.getElementById('vc-weather-detail');
+        const card  = document.getElementById('vc-weather');
+        const icon  = document.getElementById('vc-weather-icon');
+        if (!el) return;
+        let main, detail, cls, cardCls, ico;
+        if (cc < 20)  { main='SKY CLEAR'; detail=`Cloud cover: ${cc}% — excellent transparency for imaging.`; cls='green'; cardCls='green-card'; ico='✅'; }
+        else if(cc < 60){ main='PARTLY CLOUDY'; detail=`Cloud cover: ${cc}% — patchy cloud may interrupt imaging.`; cls='amber'; cardCls='amber-card'; ico='🌤'; }
+        else           { main='OBSCURED — NO-GO'; detail=`Cloud cover: ${cc}% — heavy cloud, imaging not possible tonight.`; cls='red'; cardCls='red-card'; ico='⛅'; }
+        el.textContent  = main; el.className = 'verdict-main ' + cls;
+        if (det)  det.textContent  = detail;
+        if (card) card.className   = 'verdict-card ' + cardCls;
+        if (icon) icon.textContent = ico;
+    }
+    // Try to fetch on load with default location
+    fetchCloudCover(DEFAULT_LAT, DEFAULT_LON).then(cc => {
+        if (cc != null) { cloudCoverPct = cc; updateCloudVerdict(cc); }
+    });
 
     // ── Wire in-elev input to obsAlt live ───────────────────────────────
     const inElevEl = document.getElementById('in-elev');
@@ -551,7 +600,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!locNextPass) return;
         if (!wins || wins.length === 0) {
             locNextPass.textContent = '';
-            if (winPanel) winPanel.innerHTML = '<div style="opacity:0.5; font-size:0.65rem; text-align:center;">NO VISIBLE PASSES IN NEXT 24H</div>';
+            if (winPanel) winPanel.innerHTML = '<div style="opacity:0.5; font-size:0.65rem; text-align:center;">NO VISIBLE PASSES IN NEXT 7 DAYS</div>';
             return;
         }
         const w = wins[0];
@@ -562,24 +611,44 @@ document.addEventListener("DOMContentLoaded", () => {
         const countStr = diffMs > 0 ? ` (in ${inHours > 0 ? inHours + 'h ' : ''}${inMins}m)` : ' (NOW)';
         locNextPass.textContent = `NEXT PASS: ${fmtLocalTime(w.startMs)}${countStr} • Peak ${w.peakAlt.toFixed(0)}°`;
 
-        // Populatecards in the panel
+        // Weather badge helper
+        const cc = cloudCoverPct;
+        function wxBadge() {
+            if (cc == null) return '';
+            if (cc < 20)  return '<span style="color:#00e676;font-size:0.5rem;padding:2px 6px;background:rgba(0,230,118,0.1);border:1px solid rgba(0,230,118,0.3);border-radius:3px;">SKY CLEAR</span>';
+            if (cc < 60)  return '<span style="color:#ffa726;font-size:0.5rem;padding:2px 6px;background:rgba(255,167,38,0.1);border:1px solid rgba(255,167,38,0.3);border-radius:3px;">PARTLY CLOUDY</span>';
+            return '<span style="color:#ef5350;font-size:0.5rem;padding:2px 6px;background:rgba(239,83,80,0.1);border:1px solid rgba(239,83,80,0.3);border-radius:3px;">OBSCURED</span>';
+        }
+
         if (winPanel) {
-            winPanel.innerHTML = wins.map(win => `
-                <div class="obs-telem-cell" style="margin-bottom:0; background:rgba(0,229,255,0.03); border-color:rgba(0,229,255,0.15);">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="font-family:'Orbitron',sans-serif; color:#00e5ff; font-size:0.65rem; letter-spacing:0.05em;">
-                            ${new Date(win.startMs).toLocaleDateString([], {month:'short', day:'numeric'})} &bull; ${fmtLocalTime(win.startMs)}
+            winPanel.innerHTML = wins.map((win, idx) => {
+                const daysAhead = Math.floor((win.startMs - nowMs) / 86400000);
+                const dayLabel = daysAhead === 0 ? 'TODAY' : daysAhead === 1 ? 'TOMORROW' : `IN ${daysAhead}D`;
+                return `
+                <div class="win-card">
+                    <div class="wc-badge">
+                        <div class="wc-rank">#${idx + 1}</div>
+                        <div class="wc-num">${win.peakAlt.toFixed(0)}&deg;</div>
+                        <div style="font-size:0.38rem;color:#4A90D9;">PEAK ALT</div>
+                    </div>
+                    <div class="wc-body">
+                        <div class="wc-time">${dayLabel} • ${fmtLocalTime(win.startMs)}</div>
+                        <div class="wc-detail">
+                            ${new Date(win.startMs).toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'})}
+                            &nbsp;•&nbsp; Duration: ${fmtDuration(win.endMs - win.startMs)}
                         </div>
-                        <div style="font-family:'Share Tech Mono',monospace; color:#00e676; font-size:0.7rem;">
-                            PEAK ${win.peakAlt.toFixed(1)}&deg;
+                        <div style="margin-top:4px;display:flex;align-items:center;gap:6px;">
+                            ${win.peakMag != null ? `<span style="font-size:0.52rem;color:#aaa;">Mag ${win.peakMag.toFixed(1)}</span>` : ''}
+                            ${wxBadge()}
                         </div>
                     </div>
-                    <div style="display:flex; gap:12px; margin-top:4px; font-size:0.55rem; color:var(--text-dim); font-family:'Share Tech Mono',monospace;">
-                        <span>DURATION: ${fmtDuration(win.endMs - win.startMs)}</span>
-                        <span>BEST MAG: ${win.peakMag != null ? win.peakMag.toFixed(1) : '—'}</span>
+                    <div class="wc-peak">
+                        <div class="wc-peak-label">MAG</div>
+                        <div class="wc-peak-val">${win.peakMag != null ? win.peakMag.toFixed(1) : '—'}</div>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // PRO: Exposure Start Logic (NextPass - 45s)
@@ -935,12 +1004,19 @@ document.addEventListener("DOMContentLoaded", () => {
             if (close) ctx.closePath();
         }
 
-        // ── 1. Ocean background ──────────────────────────────────────
+        // ── 1. Background: Blue Marble or fallback ocean ─────────────
         ctx.fillStyle = '#020c1e';
         ctx.fillRect(0, 0, W, H);
+        const hasBM = coverageBluemarble && coverageBluemarble.complete && coverageBluemarble.naturalWidth > 0;
+        if (hasBM) {
+            // Draw with slight darkening overlay for better contrast
+            ctx.globalAlpha = 0.85;
+            ctx.drawImage(coverageBluemarble, 0, 0, W, H);
+            ctx.globalAlpha = 1;
+        }
 
-        // Grid lines
-        ctx.strokeStyle = 'rgba(0,229,255,0.06)';
+        // Grid lines (subtle — visible over the texture)
+        ctx.strokeStyle = hasBM ? 'rgba(255,255,255,0.08)' : 'rgba(0,229,255,0.06)';
         ctx.lineWidth = 0.5;
         for (let lon = -180; lon <= 180; lon += 30) {
             ctx.beginPath(); ctx.moveTo(tx(lon), 0); ctx.lineTo(tx(lon), H); ctx.stroke();
@@ -948,18 +1024,21 @@ document.addEventListener("DOMContentLoaded", () => {
         for (let lat = -90; lat <= 90; lat += 30) {
             ctx.beginPath(); ctx.moveTo(0, ty(lat)); ctx.lineTo(W, ty(lat)); ctx.stroke();
         }
-        // Equator brighter
-        ctx.strokeStyle = 'rgba(0,229,255,0.15)';
+        // Equator & Prime Meridian
+        ctx.strokeStyle = hasBM ? 'rgba(255,255,255,0.18)' : 'rgba(0,229,255,0.15)';
         ctx.beginPath(); ctx.moveTo(0, ty(0)); ctx.lineTo(W, ty(0)); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(tx(0), 0); ctx.lineTo(tx(0), H); ctx.stroke();
 
-        // ── 2. Continent fills ───────────────────────────────────────
-        ctx.fillStyle = 'rgba(30,60,100,0.45)';
-        ctx.strokeStyle = 'rgba(80,140,200,0.35)';
-        ctx.lineWidth = 0.7;
-        for (const land of COV_LANDS) {
-            drawPath(land, true);
-            ctx.fill();
-            ctx.stroke();
+        // ── 2. Continent fills (only if no Blue Marble) ──────────────
+        if (!hasBM) {
+            ctx.fillStyle = 'rgba(30,60,100,0.45)';
+            ctx.strokeStyle = 'rgba(80,140,200,0.35)';
+            ctx.lineWidth = 0.7;
+            for (const land of COV_LANDS) {
+                drawPath(land, true);
+                ctx.fill();
+                ctx.stroke();
+            }
         }
 
         // ── 3. Day/Night terminator & night shading ──────────────────
@@ -1448,6 +1527,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const gMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.2, side: THREE.BackSide });
         mm_orion.add(new THREE.Mesh(gGeo, gMat));
 
+        // Sun direction arrow (visual indicator of sunlight direction)
+        const sunArrowDir = new THREE.Vector3(1, 0.3, 0.5).normalize();
+        const sunArrow = new THREE.ArrowHelper(sunArrowDir, new THREE.Vector3(0,0,0), 3.5, 0xffcc00, 0.5, 0.25);
+        sunArrow.name = 'sunArrow';
+        mm_scene.add(sunArrow);
+
         // Shadow cone (Earth umbra approximation)
         const sGeo = new THREE.CylinderGeometry(0.98, 0.5, 30, 32, 1, true);
         const sMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
@@ -1532,11 +1617,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 mm_orion.position.set(st.orion.x * S_SCALE, st.orion.y * S_SCALE, st.orion.z * S_SCALE);
             }
         }
-        // Update sun direction & shadow cone
+        // Update sun direction, shadow cone & sun arrow
         const sunPos = window.ObserverAstro ? window.ObserverAstro.getSunPos(new Date()) : null;
         if (sunPos && mm_sun) {
             const sv = new THREE.Vector3(sunPos.x, sunPos.y, sunPos.z).normalize();
             mm_sun.position.copy(sv.clone().multiplyScalar(200));
+            // Update sun arrow helper direction
+            const arrow = mm_scene.getObjectByName('sunArrow');
+            if (arrow) arrow.setDirection(sv);
             // Shadow cone points away from sun
             if (mm_shadow) {
                 const sd = sv.clone().negate();
@@ -1544,6 +1632,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 mm_shadow.lookAt(0, 0, 0);
                 mm_shadow.rotateX(Math.PI / 2);
             }
+        }
+        // Mission progress label
+        const mpEl = document.getElementById('map-mission-progress');
+        if (mpEl && orionData && orionData.distanceKm) {
+            const ld = orionData.distanceKm / 384400;
+            mpEl.textContent = `DIST: ${Math.round(orionData.distanceKm).toLocaleString()} km | ${ld.toFixed(3)} LD`;
         }
     }
 
