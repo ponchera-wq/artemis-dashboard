@@ -614,8 +614,16 @@
     <div id="section-sky">
       <div class="section-header cyan" data-target="sky-body">
         <span class="sh-icon">🌐</span>
-        <span class="sh-title">Step 2 — Your Sky Right Now</span>
+        <span class="sh-title" id="step2-title" style="font-size:0.75rem;">STEP 2 — LOCAL SKY - PLANISPHERE</span>
         <span class="sh-subtitle" id="ui-darkness-state">—</span>
+        
+        <!-- View Toggle Controls -->
+        <div class="sky-header-extras" style="margin-left:auto; margin-right:12px; display:flex; gap:6px;">
+          <button id="btn-view-2d" class="view-btn active" style="border: 1px solid #ffcc00; color: #ffcc00; background: rgba(255,204,0,0.1); padding: 4px 10px; font-family: 'Orbitron'; font-size: 0.55rem; cursor: pointer;">2D MAP</button>
+          <button id="btn-view-3d" class="view-btn" style="border: 1px solid rgba(255,167,38,0.5); color: #ffa726; background: transparent; padding: 4px 10px; font-family: 'Orbitron'; font-size: 0.55rem; cursor: pointer;">3D VIEW</button>
+          <button id="btn-view-eyepiece" class="view-btn" style="border: 1px solid rgba(255,167,38,0.5); color: #ffa726; background: transparent; padding: 4px 10px; font-family: 'Orbitron'; font-size: 0.55rem; cursor: pointer;">EYEPIECE</button>
+        </div>
+
         <span class="sh-help-icon" title="View 3D orbit or telescope eyepiece simulation">?</span>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
@@ -679,11 +687,6 @@
           <div class="hud-sub" id="hud-dist-sub">—</div>
         </div>
 
-        <!-- View toggle buttons -->
-        <div class="sky-controls">
-          <button id="eyepiece-toggle-btn" class="sky-ctrl-btn amber-btn">🔭 EYEPIECE</button>
-          <button id="sky-toggle-btn" class="sky-ctrl-btn">🌍 3D VIEW</button>
-        </div>
       </div><!-- /#sky-hud-wrap -->
       </div><!-- /.section-body -->
     </div><!-- /#section-sky -->

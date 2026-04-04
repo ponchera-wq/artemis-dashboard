@@ -18,7 +18,7 @@ const DEFAULT_PIXEL_SIZE   = 3.76;   // µm
 let isDrag = false;
 let o = {};
 let renderer, scene, camera, orionGroup, stars, earthMesh, trajectoryLine, shadowCone;
-let t_scene, t_camera, t_renderer, t_earth, t_traj, t_orion, t_shadow, t_sun;
+let t_scene, t_camera, t_renderer, t_earth, t_traj, t_orion, t_shadow, t_sun, t_obsMarker;
 let t_sunArrow, t_sunLabel, t_shadowLabel, t_orionLabel;
 let t_isDrag = false, t_dragStart = null, t_azimuth = 0, t_elevation = 0, t_radius = 8;
 // Mission Map (dedicated full-width 3D panel)
@@ -173,27 +173,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ── Sky plot mode state ───────────────────────────────────────
     let use3D = false;
-    const skyToggleBtn = document.getElementById('sky-toggle-btn');
+    const btnView2D = document.getElementById('btn-view-2d');
+    const btnView3D = document.getElementById('btn-view-3d');
+    const btnViewEp = document.getElementById('btn-view-eyepiece');
     const skyInfoBtn   = document.getElementById('sky-info-btn');
     const skyTooltip   = document.getElementById('sky-tooltip');
 
-    // Default label — will be set after geolocation resolves or falls back
-    
-    if (skyToggleBtn) {
-        skyToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            use3D = !use3D;
-            if (use3D) useEyepiece = false; // toggle off eyepiece if 3D dome on
+    if (btnView2D) {
+        btnView2D.addEventListener('click', () => {
+            use3D = false; useEyepiece = false;
             updateSkyModeUI();
         });
     }
-
-    const eyepieceToggleBtn = document.getElementById('eyepiece-toggle-btn');
-    if (eyepieceToggleBtn) {
-        eyepieceToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            useEyepiece = !useEyepiece;
-            if (useEyepiece) use3D = false;
+    if (btnView3D) {
+        btnView3D.addEventListener('click', () => {
+            use3D = true; useEyepiece = false;
+            updateSkyModeUI();
+        });
+    }
+    if (btnViewEp) {
+        btnViewEp.addEventListener('click', () => {
+            use3D = false; useEyepiece = true;
             updateSkyModeUI();
         });
     }
@@ -203,29 +203,44 @@ document.addEventListener("DOMContentLoaded", () => {
         const threeCanvas = document.getElementById('three-canvas');
         const skySvgWrap = document.getElementById('sky-svg-wrap');
         const legend3d = document.getElementById('sky-3d-legend');
+        const step2Title = document.getElementById('step2-title');
+
+        // Reset all buttons to base style
+        [btnView2D, btnView3D, btnViewEp].forEach(btn => {
+            if (!btn) return;
+            btn.classList.remove('active');
+            btn.style.borderColor = 'rgba(255,167,38,0.5)';
+            btn.style.color = '#ffa726';
+            btn.style.background = 'transparent';
+        });
+
+        const setActiveBtn = (btn) => {
+            if (!btn) return;
+            btn.classList.add('active');
+            btn.style.borderColor = '#ffcc00';
+            btn.style.color = '#ffcc00';
+            btn.style.background = 'rgba(255,204,0,0.1)';
+        };
 
         if (useEyepiece) {
-            skyToggleBtn.classList.remove('active');
-            skyToggleBtn.textContent = '3D VIEW';
-            eyepieceToggleBtn.classList.add('active');
+            setActiveBtn(btnViewEp);
+            if (step2Title) step2Title.textContent = "VIRTUAL EYEPIECE — TELESCOPE VIEW";
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'block';
             if (threeCanvas) threeCanvas.style.display = 'none';
             if (skySvgWrap) skySvgWrap.style.display = 'none';
             if (legend3d) legend3d.style.display = 'none';
             initEyepiece();
         } else if (use3D) {
-            eyepieceToggleBtn.classList.remove('active');
-            skyToggleBtn.classList.add('active');
-            skyToggleBtn.textContent = '2D MAP';
+            setActiveBtn(btnView3D);
+            if (step2Title) step2Title.textContent = "MISSION MAP — 3D ORBITAL VIEW";
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'none';
             if (threeCanvas) threeCanvas.style.display = 'block';
             if (skySvgWrap) skySvgWrap.style.display = 'none';
             if (legend3d) legend3d.style.display = 'block';
             initThreeJS();
         } else {
-            eyepieceToggleBtn.classList.remove('active');
-            skyToggleBtn.classList.remove('active');
-            skyToggleBtn.textContent = '3D VIEW';
+            setActiveBtn(btnView2D);
+            if (step2Title) step2Title.textContent = "LOCAL SKY — 2D PLANISPHERE";
             if (eyepieceCanvas) eyepieceCanvas.style.display = 'none';
             if (threeCanvas) threeCanvas.style.display = 'none';
             if (skySvgWrap) skySvgWrap.style.display = 'block';
@@ -2033,6 +2048,13 @@ document.addEventListener("DOMContentLoaded", () => {
         t_earth = new THREE.Mesh(eGeo, eMat);
         t_scene.add(t_earth);
 
+        // Observer Marker (Syncs with user coordinates)
+        t_obsMarker = new THREE.Mesh(
+            new THREE.SphereGeometry(0.02, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+        );
+        t_earth.add(t_obsMarker);
+
         // Starfield
         const starGeo = new THREE.BufferGeometry();
         const starPts = [];
@@ -2072,10 +2094,11 @@ document.addEventListener("DOMContentLoaded", () => {
         t_sun.position.set(100, 50, 100);
         t_scene.add(t_sun);
 
-        // Sun Vector Indicator
-        t_sunArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 4, 0xffcc00, 0.5, 0.3);
+        // Sun Vector Indicator — Fixed dimensions to eliminate polygon glitch
+        t_sunArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 4, 0xffcc00, 1.0, 0.5);
         t_scene.add(t_sunArrow);
         t_sunLabel = createTextSprite("SUN DIRECTION", "#ffcc00", 40);
+        t_sunLabel.scale.set(2, 2, 2);
         t_scene.add(t_sunLabel);
 
         // Geometric Labels
@@ -2161,6 +2184,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (t_sunArrow) t_sunArrow.setDirection(sunVec);
             if (t_sunLabel) t_sunLabel.position.copy(sunVec.clone().multiplyScalar(5));
             
+            // Update Observer Marker position
+            if (t_obsMarker && obsLat != null) {
+                const phi = (90 - obsLat) * (Math.PI / 180);
+                const theta = (obsLon + 180) * (Math.PI / 180);
+                t_obsMarker.position.x = -(Math.sin(phi) * Math.cos(theta)) * 1.02;
+                t_obsMarker.position.z = (Math.sin(phi) * Math.sin(theta)) * 1.02;
+                t_obsMarker.position.y = Math.cos(phi) * 1.02;
+            }
+
             // Update Shadow Label
             if (t_shadowLabel) {
                 t_shadowLabel.position.copy(shadowDir.clone().multiplyScalar(10));
