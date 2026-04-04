@@ -241,6 +241,16 @@
     }
     .sky-tooltip .tt-row { margin-bottom: 5px; }
     .sky-tooltip .tt-row strong { color: #ffcc00; }
+    /* Mobile: render tooltip as a fixed centred modal instead of dropdown */
+    @media (max-width: 767px) {
+      .sky-tooltip.open {
+        position: fixed; top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        right: auto; width: min(88vw, 320px);
+        max-height: 80vh; overflow-y: auto;
+        z-index: 500;
+      }
+    }
 
     #ui-loc-status {
       max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
