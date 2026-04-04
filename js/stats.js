@@ -32,6 +32,7 @@ function flashEl(el) {
 }
 
 function distAnalogy(km) {
+  if (!km || km < 0 || isNaN(km)) return '';
   var EARTH_CIRC = 40075;
   var EARTH_MOON = 384400;
   var EARTH_DIAM = 12742;
@@ -94,6 +95,7 @@ function tickPerilune() {
 }
 
 function tickTelem() {
+  if (!tvEarth || !tvMoon || !tvSpeed || !tuEarth || !tuMoon || !tuSpeed) return;
   var metSec = (Date.now() - LAUNCH_UTC) / 1000;
   var state = MissionEphemeris.getState(metSec);
 
@@ -185,7 +187,8 @@ function tickTelem() {
   tickPerilune();
 }
 
-document.getElementById('unit-toggle').addEventListener('click', function() {
+var _unitToggle = document.getElementById('unit-toggle');
+if (_unitToggle) _unitToggle.addEventListener('click', function() {
   useImperial = !useImperial;
   var btn = document.getElementById('unit-toggle');
   if (btn) {

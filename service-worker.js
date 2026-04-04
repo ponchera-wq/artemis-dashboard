@@ -13,11 +13,14 @@ const STATIC_ASSETS = [
   '/js/crew.js',
   '/js/weather.js',
   '/js/orion-model.js',
+  '/js/apollo-model.js',
+  '/js/iss-model.js',
   '/js/trajectory.js',
   '/js/dsn.js',
   '/js/ui.js',
   '/js/reference.js',
-  '/data/mission-ephemeris.json',
+  '/js/observer-astro.js',
+  '/js/observer-ui.js',
   '/manifest.json',
   '/content/mission.html',
   '/content/science.html',
@@ -34,11 +37,20 @@ const API_DOMAINS = [
   'ssd.jpl.nasa.gov',
 ];
 
-// Install: cache all static assets
+// Install: cache all static assets, tolerating individual misses
 self.addEventListener('install', function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(function(cache) { return cache.addAll(STATIC_ASSETS); })
+      .then(function(cache) {
+        // Cache files individually so a single missing file doesn't abort the install
+        return Promise.all(
+          STATIC_ASSETS.map(function(url) {
+            return cache.add(url).catch(function(err) {
+              console.warn('[SW] Failed to cache ' + url + ':', err);
+            });
+          })
+        );
+      })
       .then(function() { return self.skipWaiting(); })
   );
 });

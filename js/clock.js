@@ -43,13 +43,15 @@ const currentPhaseEl  = document.getElementById('current-phase-name');
 
 // Build phase bar once
 const phaseBar = document.getElementById('phase-bar');
-PHASES.forEach((p, i) => {
-  const node = document.createElement('div');
-  node.className = 'phase-node';
-  node.id = `phase-node-${i}`;
-  node.innerHTML = `<div class="phase-pip"></div><div class="phase-node-label">${p.label}</div>`;
-  phaseBar.appendChild(node);
-});
+if (phaseBar) {
+  PHASES.forEach((p, i) => {
+    const node = document.createElement('div');
+    node.className = 'phase-node';
+    node.id = `phase-node-${i}`;
+    node.innerHTML = `<div class="phase-pip"></div><div class="phase-node-label">${p.label}</div>`;
+    phaseBar.appendChild(node);
+  });
+}
 
 let lastPhaseIdx = -1;
 
@@ -59,7 +61,7 @@ function tick() {
   const elapsedMin = elapsed / 60000;
 
   // MET
-  metDisplay.textContent = formatMET(elapsed);
+  if (metDisplay) metDisplay.textContent = formatMET(elapsed);
 
   // Flight Day label (D+002 = Flight Day 3; FD = elapsed days + 1)
   if (flightDayDisplay) {
@@ -72,7 +74,7 @@ function tick() {
   }
 
   // UTC
-  utcDisplay.textContent = 'UTC ' + now.toUTCString().slice(17, 25);
+  if (utcDisplay) utcDisplay.textContent = 'UTC ' + now.toUTCString().slice(17, 25);
 
   // Local clock
   const ltDisp = document.getElementById('local-time-display');
@@ -82,9 +84,10 @@ function tick() {
   const phaseIdx = getCurrentPhaseIndex(elapsedMin);
   if (phaseIdx !== lastPhaseIdx) {
     lastPhaseIdx = phaseIdx;
-    currentPhaseEl.textContent = PHASES[phaseIdx].name;
+    if (currentPhaseEl) currentPhaseEl.textContent = PHASES[phaseIdx].name;
     PHASES.forEach((_, i) => {
       const node = document.getElementById(`phase-node-${i}`);
+      if (!node) return;
       node.classList.remove('active', 'done');
       if (i === phaseIdx) node.classList.add('active');
       else if (i < phaseIdx) node.classList.add('done');

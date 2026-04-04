@@ -165,6 +165,12 @@
     });
   });
 
-  refreshAll();
-  setInterval(refreshAll, 15 * 60 * 1000);
+  var _newsRefreshing = false;
+  async function _guardedRefresh() {
+    if (_newsRefreshing) return;
+    _newsRefreshing = true;
+    try { await refreshAll(); } finally { _newsRefreshing = false; }
+  }
+  _guardedRefresh();
+  var _newsInterval = setInterval(_guardedRefresh, 15 * 60 * 1000);
 })();

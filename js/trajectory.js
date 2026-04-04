@@ -370,6 +370,50 @@
     var flameGlowMat = new THREE.LineBasicMaterial({ color: 0xffeedd, transparent: true, opacity: 0.25, blending: THREE.AdditiveBlending, depthWrite: false });
     scene.add(new THREE.Line(flameGlowGeo, flameGlowMat));
 
+    // ── Pre-allocate geometry buffers ─────────────────────────────────
+    // Avoids creating new Float32Arrays every frame (prevents WebGL buffer leaks
+    // caused by replaced BufferAttributes never being explicitly disposed).
+    var MAX_PATH  = N_PTS;
+    var MAX_FLAME = FLAME_LEN + 4;
+    var MAX_ACTIVE = 25;
+
+    function _preallocPos(geo, maxPts) {
+      var buf = new Float32Array(maxPts * 3);
+      geo.setAttribute('position', new THREE.BufferAttribute(buf, 3));
+      geo.setDrawRange(0, 0);
+      return buf;
+    }
+    function _fillGeo(buf, geo, pts) {
+      var n = Math.min(pts.length, buf.length / 3);
+      for (var _i = 0; _i < n; _i++) { buf[_i*3]=pts[_i].x; buf[_i*3+1]=pts[_i].y; buf[_i*3+2]=pts[_i].z; }
+      geo.attributes.position.needsUpdate = true;
+      geo.setDrawRange(0, n);
+    }
+    function _clearGeo(geo) { geo.setDrawRange(0, 0); }
+
+    var completedPosBuf = _preallocPos(completedGeo, MAX_PATH);
+    var completedColBuf = (function() {
+      var b = new Float32Array(MAX_PATH * 3);
+      completedGeo.setAttribute('color', new THREE.BufferAttribute(b, 3));
+      return b;
+    }());
+    compGlowLines.forEach(function(g) { g._buf = _preallocPos(g.geo, MAX_PATH); });
+    compCoreLines.forEach(function(g) { g._buf = _preallocPos(g.geo, MAX_PATH); });
+    compBloomLines.forEach(function(g) { g._buf = _preallocPos(g.geo, MAX_PATH); });
+    var returnPosBuf = _preallocPos(returnGeo, MAX_PATH);
+    returnGlowLines.forEach(function(g) { g._buf = _preallocPos(g.geo, MAX_PATH); });
+    returnCoreLines.forEach(function(g) { g._buf = _preallocPos(g.geo, MAX_PATH); });
+    returnBloomLines.forEach(function(g) { g._buf = _preallocPos(g.geo, MAX_PATH); });
+    var activePosBuf  = _preallocPos(activeSegGeo, MAX_ACTIVE);
+    activeGlowLines.forEach(function(g) { g._buf = _preallocPos(g.geo, MAX_ACTIVE); });
+    var flamePosBuf   = _preallocPos(flameGeo, MAX_FLAME);
+    var flameColBuf   = (function() {
+      var b = new Float32Array(MAX_FLAME * 3);
+      flameGeo.setAttribute('color', new THREE.BufferAttribute(b, 3));
+      return b;
+    }());
+    var flameGlowPosBuf = _preallocPos(flameGlowGeo, MAX_FLAME);
+
     // ── Waypoints from shared MissionEvents ──
     var WAYPOINTS = MissionEvents.getWaypoints();
 
@@ -795,7 +839,8 @@
     });
     document.addEventListener('keydown', function(e) { if (e.key==='Escape' && popupOpen) closePopup(); });
 
-    new ResizeObserver(function() { W=container.clientWidth||400; H=container.clientHeight||300; renderer.setSize(W,H); lc.width=W; lc.height=H; camera.aspect=W/H; camera.updateProjectionMatrix(); }).observe(container);
+    var _resizeObs = new ResizeObserver(function() { W=container.clientWidth||400; H=container.clientHeight||300; renderer.setSize(W,H); lc.width=W; lc.height=H; camera.aspect=W/H; camera.updateProjectionMatrix(); });
+    _resizeObs.observe(container);
 
     var progressEl = document.getElementById('traj-progress');
     var _pv = new THREE.Vector3();
@@ -877,8 +922,9 @@
       if (wpPopup && !wpPopup.contains(e.target)) { wpPopup.remove(); wpPopup = null; }
     });
 
+    var _animFrameId;
     function animate() {
-      requestAnimationFrame(animate);
+      _animFrameId = requestAnimationFrame(animate);
       var now = Date.now();
       var elapsed = now - LAUNCH_UTC;
       var metSec = elapsed / 1000;
@@ -959,50 +1005,63 @@
       if (splitIdx > 0) {
         var slice = allPts.slice(0, splitIdx + 2);
         if (splitIdx <= caSceneIdx) {
-          // Outbound leg — all cyan
-          var sliceColors = new Float32Array(slice.length * 3);
-          for (var ci = 0; ci < slice.length; ci++) { sliceColors[ci*3]=C_GREEN.r; sliceColors[ci*3+1]=C_GREEN.g; sliceColors[ci*3+2]=C_GREEN.b; }
-          completedGeo.setFromPoints(slice);
-          completedGeo.setAttribute('color', new THREE.BufferAttribute(sliceColors, 3));
-          compGlowLines.forEach(function(g) { g.geo.setFromPoints(slice); });
-          compCoreLines.forEach(function(g) { g.geo.setFromPoints(slice); });
-          compBloomLines.forEach(function(g) { g.geo.setFromPoints(slice); });
-          returnGeo.setFromPoints([]);
-          returnGlowLines.forEach(function(g) { g.geo.setFromPoints([]); });
-          returnCoreLines.forEach(function(g) { g.geo.setFromPoints([]); });
-          returnBloomLines.forEach(function(g) { g.geo.setFromPoints([]); });
+          // Outbound leg — all cyan; update pre-allocated buffers in-place
+          var nSlice = Math.min(slice.length, MAX_PATH);
+          for (var ci = 0; ci < nSlice; ci++) {
+            completedPosBuf[ci*3]=slice[ci].x; completedPosBuf[ci*3+1]=slice[ci].y; completedPosBuf[ci*3+2]=slice[ci].z;
+            completedColBuf[ci*3]=C_GREEN.r;   completedColBuf[ci*3+1]=C_GREEN.g;   completedColBuf[ci*3+2]=C_GREEN.b;
+          }
+          completedGeo.attributes.position.needsUpdate = true;
+          completedGeo.attributes.color.needsUpdate = true;
+          completedGeo.setDrawRange(0, nSlice);
+          compGlowLines.forEach(function(g) { _fillGeo(g._buf, g.geo, slice); });
+          compCoreLines.forEach(function(g) { _fillGeo(g._buf, g.geo, slice); });
+          compBloomLines.forEach(function(g) { _fillGeo(g._buf, g.geo, slice); });
+          _clearGeo(returnGeo);
+          returnGlowLines.forEach(function(g) { _clearGeo(g.geo); });
+          returnCoreLines.forEach(function(g) { _clearGeo(g.geo); });
+          returnBloomLines.forEach(function(g) { _clearGeo(g.geo); });
           upMat.color.setHex(0x00ffcc);
           upGlowLines.forEach(function(l) { l.material.color.setHex(0x00ffcc); });
         } else {
           // Past closest approach — outbound cyan, return amber
           var outSlice = allPts.slice(0, caSceneIdx + 1);
           var retSlice = allPts.slice(caSceneIdx, splitIdx + 2);
-          var outColors = new Float32Array(outSlice.length * 3);
-          for (var ci = 0; ci < outSlice.length; ci++) { outColors[ci*3]=C_GREEN.r; outColors[ci*3+1]=C_GREEN.g; outColors[ci*3+2]=C_GREEN.b; }
-          completedGeo.setFromPoints(outSlice);
-          completedGeo.setAttribute('color', new THREE.BufferAttribute(outColors, 3));
-          compGlowLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
-          compCoreLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
-          compBloomLines.forEach(function(g) { g.geo.setFromPoints(outSlice); });
-          returnGeo.setFromPoints(retSlice);
-          returnGlowLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
-          returnCoreLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
-          returnBloomLines.forEach(function(g) { g.geo.setFromPoints(retSlice); });
+          var nOut = Math.min(outSlice.length, MAX_PATH);
+          for (var ci = 0; ci < nOut; ci++) {
+            completedPosBuf[ci*3]=outSlice[ci].x; completedPosBuf[ci*3+1]=outSlice[ci].y; completedPosBuf[ci*3+2]=outSlice[ci].z;
+            completedColBuf[ci*3]=C_GREEN.r;       completedColBuf[ci*3+1]=C_GREEN.g;       completedColBuf[ci*3+2]=C_GREEN.b;
+          }
+          completedGeo.attributes.position.needsUpdate = true;
+          completedGeo.attributes.color.needsUpdate = true;
+          completedGeo.setDrawRange(0, nOut);
+          compGlowLines.forEach(function(g) { _fillGeo(g._buf, g.geo, outSlice); });
+          compCoreLines.forEach(function(g) { _fillGeo(g._buf, g.geo, outSlice); });
+          compBloomLines.forEach(function(g) { _fillGeo(g._buf, g.geo, outSlice); });
+          _fillGeo(returnPosBuf, returnGeo, retSlice);
+          returnGlowLines.forEach(function(g) { _fillGeo(g._buf, g.geo, retSlice); });
+          returnCoreLines.forEach(function(g) { _fillGeo(g._buf, g.geo, retSlice); });
+          returnBloomLines.forEach(function(g) { _fillGeo(g._buf, g.geo, retSlice); });
           upMat.color.setHex(0xff8844);
           upGlowLines.forEach(function(l) { l.material.color.setHex(0xff8844); });
         }
         var activeSeg = allPts.slice(Math.max(0, splitIdx - 12), Math.min(N_PTS, splitIdx + 5));
-        activeSegGeo.setFromPoints(activeSeg);
+        _fillGeo(activePosBuf, activeSegGeo, activeSeg);
         activeSegMat.opacity = 0.7 + 0.3 * pulse;
-        activeGlowLines.forEach(function(g) { g.geo.setFromPoints(activeSeg); });
+        activeGlowLines.forEach(function(g) { _fillGeo(g._buf, g.geo, activeSeg); });
         var fStart = Math.max(0, splitIdx - FLAME_LEN);
         var flamePts = allPts.slice(fStart, splitIdx + 1);
         if (flamePts.length > 1) {
-          var fColors = new Float32Array(flamePts.length * 3);
-          for (var fi = 0; fi < flamePts.length; fi++) { var fff = fi / (flamePts.length - 1); fColors[fi*3]=Math.pow(fff, 0.4); fColors[fi*3+1]=Math.pow(fff, 0.8)*0.95; fColors[fi*3+2]=Math.pow(fff, 1.2)*0.90; }
-          flameGeo.setFromPoints(flamePts);
-          flameGeo.setAttribute('color', new THREE.BufferAttribute(fColors, 3));
-          flameGlowGeo.setFromPoints(flamePts);
+          var nFlame = Math.min(flamePts.length, MAX_FLAME);
+          for (var fi = 0; fi < nFlame; fi++) {
+            var fff = fi / (nFlame - 1);
+            flamePosBuf[fi*3]=flamePts[fi].x; flamePosBuf[fi*3+1]=flamePts[fi].y; flamePosBuf[fi*3+2]=flamePts[fi].z;
+            flameColBuf[fi*3]=Math.pow(fff,0.4); flameColBuf[fi*3+1]=Math.pow(fff,0.8)*0.95; flameColBuf[fi*3+2]=Math.pow(fff,1.2)*0.90;
+          }
+          flameGeo.attributes.position.needsUpdate = true;
+          flameGeo.attributes.color.needsUpdate = true;
+          flameGeo.setDrawRange(0, nFlame);
+          _fillGeo(flameGlowPosBuf, flameGlowGeo, flamePts);
         }
       }
 
@@ -1419,6 +1478,6 @@
     }
 
     tickHUD();
-    setInterval(tickHUD, 2000);
+    var _hudInterval = setInterval(tickHUD, 2000);
   } // end init()
 })();

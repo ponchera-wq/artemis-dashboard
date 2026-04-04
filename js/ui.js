@@ -1,5 +1,12 @@
 // ui.js — YouTube tabs, expand overlays, telemetry overlay, drag/reorder, footer
 
+// ── SCROLL-LOCK REF COUNTER ──────────────────────────────────────────
+// Multiple overlays can be open simultaneously. This counter ensures
+// scroll is only restored when the last overlay closes.
+var _overflowLocked = 0;
+function _lockScroll()   { if (++_overflowLocked === 1) document.body.style.overflow = 'hidden'; }
+function _unlockScroll() { if (--_overflowLocked <= 0) { _overflowLocked = 0; document.body.style.overflow = ''; } }
+
 // ── TELEMETRY CINEMATIC OVERLAY
 // ── TELEMETRY CINEMATIC OVERLAY ──────────────────────────────────────
 (function() {
@@ -15,14 +22,14 @@
 
   function open() {
     overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    _lockScroll();
     overlay.setAttribute('aria-hidden','false');
     syncData();
     updateInterval = setInterval(syncData, 1000);
   }
   function close() {
     overlay.classList.remove('open');
-    document.body.style.overflow = '';
+    _unlockScroll();
     overlay.setAttribute('aria-hidden','true');
     clearInterval(updateInterval);
   }
@@ -214,13 +221,13 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
     const activeTab = overlay.querySelector('.yt-tab.active');
     frame.src = activeTab?.dataset.ytSrc || '';
     overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    _lockScroll();
   }
 
   function closeOverlay() {
     overlay.classList.remove('open');
     frame.src = '';
-    document.body.style.overflow = '';
+    _unlockScroll();
   }
 
   expandBtn.addEventListener('click', openOverlay);
@@ -270,7 +277,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
       panelContent.style.padding = '';
     }
     panelOverlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
+    _lockScroll();
     // Trigger resize for trajectory canvas — delay lets overlay finish layout
     window.dispatchEvent(new Event('resize'));
     setTimeout(() => window.dispatchEvent(new Event('resize')), 120);
@@ -284,7 +291,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
       sourcePanel = null;
     }
     panelOverlay.classList.remove('open');
-    document.body.style.overflow = '';
+    _unlockScroll();
     window.dispatchEvent(new Event('resize'));
   }
 

@@ -160,7 +160,7 @@
   }
 
   renderTimeline();
-  setInterval(renderTimeline, 30000);
+  var _renderInterval = setInterval(renderTimeline, 30000);
 
   // Phase filter tabs
   var filterBtns = document.querySelectorAll('.tl-filter');

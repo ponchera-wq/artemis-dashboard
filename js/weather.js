@@ -123,8 +123,14 @@ async function fetchSpaceWeather() {
   if (thumb) thumb.src = 'https://services.swpc.noaa.gov/images/swx-overview-large.gif?t=' + Date.now();
 }
 
-fetchSpaceWeather();
-setInterval(fetchSpaceWeather, 5 * 60 * 1000);
+var _weatherFetching = false;
+async function _guardedFetchWeather() {
+  if (_weatherFetching) return;
+  _weatherFetching = true;
+  try { await fetchSpaceWeather(); } finally { _weatherFetching = false; }
+}
+_guardedFetchWeather();
+var _weatherInterval = setInterval(_guardedFetchWeather, 5 * 60 * 1000);
 })();
 
 // Space weather tooltip popup system

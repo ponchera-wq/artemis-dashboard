@@ -75,8 +75,8 @@
       sampled.push(p);
     }
     
-    // Ensure final point is included
-    if (rawPoints.length > 0 && sampled[sampled.length-1] !== rawPoints[rawPoints.length-1]) {
+    // Ensure final point is included (compare by value, not object reference)
+    if (rawPoints.length > 0 && sampled[sampled.length-1].metSec !== rawPoints[rawPoints.length-1].metSec) {
        const p = rawPoints[rawPoints.length-1];
        if (window.Astronomy) {
          const astroTime = Astronomy.MakeTime(p.utc);
@@ -134,12 +134,13 @@
       if (points.length > 0) {
         tStart = points[0].metSec;
         tEnd = points[points.length - 1].metSec;
-        console.log('[Ephemeris] OEM Loaded: ' + points.length + ' points, Meta: ' + meta.creationDate);
+        if (window.DEBUG) console.log('[Ephemeris] OEM Loaded: ' + points.length + ' points, Meta: ' + meta.creationDate);
       }
       _resolve();
     })
     .catch(err => {
       console.error('[Ephemeris] Failed to load OEM:', err);
+      meta.loadError = true;
       _resolve();
     });
 

@@ -382,7 +382,10 @@
   });
   document.addEventListener('keydown', e => { if (e.key==='Escape' && tipOpen) { tipEl.classList.remove('visible'); tipOpen = false; } });
 
+  var _dsnUpdating = false;
   async function update() {
+    if (_dsnUpdating) return;
+    _dsnUpdating = true;
     try {
       const res  = await fetch(DSN_URL + '?_=' + Date.now());
       const text = await res.text();
@@ -392,11 +395,13 @@
       const hour = new Date().getUTCHours();
       const code = hour < 8 ? 'cdscc' : hour < 16 ? 'mdscc' : 'gdscc';
       renderLinks([{ station: code, dish: 'DSS-EST', dishNum: '24', target: 'EM2', up: null, dn: { rate: 0, band: 'S' }, rtlt: null, az: null, el: null }], false);
+    } finally {
+      _dsnUpdating = false;
     }
   }
 
   update();
-  setInterval(update, 10000);
+  var _dsnInterval = setInterval(update, 10000);
 
   // Listen for unit changes from stats.js
   window.addEventListener('unitschanged', () => renderLinks(cachedLinks, lastIsLive));
