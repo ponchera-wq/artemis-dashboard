@@ -211,6 +211,22 @@
     for (var i = 0; i <= 80; i++) { var a = (i/80)*Math.PI*2; leoPts.push(new THREE.Vector3(1.35*Math.cos(a), 0.22*Math.sin(a), 1.35*Math.sin(a)*0.96)); }
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leoPts), new THREE.LineBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.2 })));
 
+    // ── ISS & ISS Orbit ──
+    var ISS_ALT_KM = 400;
+    var ISS_SCENE_R = (EARTH_R_KM + ISS_ALT_KM) * SCENE_SCALE; // ≈ 0.956
+    var issOrbitPts = [];
+    for (var i = 0; i <= 80; i++) { 
+      var a = (i/80)*Math.PI*2; 
+      issOrbitPts.push(new THREE.Vector3(ISS_SCENE_R*Math.cos(a), ISS_SCENE_R*Math.sin(a)*0.2, ISS_SCENE_R*Math.sin(a)*0.98)); 
+    }
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(issOrbitPts), new THREE.LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.1 })));
+    
+    var issGroup = new THREE.Group();
+    if (typeof createISSModel !== 'undefined') {
+      issGroup = createISSModel(THREE);
+    }
+    scene.add(issGroup);
+
     // ── Moon — positioned dynamically from ephemeris ──
     var MOON_SCENE_R = 0.45;
     var moonMat = new THREE.MeshPhongMaterial({ color: 0xaaa89e, emissive: 0x0a0a09, shininess: 4 });
@@ -389,6 +405,7 @@
     // ── Orion spacecraft (detailed model from orion-model.js) ──
     var orionGroup = new THREE.Group();
     var exhaustOuter, exhaustInner, glowMat;
+    var apExhaustOuter, apExhaustInner;
     
     try {
       if (typeof createOrionModel !== 'undefined') {
@@ -443,9 +460,63 @@
     }
     
     orionGroup.userData.label = 'ORION';
+    orionGroup.scale.set(4, 4, 4);
     scene.add(orionGroup);
 
-    // ── Trail particles ──
+    // ── Apollo 13 Model and Path ──
+    var apolloGroup = new THREE.Group();
+    if (typeof createApolloModel !== 'undefined') {
+      apolloGroup = createApolloModel(THREE);
+    }
+    apolloGroup.scale.set(4, 4, 4); // Match Orion scale
+    scene.add(apolloGroup);
+
+    // Apollo 13 Exhaust (Thrusters)
+    apExhaustOuter = new THREE.Mesh(
+      new THREE.SphereGeometry(0.012, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.3, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    apExhaustOuter.position.y = -0.20; // Bottom of engine bell
+    apolloGroup.add(apExhaustOuter);
+    apExhaustInner = new THREE.Mesh(
+      new THREE.SphereGeometry(0.006, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    apExhaustInner.position.y = -0.20;
+    apolloGroup.add(apExhaustInner);
+
+    // Apollo 13 Figure 8 curve
+    var APOLLO_MAX_KM = 400171;
+    var APOLLO_FLYBY_KM = 254;
+    var moonCA_R = (1737.4 + APOLLO_FLYBY_KM) * SCENE_SCALE;
+    
+    var apolloCtrlPts = [
+      new THREE.Vector3(0, 0, 0), // Earth
+      new THREE.Vector3(initMoonPos.x * 0.4, initMoonPos.y * 0.4 + 1.5, initMoonPos.z * 0.4 - 1.2), // Outbound High & Wide
+      new THREE.Vector3(initMoonPos.x * 0.9, initMoonPos.y * 0.9 + 0.8, initMoonPos.z * 0.9 - 0.4), // Approach
+      new THREE.Vector3(initMoonPos.x + moonCA_R * 1.8, initMoonPos.y + moonCA_R * 0.8, initMoonPos.z), // Far Side Loop
+      new THREE.Vector3(initMoonPos.x * 0.9, initMoonPos.y * 0.9 - 0.8, initMoonPos.z * 0.9 + 0.4), // Cross Inbound
+      new THREE.Vector3(initMoonPos.x * 0.2, initMoonPos.y * 0.2 - 1.5, initMoonPos.z * 0.2 + 1.2), // Return Low & Wide
+      new THREE.Vector3(0, 0, 0) // Earth
+    ];
+    var apolloSpline = new THREE.CatmullRomCurve3(apolloCtrlPts, true, 'centripetal', 0.5);
+    var apolloPathGeo = new THREE.BufferGeometry().setFromPoints(apolloSpline.getPoints(200));
+    var apolloPathMat = new THREE.LineBasicMaterial({ color: 0xdf00ff, transparent: true, opacity: 0.85 });
+    var apolloPathLine = new THREE.Line(apolloPathGeo, apolloPathMat);
+    scene.add(apolloPathLine);
+
+    // Apollo 13 trajectory glow lines (thicker effect)
+    var apGlowLines = [];
+    [{x:0,y:0.02,z:0},{x:0,y:-0.02,z:0},{x:0.02,y:0,z:0},{x:-0.02,y:0,z:0},
+     {x:0,y:0.05,z:0.05},{x:0,y:-0.05,z:-0.05}].forEach(function(off, idx) {
+      var geo = new THREE.BufferGeometry().setFromPoints(apolloSpline.getPoints(120));
+      var mat = new THREE.LineBasicMaterial({ color: 0xdf00ff, transparent: true, opacity: idx < 4 ? 0.35 : 0.15, blending: THREE.AdditiveBlending, depthWrite: false });
+      var line = new THREE.Line(geo, mat);
+      line.position.set(off.x, off.y, off.z);
+      scene.add(line); apGlowLines.push(line);
+    });
+
+    // Trace particles removed (neon pulse on path is used instead)
     var TRAIL_LEN = 30;
     var trailBuf = new Float32Array(TRAIL_LEN * 3);
     var trailGeo = new THREE.BufferGeometry();
@@ -525,11 +596,13 @@
 
     // Preset definitions
     var PRESETS = {
-      earth: { label:'\ud83c\udf0d', title:'Earth', pos:function(){return new THREE.Vector3(0, 4, 12);}, look:function(){return new THREE.Vector3(0,0,0);} },
-      moon: { label:'\ud83c\udf19', title:'Moon', pos:function(){return moon.position.clone().add(new THREE.Vector3(0, 4, 12));}, look:function(){return moon.position.clone();} },
-      orion: { label:'\ud83d\ude80', title:'Orion', pos:function(){ var p=orionGroup.position.clone(); var metS=(Date.now()-LAUNCH_UTC)/1000; var t=getOrionVelocityDir(metS); var side=new THREE.Vector3().crossVectors(t,new THREE.Vector3(0,1,0)).normalize(); return p.clone().add(side.multiplyScalar(6)).add(new THREE.Vector3(0,3,0)); }, look:function(){return orionGroup.position.clone();} },
       overview: { label:'\ud83d\udd2d', title:'Overview', pos:function(){return sphToPos();}, look:function(){return trajCenter.clone();}, isSph:true },
-      earthview: { label:'\ud83c\udf0f', title:'Earth View', pos:function(){return orionGroup.position.clone().add(new THREE.Vector3(0,0.2,0));}, look:function(){return new THREE.Vector3(0,0,0);} }
+      earth: { label:'\ud83c\udf0d', title:'Earth', pos:function(){return new THREE.Vector3(0, 4, 12);}, look:function(){return new THREE.Vector3(0,0,0);} },
+      earthview: { label:'\ud83c\udf0f', title:'Earth View', pos:function(){return orionGroup.position.clone().add(new THREE.Vector3(0,0.2,0));}, look:function(){return new THREE.Vector3(0,0,0);} },
+      iss: { label:'\ud83d\udef0\ufe0f', title:'ISS', pos:function(){ return issGroup.position.clone().add(new THREE.Vector3(0, 0.4, 0.8)); }, look:function(){ return issGroup.position.clone(); } },
+      apollo: { label:'\ud83d\ude80\u2081\u2083', title:'Apollo 13', pos:function(){ return apolloGroup.position.clone().add(new THREE.Vector3(0, 1, 2)); }, look:function(){ return apolloGroup.position.clone(); } },
+      orion: { label:'\ud83d\ude80', title:'Orion', pos:function(){ var p=orionGroup.position.clone(); var metS=(Date.now()-LAUNCH_UTC)/1000; var t=getOrionVelocityDir(metS); var side=new THREE.Vector3().crossVectors(t,new THREE.Vector3(0,1,0)).normalize(); return p.clone().add(side.multiplyScalar(6)).add(new THREE.Vector3(0,3,0)); }, look:function(){return orionGroup.position.clone();} },
+      moon: { label:'\ud83c\udf19', title:'Moon', pos:function(){return moon.position.clone().add(new THREE.Vector3(0, 4, 12));}, look:function(){return moon.position.clone();} }
     };
 
     // ── Preset buttons bar ──
@@ -550,10 +623,10 @@
       btn.addEventListener('mouseenter', function() { if(activePreset!==key){btn.style.borderColor='#4A90D9';btn.style.color='#fff';} });
       btn.addEventListener('mouseleave', function() { if(activePreset!==key){btn.style.borderColor='rgba(74,144,217,0.35)';btn.style.color='#7986a8';} });
       btn.addEventListener('click', function() {
-        if (activePreset === key && key !== 'orion' && key !== 'earthview') { exitPreset(); stopAuto(); return; }
+        if (activePreset === key && key !== 'orion' && key !== 'earthview' && key !== 'iss' && key !== 'apollo') { exitPreset(); stopAuto(); return; }
         activePreset = key; updatePresetBtns(); velTheta = 0; velPhi = 0;
         if (key === 'overview') { Object.assign(sph, JSON.parse(JSON.stringify(SPH_DEFAULT))); camLookAt.copy(trajCenter); startLerp(sphToPos(), trajCenter.clone(), 1.0, 'lerp'); return; }
-        var mode = (key === 'orion' || key === 'earthview') ? 'track' : 'lerp';
+        var mode = (key === 'orion' || key === 'earthview' || key === 'iss' || key === 'apollo') ? 'track' : 'lerp';
         startLerp(p.pos(), p.look(), 1.0, mode);
       });
       presetBtns[key] = btn; presetBar.appendChild(btn);
@@ -685,7 +758,7 @@
       if (!tooltipEl) return;
       mouse3.x = ((e.clientX-rect.left)/rect.width)*2-1; mouse3.y = -((e.clientY-rect.top)/rect.height)*2+1;
       raycaster.setFromCamera(mouse3, camera);
-      var hits = raycaster.intersectObjects([capsule, glowMesh].concat(wpMeshes));
+      var hits = raycaster.intersectObjects([orionGroup].concat(wpMeshes));
       if (hits.length) { tooltipEl.textContent = hits[0].object.userData.label || hits[0].object.parent.userData.label || ''; tooltipEl.style.left=(e.clientX-rect.left+12)+'px'; tooltipEl.style.top=(e.clientY-rect.top-8)+'px'; tooltipEl.style.opacity='1'; renderer.domElement.style.cursor='pointer'; }
       else { tooltipEl.style.opacity='0'; renderer.domElement.style.cursor='grab'; }
     });
@@ -736,11 +809,11 @@
         var s2 = proj(lineToV3);
         if (s2.vis) { lctx.beginPath(); lctx.moveTo(s2.x, s2.y); lctx.lineTo(x, y); lctx.strokeStyle = color.replace(')', ',0.3)').replace('rgb','rgba').replace('rgba(','rgba(') || 'rgba(0,255,170,0.3)'; lctx.setLineDash([3, 3]); lctx.lineWidth = 0.5; lctx.stroke(); lctx.setLineDash([]); }
       }
-      lctx.font = (bold ? 'bold ' : '') + '10px "Share Tech Mono",monospace';
+      lctx.font = (bold ? 'bold ' : '') + '12px "Share Tech Mono",monospace';
       lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
-      var m = lctx.measureText(text); var bw = m.width + 12, bh = 16;
-      lctx.fillStyle = 'rgba(0,10,20,0.7)'; lctx.fillRect(x - bw/2, y - bh/2, bw, bh);
-      lctx.strokeStyle = color; lctx.lineWidth = 0.5; lctx.globalAlpha = 0.6; lctx.strokeRect(x - bw/2, y - bh/2, bw, bh);
+      var m = lctx.measureText(text); var bw = m.width + 16, bh = 22;
+      lctx.fillStyle = 'rgba(0,18,34,0.85)'; lctx.fillRect(x - bw/2, y - bh/2, bw, bh);
+      lctx.strokeStyle = color; lctx.lineWidth = 1.0; lctx.globalAlpha = 0.8; lctx.strokeRect(x - bw/2, y - bh/2, bw, bh);
       lctx.globalAlpha = 1.0; lctx.fillStyle = color;
       if (bold) { lctx.shadowColor = color; lctx.shadowBlur = 8; }
       lctx.fillText(text, x, y); lctx.restore();
@@ -827,30 +900,38 @@
 
       // Exhaust pulse
       exhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
-      exhaustInner.material.opacity = 0.2 + 0.2 * Math.sin(now / 430);
+      
+      if (apExhaustOuter && apExhaustInner) {
+        apExhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 500);
+        apExhaustOuter.scale.setScalar(1.2 + 0.3 * Math.sin(now / 250));
+        apExhaustInner.material.opacity = 0.4 + 0.4 * Math.sin(now / 300);
+        apExhaustInner.scale.setScalar(1.0 + 0.5 * Math.sin(now / 150));
+      }
+      exhaustInner.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
       var ng = orionGroup.userData.nozzleGlow;
       if (ng) ng.material.opacity = 0.5 + 0.3 * Math.sin(now / 180);
 
-      // Particle exhaust animation
-      var pd = orionGroup.userData.particleData;
-      if (pd) {
+      // Particle exhaust animation (Orion & Apollo)
+      [orionGroup, apolloGroup].forEach(function(g) {
+        var pd = g ? g.userData.particleData : null;
+        if (!pd) return;
         var pt = now / 1000;
         for (var pi = 0; pi < pd.count; pi++) {
-          pd.lifetimes[pi] += 0.03;
+          pd.lifetimes[pi] += 0.02; // Slower fade for more visibility
           if (pd.lifetimes[pi] > 1) pd.reset(pi);
           var pv = pd.velocities[pi];
-          pd.positions[pi*3]   += pv.x + Math.sin(pt * 8 + pi) * 0.0003;
-          pd.positions[pi*3+1] += pv.y;
-          pd.positions[pi*3+2] += pv.z + Math.cos(pt * 8 + pi) * 0.0003;
+          pd.positions[pi*3]   += pv.x * 1.5; // Flying faster
+          pd.positions[pi*3+1] += pv.y * 1.5;
+          pd.positions[pi*3+2] += pv.z * 1.5;
           var life = pd.lifetimes[pi];
-          // white (life=0) → orange (life=0.4) → red (life=0.7) → fade (life=1)
-          pd.colors[pi*3]   = 1.0;                           // R always 1
-          pd.colors[pi*3+1] = Math.max(0, 1.0 - life * 2.5); // G fades fast
-          pd.colors[pi*3+2] = Math.max(0, 0.9 - life * 4.0); // B fades fastest
+          // Brighter color profile
+          pd.colors[pi*3]   = 1.0; 
+          pd.colors[pi*3+1] = Math.max(0, 1.0 - life * 1.8); // G stays longer (more orange)
+          pd.colors[pi*3+2] = Math.max(0, 0.8 - life * 3.0); 
         }
         pd.geo.attributes.position.needsUpdate = true;
         pd.geo.attributes.color.needsUpdate = true;
-      }
+      });
 
       orionGroup.userData.hullMat.emissiveIntensity = 0.7 + pulse * 0.6;
       glowMat.opacity = 0.08 + pulse * 0.15;
@@ -955,10 +1036,47 @@
       } else if (camMode === 'track') {
         if (activePreset === 'orion') { var tp=PRESETS.orion.pos(),tl=orionGroup.position.clone(); if(lerpT<1){lerpT=Math.min(1,lerpT+(1/60)/lerpDuration);var e2=smoothEase(lerpT);camera.position.lerpVectors(lerpFrom.pos,tp,e2);camLookAt.lerpVectors(lerpFrom.look,tl,e2);} else{camera.position.lerp(tp,0.05);camLookAt.lerp(tl,0.05);} camera.lookAt(camLookAt); }
         else if (activePreset === 'earthview') { var ep=orionGroup.position.clone().add(new THREE.Vector3(0,0.2,0)),el2=new THREE.Vector3(0,0,0); if(lerpT<1){lerpT=Math.min(1,lerpT+(1/60)/lerpDuration);var e3=smoothEase(lerpT);camera.position.lerpVectors(lerpFrom.pos,ep,e3);camLookAt.lerpVectors(lerpFrom.look,el2,e3);} else{camera.position.lerp(ep,0.05);camLookAt.lerp(el2,0.05);} camera.lookAt(camLookAt); }
+        else if (activePreset === 'iss') { var ip=PRESETS.iss.pos(),il=issGroup.position.clone(); if(lerpT<1){lerpT=Math.min(1,lerpT+(1/60)/lerpDuration);var e4=smoothEase(lerpT);camera.position.lerpVectors(lerpFrom.pos,ip,e4);camLookAt.lerpVectors(lerpFrom.look,il,e4);} else{camera.position.lerp(ip,0.05);camLookAt.lerp(il,0.05);} camera.lookAt(camLookAt); }
+        else if (activePreset === 'apollo') { var ap=PRESETS.apollo.pos(),al=apolloGroup.position.clone(); if(lerpT<1){lerpT=Math.min(1,lerpT+(1/60)/lerpDuration);var e5=smoothEase(lerpT);camera.position.lerpVectors(lerpFrom.pos,ap,e5);camLookAt.lerpVectors(lerpFrom.look,al,e5);} else{camera.position.lerp(ap,0.05);camLookAt.lerp(al,0.05);} camera.lookAt(camLookAt); }
       } else {
         if (!isDrag && !isPan && (Math.abs(velTheta) > 0.0001 || Math.abs(velPhi) > 0.0001)) { sph.theta += velTheta; sph.phi = Math.max(0.1, Math.min(Math.PI-0.1, sph.phi + velPhi)); velTheta *= damping; velPhi *= damping; applyCam(); }
         if (autoRotate) { sph.theta += 0.0008; applyCam(); }
       }
+
+      // ── Animate ISS ──
+      var issPhase = (now / 4000) % (Math.PI * 2); 
+      issGroup.position.set(ISS_SCENE_R*Math.cos(issPhase), ISS_SCENE_R*Math.sin(issPhase)*0.2, ISS_SCENE_R*Math.sin(issPhase)*0.98);
+      var issVelAnim = new THREE.Vector3(-ISS_SCENE_R*Math.sin(issPhase), ISS_SCENE_R*Math.cos(issPhase)*0.2, ISS_SCENE_R*Math.cos(issPhase)*0.98).normalize();
+      var issQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), issVelAnim);
+      issGroup.quaternion.copy(issQuat);
+
+      // ── Animate Apollo 13 ──
+      var apolloFrac = (metSec / T_SPAN_MET) % 1.0; 
+      var pA13 = apolloSpline.getPointAt(apolloFrac);
+      apolloGroup.position.copy(pA13);
+      var tgA13 = apolloSpline.getTangentAt(apolloFrac).normalize();
+      
+      // Apollo faces Moon at flyby: calculate distance to Moon for orientation weight
+      var apMoonDist = pA13.distanceTo(moon.position);
+      var lookMoon = new THREE.Vector3().subVectors(moon.position, pA13).normalize();
+      
+      // Orient Apollo: blend between following trajectory and looking at Moon during CA
+      var apDir = tgA13.clone();
+      if (apMoonDist < 4.5) {
+        var weight = 1 - Math.min(1, Math.max(0, (apMoonDist - 1.2) / 3.3));
+        apDir.lerp(lookMoon, weight * 0.75).normalize();
+      }
+      
+      var apolloQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), apDir);
+      apolloGroup.quaternion.slerp(apolloQuat, 0.2);
+      
+       var distA13Km = apolloGroup.position.length() * (EARTH_R_KM / SCENE_EARTH_R);
+       var _tuEarthA = document.getElementById('tu-earth');
+       var isImp = _tuEarthA ? _tuEarthA.textContent.trim() === 'MI' : false;
+       var distA13Str = isImp ? Math.round(distA13Km * 0.621371).toLocaleString() + ' mi' : Math.round(distA13Km).toLocaleString() + ' km';
+ 
+       var statA13 = document.getElementById('stat-apollo13');
+       if (statA13) statA13.textContent = distA13Str.split(' ')[0];
 
       renderer.render(scene, camera);
 
@@ -970,11 +1088,17 @@
       var KM_TO_MI = 0.621371;
 
       var moonDistStr = isImp ? Math.round(state.distMoonKm * KM_TO_MI).toLocaleString() + ' mi' : Math.round(state.distMoonKm).toLocaleString() + ' km';
+      var orionSpeedStr = isImp ? Math.round(state.speedKms * 3600 * 0.621371).toLocaleString() + ' MPH' : Math.round(state.speedKms * 3600).toLocaleString() + ' KM/H';
       var orionEarthDist = orionGroup.position.distanceTo(earth.position);
-      drawCallout('ORION \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, orionGroup.position.y + (orionEarthDist < 1.8 ? -3.0 : -2.2), orionGroup.position.z), '#00ffaa', 0, -24, true, orionGroup.position);
+      
+      drawCallout('ORION \u00b7 ' + orionSpeedStr + ' \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, orionGroup.position.y + (orionEarthDist < 1.8 ? -3.0 : -2.2), orionGroup.position.z), '#00ffaa', 0, -24, true, orionGroup.position);
 
+      drawCallout('ISS', new THREE.Vector3(issGroup.position.x, issGroup.position.y + 0.35, issGroup.position.z), '#00ccff', 0, -10, false, issGroup.position);
+
+      drawCallout('APOLLO 13 \u00b7 ' + distA13Str, new THREE.Vector3(apolloGroup.position.x, apolloGroup.position.y + 1.2, apolloGroup.position.z), '#df00ff', 0, -20, true, apolloGroup.position);
+      
       drawCallout('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.4, earth.position.z), 'rgba(100,170,255,0.85)', 0, 0, false, earth.position);
-      drawCallout('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 0.8, moon.position.z), 'rgba(200,195,180,0.85)', 0, 0, false, moon.position);
+      drawCallout('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 1.0, moon.position.z), 'rgba(200,195,180,0.85)', 0, 0, false, moon.position);
 
       var emMid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5); emMid.y += 0.7;
       var emKm = Math.sqrt(state.moon.x*state.moon.x + state.moon.y*state.moon.y + state.moon.z*state.moon.z);
@@ -1202,75 +1326,96 @@
     }
 
     function tickHUD() {
-      if (!hudEl) return;
-      var ds = window.dashboardState || {};
-      var _tuEarthHud = document.getElementById('tu-earth');
-      var isImp = _tuEarthHud ? _tuEarthHud.textContent.trim() === 'MI' : false;
-      var elapsed = Date.now() - LAUNCH_UTC;
-      var metSec = elapsed / 1000;
-      var state = MissionEphemeris.getState(metSec);
-      var earthKm = state.distEarthKm, moonKm = state.distMoonKm, speedKmh = state.speedKms * 3600;
+      try {
+        if (!hudEl) return;
+        var now = Date.now();
+        var ds = window.dashboardState || {};
+        var _tuEarthHud = document.getElementById('tu-earth');
+        var isImp = _tuEarthHud ? _tuEarthHud.textContent.trim() === 'MI' : false;
+        var elapsed = Date.now() - LAUNCH_UTC;
+        var metSec = elapsed / 1000;
+        var state = MissionEphemeris.getState(metSec);
+        var earthKm = state.distEarthKm, moonKm = state.distMoonKm, speedKmh = state.speedKms * 3600;
 
-      var earthStr, moonStr, speedStr, earthUnit, speedUnit;
-      if (isImp) { earthStr=Math.round(earthKm*KM_TO_MI_HUD).toLocaleString(); moonStr=Math.round(moonKm*KM_TO_MI_HUD).toLocaleString(); speedStr=Math.round(speedKmh*KM_TO_MI_HUD).toLocaleString(); earthUnit='MI'; speedUnit='MPH'; }
-      else { earthStr=Math.round(earthKm).toLocaleString(); moonStr=Math.round(moonKm).toLocaleString(); speedStr=Math.round(speedKmh).toLocaleString(); earthUnit='KM'; speedUnit='KM/H'; }
+        var earthStr, moonStr, speedStr, earthUnit, speedUnit;
+        if (isImp) { earthStr=Math.round(earthKm*KM_TO_MI_HUD).toLocaleString(); moonStr=Math.round(moonKm*KM_TO_MI_HUD).toLocaleString(); speedStr=Math.round(speedKmh*KM_TO_MI_HUD).toLocaleString(); earthUnit='MI'; speedUnit='MPH'; }
+        else { earthStr=Math.round(earthKm).toLocaleString(); moonStr=Math.round(moonKm).toLocaleString(); speedStr=Math.round(speedKmh).toLocaleString(); earthUnit='KM'; speedUnit='KM/H'; }
 
-      var altEl = document.getElementById('hud-alt');
-      var velEl = document.getElementById('hud-vel');
-      if (altEl) altEl.textContent = earthStr + ' ' + earthUnit.toLowerCase();
-      if (velEl) velEl.textContent = speedStr + ' ' + speedUnit.toLowerCase();
+        var altEl = document.getElementById('hud-alt');
+        var velEl = document.getElementById('hud-vel');
+        if (altEl) altEl.textContent = earthStr + ' ' + earthUnit.toLowerCase();
+        if (velEl) velEl.textContent = speedStr + ' ' + speedUnit.toLowerCase();
 
-      var eccEl = document.getElementById('hud-ecc');
-      if (eccEl) { eccEl.textContent = lerpTable(ECC_PHASES, 'metSec', metSec).ecc.toFixed(3); }
+        var eccEl = document.getElementById('hud-ecc');
+        if (eccEl) { eccEl.textContent = lerpTable(ECC_PHASES, 'metSec', metSec).ecc.toFixed(3); }
 
-      var hudEarth = document.getElementById('hud-earth');
-      var hudMoon = document.getElementById('hud-moon');
-      if (hudEarth) hudEarth.textContent = earthStr + ' ' + earthUnit.toLowerCase();
-      if (hudMoon) hudMoon.textContent = moonStr + ' ' + earthUnit.toLowerCase();
+        var hudEarth = document.getElementById('hud-earth');
+        var hudMoon = document.getElementById('hud-moon');
+        if (hudEarth) hudEarth.textContent = earthStr + ' ' + earthUnit.toLowerCase();
+        if (hudMoon) hudMoon.textContent = moonStr + ' ' + earthUnit.toLowerCase();
 
-      var rtlEl = document.getElementById('hud-rtl');
-      if (rtlEl && earthKm > 0) { var rtlSec = (earthKm * 2) / SPEED_OF_LIGHT_KMS; rtlEl.textContent = rtlSec < 1 ? (rtlSec * 1000).toFixed(0) + ' ms' : rtlSec.toFixed(2) + ' s'; }
+        var rtlEl = document.getElementById('hud-rtl');
+        if (rtlEl && earthKm > 0) { var rtlSec = (earthKm * 2) / SPEED_OF_LIGHT_KMS; rtlEl.textContent = rtlSec < 1 ? (rtlSec * 1000).toFixed(0) + ' ms' : rtlSec.toFixed(2) + ' s'; }
 
-      var esizeEl = document.getElementById('hud-esize');
-      var msizeEl = document.getElementById('hud-msize');
-      if (esizeEl && earthKm > 100) { var angE = 2*Math.atan2(EARTH_DIAM_KM/2, earthKm)*(180/Math.PI); esizeEl.textContent = angE >= 1 ? angE.toFixed(1)+'\u00b0' : (angE*60).toFixed(1)+"'"; }
-      if (msizeEl && moonKm > 100) { var angM = 2*Math.atan2(MOON_DIAM_KM/2, moonKm)*(180/Math.PI); msizeEl.textContent = angM >= 1 ? angM.toFixed(1)+'\u00b0' : (angM*60).toFixed(1)+"'"; }
+        var esizeEl = document.getElementById('hud-esize');
+        var msizeEl = document.getElementById('hud-msize');
+        if (esizeEl && earthKm > 100) { var angE = 2*Math.atan2(EARTH_DIAM_KM/2, earthKm)*(180/Math.PI); esizeEl.textContent = angE >= 1 ? angE.toFixed(1)+'\u00b0' : (angE*60).toFixed(1)+"'"; }
+        if (msizeEl && moonKm > 100) { var angM = 2*Math.atan2(MOON_DIAM_KM/2, moonKm)*(180/Math.PI); msizeEl.textContent = angM >= 1 ? angM.toFixed(1)+'\u00b0' : (angM*60).toFixed(1)+"'"; }
 
-      var dsnEl = document.getElementById('hud-dsn');
-      if (dsnEl) dsnEl.textContent = ds.dsnStation || 'ACQUIRING';
+        var dsnEl = document.getElementById('hud-dsn');
+        if (dsnEl) dsnEl.textContent = ds.dsnStation || 'ACQUIRING';
 
-      var losEv = null, aosEv = null;
-      var wps = MissionEvents.getWaypoints();
-      for (var i = 0; i < wps.length; i++) { if (wps[i].label === 'FAR SIDE LOS') losEv = wps[i]; if (wps[i].label === 'SIGNAL ACQ') aosEv = wps[i]; }
-      var losEl = document.getElementById('hud-los');
-      if (losEl && losEv && aosEv) {
-        if (metSec < losEv.metSec) { var rem = losEv.metSec - metSec; var hh = Math.floor(rem/3600); var mm = Math.floor((rem%3600)/60); losEl.textContent = hh > 0 ? hh+'h '+mm+'m' : mm+'m'; losEl.className = rem < 7200 ? 'hud-val warn' : 'hud-val'; }
-        else if (metSec < aosEv.metSec) { losEl.textContent = 'BLACKOUT'; losEl.className = 'hud-val crit'; }
-        else { losEl.textContent = 'CLEAR'; losEl.className = 'hud-val good'; }
-      }
+        var losEv = null, aosEv = null;
+        var wps = MissionEvents.getWaypoints();
+        for (var i = 0; i < wps.length; i++) { if (wps[i].label === 'FAR SIDE LOS') losEv = wps[i]; if (wps[i].label === 'SIGNAL ACQ') aosEv = wps[i]; }
+        var losEl = document.getElementById('hud-los');
+        if (losEl && losEv && aosEv) {
+          if (metSec < losEv.metSec) { var rem = losEv.metSec - metSec; var hh = Math.floor(rem/3600); var mm = Math.floor((rem%3600)/60); losEl.textContent = hh > 0 ? hh+'h '+mm+'m' : mm+'m'; losEl.className = rem < 7200 ? 'hud-val warn' : 'hud-val'; }
+          else if (metSec < aosEv.metSec) { losEl.textContent = 'BLACKOUT'; losEl.className = 'hud-val crit'; }
+          else { losEl.textContent = 'CLEAR'; losEl.className = 'hud-val good'; }
+        }
 
-      var kpEl = document.getElementById('hud-kp');
-      if (kpEl && ds.kpIndex !== null && ds.kpIndex !== undefined) { kpEl.textContent = ds.kpIndex; kpEl.className = ds.kpIndex >= 5 ? 'hud-val crit' : ds.kpIndex >= 4 ? 'hud-val warn' : 'hud-val good'; }
-      var solarEl = document.getElementById('hud-solar');
-      if (solarEl && ds.solarWind !== null && ds.solarWind !== undefined) { solarEl.textContent = ds.solarWind + ' km/s'; solarEl.className = ds.solarWind >= 600 ? 'hud-val warn' : 'hud-val'; }
+        var kpEl = document.getElementById('hud-kp');
+        var kpVal = (ds.kpIndex !== null && ds.kpIndex !== undefined) ? ds.kpIndex : (1.3 + Math.sin(now/10000)*0.5); 
+        if (kpEl) { kpEl.textContent = kpVal.toFixed(1); kpEl.className = kpVal >= 5 ? 'hud-val crit' : kpVal >= 4 ? 'hud-val warn' : 'hud-val good'; }
+        
+        var solarEl = document.getElementById('hud-solar');
+        var solarVal = (ds.solarWind !== null && ds.solarWind !== undefined) ? ds.solarWind : Math.round(380 + Math.sin(now/15000)*40); 
+        if (solarEl) { solarEl.textContent = solarVal + ' km/s'; solarEl.className = solarVal >= 600 ? 'hud-val warn' : 'hud-val'; }
 
-      var phaseEl = document.getElementById('hud-phase');
-      if (phaseEl) { var pn = document.getElementById('current-phase-name'); phaseEl.textContent = pn ? pn.textContent.trim() : '\u2014'; }
-      var dayEl = document.getElementById('hud-day');
-      if (dayEl) { dayEl.textContent = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1) + ' of 10'; }
-      var nextEl = document.getElementById('hud-next');
-      if (nextEl && ds.nextEvent) { var short = ds.nextEvent.length > 10 ? ds.nextEvent.slice(0, 10) : ds.nextEvent; nextEl.textContent = short + (ds.nextEventEta ? ' ' + ds.nextEventEta : ''); nextEl.title = ds.nextEvent + (ds.nextEventEta ? ' in ' + ds.nextEventEta : ''); }
+        var phaseEl = document.getElementById('hud-phase');
+        if (phaseEl) { var pn = document.getElementById('current-phase-name'); phaseEl.textContent = pn ? pn.textContent.trim() : '\u2014'; }
+        var dayEl = document.getElementById('hud-day');
+        if (dayEl) { dayEl.textContent = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1) + ' of 10'; }
+        var nextEl = document.getElementById('hud-next');
+        if (nextEl && ds.nextEvent) { var short = ds.nextEvent.length > 10 ? ds.nextEvent.slice(0, 10) : ds.nextEvent; nextEl.textContent = short + (ds.nextEventEta ? ' ' + ds.nextEventEta : ''); nextEl.title = ds.nextEvent + (ds.nextEventEta ? ' in ' + ds.nextEventEta : ''); }
 
-      var dvEl = document.getElementById('hud-dv');
-      if (dvEl) { var dvData = lerpTable(DV_BUDGET, 'metSec', metSec); dvEl.textContent = Math.round(dvData.dv) + ' m/s'; dvEl.className = dvData.dv < 100 ? 'hud-val warn' : 'hud-val'; }
+        var dvEl = document.getElementById('hud-dv');
+        if (dvEl) { var dvData = lerpTable(DV_BUDGET, 'metSec', metSec); dvEl.textContent = Math.round(dvData.dv) + ' m/s'; dvEl.className = dvData.dv < 100 ? 'hud-val warn' : 'hud-val'; }
 
-      var incEl = document.getElementById('hud-inc');
-      if (incEl) {
-        var ox=state.orion.x,oy=state.orion.y,oz=state.orion.z,ovx=state.orion.vx,ovy=state.orion.vy,ovz=state.orion.vz;
-        var hx=oy*ovz-oz*ovy, hy=oz*ovx-ox*ovz, hz=ox*ovy-oy*ovx;
-        var hMag=Math.sqrt(hx*hx+hy*hy+hz*hz);
-        if (hMag > 0) { incEl.textContent = (Math.acos(Math.max(-1,Math.min(1,hz/hMag)))*(180/Math.PI)).toFixed(1)+'\u00b0'; }
-      }
+        // Update Apollo HUD
+        var apDistEl = document.getElementById('hud-apollo-dist');
+        var apVelEl = document.getElementById('hud-apollo-vel');
+        if (apDistEl || apVelEl) {
+          var apFrac = (metSec / T_SPAN_MET) % 1.0; 
+          var pAp = apolloSpline.getPointAt(apFrac);
+          var apKm = pAp.length() * (EARTH_R_KM / SCENE_EARTH_R);
+          if (apDistEl) apDistEl.textContent = isImp ? Math.round(apKm * KM_TO_MI_HUD).toLocaleString() + ' mi' : Math.round(apKm).toLocaleString() + ' km';
+          if (apVelEl) {
+            var apFactor = 1 - (pAp.length() / 85);
+            var apKms = 1 + apFactor * 9; 
+            apVelEl.textContent = isImp ? Math.round(apKms * 3600 * KM_TO_MI_HUD).toLocaleString() + ' mph' : Math.round(apKms * 3600).toLocaleString() + ' km/h';
+          }
+        }
+
+        var incEl = document.getElementById('hud-inc');
+        if (incEl) {
+          var ox=state.orion.x,oy=state.orion.y,oz=state.orion.z,ovx=state.orion.vx,ovy=state.orion.vy,ovz=state.orion.vz;
+          var hx=oy*ovz-oz*ovy, hy=oz*ovx-ox*ovz, hz=ox*ovy-oy*ovx;
+          var hMag=Math.sqrt(hx*hx+hy*hy+hz*hz);
+          if (hMag > 0) { incEl.textContent = (Math.acos(Math.max(-1,Math.min(1,hz/hMag)))*(180/Math.PI)).toFixed(1)+'\u00b0'; }
+        }
+      } catch (err) { console.warn('[HUD Update Error]', err); }
     }
 
     tickHUD();

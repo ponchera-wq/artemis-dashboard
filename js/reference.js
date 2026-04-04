@@ -16,7 +16,7 @@
   var modal, modalTitle, modalBody, modalClose;
 
   function buildNav() {
-    var nav = document.getElementById('ref-nav');
+    var nav = document.getElementById('ref-menu-items') || document.getElementById('ref-nav');
     if (!nav) return;
     ITEMS.forEach(function (item) {
       var btn = document.createElement('button');

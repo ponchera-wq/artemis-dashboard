@@ -1801,8 +1801,8 @@
       /* Reset button already hidden on mobile */
 
       /* ── Mobile panel order (flex order; no effect on desktop grid) ── */
+      #ref-nav         { order: 0; }
       #top-bar         { order: 1; }
-      #ref-nav         { order: 2; }
       #feed-arow       { order: 3; }
       #feed-blog       { order: 4; }
       #feed-youtube    { order: 5; }
@@ -2657,19 +2657,34 @@ body.ref-modal-active {
     flex-shrink: 0;
   }
 
+  .ref-observer-btn {
+    font-family: var(--font-ui);
+    font-size: 0.42rem;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border: 1px solid rgba(255,167,38,0.5);
+    color: var(--amber);
+    background: rgba(255,167,38,0.08);
+    border-radius: 2px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
   #ref-nav-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     width: 28px;
     height: 24px;
-    background: rgba(74, 144, 217, 0.1);
-    border: 1px solid rgba(74, 144, 217, 0.3);
-    color: var(--blue-light);
+    background: rgba(255, 167, 38, 0.1);
+    border: 1px solid rgba(255, 167, 38, 0.4);
+    color: var(--amber);
     font-size: 1rem;
     border-radius: 3px;
     cursor: pointer;
-    position: static; /* Reset from relative/absolute */
+    position: static;
     transform: none;
   }
 
@@ -2727,9 +2742,8 @@ body.ref-modal-active {
 /* ── Reference nav hamburger ── */
 #ref-nav-toggle {
   display: none;
-  position: absolute; left: 8px; top: 50%; transform: translateY(-50%);
-  background: none; border: 1px solid rgba(74,144,217,0.35);
-  color: var(--cyan); font-size: 1rem; padding: 2px 8px;
+  background: none; border: 1px solid rgba(255,167,38,0.5);
+  color: var(--amber); font-size: 1rem; padding: 2px 8px;
   border-radius: 4px; cursor: pointer; z-index: 11;
   font-family: var(--font-mono);
 }

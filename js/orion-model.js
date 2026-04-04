@@ -212,24 +212,24 @@ function createOrionModel(THREE) {
   ship.add(haloMesh);
 
   // Particle exhaust system
-  var PARTICLE_COUNT = 30;
+  var PARTICLE_COUNT = 60;
   var pPositions  = new Float32Array(PARTICLE_COUNT * 3);
   var pColors     = new Float32Array(PARTICLE_COUNT * 3);
   var pLifetimes  = new Float32Array(PARTICLE_COUNT);
   var pVelocities = [];
 
   function resetParticle(i) {
-    pPositions[i*3]   = (Math.random() - 0.5) * 0.016;
+    pPositions[i*3]   = (Math.random() - 0.5) * 0.024;
     pPositions[i*3+1] = -0.25;
-    pPositions[i*3+2] = (Math.random() - 0.5) * 0.016;
+    pPositions[i*3+2] = (Math.random() - 0.5) * 0.024;
     pColors[i*3]   = 1.0;
     pColors[i*3+1] = 1.0;
     pColors[i*3+2] = 0.9;
     pLifetimes[i] = 0;
     pVelocities[i] = {
-      x: (Math.random() - 0.5) * 0.003,
-      y: -(0.008 + Math.random() * 0.006),
-      z: (Math.random() - 0.5) * 0.003
+      x: (Math.random() - 0.5) * 0.006,
+      y: -(0.012 + Math.random() * 0.01),
+      z: (Math.random() - 0.5) * 0.006
     };
   }
   for (var ppi = 0; ppi < PARTICLE_COUNT; ppi++) {
@@ -254,7 +254,7 @@ function createOrionModel(THREE) {
   pGeo.setAttribute('color',    new THREE.BufferAttribute(pColors, 3));
 
   var pMat = new THREE.PointsMaterial({
-    size: 0.025,
+    size: 0.08,
     map: new THREE.CanvasTexture(pCanvas),
     vertexColors: true,
     transparent: true,
