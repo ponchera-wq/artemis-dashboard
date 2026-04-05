@@ -1149,9 +1149,6 @@
        var _tuEarthA = document.getElementById('tu-earth');
        var isImp = _tuEarthA ? _tuEarthA.textContent.trim() === 'MI' : false;
        var distA13Str = isImp ? Math.round(distA13Km * 0.621371).toLocaleString() + ' mi' : Math.round(distA13Km).toLocaleString() + ' km';
- 
-       var statA13 = document.getElementById('stat-apollo13');
-       if (statA13) statA13.textContent = distA13Str.split(' ')[0];
 
       renderer.render(scene, camera);
 
