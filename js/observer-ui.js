@@ -267,19 +267,30 @@ function initObserverUI() {
     // ── Hardware Config Binding ──────────────────────────────────────────
     function updateHardware() {
         if (!inFocalLength || !inPixelSize || !inAperture || !inHyperstar) return;
-        const ap = parseFloat(inAperture.value) || 203.2;
+        let ap = parseFloat(inAperture.value);
+        let ps = parseFloat(inPixelSize.value);
+        let fl = parseFloat(inFocalLength.value);
         const hs = inHyperstar.checked;
-        const ps = parseFloat(inPixelSize.value) || 3.76;
-        
-        let fl = parseFloat(inFocalLength.value) || 1420;
+        const apBad = !isFinite(ap) || ap <= 0 || ap > 100;
+        const psBad = !isFinite(ps) || ps <= 0 || ps > 100;
+        if (inAperture) inAperture.style.borderColor = apBad ? '#ef5350' : '';
+        if (inPixelSize) inPixelSize.style.borderColor = psBad ? '#ef5350' : '';
+        if (apBad || psBad) return;
+        ap = Math.min(100, Math.max(0.1, ap));
+        ps = Math.min(100, Math.max(0.1, ps));
         if (hs) {
             fl = ap * 1.9;
             inFocalLength.value = fl.toFixed(0);
             inFocalLength.disabled = true;
             inFocalLength.style.opacity = '0.5';
+            if (inFocalLength) inFocalLength.style.borderColor = '';
         } else {
             inFocalLength.disabled = false;
             inFocalLength.style.opacity = '1';
+            const flBad = !isFinite(fl) || fl <= 0 || fl > 50000;
+            if (inFocalLength) inFocalLength.style.borderColor = flBad ? '#ef5350' : '';
+            if (flBad) return;
+            fl = Math.min(50000, Math.max(1, fl));
         }
 
         window.ObserverAstro.setHardwareConfig({ 
@@ -550,13 +561,28 @@ function initObserverUI() {
         });
     }
 
+    function setInputRangeError(el, bad) {
+        if (!el) return;
+        el.style.borderColor = bad ? '#ef5350' : '';
+        el.title = bad ? 'Out of valid range' : '';
+    }
+
     // Manual Entry bind
     document.getElementById('btn-apply-loc').addEventListener('click', async () => {
-        const latVal  = parseFloat(document.getElementById('in-lat').value);
-        const lonVal  = parseFloat(document.getElementById('in-lon').value);
+        const latEl = document.getElementById('in-lat');
+        const lonEl = document.getElementById('in-lon');
+        let latVal  = parseFloat(latEl && latEl.value);
+        let lonVal  = parseFloat(lonEl && lonEl.value);
         const elevVal = parseFloat(document.getElementById('in-elev')?.value);
+        const latBad = !isFinite(latVal) || latVal < -90 || latVal > 90;
+        const lonBad = !isFinite(lonVal) || lonVal < -180 || lonVal > 180;
+        setInputRangeError(latEl, latBad);
+        setInputRangeError(lonEl, lonBad);
+        if (latBad || lonBad) return;
         if (!isNaN(latVal) && !isNaN(lonVal)) {
-            const elevOverride = !isNaN(elevVal) ? elevVal : null;
+            latVal = Math.min(90, Math.max(-90, latVal));
+            lonVal = Math.min(180, Math.max(-180, lonVal));
+            const elevOverride = !isNaN(elevVal) && isFinite(elevVal) ? Math.min(9000, Math.max(0, elevVal)) : null;
             await applyLocation(latVal, lonVal, elevOverride);
         }
     });
