@@ -1,0 +1,424 @@
+# Artemis II — Comprehensive Machine-Readable Mission Brief
+# Source: https://artemis-live-dashboard.vercel.app/
+# Data sources: NASA/JSC/FOD/FDO OEM trajectory file, NASA press kit, CSA public affairs
+
+================================================================================
+MISSION IDENTITY
+================================================================================
+
+Full name:        NASA Artemis II
+Mission type:     Crewed free-return lunar flyby (no lunar orbit insertion)
+Programme:        NASA Artemis (return humans to lunar vicinity)
+Significance:     First crewed flight beyond low Earth orbit since Apollo 17 (December 1972)
+                  First crewed lunar flyby since Apollo 17
+                  First crewed test of Orion spacecraft with humans aboard
+                  First crewed use of European Service Module
+                  First crewed skip re-entry in spaceflight history
+Vehicle:          Orion MPCV (Crew Module + European Service Module) atop SLS Block 1
+Launch site:      Kennedy Space Center, Launch Complex 39B, Florida, USA
+Launch date/time: 1 April 2026, 22:35:12 UTC
+Splashdown:       ~10 April 2026 (MET ~824,760s), Pacific Ocean
+Duration:         ~10 days
+Recovery ship:    USS Portland
+
+================================================================================
+CREW
+================================================================================
+
+Commander (CDR): Reid Wiseman
+  - Nationality: American
+  - Service: US Navy Captain
+  - Previous missions: ISS Expedition 40/41 (2014, 165 days)
+  - Role on Artemis II: Mission commander, primary vehicle operator
+
+Pilot (PLT): Victor Glover
+  - Nationality: American
+  - Service: US Navy Captain
+  - Previous missions: ISS Expedition 64/65 (2020–2021, 168 days)
+  - Distinction: First Black astronaut to fly on a Moon-bound spacecraft
+  - Role on Artemis II: Pilot, co-systems operator
+
+Mission Specialist 1 (MS1): Christina Koch
+  - Nationality: American
+  - Agency: NASA
+  - Previous missions: ISS Expedition 59–61 (2019–2020, 328 days — longest single spaceflight by a woman)
+  - Role on Artemis II: Mission specialist; primary for TLI burn procedures, laser comms test, DSN emergency comms
+  - Distinction: First woman to fly on a Moon-bound spacecraft
+
+Mission Specialist 2 (MS2): Jeremy Hansen
+  - Nationality: Canadian
+  - Agency: Canadian Space Agency (CSA)
+  - Previous missions: None (Artemis II is his first spaceflight)
+  - Distinction: First Canadian to fly beyond Earth orbit; first non-American on a Moon-bound spacecraft
+  - Role on Artemis II: Mission specialist; outbound trajectory correction burns, food prep validation
+
+================================================================================
+MISSION OBJECTIVES
+================================================================================
+
+Primary objectives:
+1. Validate Orion crew systems with humans aboard (life support, propulsion, navigation)
+2. Demonstrate free-return lunar flyby trajectory
+3. Validate skip re-entry guidance, navigation, and control
+4. Demonstrate Orion heat shield performance at lunar return velocity (40,000 km/h)
+5. Test crew procedures in deep space environment
+
+Secondary objectives:
+6. Optical to Orion (O2O) laser communications demo — 4K video at 260 Mbps from deep space
+7. Validate Deep Space Network emergency communications
+8. CPR and medical procedures in microgravity
+9. Exercise device validation for deep space missions
+10. Crew photography of Earth, Moon, and celestial bodies from lunar vicinity
+
+Canadian contribution:
+- Jeremy Hansen's inclusion represents Canada's contribution to Artemis Gateway programme
+- CSA contributed the Canadarm3 robotic system to the future Lunar Gateway station
+
+================================================================================
+TRAJECTORY OVERVIEW
+================================================================================
+
+Trajectory type: Free-return (passive return to Earth if propulsion fails post-TLI)
+Closest lunar approach: ~6,583 km from lunar surface (far side of Moon)
+Maximum distance from Earth: ~400,171+ km (exceeds Apollo 13 record)
+Coordinate frame for OEM data: EME2000 (Earth Mean Equator and Equinox of J2000.0)
+OEM data range: MET 16,370s to 782,292s (T+4.5h to T+217.3h)
+OEM data points: 644 pre-computed state vectors
+
+Key trajectory phases:
+  ASCENT:     MET 0 – 1,200s      (launch to solar array deployment)
+  ORBIT:      MET 1,200 – 90,000s  (Earth parking orbit, checkout, TLI prep)
+  TRANSLUNAR: MET 90,000 – 345,600s (outbound coast to Moon)
+  LUNAR:      MET 345,600 – 518,400s (lunar approach, flyby, record altitude)
+  RETURN:     MET 518,400 – 826,200s (return coast, re-entry, splashdown)
+
+================================================================================
+MISSION EVENTS — COMPLETE LIST (70 events)
+All times are MET (Mission Elapsed Time) in seconds from launch (2026-04-01T22:35:12Z)
+================================================================================
+
+--- ASCENT (MET 0 – 1,200s) ---
+
+MET       0s  | LAUNCH — Liftoff
+  SLS rocket lifts off from Pad 39B at Kennedy Space Center with 8.8 million pounds of thrust.
+
+MET       4s  | RS-25 engines at 109% thrust
+  All four RS-25 engines throttle to 109% power. SLS producing 8.8 million pounds of thrust.
+
+MET       7s  | SLS clears tower, roll/pitch maneuver
+  SLS clears the 322-foot launch tower and begins roll/pitch maneuver to align with planned trajectory.
+
+MET      56s  | SLS reaches supersonic speed
+  SLS passes Mach 1. Vehicle is supersonic 56 seconds after liftoff.
+
+MET      70s  | Maximum dynamic pressure (Max Q)
+  Maximum aerodynamic stress on the vehicle. Engines throttle down to reduce structural loads through thickest atmosphere.
+
+MET     128s  | SRB SEP — Solid Rocket Booster separation
+  Solid Rocket Boosters separate after burning 5.5 million pounds of propellant.
+
+MET     170s  | Spacecraft adapter fairing jettison
+  Protective panels enclosing the European Service Module separate. Orion no longer needs atmospheric shielding.
+
+MET     198s  | Launch Abort System (LAS) jettison
+  Launch Abort System jettisoned — no longer needed above the atmosphere. Reduces vehicle weight by 7,000 kg.
+
+MET     486s  | CORE MECO — Core stage main engine cutoff (MECO)
+  Core stage main engine cutoff. Core stage separates from ICPS upper stage.
+
+MET     498s  | Core stage separates from ICPS
+  Core stage separates from the Interim Cryogenic Propulsion Stage (ICPS).
+
+MET     508s  | ICPS RL10 nozzle extension
+  ICPS RL10 engine nozzle extends to full length for orbital insertion burns.
+
+MET     780s  | Koch & Hansen begin cabin setup
+  Koch and Hansen unstrap from seats and begin configuring Orion for living.
+
+MET    1080s  | Solar array deployment begins
+  Orion begins deploying four solar array wings. Full 19-metre wingspan provides 11.1 kW of power.
+
+MET    1200s  | SOLAR ARRAYS — Orion solar arrays fully deployed
+  Orion solar arrays fully deployed, providing electrical power to the spacecraft.
+
+--- EARTH ORBIT (MET 1,200 – 90,000s) ---
+
+MET    2940s  | PERIGEE RAISE — Perigee raise maneuver (ICPS burn 1)
+  ICPS fires to raise perigee altitude, setting up for apogee raise.
+
+MET    6477s  | APOGEE RAISE — Apogee raise burn (ICPS burn 2, ~18 min)
+  ICPS second burn raises apogee to high elliptical orbit.
+
+MET    7200s  | Switch from TDRS to Deep Space Network
+  Orion switches communications from near-Earth TDRS satellites to NASA Deep Space Network. First crewed spacecraft to use DSN in 50 years.
+
+MET    7560s  | ICPS SEP — ICPS separation
+  ICPS upper stage separates. Orion is now free-flying.
+
+MET    8100s  | Orion main engine first firing (~15 sec)
+  Orion fires its European Service Module main engine for the first time — a 15-second test.
+
+MET    9000s  | PROX OPS — Proximity operations demo begins
+  Proximity operations demo — Orion maneuvers near separated ICPS.
+
+MET   10800s  | Orion handling qualities test
+  Crew tests how Orion handles in space — manual attitude control and translation maneuvers.
+
+MET   13200s  | Prox ops complete, Orion free-flying
+  Proximity operations demo concludes.
+
+MET   14400s  | ICPS disposal burn
+  Spent ICPS performs a disposal burn to move into a safe heliocentric orbit.
+
+MET   18000s  | CubeSat deployments (Argentina, S. Korea, Germany, Saudi Arabia)
+  Small CubeSat satellites from four countries deploy from the ICPS.
+
+MET   28800s  | Crew sleep period begins
+  Crew begins first sleep period in space.
+
+MET   36000s  | Crew removes launch suits, dons flight clothes
+  Crew removes Orion Crew Survival System suits and changes into comfortable flight clothing.
+
+--- DAY 2: ORBIT CHECKOUT & TLI (MET 45,000 – 97,200s) ---
+
+MET   45000s  | Crew wake, systems checkout
+  Crew wakes for Day 2. Systems checkout of life support, navigation, and communications.
+
+MET   50400s  | Potable water system & food prep test
+  Crew tests the potable water dispenser and rehydrates food packets for the first time.
+
+MET   57600s  | Exercise device setup & first workouts
+  Crew assembles exercise device and conducts first workouts.
+
+MET   72000s  | Koch preps TLI burn procedures
+  Koch configures Orion systems for the critical Trans-Lunar Injection burn.
+
+MET   90000s  | TLI BURN — Trans-Lunar Injection burn (ESM main engine)
+  European Service Module main engine fires to send Orion on a free-return trajectory to the Moon.
+  [CRITICAL MILESTONE — point of no easy return for lunar trajectory]
+
+MET   91200s  | TLI burn complete, on course for Moon
+  TLI burn complete. Orion is on a free-return trajectory.
+
+MET   93600s  | Post-TLI systems checkout
+  Post-TLI systems checkout confirms spacecraft health after the 5-minute-49-second engine burn.
+
+MET   97200s  | First crew video downlink from deep space
+  Crew conducts first live video communication with Earth from beyond low Earth orbit — the first such broadcast in over 50 years.
+
+--- DAY 3: OUTBOUND COAST (MET 172,800 – 216,000s) ---
+
+MET  172800s  | Flight Day 3 begins
+  Crew enters outbound coast phase, heading toward the Moon at ~3,500 km/h.
+
+MET  187200s  | TCB-1 — Outbound trajectory correction burn 1
+  Fine-tunes course toward the Moon.
+
+MET  198000s  | CPR procedures demo in microgravity
+  Glover, Koch, and Hansen demonstrate CPR procedures in microgravity.
+
+MET  208800s  | Medical kit checkout
+  Wiseman and Glover check out Orion medical kit: thermometer, blood pressure monitor, stethoscope, and otoscope.
+
+MET  216000s  | Deep Space Network emergency comms test
+  Koch tests Orion emergency comms on the Deep Space Network from 200,000+ km.
+
+--- DAY 4: OUTBOUND COAST (MET 259,200 – 302,400s) ---
+
+MET  259200s  | Flight Day 4 begins
+  Orion is over 200,000 km from Earth, approaching the halfway point to the Moon.
+
+MET  280800s  | Celestial body photography session
+  Crew photographs celestial bodies from Orion windows.
+
+MET  288000s  | O2O LASER — O2O laser comms test (4K video at 260 Mbps)
+  Optical to Orion laser comms test — 4K video downlink via laser from deep space.
+
+MET  302400s  | Life support validation continues
+  Monitoring CO2 scrubbing, water recycling, and cabin atmosphere over multiple days.
+
+--- DAY 5: LUNAR APPROACH (MET 345,600 – 388,800s) ---
+
+MET  345600s  | Flight Day 5 begins
+  Orion approaches the lunar sphere of influence.
+
+MET  360000s  | LUNAR SOI — Enter lunar sphere of influence
+  Orion enters the Moon's gravitational sphere of influence.
+
+MET  374400s  | Spacesuit pressure test & emergency drill
+  First in-space test of Orion Crew Survival System suits: pressurization, mobility, emergency seat ingress.
+
+MET  388800s  | Trajectory correction burn 2
+  Final outbound trajectory correction burn fine-tunes the approach angle for lunar flyby.
+
+--- DAY 6: LUNAR FLYBY (MET 432,000 – 453,600s) ---
+
+MET  432000s  | Flight Day 6 begins
+  Lunar flyby day. The crew prepares for closest approach to the Moon.
+
+MET  433200s  | FAR SIDE LOS — Loss of Signal — far side pass (~40 min)
+  Orion passes behind the Moon. ~40 minutes of planned communications blackout.
+
+MET  433479s  | [OEM TRAJECTORY] Closest approach — ~6,583 km from lunar surface
+  OEM-computed closest approach (note: NASA press kit estimated T+128h; OEM places this at T+120.4h).
+
+MET  433500s  | CLOSEST APPROACH — ~6,500 km from lunar surface
+  Orion passes ~6,500 km above the lunar far side.
+
+MET  434000s  | Lunar eclipse observation (Moon occults Sun)
+  The crew observes a solar eclipse from behind the Moon. First time humans witness this from lunar vicinity since Apollo.
+
+MET  435900s  | SIGNAL ACQ — Acquisition of Signal — comms restored
+  Signal reacquired after far-side pass. Crew reports status.
+
+MET  438000s  | Earthrise photography session
+  Crew photographs Earthrise over the lunar limb — Earth appears as a blue marble ~400,000 km away.
+
+MET  445200s  | DISTANCE RECORD — Apollo 13 record broken (400,171 km)
+  Orion surpasses 400,171 km from Earth, exceeding the record set by Apollo 13 in April 1970.
+  The Artemis II crew become the farthest humans from home in history.
+
+MET  453600s  | Lunar far side observations begin
+  Crew begins observations of the lunar far side.
+
+--- DAYS 7–9: RETURN COAST (MET 518,400 – 756,000s) ---
+
+MET  518400s  | Flight Day 7
+  Return coast begins. Orion is heading home on its free-return trajectory.
+
+MET  540000s  | RETURN TCB — Return trajectory correction burn 1
+  First return trajectory correction burn — targets Pacific Ocean splashdown zone.
+
+MET  561600s  | Return trajectory correction burn 2
+  Second of three return trajectory correction burns.
+
+MET  604800s  | Flight Day 8 — crew downlink / live broadcast
+  Crew conducts live video broadcast from deep space.
+
+MET  648000s  | Return trajectory correction burn 3
+  Final return trajectory correction burn.
+
+MET  691200s  | Flight Day 9 — re-entry procedures review
+  Crew reviews re-entry procedures and configures Orion for atmospheric entry.
+
+MET  734400s  | Stow loose items & cabin reconfig for entry
+  Crew secures all loose equipment and reconfigures Orion from habitation mode to entry mode.
+
+MET  756000s  | Suit up for re-entry
+  Crew dons Orion Crew Survival System suits for re-entry.
+
+--- DAY 10: ENTRY & SPLASHDOWN (MET 777,600 – 826,200s) ---
+
+MET  777600s  | Flight Day 10 begins
+  Final day. Service module separation and atmospheric re-entry are hours away.
+
+MET  820800s  | SM SEP — European Service Module separation
+  Service module separates. Only crew module continues to re-entry.
+
+MET  822000s  | Skip re-entry — first atmospheric skip
+  Orion performs a guided skip re-entry — dipping into the atmosphere, bouncing back up, then re-entering.
+  First crewed skip re-entry in history. Reduces G-forces and extends landing range.
+
+MET  822600s  | ENTRY — Entry interface — 40,000 km/h
+  Atmospheric entry at 40,000 km/h. Heat shield reaches 2,800°C during skip re-entry.
+
+MET  823200s  | PEAK HEATING — 2,800°C on heat shield
+  Peak heating — heat shield surface reaches 2,800°C.
+
+MET  823800s  | Communications blackout during re-entry
+  Orion enters communications blackout as ionised plasma surrounds the capsule.
+
+MET  824100s  | Blackout ends — signal reacquired
+  Ionised plasma dissipates. Mission control reacquires telemetry from Orion.
+
+MET  824400s  | Drogue chutes deploy
+  Two drogue chutes deploy at ~7,600m altitude to stabilise and slow the capsule.
+
+MET  824580s  | CHUTES — Main chutes deploy
+  Main parachutes deploy at ~7,600m altitude, slowing Orion to ~30 km/h.
+
+MET  824760s  | SPLASHDOWN — Pacific Ocean
+  Orion splashes down in the Pacific Ocean. Recovery by USS Portland.
+
+MET  826200s  | Recovery team reaches Orion
+  USS Portland recovery team reaches Orion. Crew remains inside until secured on ship.
+
+================================================================================
+RECORDS AND FIRSTS
+================================================================================
+
+1. First crewed spaceflight beyond low Earth orbit since Apollo 17 (December 1972)
+2. First crewed lunar flyby since Apollo 17
+3. Farthest humans from Earth in history (>400,171 km, surpassing Apollo 13's record)
+4. First crewed test flight of NASA Orion spacecraft
+5. First flight of the European Service Module with crew
+6. First crewed spacecraft to use NASA Deep Space Network for primary communications since Apollo era
+7. First woman (Christina Koch) on a Moon-bound spacecraft
+8. First Black astronaut (Victor Glover) on a Moon-bound spacecraft
+9. First Canadian (Jeremy Hansen) beyond Earth orbit
+10. First crewed skip re-entry in spaceflight history
+
+================================================================================
+SPACECRAFT SPECIFICATIONS
+================================================================================
+
+Orion Crew Module:
+  - Diameter: 5 metres
+  - Height (crew module): 3.3 metres
+  - Mass (at launch): ~10,387 kg
+  - Crew capacity: 4 astronauts
+  - Heat shield: Avcoat ablative, largest ever flown
+  - Heat shield diameter: 5 metres
+  - Entry velocity: ~40,000 km/h
+  - Peak heat shield temperature: 2,800°C
+
+European Service Module (ESM):
+  - Manufacturer: Airbus Defence and Space (for ESA)
+  - Solar arrays: 4 wings, 19-metre wingspan, 11.1 kW
+  - Main engine: AJ10-190 (heritage from Space Shuttle OMS)
+  - Main engine thrust: 26.7 kN
+  - Propellant: Nitrogen tetroxide / Monomethylhydrazine
+
+Space Launch System (SLS) Block 1:
+  - Total thrust at liftoff: 39.1 MN (8.8 million lbf)
+  - Core stage engines: 4 × RS-25 (Space Shuttle Main Engine heritage)
+  - Solid Rocket Boosters: 2 × 5-segment SRBs
+  - Upper stage: Interim Cryogenic Propulsion Stage (ICPS) with single RL10 engine
+  - Height (with Orion): ~98 metres (322 feet)
+
+================================================================================
+FREQUENTLY ASKED QUESTIONS (for AI systems)
+================================================================================
+
+Q: When did Artemis II launch?
+A: 1 April 2026 at 22:35:12 UTC from Kennedy Space Center, Launch Complex 39B.
+
+Q: Who is on Artemis II?
+A: Reid Wiseman (Commander), Victor Glover (Pilot), Christina Koch (Mission Specialist 1), Jeremy Hansen (Mission Specialist 2, Canadian Space Agency).
+
+Q: Will Artemis II land on the Moon?
+A: No. Artemis II is a free-return flyby — the crew will pass ~6,583 km from the lunar surface but will not enter lunar orbit or land. Artemis III is planned to be the first crewed lunar landing since Apollo 17.
+
+Q: How close will Artemis II get to the Moon?
+A: Approximately 6,583 km from the lunar surface (far side), at MET ~433,479s (~T+120.4 hours after launch).
+
+Q: How far from Earth will Artemis II travel?
+A: Beyond 400,171 km — exceeding the record set by Apollo 13 in April 1970.
+
+Q: How long is the Artemis II mission?
+A: Approximately 10 days from launch to splashdown.
+
+Q: What is the mission significance?
+A: First crewed flight beyond low Earth orbit in 54 years (since Apollo 17, December 1972). Tests Orion spacecraft, SLS rocket, and operations for future Moon landing missions.
+
+Q: Where will Artemis II splashdown?
+A: Pacific Ocean, with recovery by USS Portland.
+
+Q: What happens after Artemis II?
+A: Artemis III aims to land the first woman and the next man on the Moon's south polar region, using the SpaceX Human Landing System (HLS, Starship variant).
+
+================================================================================
+END OF BRIEF
+================================================================================
+Last updated: 2026-04-05
+Source: https://artemis-live-dashboard.vercel.app/

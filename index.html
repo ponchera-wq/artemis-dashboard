@@ -18,10 +18,10 @@
   <meta name="apple-mobile-web-app-title" content="Artemis II">
   <link rel="manifest" href="manifest.json">
   <!-- SEO -->
-  <meta name="description" content="Real-time Artemis II mission dashboard with NASA OEM ephemeris data, 3D trajectory map, space weather monitoring, crew profiles, and NASA news feeds. Track Orion's journey to the Moon.">
-  <meta name="keywords" content="Artemis II, Artemis 2, NASA, Moon mission, Orion spacecraft, live tracker, mission dashboard, JPL Horizons, space weather, SLS rocket, lunar flyby, 2026">
+  <meta name="description" content="Live real-time tracker for NASA's Artemis II crewed lunar flyby — crew Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen. NASA OEM ephemeris, 3D trajectory, space weather, DSN telemetry. First humans to the Moon since Apollo 17.">
+  <meta name="keywords" content="Artemis II, Artemis 2, NASA moon mission 2026, Orion spacecraft, SLS rocket, lunar trajectory, live mission tracker, crewed lunar flyby 2026, Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen, NASA live, deep space, lunar flyby, real-time tracker, mission status, Artemis mission, moon 2026, NASA Artemis">
   <meta name="author" content="Caz">
-  <meta name="robots" content="index, follow">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
   <link rel="canonical" href="https://artemis-live-dashboard.vercel.app/">
   <!-- Open Graph -->
   <meta property="og:title" content="Artemis II — Live Mission Dashboard">
@@ -38,16 +38,45 @@
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Artemis II Live Mission Dashboard",
-    "description": "Real-time mission dashboard tracking NASA's Artemis II crewed lunar flyby with NASA OEM ephemeris data, 3D trajectory visualization, and space weather monitoring.",
-    "url": "https://artemis-live-dashboard.vercel.app/",
-    "applicationCategory": "Space Tracking",
-    "operatingSystem": "Web Browser",
-    "author": {
-      "@type": "Person",
-      "name": "Caz"
-    }
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "Artemis II Live Mission Dashboard",
+        "description": "Live real-time tracker for NASA's Artemis II crewed lunar flyby mission. Tracks crew Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen on the first crewed flight beyond Earth orbit since Apollo 17. Features NASA OEM ephemeris data, 3D trajectory visualization, Deep Space Network telemetry, and space weather monitoring.",
+        "url": "https://artemis-live-dashboard.vercel.app/",
+        "applicationCategory": "Space Tracking",
+        "operatingSystem": "Web Browser",
+        "datePublished": "2026-04-01",
+        "author": {
+          "@type": "Person",
+          "name": "Caz"
+        },
+        "keywords": "Artemis II, Artemis 2, NASA moon mission 2026, Orion spacecraft, SLS rocket, lunar trajectory, live mission tracker, crewed lunar flyby 2026, Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen, NASA live, deep space, real-time tracker",
+        "about": {
+          "@type": "Event",
+          "name": "NASA Artemis II Mission",
+          "description": "First crewed lunar flyby since Apollo 17 (1972). Crew of four — Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen — travel beyond 400,000 km from Earth on a free-return trajectory around the Moon.",
+          "startDate": "2026-04-01T22:35:12Z",
+          "endDate": "2026-04-10",
+          "location": {
+            "@type": "Place",
+            "name": "Kennedy Space Center, Launch Complex 39B",
+            "address": "Merritt Island, Florida, USA"
+          },
+          "organizer": {
+            "@type": "Organization",
+            "name": "NASA",
+            "url": "https://www.nasa.gov"
+          },
+          "performer": [
+            { "@type": "Person", "name": "Reid Wiseman", "jobTitle": "Commander" },
+            { "@type": "Person", "name": "Victor Glover", "jobTitle": "Pilot" },
+            { "@type": "Person", "name": "Christina Koch", "jobTitle": "Mission Specialist 1" },
+            { "@type": "Person", "name": "Jeremy Hansen", "jobTitle": "Mission Specialist 2" }
+          ]
+        }
+      }
+    ]
   }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">

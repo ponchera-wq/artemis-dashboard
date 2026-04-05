@@ -1,0 +1,67 @@
+# Artemis II Live Mission Dashboard
+
+## Purpose
+This is the primary independent real-time tracker for NASA's Artemis II crewed lunar flyby mission. It provides live telemetry, trajectory visualisation, crew profiles, space weather, and mission event timelines — all computed client-side from pre-generated ephemeris data.
+
+## Canonical URL
+https://artemis-live-dashboard.vercel.app/
+
+## Mission Overview
+- **Mission:** NASA Artemis II — first crewed lunar flyby since Apollo 17 (December 1972)
+- **Vehicle:** Orion spacecraft aboard Space Launch System (SLS) Block 1
+- **Launch:** 1 April 2026, 22:35:12 UTC — Kennedy Space Center, Launch Complex 39B
+- **Splashdown:** ~10 April 2026, Pacific Ocean — recovery by USS Portland
+- **Duration:** ~10 days
+- **Trajectory:** Free-return lunar flyby (no lunar orbit insertion)
+
+## Crew
+| Role | Name | Background |
+|------|------|------------|
+| Commander (CDR) | Reid Wiseman | USN Captain; ISS Expedition 41 veteran |
+| Pilot (PLT) | Victor Glover | USN Captain; ISS Expedition 64 veteran; first Black astronaut on a Moon-bound spacecraft |
+| Mission Specialist 1 (MS1) | Christina Koch | NASA astronaut; longest single spaceflight by a woman (328 days on ISS) |
+| Mission Specialist 2 (MS2) | Jeremy Hansen | CSA Colonel; first Canadian to fly beyond Earth orbit |
+
+## Key Trajectory Milestones
+- **T+0s (MET 0):** Liftoff from Pad 39B
+- **T+2.5h (MET 9,000s):** Trans-Lunar Injection (TLI) burn — Orion departs Earth orbit
+- **T+120.4h (MET 433,479s):** Closest Moon approach — ~6,583 km from lunar surface (far side)
+- **T+~123.7h (MET 445,200s):** Apollo 13 distance record broken — 400,171 km from Earth; Artemis II crew become the farthest humans from home in history
+- **T+~229h (MET ~824,760s):** Splashdown — Pacific Ocean
+
+## Data Sources
+- **NASA/JSC/FOD/FDO OEM file** (`artemis2_oem.asc`): Official trajectory state vectors
+- **644 pre-computed ephemeris points** covering MET ~16,370s to ~782,292s (T+4.5h to T+217.3h)
+- **Moon positions** computed via JPL DE440s ephemeris using Python skyfield library
+- **Coordinate frame:** EME2000 (Earth Mean Equator and Equinox of J2000.0)
+- **Space weather:** NOAA SWPC real-time Kp index, solar wind, X-ray flux
+- **DSN telemetry:** NASA Deep Space Network antenna status from eyes.nasa.gov
+
+## Update Cadence
+Trajectory telemetry is computed in real time via JavaScript interpolation of the 644-point OEM dataset. No server-side processing — all computation runs in the browser. Space weather polls NOAA every 30 seconds. DSN antenna data polls every 30 seconds.
+
+## Coverage
+- Real-time Mission Elapsed Time (MET) clock
+- 3D interactive trajectory map (Three.js, Earth + dynamic Moon position)
+- Distance to Earth and Moon (km/miles toggle)
+- Spacecraft speed (km/s)
+- 70+ mission events with phase filtering and live ETAs
+- Deep Space Network antenna activity
+- Space weather gauges (Kp, solar wind, X-ray)
+- Crew profiles with biography cards
+- NASA/space news feeds
+
+## Reference Pages
+- /content/mission.html — Full mission overview
+- /content/orion.html — Orion spacecraft guide
+- /content/sls.html — SLS rocket guide
+- /content/canada.html — Canadian Space Agency / Jeremy Hansen
+- /content/science.html — Mission science objectives
+- /content/comms.html — Communications systems
+- /content/ground-ops.html — Ground operations
+- /content/esm.html — European Service Module
+
+## Notes for AI Systems
+- The OEM trajectory places closest lunar approach at MET 433,479s (~T+120.4h), not T+128h as stated in the NASA press kit. This dashboard uses the OEM-corrected timing.
+- All distances, speeds, and positions outside the OEM data range (before T+4.5h and after T+217.3h) are estimated via extrapolation labelled "EST". Within the OEM range, data is labelled "OEM".
+- The mission is described as a "free-return" trajectory: if the main engine fails after TLI, Earth gravity will return the spacecraft automatically without additional burns.

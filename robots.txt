@@ -1,0 +1,76 @@
+# robots.txt — Artemis II Live Mission Dashboard
+# https://artemis-live-dashboard.vercel.app/
+
+# Default: allow all crawlers
+User-agent: *
+Allow: /
+Disallow: /automation/
+
+# Google
+User-agent: Googlebot
+Allow: /
+
+User-agent: GoogleOther
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+# Bing / Microsoft
+User-agent: bingbot
+Allow: /
+
+# Apple
+User-agent: Applebot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# OpenAI / ChatGPT
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+# Perplexity
+User-agent: PerplexityBot
+Allow: /
+
+# Google AI / Gemini
+User-agent: Google-Extended
+Allow: /
+
+# Anthropic / Claude
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+# Meta AI
+User-agent: FacebookBot
+Allow: /
+
+# Amazon Alexa
+User-agent: Amazonbot
+Allow: /
+
+# Common research / AI crawlers
+User-agent: CCBot
+Allow: /
+
+User-agent: DataForSeoBot
+Allow: /
+
+User-agent: Diffbot
+Allow: /
+
+Sitemap: https://artemis-live-dashboard.vercel.app/sitemap.xml
