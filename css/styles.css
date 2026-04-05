@@ -2480,7 +2480,6 @@
   border-top: 1px solid rgba(255,140,0,0.18);
   border-bottom: 1px solid rgba(255,140,0,0.18);
   flex-shrink: 0;
-  height: 36px;
   max-height: 36px;
   overflow: hidden;
   transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);

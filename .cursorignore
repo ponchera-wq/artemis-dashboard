@@ -1,0 +1,42 @@
+# === Generated / Build Output — never edit these directly ===
+min/
+node_modules/
+
+# === Binary & Large Data — Cursor can't usefully read these ===
+data/*.asc
+data/skyfield-data/
+data/mission-ephemeris.json
+*.pdf
+*.bsp
+
+# === Git ===
+.git/
+
+# === Media — no useful code context ===
+img/
+css/bg-3dtraj.jpg
+css/artemis-logo.png
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.webp
+*.webm
+
+# === Automation recordings — dev tooling, not app code ===
+automation/videos/
+
+# === Package lock files — massive, no code value ===
+package-lock.json
+automation/package-lock.json
+
+# === SEO/config files — rarely need AI help with these ===
+robots.txt
+sitemap.xml
+manifest.json
+service-worker.js
+
+# === LLM context dumps — meta files, not source code ===
+llms.txt
+llms-full.txt
