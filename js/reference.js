@@ -15,6 +15,29 @@
   var cache = {};
   var modal, modalTitle, modalBody, modalClose;
 
+  /** Strip scripts/event handlers from fetched HTML before assigning to innerHTML. */
+  function sanitizeFetchedHtml(html) {
+    var doc = new DOMParser().parseFromString(html || '', 'text/html');
+    var body = doc.body;
+    if (!body) return '';
+    var kill = body.querySelectorAll('script, iframe, object, embed, link[rel="import"]');
+    var i;
+    for (i = 0; i < kill.length; i++) kill[i].remove();
+    body.querySelectorAll('*').forEach(function (el) {
+      var attrs = el.attributes;
+      var j;
+      for (j = attrs.length - 1; j >= 0; j--) {
+        var name = attrs[j].name;
+        if (/^on/i.test(name) || name === 'srcdoc') el.removeAttribute(name);
+      }
+      if (el.tagName === 'A') {
+        var h = el.getAttribute('href');
+        if (h && /^\s*javascript:/i.test(h)) el.setAttribute('href', '#');
+      }
+    });
+    return body.innerHTML;
+  }
+
   function buildNav() {
     var nav = document.getElementById('ref-menu-items') || document.getElementById('ref-nav');
     if (!nav) return;
@@ -49,9 +72,10 @@
         return r.text();
       })
       .then(function (html) {
-        cache[id] = html;
+        var safe = sanitizeFetchedHtml(html);
+        cache[id] = safe;
         if (modal.classList.contains('ref-modal-open')) {
-          modalBody.innerHTML = html;
+          modalBody.innerHTML = safe;
         }
       })
       .catch(function (err) {
@@ -61,7 +85,7 @@
 
   function show(title, html) {
     modalTitle.innerHTML = title;
-    modalBody.innerHTML = html;
+    modalBody.innerHTML = sanitizeFetchedHtml(html);
     modal.classList.add('ref-modal-open');
     document.body.classList.add('ref-modal-active');
     modalBody.scrollTop = 0;

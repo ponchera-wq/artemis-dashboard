@@ -33,9 +33,15 @@
   let activeTab = 'all';
 
   function stripHtml(s) {
-    return (s || '').replace(/<[^>]*>/g, '')
-      .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
-      .replace(/&nbsp;/g,' ').replace(/&#\d+;/g,'').trim();
+    var d = document.createElement('div');
+    d.innerHTML = s || '';
+    return (d.textContent || '').trim();
+  }
+
+  function safeHttpsUrl(href) {
+    if (!href || typeof href !== 'string') return '#';
+    var t = href.trim();
+    return /^https:\/\//i.test(t) ? t : '#';
   }
 
   function timeAgo(dateStr) {
@@ -120,25 +126,46 @@
       const excerpt = raw.slice(0, 120) + (raw.length > 120 ? '…' : '');
       const el      = document.createElement('div');
       el.className  = 'news-item';
-      const link    = item.link || '#';
+      const href    = safeHttpsUrl(item.link);
 
-      // Build "Published: Apr 2, 10:35 PM AEST" tooltip
-      let pubTooltip = '';
+      const src = document.createElement('div');
+      src.className = 'news-source';
+      const dot = document.createElement('span');
+      dot.className = 'news-dot';
+      src.appendChild(dot);
+      src.appendChild(document.createTextNode(item._src || 'RSS'));
+      el.appendChild(src);
+
+      const a = document.createElement('a');
+      a.className = 'news-title';
+      a.href = href;
+      if (href !== '#') {
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+      }
+      a.textContent = stripHtml(item.title || '');
+      el.appendChild(a);
+
+      if (excerpt) {
+        const desc = document.createElement('div');
+        desc.className = 'news-desc';
+        desc.textContent = excerpt;
+        el.appendChild(desc);
+      }
+
+      const timeEl = document.createElement('div');
+      timeEl.className = 'news-time';
+      timeEl.textContent = timeAgo(item.pubDate);
       if (item.pubDate) {
         const hasZone = /Z$|[+-]\d{2}:?\d{2}$|GMT|UTC/i.test(item.pubDate.trim());
         const norm    = hasZone ? item.pubDate : item.pubDate.trim().replace(' ', 'T') + 'Z';
         const pd      = new Date(norm);
         if (!isNaN(pd.getTime())) {
-          pubTooltip = `Published: ${fmtLocal(pd, true)} ${tzAbbr(pd)}`;
+          timeEl.title = `Published: ${fmtLocal(pd, true)} ${tzAbbr(pd)}`;
         }
       }
+      el.appendChild(timeEl);
 
-      el.innerHTML  = `
-        <div class="news-source"><span class="news-dot"></span>${item._src || 'RSS'}</div>
-        <a class="news-title" href="${link}" target="_blank" rel="noopener noreferrer">${stripHtml(item.title || '')}</a>
-        ${excerpt ? `<div class="news-desc">${excerpt}</div>` : ''}
-        <div class="news-time" ${pubTooltip ? `title="${pubTooltip}"` : ''}>${timeAgo(item.pubDate)}</div>
-      `;
       feed.appendChild(el);
     });
   }
