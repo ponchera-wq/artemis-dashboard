@@ -340,8 +340,12 @@
       /* Make interactive elements Amber */
       .sh-help-icon { color: var(--amber); border-color: rgba(255,167,38,0.5); }
       #ui-loc-status { color: var(--amber); }
-      .gear-input { border-color: rgba(255,167,38,0.25); }
+      .gear-input {
+        border-color: rgba(255,167,38,0.25);
+        font-size: max(16px, 0.9rem);
+      }
       .gear-input:focus { border-color: var(--amber); }
+      .loc-inline input { font-size: max(16px, 0.8rem); }
 
       /* Visual tweak for the 3D map on mobile */
       #sky-plot-container { width: 95%; }
