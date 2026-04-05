@@ -3,6 +3,7 @@ const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/observer.html',
+  '/data/mission-ephemeris.json',
   '/css/styles.css',
   '/js/shared.js',
   '/js/mission-ephemeris.js',
