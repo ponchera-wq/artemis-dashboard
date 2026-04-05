@@ -27,4 +27,5 @@ data/skyfield-data/
 # Automation
 automation/
 node_modules/
+min/
 *.webm
