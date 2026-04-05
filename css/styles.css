@@ -512,6 +512,7 @@
     .news-tabs {
       display: flex; flex-shrink: 0;
       border-bottom: 1px solid var(--border);
+      position: relative;
     }
     .news-tab {
       flex: 1;
@@ -1757,8 +1758,16 @@
       #feed-weather { min-height: 280px; flex-shrink: 0; }
 
       /* News tabs: scrollable row */
-      .news-tabs { overflow-x: auto; scrollbar-width: none; }
+      .news-tabs { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
       .news-tabs::-webkit-scrollbar { display: none; }
+      .news-tabs::after {
+        content: '';
+        position: absolute; right: 0; top: 0;
+        height: 100%; width: 32px;
+        background: linear-gradient(to right, transparent, var(--bg-panel, #0d1117));
+        pointer-events: none;
+        z-index: 1;
+      }
       .news-tab { flex: 0 0 auto; min-width: 60px; min-height: 44px; padding: 10px 16px; font-size: 0.58rem; }
 
       /* Timeline */
