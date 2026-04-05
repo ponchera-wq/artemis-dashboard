@@ -2480,6 +2480,11 @@
   flex-shrink: 0;
   height: 36px;
   z-index: 10;
+  max-height: 36px;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-direction: column;
+  align-items: stretch;
 }
 .ref-brand {
   font-family: 'Orbitron', sans-serif;
@@ -3016,10 +3021,11 @@ body.ref-modal-active {
 }
 
 #ref-nav.ref-nav-open {
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow-y: auto;
   flex-direction: column;
   align-items: stretch;
-  max-height: 100vh;
-  overflow-y: auto;
   position: sticky;
   top: 0;
   z-index: 9000;
