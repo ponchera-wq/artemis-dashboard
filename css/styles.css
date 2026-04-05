@@ -1714,7 +1714,8 @@
         grid-template-areas:
           "met        phase"
           "position   info"
-          "velocity   milestones";
+          "velocity   milestones"
+          "controls   controls";
         height: auto; flex-shrink: 0;
       }
       #top-bar > * + * { border-left: none; }
@@ -1724,7 +1725,9 @@
       #telem-info       { grid-area: info;       border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
       #telem-velocity   { grid-area: velocity;   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
       #telem-milestones { grid-area: milestones; border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
-      #tb-controls     { display: none; }
+      #tb-controls      { grid-area: controls; display: flex; align-items: center; justify-content: center; padding: 6px 12px; border-bottom: 1px solid var(--border); flex: none; }
+      #tb-controls .yt-expand-btn, #tb-controls .ref-observer-btn { display: none; }
+      #unit-toggle { width: auto !important; font-size: 0.52rem !important; padding: 5px 20px !important; }
 
       #met-display { font-size: clamp(1rem, 7vw, 1.5rem); }
       .telem-value { font-size: clamp(1.1rem, 7vw, 1.8rem); }
@@ -1793,8 +1796,8 @@
       .panel-expand, .yt-expand-btn,
       .news-tab, .tl-filter { min-height: 44px; }
 
-      /* Hide controls box on mobile */
-      #tb-controls { display: none; }
+      /* Hide expand/observer links inside controls box on mobile (unit toggle stays) */
+      #tb-controls #telem-expand-btn, #tb-controls .ref-observer-btn { display: none !important; }
 
       /* Overflow containment */
       #crew-strip { overflow-x: hidden; }
