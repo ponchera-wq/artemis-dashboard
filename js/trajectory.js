@@ -1008,7 +1008,16 @@
       });
 
       orionGroup.userData.hullMat.emissiveIntensity = 0.7 + pulse * 0.6;
-      glowMat.opacity = 0.08 + pulse * 0.15;
+
+      // Illumination-driven shadow effect from ObserverHorizons
+      var illu = (typeof ObserverHorizons !== 'undefined' && ObserverHorizons.isReady())
+        ? ObserverHorizons.getIllumination(metSec) : 100;
+      if (illu === null || illu === undefined) illu = 100;
+      illu = Math.max(0, Math.min(100, illu));
+      var shadowFactor = illu / 100;
+      orionGroup.userData.hullMat.emissive.setHex(0x050810).lerp(new THREE.Color(0x181818), shadowFactor);
+      orionLight.intensity = 0.5 * shadowFactor;
+      glowMat.opacity = (0.08 + pulse * 0.15) * (0.3 + 0.7 * shadowFactor);
       orionLight.position.copy(orionGroup.position);
 
       // Trail
