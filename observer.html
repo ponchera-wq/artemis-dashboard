@@ -654,7 +654,7 @@
 
       <div style="position:relative; background:rgba(0,8,20,0.9); border:1px solid rgba(0,229,255,0.18); border-radius:6px; overflow:hidden;">
         <!-- Canvas fills the panel -->
-        <canvas id="coverage-canvas" style="width:100%; height:280px; display:block;"></canvas>
+        <canvas id="coverage-canvas" aria-label="Ground track coverage map" style="width:100%; height:280px; display:block;"></canvas>
         <!-- HUD labels overlay -->
         <div style="position:absolute; top:10px; left:12px; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:6px 10px; pointer-events:none;">
           <div style="font-family:'Orbitron',sans-serif; font-size:0.36rem; letter-spacing:0.16em; color:rgba(0,229,255,0.55); margin-bottom:2px;">LINE OF SIGHT</div>
@@ -697,8 +697,8 @@
             <div id="sky-svg-wrap" style="position: absolute; inset:0;"></div>
             
             <!-- Three.js Visualizers -->
-            <canvas id="three-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%;"></canvas>
-            <canvas id="eyepiece-canvas" style="position: absolute; inset: 0; width: 100%; height: 100%;"></canvas>
+            <canvas id="three-canvas" aria-label="3D sky view showing spacecraft position" style="position: absolute; inset: 0; width: 100%; height: 100%;"></canvas>
+            <canvas id="eyepiece-canvas" aria-label="Simulated telescope eyepiece view" style="position: absolute; inset: 0; width: 100%; height: 100%;"></canvas>
             
             <!-- 3D situational legend -->
             <div id="sky-3d-legend" style="display:none; position:absolute; bottom:12px; left:12px; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); border:1px solid rgba(0,229,255,0.2); border-radius:4px; padding:6px 10px; font-family:'Share Tech Mono',monospace; font-size:0.48rem; letter-spacing:0.05em; z-index:20; pointer-events:none;">
@@ -713,7 +713,7 @@
             </div>
             
             <!-- Crosshair overlay for eyepiece -->
-            <canvas id="eyepiece-crosshair" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
+            <canvas id="eyepiece-crosshair" aria-label="Telescope crosshair overlay" style="position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10;"></canvas>
           </div>
         </div>
 
@@ -866,7 +866,7 @@
         <span class="map-subtitle">DRAG TO ROTATE · SCROLL TO ZOOM</span>
       </div>
       <div id="mission-map-canvas-wrap">
-        <canvas id="mission-map-canvas"></canvas>
+        <canvas id="mission-map-canvas" aria-label="Mission trajectory map"></canvas>
         <div id="mission-map-overlay">
           <div class="map-stat"><div class="map-stat-label">DIST FROM EARTH</div><div class="map-stat-val" id="map-dist">—</div></div>
           <div class="map-stat"><div class="map-stat-label">VELOCITY</div><div class="map-stat-val" id="map-vel">—</div></div>
