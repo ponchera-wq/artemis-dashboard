@@ -773,6 +773,11 @@
     Object.assign(popupEl.style, { position:'absolute',display:'none',background:'rgba(0,10,20,0.88)',border:'1px solid rgba(0,255,170,0.4)',borderRadius:'4px',padding:'10px 14px',zIndex:'5',maxWidth:'280px',minWidth:'200px',fontFamily:"'Share Tech Mono',monospace",pointerEvents:'auto',boxShadow:'0 0 12px rgba(0,255,170,0.25)' });
     container.appendChild(popupEl);
     var popupOpen = false;
+
+    // ── Osculating orbit overlay ──
+    if (typeof OsculatingOrbit !== 'undefined') {
+      OsculatingOrbit.init({ scene: scene, camera: camera, lctx: lctx, toScene: toScene, rotMat: rotMat, popupEl: popupEl });
+    }
     function closePopup() { popupEl.style.display = 'none'; popupOpen = false; }
     function openPopup(wp, sx, sy) {
       var nowMet = (Date.now()-LAUNCH_UTC)/1000;
@@ -829,6 +834,9 @@
       var my = (e.clientY - rect.top) * scaleY;
       
       console.log('[WP Click] Checking ' + wpClickAreas.length + ' areas at (' + mx.toFixed(0) + ',' + my.toFixed(0) + ')');
+
+      // Check osculating orbit periapsis dot (30 px radius)
+      if (typeof OsculatingOrbit !== 'undefined' && OsculatingOrbit.handleClick(mx, my)) return;
 
       // Check 2D label hit areas first
       for (var wi = wpClickAreas.length - 1; wi >= 0; wi--) {
@@ -1246,6 +1254,9 @@
           }
         }
       });
+
+      // Osculating orbit 2D label (drawn after clearRect, reuses same lctx)
+      if (typeof OsculatingOrbit !== 'undefined') OsculatingOrbit.update(metSec);
 
       if (progressEl) { var fd = Math.max(1, Math.floor(elapsed / (24*3600*1000)) + 1); progressEl.textContent = 'MISSION PROGRESS: ' + (gt*100).toFixed(1) + '%  \u00b7  FLIGHT DAY ' + fd; }
 
