@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artemis-dashboard-v10';
+const CACHE_NAME = 'artemis-dashboard-v11';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
