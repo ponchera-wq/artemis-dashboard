@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Artemis II — Observer Mode</title>
   <meta name="description" content="Artemis II Observer — point your telescope at Orion with real-time sky guidance.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,6 +22,7 @@
       font-family: 'Share Tech Mono', monospace;
       color: #e8eaf6; overflow-y: auto; overflow-x: hidden; min-height: 100vh;
       min-height: 100dvh;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
     }
     body::after {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 9999;
@@ -29,7 +30,13 @@
     }
 
     /* ── Sticky Nav ───────────────────────────────────────────────── */
-    #obs-sticky { position: sticky; top: 0; z-index: 1000; background: #08080f; border-bottom: 1px solid rgba(0,229,255,0.12); }
+    #obs-sticky {
+      position: sticky; top: 0; z-index: 1000;
+      background: #08080f; border-bottom: 1px solid rgba(0,229,255,0.12);
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-left: env(safe-area-inset-left, 0px);
+      padding-right: env(safe-area-inset-right, 0px);
+    }
     .obs-header {
       display: flex; justify-content: space-between; align-items: center;
       padding: 10px 24px;
