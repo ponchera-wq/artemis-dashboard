@@ -115,17 +115,18 @@ function tickTelem() {
   var moonVal  = Math.round(Math.max(0, moonKm));
   var speedVal = Math.round(Math.max(0, speedKmh));
 
+  var isMobile = window.innerWidth < 768;
   if (useImperial) {
     earthVal = Math.round(earthVal * KM_TO_MI);
     moonVal  = Math.round(moonVal  * KM_TO_MI);
     speedVal = Math.round(speedVal * KM_TO_MI);
-    tuEarth.textContent = 'MI';
-    tuMoon.textContent  = 'MI';
+    tuEarth.textContent = isMobile ? 'mi' : 'MI';
+    tuMoon.textContent  = isMobile ? 'mi' : 'MI';
     tuSpeed.textContent = 'MPH';
   } else {
-    tuEarth.textContent = 'KM';
-    tuMoon.textContent  = 'KM';
-    tuSpeed.textContent = 'KM/H';
+    tuEarth.textContent = isMobile ? 'km' : 'KM';
+    tuMoon.textContent  = isMobile ? 'km' : 'KM';
+    tuSpeed.textContent = isMobile ? 'km/h' : 'KM/H';
   }
 
   var eStr = (state.earthSign || '') + (state.earthSign ? ' ' : '') + fmt.format(earthVal);

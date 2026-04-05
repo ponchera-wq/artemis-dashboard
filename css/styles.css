@@ -1731,7 +1731,7 @@
       #unit-toggle { width: auto !important; font-size: 0.69rem !important; padding: 5px 20px !important; }
 
       #met-display { font-size: clamp(1rem, 7vw, 1.5rem); }
-      .telem-value { font-size: clamp(1.1rem, 7vw, 1.8rem); }
+      .telem-value { font-size: clamp(0.85rem, 5.5vw, 1.4rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .telem-label { font-size: 0.69rem !important; }
 
       /* Panels */
