@@ -519,7 +519,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
 
     function apply(collapsed) {
       panel.classList.toggle('mobile-collapsed', collapsed);
-      btn.textContent = collapsed ? '▸' : '▾';
+      btn.textContent = collapsed ? '▾' : '▴';
       btn.setAttribute('aria-expanded', String(!collapsed));
     }
 
