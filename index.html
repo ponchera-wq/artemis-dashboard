@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
   <!-- PWA -->
-  <meta name="theme-color" content="#0B3D91">
+  <meta name="theme-color" content="#0a0e1a">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -81,7 +81,9 @@
   }
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script>
     (function() {
       var v = Date.now();
@@ -186,7 +188,7 @@
       <div id="telem-odometer" style="display:flex; flex-direction:column; align-items:center;">
         <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em;">TOTAL TRAVELED</div>
         <div class="telem-val-row" style="align-items:baseline;">
-          <div class="telem-value" id="stat-odometer" style="font-size:0.95rem; line-height:1; color:var(--cyan); text-shadow:0 0 10px rgba(0,229,255,0.4);">—</div>
+          <div class="telem-value" id="stat-odometer" style="font-size:0.95rem; line-height:1; color:var(--cyan); text-shadow:0 0 10px rgba(184,240,0,0.4);">—</div>
           <div class="telem-unit" style="font-size:0.45rem; margin-left:4px; color:var(--cyan);">KM</div>
         </div>
         <div class="stat-sub" id="stat-odometer-sub" style="font-size:0.38rem; text-align:center;"></div>
@@ -215,7 +217,7 @@
         <div id="telem-badge" class="telem-badge-est" style="position:absolute; top:-2px; right:-20px;">EST</div>
       </div>
       
-      <div id="gforce-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(74,144,217,0.1); padding-top:6px; width:80%;">
+      <div id="gforce-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(168,224,0,0.1); padding-top:6px; width:80%;">
         <div class="stat-label" style="font-size:0.3rem;">G-FORCE</div>
         <div class="stat-value" id="stat-gforce" style="font-size:0.65rem;">—</div>
         <div class="stat-sub" id="stat-gforce-sub" style="font-size:0.35rem;">APPARENT ACCELERATION</div>
@@ -230,7 +232,7 @@
         <div class="stat-sub" id="perilune-dist">CLOSEST APPROACH: ~6,556 KM</div>
       </div>
 
-      <div id="splashdown-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(74,144,217,0.1); padding-top:6px; width:80%;">
+      <div id="splashdown-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(168,224,0,0.1); padding-top:6px; width:80%;">
         <div class="stat-label">SPLASHDOWN</div>
         <div class="stat-value" id="splashdown-countdown" style="font-size:0.9rem;">--:--:--</div>
         <div class="stat-sub" id="splashdown-date">10 APR · 17:00 UTC</div>
@@ -242,7 +244,7 @@
       <button class="yt-expand-btn" id="telem-expand-btn"
         style="font-size:0.42rem;padding:3px 10px;letter-spacing:0.12em;white-space:nowrap;width:100%;" title="Expand telemetry">&#x26F6; EXPAND</button>
       <button id="unit-toggle" title="Switch units"
-        style="color:var(--amber);border:1px solid rgba(255,167,38,0.5);background:none;font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.08em;padding:3px 9px;cursor:pointer;white-space:nowrap;width:100%;">KM · MILES</button>
+        style="color:var(--amber);border:1px solid rgba(255,40,0,0.5);background:none;font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.08em;padding:3px 9px;cursor:pointer;white-space:nowrap;width:100%;">KM · MILES</button>
       <a href="observer.html" class="ref-observer-btn tb-observer-btn" title="Observer mode">🔭 OBSERVER</a>
     </div>
   </div>
@@ -296,7 +298,7 @@
             <div class="to-gauge-unit" id="to-u-earth">MI</div>
           </div>
           <div class="to-gauge-annotation" id="to-a-earth"></div>
-          <div class="to-gauge-annotation" id="to-a-earth-analogy" style="color:rgba(74,144,217,0.65);"></div>
+          <div class="to-gauge-annotation" id="to-a-earth-analogy" style="color:rgba(168,224,0,0.65);"></div>
           <div class="to-gauge-trend" id="to-t-earth"></div>
         </div>
         <div class="to-gauge to-gauge-moon">
@@ -393,8 +395,8 @@
   <div class="panel" id="feed-arow">
     <div class="panel-header" style="letter-spacing:2px"><span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span><h2 class="panel-heading" style="letter-spacing:2px">MISSION TRAJECTORY — LIVE POSITION</h2><button class="yt-expand-btn panel-expand" data-panel="feed-arow" title="Expand">&#x26F6; EXPAND</button></div>
     <div id="trajectory-3d" style="flex:1;width:100%;min-height:0;position:relative;overflow:hidden;background:#000005;">
-      <div id="traj-progress" style="position:absolute;top:9px;left:0;width:100%;font-family:'Share Tech Mono',monospace;font-size:11px;color:rgba(74,144,217,0.9);pointer-events:none;z-index:10;letter-spacing:0.05em;text-align:center;"></div>
-      <div id="traj-tooltip" style="position:absolute;top:0;left:0;background:rgba(8,12,26,0.88);border:1px solid rgba(74,144,217,0.55);padding:3px 9px;font-family:'Share Tech Mono',monospace;font-size:11px;color:#a8d4ff;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:3;white-space:nowrap;border-radius:2px;"></div>
+      <div id="traj-progress" style="position:absolute;top:9px;left:0;width:100%;font-family:'Space Mono',monospace;font-size:11px;color:rgba(168,224,0,0.9);pointer-events:none;z-index:10;letter-spacing:0.05em;text-align:center;"></div>
+      <div id="traj-tooltip" style="position:absolute;top:0;left:0;background:rgba(8,12,26,0.88);border:1px solid rgba(168,224,0,0.55);padding:3px 9px;font-family:'Space Mono',monospace;font-size:11px;color:#a8d4ff;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:3;white-space:nowrap;border-radius:2px;"></div>
       <!-- Telemetry HUD overlay -->
       <div id="traj-hud" class="traj-hud">
         <div class="hud-section">
@@ -447,7 +449,7 @@
       <div id="signal-pill" class="acquired" style="margin-left:auto;" tabindex="0" role="button" aria-label="Toggle signal acquisition demo state">▶ SIGNAL ACQUIRED</div>
       <button class="yt-expand-btn panel-expand" data-panel="feed-dsn" title="Expand">&#x26F6; EXPAND</button>
     </div>
-    <div id="dsn-content"><div style="padding:16px;font-family:'Share Tech Mono',monospace;font-size:0.69rem;color:rgba(74,144,217,0.5);">CONNECTING TO DSN FEED…</div></div>
+    <div id="dsn-content"><div style="padding:16px;font-family:'Space Mono',monospace;font-size:0.69rem;color:rgba(168,224,0,0.5);">CONNECTING TO DSN FEED…</div></div>
     <div class="corner-tl"></div><div class="corner-br"></div>
   </div>
 
@@ -472,11 +474,11 @@
           <svg id="kp-svg" viewBox="0 0 200 170" style="width:100%;max-width:170px;overflow:visible;">
             <!-- bg arc (full 300°, dim) -->
             <path d="M 65 161 A 70 70 0 1 1 135 161"
-              fill="none" stroke="rgba(74,144,217,0.13)" stroke-width="15" stroke-linecap="round"/>
+              fill="none" stroke="rgba(168,224,0,0.13)" stroke-width="15" stroke-linecap="round"/>
             <!-- color zones overlay (decorative segments behind fill) -->
             <!-- G0-G1 green: 0–5/9 = 0–203.6 -->
             <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
-              stroke="rgba(0,230,118,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke="rgba(204,255,0,0.07)" stroke-width="15" stroke-linecap="round"
               stroke-dasharray="203.6 366.5"/>
             <!-- G2 yellow: 5–6/9 = 203.6–244.3 -->
             <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
@@ -484,7 +486,7 @@
               stroke-dasharray="40.7 366.5" stroke-dashoffset="-203.6"/>
             <!-- G3 orange: 6–7/9 = 244.3–285.1 -->
             <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
-              stroke="rgba(255,167,38,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke="rgba(255,40,0,0.07)" stroke-width="15" stroke-linecap="round"
               stroke-dasharray="40.7 366.5" stroke-dashoffset="-244.3"/>
             <!-- G4-G5 red: 7–9/9 = 285.1–366.5 -->
             <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
@@ -492,16 +494,16 @@
               stroke-dasharray="81.4 366.5" stroke-dashoffset="-285.1"/>
             <!-- active fill arc (updated by JS) -->
             <path id="kp-fill" d="M 65 161 A 70 70 0 1 1 135 161"
-              fill="none" stroke="#00e676" stroke-width="15" stroke-linecap="round"
+              fill="none" stroke="#ccff00" stroke-width="15" stroke-linecap="round"
               stroke-dasharray="0 366.5" stroke-dashoffset="0"/>
             <!-- scale labels -->
             <text x="42" y="168" text-anchor="middle"
-              font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(74,144,217,0.4)">0</text>
+              font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(168,224,0,0.4)">0</text>
             <text x="158" y="168" text-anchor="middle"
-              font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(74,144,217,0.4)">9</text>
+              font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(168,224,0,0.4)">9</text>
             <!-- Kp number (center) -->
             <text id="kp-val" x="100" y="100" text-anchor="middle" dominant-baseline="middle"
-              font-family="Share Tech Mono,monospace" font-size="30" fill="#4A90D9">—</text>
+              font-family="Share Tech Mono,monospace" font-size="30" fill="#a8e000">—</text>
             <!-- G label -->
             <text id="kp-g" x="100" y="128" text-anchor="middle"
               font-family="Orbitron,sans-serif" font-size="9" fill="#7986a8" letter-spacing="2">G0</text>
@@ -514,7 +516,7 @@
           <!-- X-ray flare badge -->
           <div>
             <div class="sw-label" style="margin-bottom:4px;">SOLAR X-RAY FLUX<button class="sw-info-btn" data-sw="xray" title="What is Solar X-Ray Flux?">ⓘ</button></div>
-            <div id="xray-badge" style="font-family:'Share Tech Mono',monospace;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:700;color:#00e676;text-shadow:0 0 12px rgba(0,230,118,0.5);line-height:1;">—</div>
+            <div id="xray-badge" style="font-family:'Space Mono',monospace;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:700;color:#ccff00;text-shadow:0 0 12px rgba(204,255,0,0.5);line-height:1;">—</div>
             <div id="xray-label" style="font-family:'Orbitron',sans-serif;font-size:0.42rem;letter-spacing:0.1em;color:var(--text-dim);margin-top:3px;">LOADING</div>
           </div>
 
@@ -522,9 +524,9 @@
           <div style="border-top:1px solid var(--border);padding-top:6px;">
             <div class="sw-label" style="margin-bottom:4px;">SOLAR WIND SPEED<button class="sw-info-btn" data-sw="wind" title="What is Solar Wind Speed?">ⓘ</button></div>
             <div style="display:flex;align-items:baseline;gap:4px;">
-              <span id="wind-speed" style="font-family:'Share Tech Mono',monospace;font-size:clamp(1rem,1.8vw,1.5rem);color:var(--blue-light);text-shadow:var(--glow-blue);">—</span>
-              <span style="font-family:'Share Tech Mono',monospace;font-size:0.69rem;color:var(--text-dim);">km/s</span>
-              <span id="wind-trend" style="font-family:'Share Tech Mono',monospace;font-size:1rem;margin-left:2px;"></span>
+              <span id="wind-speed" style="font-family:'Space Mono',monospace;font-size:clamp(1rem,1.8vw,1.5rem);color:var(--blue-light);text-shadow:var(--glow-blue);">—</span>
+              <span style="font-family:'Space Mono',monospace;font-size:0.69rem;color:var(--text-dim);">km/s</span>
+              <span id="wind-trend" style="font-family:'Space Mono',monospace;font-size:1rem;margin-left:2px;"></span>
             </div>
           </div>
 
@@ -534,7 +536,7 @@
       <!-- Radiation risk bar -->
       <div style="border-top:1px solid var(--border);padding-top:7px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
         <span class="sw-label" style="white-space:nowrap;">CREW RADIATION RISK<button class="sw-info-btn" data-sw="rad" title="What is Crew Radiation Risk?">ⓘ</button></span>
-        <span id="rad-label" style="font-family:'Orbitron',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:#00e676;text-shadow:0 0 10px rgba(0,230,118,0.4);">NOMINAL</span>
+        <span id="rad-label" style="font-family:'Orbitron',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:#ccff00;text-shadow:0 0 10px rgba(204,255,0,0.4);">NOMINAL</span>
       </div>
 
       <!-- What does this mean? -->
@@ -543,7 +545,7 @@
       <!-- NOAA link -->
       <div style="border-top:1px solid var(--border);padding-top:6px;flex-shrink:0;">
         <a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener"
-          style="font-family:'Share Tech Mono',monospace;font-size:0.69rem;color:#ffa726;letter-spacing:0.08em;text-decoration:none;transition:text-decoration 0.15s;"
+          style="font-family:'Space Mono',monospace;font-size:0.69rem;color:#ff2800;letter-spacing:0.08em;text-decoration:none;transition:text-decoration 0.15s;"
           onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">NOAA FULL OVERVIEW ↗</a>
       </div>
 
