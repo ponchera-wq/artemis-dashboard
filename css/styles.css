@@ -1784,6 +1784,7 @@
       #telem-velocity   { grid-area: velocity;   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; }
       #telem-milestones { grid-area: milestones; border-bottom: 1px solid var(--border); flex: none; }
       #tb-controls     { display: none; }
+      #ref-nav-end .ref-observer-btn { display: inline-flex; }
     }
 
     /* ══════════════════════════════════════════════════════════════════
@@ -1829,8 +1830,9 @@
       #telem-info       { grid-area: info;       border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
       #telem-velocity   { grid-area: velocity;   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
       #telem-milestones { grid-area: milestones; border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
-      #tb-controls      { grid-area: controls; display: flex; align-items: center; justify-content: center; padding: 6px 12px; border-bottom: 1px solid var(--border); flex: none; }
-      #tb-controls .yt-expand-btn, #tb-controls .ref-observer-btn { display: none; }
+      #tb-controls      { grid-area: controls; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 8px; padding: 6px 12px; border-bottom: 1px solid var(--border); flex: none; }
+      #tb-controls .yt-expand-btn { display: none; }
+      #ref-nav-end .ref-observer-btn { display: none; }
       /* Desktop .stat-block has min-width:80px — allow milestone cell to shrink in 2-col grid */
       #top-bar .stat-block { min-width: 0; }
       /* Nested column flex stacks inside telemetry cells */
@@ -1959,8 +1961,9 @@
       .panel-expand, .yt-expand-btn,
       .news-tab, .tl-filter { min-height: 44px; }
 
-      /* Hide expand/observer links inside controls box on mobile (unit toggle stays) */
-      #tb-controls #telem-expand-btn, #tb-controls .ref-observer-btn { display: none !important; }
+      /* Hide expand btn inside controls box on mobile (unit toggle + observer stay) */
+      #tb-controls #telem-expand-btn { display: none !important; }
+      #tb-controls .ref-observer-btn { display: inline-flex !important; }
 
       /* Overflow containment */
       #crew-strip { overflow-x: hidden; }
@@ -2571,10 +2574,14 @@
   #ref-brand-mobile {
     display: none !important;
   }
-  #ref-watching {
+  #ref-nav-end {
     grid-column: 3;
     grid-row: 1;
     justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
   }
   #ref-menu-items {
     grid-column: 1;
@@ -3182,9 +3189,23 @@ body.ref-modal-active {
     #ref-nav-toggle { color: var(--amber) !important; }
     
     .ref-observer-btn {
+      font-family: var(--font-ui);
+      font-size: 0.69rem;
+      letter-spacing: 0.08em;
+      padding: 3px 8px;
+      border: 1px solid rgba(255,167,38,0.5);
       color: var(--amber) !important;
-      border-color: rgba(255,167,38,0.5) !important;
+      background: rgba(255,167,38,0.08);
+      border-radius: 2px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      cursor: pointer;
     }
+    /* Mobile-only observer btn in controls box is hidden on desktop/tablet */
+    #tb-controls .ref-observer-btn { display: none; }
     .ref-observer-btn:hover {
       background: rgba(255,167,38,0.1) !important;
       border-color: var(--amber) !important;
