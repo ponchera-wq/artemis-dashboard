@@ -168,7 +168,11 @@
       font-family: 'Share Tech Mono', monospace; font-size: 0.9rem; padding: 7px 10px;
       border-radius: 3px; width: 100%; transition: border-color 0.2s;
     }
-    .gear-input:focus { outline: none; border-color: var(--amber); }
+    .gear-input:focus {
+      outline: 2px solid var(--amber);
+      outline-offset: 2px;
+      border-color: var(--amber);
+    }
     .hyperstar-touch {
       display: flex; align-items: center; gap: 8px;
       min-height: 44px; padding: 8px 0; margin-top: 6px;
@@ -191,7 +195,11 @@
       font-family: 'Share Tech Mono', monospace; font-size: 0.8rem; padding: 5px 7px;
       border-radius: 3px; width: 100%; transition: border-color 0.2s;
     }
-    .loc-inline input:focus { outline: none; border-color: rgba(255,204,0,0.7); }
+    .loc-inline input:focus {
+      outline: 2px solid var(--amber);
+      outline-offset: 2px;
+      border-color: rgba(255,204,0,0.7);
+    }
     .loc-inline > div:last-child { /* button column */
       display: flex; flex-direction: row; gap: 5px;
     }
@@ -375,7 +383,11 @@
         border-color: rgba(255,167,38,0.25);
         font-size: max(16px, 0.9rem);
       }
-      .gear-input:focus { border-color: var(--amber); }
+      .gear-input:focus {
+        outline: 2px solid var(--amber);
+        outline-offset: 2px;
+        border-color: var(--amber);
+      }
       .loc-inline input { font-size: max(16px, 0.8rem); }
 
       /* Visual tweak for the 3D map on mobile */
