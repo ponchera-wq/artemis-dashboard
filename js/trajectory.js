@@ -6,6 +6,8 @@
   var container = document.getElementById('trajectory-3d');
   if (!container || typeof THREE === 'undefined') return;
 
+  var _loopStarted = false;
+
   var MISSION_MS = 10 * 24 * 3600 * 1000;
   var EARTH_R_KM = 6371;
   var SCENE_EARTH_R = 0.9;
@@ -935,11 +937,21 @@
     });
 
     var _animFrameId;
+    function scheduleNextFrame() {
+      _animFrameId = requestAnimationFrame(function() {
+        _animFrameId = null;
+        animate();
+      });
+    }
     function animate() {
-      _animFrameId = requestAnimationFrame(animate);
+      if (_animFrameId != null) return;
+      _loopStarted = true;
       var now = Date.now();
       if (reduceMotion) {
-        if (now - lastReducedRenderMs < 250) return;
+        if (now - lastReducedRenderMs < 250) {
+          scheduleNextFrame();
+          return;
+        }
         lastReducedRenderMs = now;
       }
       var elapsed = now - LAUNCH_UTC;
@@ -1245,6 +1257,8 @@
            mtNt.textContent = 'COMPLETE';
         }
       }
+
+      scheduleNextFrame();
     }
     animate();
 
@@ -1503,11 +1517,13 @@
 
     document.addEventListener('visibilitychange', function() {
       if (document.hidden) {
+        if (!_loopStarted) return;
         if (_animFrameId) cancelAnimationFrame(_animFrameId);
         _animFrameId = null;
         clearInterval(_hudInterval);
       } else {
         animate();
+        clearInterval(_hudInterval);
         _hudInterval = setInterval(tickHUD, 2000);
       }
     });
