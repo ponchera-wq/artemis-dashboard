@@ -980,7 +980,8 @@
       top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       width: 200px; height: 200px;
-      background: url('artemis-logo.png') center/contain no-repeat;
+      background: center/contain no-repeat;
+      background-image: image-set(url('artemis-logo.webp') type('image/webp'), url('artemis-logo.png') type('image/png'));
       opacity: 0.04;
       pointer-events: none;
       z-index: 0;

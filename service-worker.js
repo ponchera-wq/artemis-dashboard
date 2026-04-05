@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artemis-dashboard-v12';
+const CACHE_NAME = 'artemis-dashboard-v13';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -28,6 +28,8 @@ const STATIC_ASSETS = [
   '/css/icon-512.png',
   '/css/icon-192-maskable.png',
   '/css/icon-512-maskable.png',
+  '/og-preview.webp',
+  '/css/artemis-logo.webp',
   '/content/mission.html',
   '/content/science.html',
   '/content/sls.html',
