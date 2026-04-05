@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Artemis II — Observer Mode</title>
   <meta name="description" content="Artemis II Observer — point your telescope at Orion with real-time sky guidance.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,6 +14,9 @@
     /* ── Reset ──────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
     html { background: #05050d; }
+    #coverage-canvas, #three-canvas, #eyepiece-canvas, #eyepiece-crosshair, #mission-map-canvas {
+      touch-action: none;
+    }
     body {
       margin: 0; padding: 0; background: #05050d;
       font-family: 'Share Tech Mono', monospace;
