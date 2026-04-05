@@ -4,9 +4,9 @@
   const DSN_URL = 'https://eyes.nasa.gov/dsn/data/dsn.xml';
   const ART_IDS = new Set(['EM2','ORION','ART2','ARTEMIS','ARTII','ORXII']);
   const STATIONS = {
-    gdscc: { name: 'Goldstone', flag: '🇺🇸', tz: -25200000, mx: 52.6,  my: 24.3 },
-    mdscc: { name: 'Madrid',    flag: '🇪🇸', tz:  7200000,  mx: 146.5, my: 22.0 },
-    cdscc: { name: 'Canberra',  flag: '🇦🇺', tz:  39600000, mx: 274.2, my: 55.7 },
+    gdscc: { name: 'Goldstone', flag: '🇺🇸', timeZone: 'America/Los_Angeles', mx: 52.6,  my: 24.3 },
+    mdscc: { name: 'Madrid',    flag: '🇪🇸', timeZone: 'Europe/Madrid',      mx: 146.5, my: 22.0 },
+    cdscc: { name: 'Canberra',  flag: '🇦🇺', timeZone: 'Australia/Canberra',  mx: 274.2, my: 55.7 },
   };
   const BIG_DISHES = new Set([14, 43, 63]);
   const BAND_INFO = {
@@ -74,9 +74,14 @@
     if (km > 0) { const sec = (km * 2) / 299792.458; return { str: fmtRTLT(sec) + ' ~', sec }; }
     return null;
   }
-  function stationTime(tz) {
-    const d = new Date(Date.now() + tz);
-    return d.getUTCHours().toString().padStart(2,'0') + ':' + d.getUTCMinutes().toString().padStart(2,'0');
+  function stationTime(timeZone) {
+    return new Intl.DateTimeFormat('en-GB', {
+      timeZone: timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    }).format(new Date());
   }
   function dishSize(num) { return BIG_DISHES.has(parseInt(num)) ? '70m' : '34m'; }
   function bandInfo(b)   { return BAND_INFO[(b||'').toUpperCase()] || { name: b ? b+'-band' : '', freq: '', color: '#4A90D9' }; }
@@ -300,7 +305,7 @@
             <span class="dsn-complex-flag">${si.flag}</span>
             <div>
               <div class="dsn-complex-name">${si.name.toUpperCase()}</div>
-              <div class="dsn-complex-detail">${on ? cnt+' DISH TRACKING ART-II' : 'NO ART-II LINK'} · ${stationTime(si.tz)} LT</div>
+              <div class="dsn-complex-detail">${on ? cnt+' DISH TRACKING ART-II' : 'NO ART-II LINK'} · ${stationTime(si.timeZone)} LT</div>
             </div>
           </div>`;
         }).join('') +
