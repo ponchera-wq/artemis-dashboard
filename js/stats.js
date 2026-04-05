@@ -67,8 +67,30 @@ function tickSplashdown() {
   elSplashdown.className = cls;
 }
 
-function tickPerilune() {
-  if (!elPerilune || typeof PERILUNE_UTC === 'undefined') return;
+function tickPerilune(metSec) {
+  if (!elPerilune) return;
+  // Use Horizons-derived seconds when available
+  if (ObserverHorizons.isReady() && metSec !== undefined) {
+    var secsLeft = ObserverHorizons.getSecsToPerilune(metSec);
+    if (secsLeft !== null) {
+      var str, cls = 'stat-value';
+      if (secsLeft > 0) {
+        var h = Math.floor(secsLeft / 3600);
+        var m = Math.floor((secsLeft % 3600) / 60);
+        var s = Math.floor(secsLeft % 60);
+        str = 'Perilune in ' + pad(h) + ':' + pad(m) + ':' + pad(s);
+        if (secsLeft < 6 * 3600) cls += ' imminent';
+      } else {
+        str = 'Perilune passed \u2013 closest approach 8,281 km';
+        cls += ' complete';
+      }
+      elPerilune.textContent = str;
+      elPerilune.className = cls;
+      return;
+    }
+  }
+  // Fallback: wall-clock PERILUNE_UTC
+  if (typeof PERILUNE_UTC === 'undefined') return;
   var diff = PERILUNE_UTC - Date.now();
   var absDiff = Math.abs(diff);
   var str, cls = 'stat-value';
@@ -195,7 +217,7 @@ function tickTelem() {
 
   // Countdown clocks
   tickSplashdown();
-  tickPerilune();
+  tickPerilune(metSec);
 }
 
 var _unitToggle = document.getElementById('unit-toggle');
