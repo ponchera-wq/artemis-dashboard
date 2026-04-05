@@ -3,8 +3,9 @@
 // ══════════════════════════════════════════════════════════════════════
 
 window.NASA_API_KEY = 'NkWaGNE5rQyjA2k7cwhJhPzzSblE9MILSMEBP6yD';
-window.LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
-window.SPLASHDOWN_MET_SEC = 824760;
+window.LAUNCH_UTC = new Date('2026-04-01T22:35:12Z');
+/* Nominal splashdown 2026-04-10T17:00:00Z; MET = 757,488 s (763,488 would be 18:40 UTC) */
+window.SPLASHDOWN_MET_SEC = 757488;
 window.SPLASHDOWN_UTC = new Date(window.LAUNCH_UTC.getTime() + window.SPLASHDOWN_MET_SEC * 1000);
 window.PERILUNE_MET_SEC = 433611.319;
 window.PERILUNE_UTC = new Date(window.LAUNCH_UTC.getTime() + window.PERILUNE_MET_SEC * 1000);

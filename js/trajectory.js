@@ -1394,12 +1394,12 @@
     var DV_BUDGET = [
       { metSec: 0, dv: 3900 }, { metSec: 2940, dv: 3700 }, { metSec: 6477, dv: 3400 },
       { metSec: 90000, dv: 1600 }, { metSec: 187200, dv: 1500 }, { metSec: 540000, dv: 800 },
-      { metSec: 820800, dv: 50 }, { metSec: 824760, dv: 0 },
+      { metSec: 753528, dv: 50 }, { metSec: 757488, dv: 0 },
     ];
     var ECC_PHASES = [
       { metSec: 0, ecc: 0.01 }, { metSec: 2940, ecc: 0.35 }, { metSec: 6477, ecc: 0.80 },
       { metSec: 90000, ecc: 0.97 }, { metSec: 360000, ecc: 1.20 }, { metSec: 433500, ecc: 1.80 },
-      { metSec: 540000, ecc: 0.97 }, { metSec: 820800, ecc: 0.98 },
+      { metSec: 540000, ecc: 0.97 }, { metSec: 757488, ecc: 0.98 },
     ];
 
     function lerpTable(table, key, val) {

@@ -1910,7 +1910,7 @@ function initObserverUI() {
     // ── PRO: Mission Phase Timeline ──────────────────────────────────
     function updateMissionTimeline(met) {
         if (!timelineProgress) return;
-        const totalDuration = 824760; // Launch to Splashdown
+        const totalDuration = 757488; // Launch to Splashdown (nominal MET)
         const pct = Math.min(100, Math.max(0, (met / totalDuration) * 100));
         timelineProgress.style.width = pct + "%";
         

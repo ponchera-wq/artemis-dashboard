@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const Astronomy = require('./astronomy.js');
 
-const LAUNCH_UTC = new Date('2026-04-01T22:35:00Z');
+const LAUNCH_UTC = new Date('2026-04-01T22:35:12Z');
 const EARTH_R_KM = 6371.0;
 const MOON_R_KM = 1737.0;
 

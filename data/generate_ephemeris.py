@@ -110,7 +110,7 @@ def to_json(points):
         })
     return {
         'meta': {
-            'launchUtc': '2026-04-01T22:35:00Z',
+            'launchUtc': '2026-04-01T22:35:12Z',
             'frame': 'EME2000',
             'oemSource': 'artemis2_oem.asc',
             'moonSource': 'DE440s via skyfield',
