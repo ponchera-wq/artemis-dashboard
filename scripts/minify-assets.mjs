@@ -8,6 +8,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { minify as terserMinify } from 'terser';
 import { minify as minifyCss } from 'csso';
+import { PostHog } from 'posthog-node';
+
+const posthog = new PostHog(process.env.POSTHOG_API_KEY, {
+  host: process.env.POSTHOG_HOST,
+  flushAt: 1,
+  flushInterval: 0,
+  enableExceptionAutocapture: true,
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
@@ -39,3 +47,15 @@ if (fs.existsSync(ephem)) {
 }
 
 console.log('Wrote min/js, min/css/styles.css, min/data/mission-ephemeris.json');
+
+const jsFileCount = fs.readdirSync(jsDir).filter((x) => x.endsWith('.js')).length;
+posthog.capture({
+  distinctId: 'artemis-pipeline',
+  event: 'assets minified',
+  properties: {
+    js_file_count: jsFileCount,
+    css_minified: fs.existsSync(cssPath),
+    ephemeris_minified: fs.existsSync(ephem),
+  },
+});
+await posthog.shutdown();

@@ -42,7 +42,8 @@ function initObserverUI() {
     let obsAlt = DEFAULT_ELEV;
     let isReady = true; 
     let useEyepiece = false;
-    let cloudCoverPct = null;   // cached from Open-Meteo
+    let cloudCoverPct = null;   // cached cloud cover % from Open-Meteo
+    let lastWeatherData = null; // full weather object from Open-Meteo
     let coverageBluemarble = null; // preloaded texture for 2D map
     // Preload Blue Marble
     (() => {
@@ -464,17 +465,104 @@ function initObserverUI() {
         if (heroAwaiting) heroAwaiting.style.display = 'none';
     }
 
-    // ── Cloud cover fetch (Open-Meteo, free, no API key) ────────────────
-    async function fetchCloudCover(lat, lon) {
+    // ── Weather fetch (Open-Meteo, free, no API key) ─────────────────────
+    async function fetchWeather(lat, lon) {
         try {
-            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=cloud_cover&forecast_days=1`;
+            const params = [
+                'cloud_cover', 'visibility', 'precipitation',
+                'weather_code', 'dew_point_2m', 'temperature_2m',
+                'wind_speed_10m', 'wind_gusts_10m', 'relative_humidity_2m'
+            ].join(',');
+            const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=${params}&forecast_days=1&wind_speed_unit=kmh`;
             const res = await fetch(url);
             if (!res.ok) return null;
             const data = await res.json();
-            return data.current?.cloud_cover ?? null;
+            return data.current ?? null;
         } catch {
             return null;
         }
+    }
+
+    // ── WMO weather code → short description ──────────────────────────────
+    function wmoDesc(code) {
+        if (code === 0)              return 'Clear sky';
+        if (code <= 3)               return 'Partly cloudy';
+        if (code <= 9)               return 'Haze / dust';
+        if (code <= 19)              return 'Patchy precipitation';
+        if (code <= 29)              return 'Thunderstorm (recent)';
+        if (code <= 39)              return 'Dust storm';
+        if (code <= 48)              return 'Fog';
+        if (code <= 59)              return 'Drizzle';
+        if (code <= 69)              return 'Rain';
+        if (code <= 79)              return 'Snow';
+        if (code <= 82)              return 'Rain showers';
+        if (code <= 86)              return 'Snow showers';
+        if (code <= 94)              return 'Hail showers';
+        return 'Thunderstorm';
+    }
+
+    // ── Multi-factor weather verdict ──────────────────────────────────────
+    function calcWeatherVerdict(d) {
+        const cc   = d.cloud_cover          ?? 0;
+        const wc   = d.weather_code         ?? 0;
+        const prec = d.precipitation        ?? 0;
+        const wind = d.wind_speed_10m       ?? 0;
+        const temp = d.temperature_2m       ?? 15;
+        const dew  = d.dew_point_2m         ?? 10;
+        const hum  = d.relative_humidity_2m ?? 50;
+        const vis  = d.visibility           ?? 10000;
+        const dm   = temp - dew; // dew point margin
+
+        // Hard no-gos regardless of cloud
+        if (prec > 0)
+            return { grade: 'NO-GO', detail: 'Precipitation detected — pack up', color: 'red', cardCls: 'red-card', ico: '🌧' };
+        if (wc >= 45 && wc <= 48)
+            return { grade: 'NO-GO', detail: 'Fog reported — zero visibility', color: 'red', cardCls: 'red-card', ico: '🌫' };
+        if (wc >= 95)
+            return { grade: 'NO-GO', detail: 'Thunderstorm in progress', color: 'red', cardCls: 'red-card', ico: '⛈' };
+        if (wc >= 61 && wc <= 69)
+            return { grade: 'NO-GO', detail: 'Rain reported — optics at risk', color: 'red', cardCls: 'red-card', ico: '🌧' };
+        if (wc >= 51 && wc <= 59)
+            return { grade: 'NO-GO', detail: 'Drizzle reported — optics at risk', color: 'red', cardCls: 'red-card', ico: '🌦' };
+
+        // Heavy overcast
+        if (cc > 60)
+            return { grade: 'OVERCAST', detail: `${cc}% cloud cover — sky blocked`, color: 'red', cardCls: 'red-card', ico: '☁' };
+
+        // Partly cloudy — marginal at best regardless of other factors
+        if (cc > 20) {
+            const windNote = wind > 25 ? ` · ${Math.round(wind)} km/h wind` : '';
+            return { grade: 'PARTLY CLOUDY', detail: `${cc}% cloud — patchy interruptions likely${windNote}`, color: 'amber', cardCls: 'amber-card', ico: '🌤' };
+        }
+
+        // Clear sky — rate secondary factors
+        let score = 0;
+        let limit = null;
+
+        // Wind (0–2)
+        if (wind < 10)       score += 2;
+        else if (wind < 25) { score += 1; limit = limit ?? `${Math.round(wind)} km/h wind`; }
+        else                {             limit = limit ?? `${Math.round(wind)} km/h wind — poor seeing`; }
+
+        // Dew margin (0–2)
+        if (dm > 5)       score += 2;
+        else if (dm > 2) { score += 1; limit = limit ?? `Low dew margin (∆T ${dm.toFixed(1)}°C)`; }
+        else             {             limit = limit ?? `Dew risk — ∆T only ${dm.toFixed(1)}°C`; }
+
+        // Humidity (0–1)
+        if (hum < 60)       score += 1;
+        else if (hum < 80) {           limit = limit ?? `${Math.round(hum)}% humidity`; }
+        else               {           limit = limit ?? `High humidity: ${Math.round(hum)}%`; }
+
+        // Visibility (0–1)
+        if (vis >= 10000)      score += 1;
+        else if (vis >= 5000) { limit = limit ?? `Visibility ${(vis/1000).toFixed(0)} km`; }
+        else                  { limit = limit ?? `Poor visibility: ${(vis/1000).toFixed(0)} km`; }
+
+        // Max score = 6
+        if (score >= 5) return { grade: 'EXCELLENT',  detail: 'All conditions optimal for imaging',   color: 'green', cardCls: 'green-card', ico: '✅' };
+        if (score >= 3) return { grade: 'GOOD',        detail: limit ?? 'Conditions favorable',        color: 'green', cardCls: 'green-card', ico: '🔭' };
+        return              { grade: 'MARGINAL',    detail: limit ?? 'Multiple limiting factors',    color: 'amber', cardCls: 'amber-card', ico: '⚠' };
     }
 
     // ── Elevation API fetch (open-elevation.com) ───────────────────────
@@ -515,11 +603,12 @@ function initObserverUI() {
         }
         // Update thin-atmosphere badge
         updateElevBadge(obsAlt);
-        // Fetch cloud cover in background (non-blocking)
-        fetchCloudCover(lat, lon).then(cc => {
-            if (cc != null) {
-                cloudCoverPct = cc;
-                updateCloudVerdict(cc);
+        // Fetch full weather in background (non-blocking)
+        fetchWeather(lat, lon).then(wx => {
+            if (wx != null) {
+                cloudCoverPct   = wx.cloud_cover ?? null;
+                lastWeatherData = wx;
+                updateWeatherVerdict(wx);
             }
         });
         // Trigger immediate redraw
@@ -540,25 +629,65 @@ function initObserverUI() {
     // set initial badge state
     updateElevBadge(obsAlt);
 
-    function updateCloudVerdict(cc) {
-        const el    = document.getElementById('vc-weather-main');
-        const det   = document.getElementById('vc-weather-detail');
-        const card  = document.getElementById('vc-weather');
-        const icon  = document.getElementById('vc-weather-icon');
+    function updateWeatherVerdict(d) {
+        const el   = document.getElementById('vc-weather-main');
+        const det  = document.getElementById('vc-weather-detail');
+        const card = document.getElementById('vc-weather');
+        const icon = document.getElementById('vc-weather-icon');
         if (!el) return;
-        let main, detail, cls, cardCls, ico;
-        if (cc < 20)  { main='SKY CLEAR'; detail=`Cloud cover: ${cc}% — excellent transparency for imaging.`; cls='green'; cardCls='green-card'; ico='✅'; }
-        else if(cc < 60){ main='PARTLY CLOUDY'; detail=`Cloud cover: ${cc}% — patchy cloud may interrupt imaging.`; cls='amber'; cardCls='amber-card'; ico='🌤'; }
-        else           { main='OBSCURED — NO-GO'; detail=`Cloud cover: ${cc}% — heavy cloud, imaging not possible tonight.`; cls='red'; cardCls='red-card'; ico='⛅'; }
-        el.textContent  = main; el.className = 'verdict-main ' + cls;
-        if (det)  det.textContent  = detail;
-        if (card) card.className   = 'verdict-card ' + cardCls;
-        if (icon) icon.textContent = ico;
+
+        const v = calcWeatherVerdict(d);
+        el.textContent = v.grade;
+        el.className   = 'verdict-main ' + v.color;
+        if (det)  det.textContent = v.detail;
+        if (card) card.className  = 'verdict-card ' + v.cardCls;
+        if (icon) icon.textContent = v.ico;
+
+        // Populate stats chips
+        const cc   = d.cloud_cover          ?? null;
+        const wind = d.wind_speed_10m       ?? null;
+        const hum  = d.relative_humidity_2m ?? null;
+        const dm   = (d.temperature_2m != null && d.dew_point_2m != null)
+                     ? (d.temperature_2m - d.dew_point_2m) : null;
+
+        const wsCloud = document.getElementById('ws-cloud');
+        const wsWind  = document.getElementById('ws-wind');
+        const wsHumid = document.getElementById('ws-humid');
+        const wsDew   = document.getElementById('ws-dew');
+        const statsEl = document.getElementById('vc-weather-stats');
+
+        if (wsCloud) wsCloud.textContent = cc   != null ? `☁ ${Math.round(cc)}%`               : '';
+        if (wsWind)  wsWind.textContent  = wind != null ? `💨 ${Math.round(wind)} km/h`         : '';
+        if (wsHumid) wsHumid.textContent = hum  != null ? `💧 ${Math.round(hum)}%`              : '';
+        if (wsDew)   wsDew.textContent   = dm   != null ? `∆T ${dm >= 0 ? '+' : ''}${dm.toFixed(1)}°C` : '';
+        if (statsEl) statsEl.style.display = 'flex';
     }
+
     // Try to fetch on load with default location
-    fetchCloudCover(DEFAULT_LAT, DEFAULT_LON).then(cc => {
-        if (cc != null) { cloudCoverPct = cc; updateCloudVerdict(cc); }
+    fetchWeather(DEFAULT_LAT, DEFAULT_LON).then(wx => {
+        if (wx != null) {
+            cloudCoverPct   = wx.cloud_cover ?? null;
+            lastWeatherData = wx;
+            updateWeatherVerdict(wx);
+        }
     });
+
+    // ── Weather info popup ────────────────────────────────────────────────
+    (function initWxPopup() {
+        const popup    = document.getElementById('wx-info-popup');
+        const openBtn  = document.getElementById('wx-info-btn');
+        const closeBtn = document.getElementById('wx-info-close');
+        const backdrop = document.getElementById('wx-popup-backdrop');
+        if (!popup || !openBtn) return;
+
+        function openPopup()  { popup.classList.add('open');    document.body.style.overflow = 'hidden'; }
+        function closePopup() { popup.classList.remove('open'); document.body.style.overflow = ''; }
+
+        openBtn.addEventListener('click',  e => { e.stopPropagation(); openPopup(); });
+        if (closeBtn)  closeBtn.addEventListener('click', closePopup);
+        if (backdrop)  backdrop.addEventListener('click', closePopup);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape' && popup.classList.contains('open')) closePopup(); });
+    })();
 
     // ── Wire in-elev input to obsAlt live ───────────────────────────────
     const inElevEl = document.getElementById('in-elev');

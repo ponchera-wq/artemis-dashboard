@@ -1,6 +1,14 @@
 const fs = require('fs');
 const path = require('path');
 const Astronomy = require('./astronomy.js');
+const { PostHog } = require('posthog-node');
+
+const posthog = new PostHog(process.env.POSTHOG_API_KEY, {
+    host: process.env.POSTHOG_HOST,
+    flushAt: 1,
+    flushInterval: 0,
+    enableExceptionAutocapture: true,
+});
 
 const LAUNCH_UTC = new Date('2026-04-01T22:35:12Z');
 const EARTH_R_KM = 6371.0;
@@ -108,29 +116,59 @@ function downsample(points, targetCount = 640) {
 const oemPath = path.join(__dirname, 'Artemis_II_OEM_2026_04_03_to_EI-1.asc');
 const outPath = path.join(__dirname, 'mission-ephemeris.json');
 
-console.log('Parsing OEM file...');
-const points = parseOEM(oemPath);
-console.log(`Parsed ${points.length} points.`);
+async function main() {
+    try {
+        console.log('Parsing OEM file...');
+        const points = parseOEM(oemPath);
+        console.log(`Parsed ${points.length} points.`);
 
-console.log('Calculating Moon positions and derived metrics...');
-const { processed, periluneMetSec, minMoonDist } = processPoints(points);
-console.log(`New Perilune identified at MET ${periluneMetSec.toFixed(3)}s with distance ${minMoonDist} km`);
+        console.log('Calculating Moon positions and derived metrics...');
+        const { processed, periluneMetSec, minMoonDist } = processPoints(points);
+        console.log(`New Perilune identified at MET ${periluneMetSec.toFixed(3)}s with distance ${minMoonDist} km`);
 
-console.log('Downsampling...');
-const sampled = downsample(processed, 640);
+        console.log('Downsampling...');
+        const sampled = downsample(processed, 640);
 
-const finalJson = {
-    meta: {
-        launchUtc: LAUNCH_UTC.toISOString().replace('.000Z', 'Z'),
-        frame: 'EME2000',
-        oemSource: 'Artemis_II_OEM_2026_04_03_to_EI-1.asc',
-        moonSource: 'astronomy-engine@2.1.19',
-        generated: new Date().toISOString().replace('.000Z', 'Z'),
-        pointCount: sampled.length,
-        periluneMetSec: periluneMetSec
-    },
-    points: sampled
-};
+        const finalJson = {
+            meta: {
+                launchUtc: LAUNCH_UTC.toISOString().replace('.000Z', 'Z'),
+                frame: 'EME2000',
+                oemSource: 'Artemis_II_OEM_2026_04_03_to_EI-1.asc',
+                moonSource: 'astronomy-engine@2.1.19',
+                generated: new Date().toISOString().replace('.000Z', 'Z'),
+                pointCount: sampled.length,
+                periluneMetSec: periluneMetSec
+            },
+            points: sampled
+        };
 
-fs.writeFileSync(outPath, JSON.stringify(finalJson));
-console.log(`Successfully wrote ${outPath}`);
+        fs.writeFileSync(outPath, JSON.stringify(finalJson));
+        console.log(`Successfully wrote ${outPath}`);
+
+        posthog.capture({
+            distinctId: 'artemis-pipeline',
+            event: 'ephemeris generation completed',
+            properties: {
+                raw_point_count: points.length,
+                sampled_point_count: sampled.length,
+                perilune_met_sec: periluneMetSec,
+                min_moon_dist_km: minMoonDist,
+                oem_source: 'Artemis_II_OEM_2026_04_03_to_EI-1.asc',
+            },
+        });
+    } catch (err) {
+        posthog.captureException(err, 'artemis-pipeline');
+        posthog.capture({
+            distinctId: 'artemis-pipeline',
+            event: 'ephemeris generation failed',
+            properties: {
+                error_message: err.message,
+            },
+        });
+        throw err;
+    } finally {
+        await posthog.shutdown();
+    }
+}
+
+main();

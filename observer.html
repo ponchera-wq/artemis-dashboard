@@ -1105,5 +1105,43 @@
         person_profiles: 'identified_only',
     });
 </script>
+
+<!-- PostHog: custom interaction tracking -->
+<script>
+(function () {
+  if (typeof window.posthog === 'undefined') return;
+
+  // Section expand/collapse buttons — .panel-header elements contain .panel-collapse-btn chevrons.
+  // observer-ui.js clones .panel-header nodes to strip conflicting listeners, so we use
+  // document-level delegation instead of direct listeners (which would be silently dropped).
+  // Guard mirrors observer-ui.js: skip clicks on button/a/input children.
+  // By the time the event bubbles to document, observer-ui.js has already toggled
+  // the 'collapsed' class, so we read post-toggle state to determine expand vs collapse.
+  document.addEventListener('click', function (e) {
+    var header = e.target.closest('.panel-header');
+    if (!header) return;
+    if (e.target.closest('button, a, input')) return;
+
+    var panel = header.parentElement;
+    var isNowCollapsed = panel ? panel.classList.contains('collapsed') : null;
+
+    // Post-toggle: collapsed=true means the user just collapsed; false means just expanded
+    var action = isNowCollapsed ? 'collapsed' : 'expanded';
+
+    var titleEl = header.querySelector('.sh-title');
+    var sectionTitle = titleEl ? titleEl.textContent.trim() : null;
+    var sectionId = header.dataset.target || (panel ? panel.id : null);
+
+    window.posthog.capture('expand_button_clicked', {
+      page: window.location.pathname,
+      button_text: sectionTitle || sectionId || null,
+      button_id: sectionId || null,
+      button_class: 'panel-collapse-btn',
+      section: sectionId || sectionTitle || null,
+      action: action
+    });
+  });
+})();
+</script>
 </body>
 </html>

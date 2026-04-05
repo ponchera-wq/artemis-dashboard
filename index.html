@@ -776,5 +776,38 @@ function _u(){
     });
   }
 </script>
+
+<!-- PostHog: custom interaction tracking -->
+<script>
+(function () {
+  if (typeof window.posthog === 'undefined') return;
+
+  // Observer button — nav bar + top-bar variants (class: ref-observer-btn)
+  document.querySelectorAll('.ref-observer-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      window.posthog.capture('observer_button_clicked', {
+        page: window.location.pathname,
+        button_text: btn.textContent.trim(),
+        button_id: btn.id || null,
+        button_class: btn.className
+      });
+    });
+  });
+
+  // Expand buttons — all share class yt-expand-btn (telem, youtube, and panel-expand variants)
+  // section: data-panel value when present, otherwise button id, otherwise title
+  document.querySelectorAll('.yt-expand-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      window.posthog.capture('expand_button_clicked', {
+        page: window.location.pathname,
+        button_text: btn.textContent.trim(),
+        button_id: btn.id || null,
+        button_class: btn.className,
+        section: btn.dataset.panel || btn.id || btn.getAttribute('title') || null
+      });
+    });
+  });
+})();
+</script>
 </body>
 </html>
