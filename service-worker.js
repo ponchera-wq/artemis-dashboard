@@ -30,6 +30,9 @@ const STATIC_ASSETS = [
   '/content/orion.html',
   '/content/ground-ops.html',
   '/content/comms.html',
+  'https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
+  'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap',
 ];
 
 const API_DOMAINS = [
