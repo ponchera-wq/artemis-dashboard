@@ -94,7 +94,7 @@
     #main-content {
       display: grid;
       /* Row 1 must grow when #ref-nav opens — a fixed 32px row clipped the menu on desktop */
-      grid-template-rows: auto 112px 1fr 1fr 36px 38px;
+      grid-template-rows: auto 112px auto 1fr 1fr 36px 38px;
       grid-template-columns: 1fr 2fr 1fr;
       gap: 6px;
       padding: calc(6px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px));
@@ -105,7 +105,7 @@
 
     /* ── Site footer ── */
     #site-footer {
-      grid-row: 6; grid-column: 1 / -1;
+      grid-row: 7; grid-column: 1 / -1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -646,7 +646,7 @@
        CREW STRIP — bottom row
     ════════════════════════════════ */
     #crew-strip {
-      grid-row: 5; grid-column: 1 / -1;
+      grid-row: 6; grid-column: 1 / -1;
       background: var(--bg-panel);
       border: 1px solid var(--border);
       border-radius: 4px;
@@ -1523,12 +1523,13 @@
     }
 
     /* ── Placeholder grid positions ── */
-    #feed-youtube  { grid-row: 3; grid-column: 1; }
-    #feed-arow     { grid-row: 3; grid-column: 2; }
-    #feed-dsn      { grid-row: 4; grid-column: 1; align-self: stretch; }
-    #feed-weather  { grid-row: 3; grid-column: 3; }
-    #feed-blog     { grid-row: 4; grid-column: 2; }
-    #mission-updates { grid-row: 4; grid-column: 3; }
+    #crew-activity-strip { grid-row: 3; grid-column: 1 / -1; margin: 0; }
+    #feed-youtube  { grid-row: 4; grid-column: 1; }
+    #feed-arow     { grid-row: 4; grid-column: 2; }
+    #feed-dsn      { grid-row: 5; grid-column: 1; align-self: stretch; }
+    #feed-weather  { grid-row: 4; grid-column: 3; }
+    #feed-blog     { grid-row: 5; grid-column: 2; }
+    #mission-updates { grid-row: 5; grid-column: 3; }
 
     /* ── Corner accent ── */
     .corner-tl, .corner-br {
@@ -1744,20 +1745,21 @@
       body { height: auto; overflow: visible; overflow-x: hidden; max-width: 100vw; }
       #main-content {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: minmax(32px, auto) auto auto 320px auto 380px 44px;
+        grid-template-rows: minmax(32px, auto) auto auto auto 320px auto 380px 44px;
         height: auto; min-height: 100vh;
         min-height: 100dvh;
         overflow-x: hidden; max-width: 100%;
       }
-      #ref-nav         { grid-row: 1; grid-column: 1 / -1; }
-      #top-bar         { grid-row: 2; grid-column: 1 / -1; }
-      #feed-youtube    { grid-row: 3; grid-column: 1; min-height: 260px; }
-      #feed-dsn        { grid-row: 5; grid-column: 1; min-height: 420px; align-self: stretch; }
-      #feed-arow       { grid-row: 4; grid-column: 1 / -1; }
-      #feed-weather    { grid-row: 3; grid-column: 2; min-height: 240px; }
-      #feed-blog       { grid-row: 5; grid-column: 2; min-height: 240px; }
-      #mission-updates { grid-row: 6; grid-column: 1 / -1; }
-      #crew-strip      { grid-row: 7; grid-column: 1 / -1; overflow-x: hidden; }
+      #ref-nav             { grid-row: 1; grid-column: 1 / -1; }
+      #top-bar             { grid-row: 2; grid-column: 1 / -1; }
+      #crew-activity-strip { grid-row: 3; grid-column: 1 / -1; margin: 0; }
+      #feed-youtube    { grid-row: 4; grid-column: 1; min-height: 260px; }
+      #feed-dsn        { grid-row: 6; grid-column: 1; min-height: 420px; align-self: stretch; }
+      #feed-arow       { grid-row: 5; grid-column: 1 / -1; }
+      #feed-weather    { grid-row: 4; grid-column: 2; min-height: 240px; }
+      #feed-blog       { grid-row: 6; grid-column: 2; min-height: 240px; }
+      #mission-updates { grid-row: 7; grid-column: 1 / -1; }
+      #crew-strip      { grid-row: 8; grid-column: 1 / -1; overflow-x: hidden; }
 
       .crew-strip-members { flex-wrap: wrap; }
       #reset-layout-btn { display: none; }
@@ -3270,6 +3272,117 @@ body.ref-modal-active {
       opacity: 0.7;
     }
     .footer-link:hover { opacity: 1; text-decoration: underline; }
+
+/* ── Crew Activity Strip ─────────────────────────────────────────── */
+#crew-activity-strip {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-left: 3px solid #4a90d9; /* overridden per-activity by JS */
+  border-radius: 4px;
+  margin: 6px 12px;
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+  max-height: 50px;
+  overflow: hidden;
+  transition: border-left-color 0.3s ease, opacity 0.3s ease;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.cas-current {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cas-emoji {
+  font-size: 1rem;
+  flex-shrink: 0;
+  display: inline-block; /* needed for transform animation */
+}
+
+.cas-label {
+  color: #fff;
+  font-family: var(--font-ui, 'Orbitron', sans-serif);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+}
+
+.cas-detail {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.68rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.cas-sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+  margin: 0 10px;
+}
+
+.cas-upcoming {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.cas-next-item {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.cas-next-item em {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.36);
+}
+
+/* Emoji pulse when a new activity begins */
+@keyframes cas-pulse {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+#crew-activity-strip.cas-new .cas-emoji {
+  animation: cas-pulse 0.55s ease-out;
+}
+
+@media (max-width: 767px) {
+  #crew-activity-strip {
+    flex-direction: column;
+    align-items: flex-start;
+    max-height: 65px;
+    gap: 3px;
+    padding: 6px 10px;
+  }
+
+  .cas-sep          { display: none; }
+  .cas-detail       { display: none; }
+  .cas-upcoming     { gap: 8px; }
+
+  /* Show only "Next", hide "After" on mobile */
+  .cas-next-item:nth-child(n+2) { display: none; }
+}
 
 /* ── Keyboard focus indicator ─────────────────────────────────────── */
 /* Visible only on keyboard nav (not on mouse click) */
