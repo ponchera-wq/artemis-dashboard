@@ -59,6 +59,12 @@
       font-family: 'Orbitron', sans-serif; font-size: 0.58rem; font-weight: 700;
       letter-spacing: 0.2em; text-transform: uppercase;
     }
+    .section-header h2.sh-title {
+      margin: 0;
+      display: inline;
+      font: inherit;
+      color: inherit;
+    }
     .section-header .sh-subtitle {
       font-family: 'Rajdhani', sans-serif; font-size: 0.75rem; opacity: 0.55; margin-left: auto;
     }
@@ -477,6 +483,7 @@
 </head>
 <body>
 <a href="#main-content" class="skip-link">Skip to content</a>
+<h1 class="visually-hidden">Artemis II — Observer Mode</h1>
 
   <!-- ══ STICKY NAV ═══════════════════════════════════════════════ -->
   <div id="obs-sticky">
@@ -496,7 +503,7 @@
     <div id="panel-about" class="obs-panel collapsed" style="margin-bottom:12px;">
       <div class="panel-header muted" data-target="inspiration-body" style="padding:10px 0 6px; cursor:pointer;">
         <span class="sh-icon" style="font-size:0.9rem;">🛰️</span>
-        <span class="sh-title" style="font-size:0.54rem;">•• ABOUT THE OBSERVER TOOL</span>
+        <h2 class="sh-title" style="font-size:0.54rem;">•• ABOUT THE OBSERVER TOOL</h2>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>
       </div>
@@ -516,7 +523,7 @@
     <div id="section-gear" class="obs-panel">
       <div class="panel-header amber" data-target="gear-body" style="border-bottom-color:rgba(255,167,38,0.15); margin-bottom:0;">
         <span class="sh-icon">⚙</span>
-        <span class="sh-title">Step 1 — Your Setup <span id="ui-loc-header-name" style="font-size:0.52rem; color:var(--amber); margin-left:10px; opacity:0.8; letter-spacing:0.05em;">[Loading...]</span></span>
+        <h2 class="sh-title">Step 1 — Your Setup <span id="ui-loc-header-name" style="font-size:0.52rem; color:var(--amber); margin-left:10px; opacity:0.8; letter-spacing:0.05em;">[Loading...]</span></h2>
         <span class="sh-subtitle">Enter your location and telescope specs</span>
         <span class="sh-help-icon" title="To determine if your camera can resolve the spacecraft, the system calculates its angular size. Field tests with geosynchronous satellites demonstrate that the target must occupy at least 0.1 pixels on your sensor to be detectable in a long exposure[cite: 104, 106, 107]." style="border-color:rgba(255,167,38,0.5); color:#ffa726;">(i)</span>
         <span class="sh-toggle">[–]</span>
@@ -607,7 +614,7 @@
     <div id="section-coverage" class="obs-panel" style="margin-top:12px;">
       <div class="panel-header cyan" data-target="coverage-body">
         <span class="sh-icon">🌍</span>
-        <span class="sh-title">Global Mission Coverage</span>
+        <h2 class="sh-title">Global Mission Coverage</h2>
         <span class="sh-subtitle">Ground track · Visibility footprint · Day/Night terminator</span>
         <span class="sh-help-icon" title="Map follows Orion (SSP) - click to set location">?</span>
         <span class="sh-toggle">[–]</span>
@@ -639,7 +646,7 @@
     <div id="section-sky" class="obs-panel">
       <div class="panel-header cyan" data-target="sky-body">
         <span class="sh-icon">🌐</span>
-        <span class="sh-title" id="step2-title" style="font-size:0.75rem;">STEP 2 — LOCAL SKY - PLANISPHERE</span>
+        <h2 class="sh-title" id="step2-title" style="font-size:0.75rem;">STEP 2 — LOCAL SKY - PLANISPHERE</h2>
         <span class="sh-subtitle" id="ui-darkness-state">—</span>
         
         <!-- View Toggle Controls -->
@@ -722,7 +729,7 @@
     <div id="section-verdicts" class="obs-panel">
       <div class="panel-header cyan" data-target="verdicts-body">
         <span class="sh-icon">📡</span>
-        <span class="sh-title">Step 3 — Imaging Strategy</span>
+        <h2 class="sh-title">Step 3 — Imaging Strategy</h2>
         <span class="sh-subtitle">Human-readable conditions for your session</span>
         <span class="sh-help-icon" title="Visibility requires four conditions: Target altitude > 15° , target is sunlit , and local sky is in Astronomical Twilight (-12° Sun altitude). Expect the spacecraft to appear as a streak of light in long exposures, similar to a satellite trail[cite: 48]." style="border-color:rgba(255,167,38,0.5); color:#ffa726;">(i)</span>
         <span class="sh-toggle">[–]</span>
@@ -808,7 +815,7 @@
     <div id="section-passes" class="obs-panel" style="margin-top: 25px; margin-bottom: 25px;">
       <div class="panel-header muted" data-target="passes-body">
         <span class="sh-icon">📅</span>
-        <span class="sh-title">Step 4 — Upcoming Passes</span>
+        <h2 class="sh-title">Step 4 — Upcoming Passes</h2>
         <span class="sh-subtitle">Next dark-sky opportunities from your location</span>
         <span class="sh-toggle">[–]</span>
         <span class="panel-collapse-btn"></span>

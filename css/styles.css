@@ -20,6 +20,18 @@
       --font-body:   'Rajdhani', sans-serif;
     }
 
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
     .skip-link {
       position: absolute;
       left: 0;
@@ -177,6 +189,22 @@
       border-radius: 50%;
       background: var(--blue-light);
       box-shadow: var(--glow-blue);
+    }
+
+    .panel-header .panel-heading {
+      margin: 0;
+      font: inherit;
+      color: inherit;
+      letter-spacing: inherit;
+      text-transform: inherit;
+      flex: 1 1 auto;
+      min-width: 0;
+      font-size: inherit;
+      font-weight: inherit;
+    }
+
+    .panel-header .panel-heading--compact {
+      flex: 0 1 auto;
     }
 
     /* Mobile collapse toggle — hidden on desktop, shown via mobile media query */
@@ -619,9 +647,10 @@
       font-size: 0.42rem;
       letter-spacing: 0.18em;
       color: var(--text-dim);
-      margin-right: 20px;
+      margin: 0 20px 0 0;
       white-space: nowrap;
       flex-shrink: 0;
+      font-weight: inherit;
     }
 
     .crew-strip-members {
