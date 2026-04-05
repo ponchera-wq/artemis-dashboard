@@ -1500,5 +1500,16 @@
 
     tickHUD();
     var _hudInterval = setInterval(tickHUD, 2000);
+
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        if (_animFrameId) cancelAnimationFrame(_animFrameId);
+        _animFrameId = null;
+        clearInterval(_hudInterval);
+      } else {
+        animate();
+        _hudInterval = setInterval(tickHUD, 2000);
+      }
+    });
   } // end init()
 })();

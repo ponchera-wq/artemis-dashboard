@@ -27,6 +27,14 @@ let mm_isDrag = false, mm_dragStart = null, mm_azimuth = 0.4, mm_elevation = 0.5
 const EARTH_R_KM = 6371;
 const S_SCALE = 1/EARTH_R_KM;
 
+let mm_animRaf = null;
+let ep_animRaf = null;
+let t_animRaf = null;
+let mmAnimateLoop = null;
+let epAnimateLoop = null;
+let tAnimateLoop = null;
+let obs_uiTickId = null;
+
 function initObserverUI() {
     console.log('[ObserverUI] Initializing...');
     let obsLat = DEFAULT_LAT;
@@ -1525,7 +1533,7 @@ function initObserverUI() {
     }
 
     // Call interval and initial kickoff
-    setInterval(tick, 1000);
+    obs_uiTickId = setInterval(tick, 1000);
     tick(); // fire immediately
 
     // ── Mission Map — Dedicated Full-Width 3D Panel ───────────────────
@@ -1664,7 +1672,7 @@ function initObserverUI() {
 
         // Animation loop
         function mmAnimate() {
-            requestAnimationFrame(mmAnimate);
+            mm_animRaf = requestAnimationFrame(mmAnimate);
             // Slow auto-rotate when not dragging
             if (!mm_isDrag) mm_azimuth += 0.0004;
             // Orbit camera
@@ -1677,6 +1685,7 @@ function initObserverUI() {
             if (mm_earth) mm_earth.rotation.y += 0.0002;
             mm_renderer.render(mm_scene, mm_camera);
         }
+        mmAnimateLoop = mmAnimate;
         mmAnimate();
     }
 
@@ -1985,11 +1994,12 @@ function initObserverUI() {
         drawCrosshair();
 
         function animate() {
-            requestAnimationFrame(animate); // always keep loop alive
+            ep_animRaf = requestAnimationFrame(animate);
             if (!useEyepiece) return;       // skip render when not active
             renderer.render(scene, camera);
             if (orionGroup) orionGroup.rotation.y += 0.004;
         }
+        epAnimateLoop = animate;
         animate();
     };
 
@@ -2160,7 +2170,7 @@ function initObserverUI() {
 
         let t_loopAlive = false;
         function t_animate() {
-            requestAnimationFrame(t_animate); // keep loop alive always
+            t_animRaf = requestAnimationFrame(t_animate);
             if (!use3D) return;              // skip render when toggled off
             t_loopAlive = true;
             t_renderer.render(t_scene, t_camera);
@@ -2175,6 +2185,7 @@ function initObserverUI() {
             t_camera.position.set(tx, ty, tz);
             t_camera.lookAt(0, 0, 0);
         }
+        tAnimateLoop = t_animate;
         t_animate();
     };
 
@@ -2265,6 +2276,21 @@ function initObserverUI() {
             footer.innerHTML = `DATA LAST UPDATED: ${fmt.format(d)} | NASA OEM`;
         } catch(e) {
             console.warn('[ObserverUI] Failed to format metadata date:', e);
+        }
+    });
+
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            if (mm_animRaf) { cancelAnimationFrame(mm_animRaf); mm_animRaf = null; }
+            if (ep_animRaf) { cancelAnimationFrame(ep_animRaf); ep_animRaf = null; }
+            if (t_animRaf) { cancelAnimationFrame(t_animRaf); t_animRaf = null; }
+            if (obs_uiTickId) { clearInterval(obs_uiTickId); obs_uiTickId = null; }
+        } else {
+            obs_uiTickId = setInterval(tick, 1000);
+            tick();
+            if (mmAnimateLoop && mm_renderer) mmAnimateLoop();
+            if (epAnimateLoop && renderer) epAnimateLoop();
+            if (tAnimateLoop && t_renderer) tAnimateLoop();
         }
     });
 }
