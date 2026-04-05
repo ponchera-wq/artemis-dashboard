@@ -588,6 +588,7 @@
 
     .news-feed {
       flex: 1; overflow-y: auto;
+      overscroll-behavior: contain;
       padding: 2px 0; display: flex; flex-direction: column;
       scrollbar-width: thin; scrollbar-color: rgba(74,144,217,0.3) transparent;
     }
@@ -975,6 +976,7 @@
 
     .timeline-scroll {
       flex: 1; overflow-y: auto; max-height: 340px;
+      overscroll-behavior: contain;
       scrollbar-width: thin; scrollbar-color: rgba(74,144,217,0.3) transparent;
       position: relative; z-index: 1;
     }
@@ -1336,6 +1338,7 @@
       max-height: 96vh;
       max-height: 96dvh;
       overflow-y: auto;
+      overscroll-behavior: contain;
       position: relative;
       display: flex; flex-direction: column; gap: 32px;
       padding: 32px 44px 36px;
@@ -1567,6 +1570,7 @@
       max-height: 85vh;
       max-height: 85dvh;
       overflow-y: auto;
+      overscroll-behavior: contain;
       position: relative;
       transform: translateY(16px);
       transition: transform 0.25s ease;
@@ -1978,7 +1982,7 @@
     /* ══════════════════════════════════════════════════════════════════
        DSN CUSTOM PANEL
     ══════════════════════════════════════════════════════════════════ */
-    #dsn-content { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-height: 0; }
+    #dsn-content { flex: 1; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; min-height: 0; }
     .dsn-links   { display: flex; flex-direction: column; padding: 8px 8px 4px; gap: 6px; }
 
     .dsn-link-card {
@@ -2262,6 +2266,7 @@
   width: 172px;
   max-height: calc(100% - 52px);
   overflow-y: auto;
+  overscroll-behavior: contain;
   background: rgba(4, 8, 18, 0.82);
   border: 1px solid rgba(74, 144, 217, 0.22);
   border-radius: 3px;
@@ -2553,6 +2558,7 @@ body.ref-modal-active {
 
 #ref-modal-body {
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 20px 22px 28px;
   flex: 1;
   scrollbar-width: thin;
@@ -2864,6 +2870,7 @@ body.ref-modal-active {
     max-height: 100vh;
     max-height: 100dvh;
     overflow-y: auto;
+    overscroll-behavior: contain;
   }
 
   #ref-top-row {
