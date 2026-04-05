@@ -205,7 +205,7 @@ if (_unitToggle) _unitToggle.addEventListener('click', function() {
 // Wait for ephemeris data before starting ticks
 MissionEphemeris.ready.then(function() {
   tickTelem();
-  setInterval(tickTelem, 1000);
+  window.addEventListener('dashboard-tick', tickTelem);
 });
 
 })();

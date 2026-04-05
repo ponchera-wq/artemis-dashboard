@@ -128,3 +128,14 @@ window.dashboardState = {
   nextEvent: null,
   nextEventEta: null
 };
+
+// Single 1 Hz clock for dashboard modules (clock.js, stats.js, ui.js overlay)
+(function() {
+  function emitDashboardTick() {
+    window.dispatchEvent(new Event('dashboard-tick'));
+  }
+  setTimeout(function() {
+    emitDashboardTick();
+    setInterval(emitDashboardTick, 1000);
+  }, 0);
+})();

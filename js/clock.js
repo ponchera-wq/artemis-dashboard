@@ -115,8 +115,7 @@ function tick() {
   }
 }
 
-tick();
-setInterval(tick, 1000);
+window.addEventListener('dashboard-tick', tick);
 
 // ── SIGNAL PILL ──────────────────────────────────────────────────────
 let signalAcquired = true;

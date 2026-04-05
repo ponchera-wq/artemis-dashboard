@@ -16,22 +16,25 @@ function _unlockScroll() { if (--_overflowLocked <= 0) { _overflowLocked = 0; do
   const pipsEl    = document.getElementById('to-phase-pips');
   if (!overlay || !expandBtn) return;
 
-  let updateInterval = null;
   let prevEarth = null, prevMoon = null, prevSpeed = null;
   let pipsBuilt = false;
+
+  function onDashboardTick() {
+    syncData();
+  }
 
   function open() {
     overlay.classList.add('open');
     _lockScroll();
     overlay.setAttribute('aria-hidden','false');
     syncData();
-    updateInterval = setInterval(syncData, 1000);
+    window.addEventListener('dashboard-tick', onDashboardTick);
   }
   function close() {
     overlay.classList.remove('open');
     _unlockScroll();
     overlay.setAttribute('aria-hidden','true');
-    clearInterval(updateInterval);
+    window.removeEventListener('dashboard-tick', onDashboardTick);
   }
 
   function set(id, text) { const el = document.getElementById(id); if (el) el.textContent = text || ''; }
