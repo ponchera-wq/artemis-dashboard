@@ -601,7 +601,9 @@
     var camLookAt = trajCenter.clone();
     var sph = { theta: 0.3, phi: 1.05, r: 85 };
     var SPH_DEFAULT = { theta: 0.3, phi: 1.05, r: 85 };
-    var isDrag = false, isPan = false, lastMx = 0, lastMy = 0, autoRotate = true, rotTimer = null;
+    var reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var isDrag = false, isPan = false, lastMx = 0, lastMy = 0, autoRotate = !reduceMotion, rotTimer = null;
+    var lastReducedRenderMs = 0;
     var velTheta = 0, velPhi = 0, damping = 0.92;
     var camMode = 'orbit';
     var lerpFrom = { pos: new THREE.Vector3(), look: new THREE.Vector3() };
@@ -936,6 +938,10 @@
     function animate() {
       _animFrameId = requestAnimationFrame(animate);
       var now = Date.now();
+      if (reduceMotion) {
+        if (now - lastReducedRenderMs < 250) return;
+        lastReducedRenderMs = now;
+      }
       var elapsed = now - LAUNCH_UTC;
       var metSec = elapsed / 1000;
       var pulse = 0.5 + 0.5 * Math.sin(now / 430);
