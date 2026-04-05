@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artemis-dashboard-v11';
+const CACHE_NAME = 'artemis-dashboard-v12';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -24,6 +24,10 @@ const STATIC_ASSETS = [
   '/js/observer-astro.js',
   '/js/observer-ui.js',
   '/manifest.json',
+  '/css/icon-192.png',
+  '/css/icon-512.png',
+  '/css/icon-192-maskable.png',
+  '/css/icon-512-maskable.png',
   '/content/mission.html',
   '/content/science.html',
   '/content/sls.html',
