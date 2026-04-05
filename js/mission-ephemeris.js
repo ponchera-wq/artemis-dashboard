@@ -1,9 +1,9 @@
 // mission-ephemeris.js — Single source of truth for spacecraft and Moon state
-// Parses raw NASA OEM (ASCII) data and provides interpolated state at any MET.
+// Loads precomputed ephemeris JSON (OEM + Moon) and provides interpolated state at any MET.
 // All position/velocity in EME2000 (km, km/s).
 // ══════════════════════════════════════════════════════════════════════
 (function() {
-  const EPHEMERIS_FILE = 'data/Artemis_II_OEM_latest.asc';
+  const EPHEMERIS_FILE = 'data/mission-ephemeris.json';
   var points = null;
   var tStart = 0;
   var tEnd = 0;
@@ -20,78 +20,30 @@
     };
   }
 
-  function parseOEM(text) {
-    // 1. Extract Creation Date
-    const creationRegex = /CREATION_DATE\s*=\s*([\d-T:]+)/;
-    const creationMatch = text.match(creationRegex);
-    if (creationMatch) meta.creationDate = creationMatch[1];
-
-    // 2. Extract State Vectors
-    // Matches: 2026-04-02T01:57:37.084 -24468.231698271986 -12677.926410379976 -6901.348388602915 -1.83796863689585 -3.41722647280823 -1.84782351579474
-    const lines = text.split('\n');
-    const launchTime = window.LAUNCH_UTC ? window.LAUNCH_UTC.getTime() : 0;
-    const rawPoints = [];
-
-    lines.forEach(line => {
-      const parts = line.trim().split(/\s+/);
-      if (parts.length === 7 && parts[0].includes('T')) {
-        const date = new Date(parts[0] + 'Z');
-        const metSec = (date.getTime() - launchTime) / 1000;
-        
-        // Convert to state object
-        const x = parseFloat(parts[1]), y = parseFloat(parts[2]), z = parseFloat(parts[3]);
-        const vx = parseFloat(parts[4]), vy = parseFloat(parts[5]), vz = parseFloat(parts[6]);
-        
-        rawPoints.push({
-          utc: date,
-          metSec: metSec,
-          orion: { x, y, z, vx, vy, vz },
-          distEarthKm: Math.sqrt(x*x + y*y + z*z),
-          speedKms: Math.sqrt(vx*vx + vy*vy + vz*vz)
-        });
-      }
+  /** Map mission-ephemeris.json { meta, points } to internal point array for getState(). */
+  function parseEphemerisJson(data) {
+    if (data && data.meta) {
+      meta.creationDate = data.meta.generated || data.meta.oemSource || null;
+      meta.launchUtc = data.meta.launchUtc;
+      meta.frame = data.meta.frame;
+      meta.oemSource = data.meta.oemSource;
+      meta.moonSource = data.meta.moonSource;
+      meta.pointCount = data.meta.pointCount;
+      meta.periluneMetSec = data.meta.periluneMetSec;
+    }
+    if (!data || !data.points || !Array.isArray(data.points)) return [];
+    return data.points.map(function(p) {
+      var o = p.orion;
+      var m = p.moon;
+      return {
+        metSec: p.metSec,
+        orion: { x: o.x, y: o.y, z: o.z, vx: o.vx, vy: o.vy, vz: o.vz },
+        moon: { x: m.x, y: m.y, z: m.z },
+        distEarthKm: p.distEarthKm,
+        distMoonKm: p.distMoonKm,
+        speedKms: p.speedKms
+      };
     });
-
-    // 3. Sample and enrich with Moon data
-    // OEM often has high density (every 1-5 mins), sample for performance
-    const step = rawPoints.length > 1500 ? 10 : 2; 
-    const sampled = [];
-    for (let i = 0; i < rawPoints.length; i += step) {
-      const p = rawPoints[i];
-      
-      // Calculate Moon position in EME2000 using Astronomy Engine
-      // GeoVector returns AU — convert to km to match OEM coordinate units
-      const AU_TO_KM = 149597870.7;
-      if (window.Astronomy) {
-        const astroTime = Astronomy.MakeTime(p.utc);
-        const mPos = Astronomy.GeoVector('Moon', astroTime, false);
-        p.moon = { x: mPos.x * AU_TO_KM, y: mPos.y * AU_TO_KM, z: mPos.z * AU_TO_KM };
-        const dx = p.orion.x - p.moon.x;
-        const dy = p.orion.y - p.moon.y;
-        const dz = p.orion.z - p.moon.z;
-        p.distMoonKm = Math.sqrt(dx*dx + dy*dy + dz*dz);
-      } else {
-        p.moon = { x: 384400, y: 0, z: 0 }; // fallback
-        p.distMoonKm = 384400;
-      }
-      sampled.push(p);
-    }
-
-    // Ensure final point is included (compare by value, not object reference)
-    if (rawPoints.length > 0 && sampled[sampled.length-1].metSec !== rawPoints[rawPoints.length-1].metSec) {
-       const p = rawPoints[rawPoints.length-1];
-       if (window.Astronomy) {
-         const AU_TO_KM = 149597870.7;
-         const astroTime = Astronomy.MakeTime(p.utc);
-         const mPos = Astronomy.GeoVector('Moon', astroTime, false);
-         p.moon = { x: mPos.x * AU_TO_KM, y: mPos.y * AU_TO_KM, z: mPos.z * AU_TO_KM };
-         const dx = p.orion.x - p.moon.x, dy = p.orion.y - p.moon.y, dz = p.orion.z - p.moon.z;
-         p.distMoonKm = Math.sqrt(dx*dx + dy*dy + dz*dz);
-       }
-       sampled.push(p);
-    }
-
-    return sampled;
   }
 
   function getState(metSec) {
@@ -131,18 +83,18 @@
 
   const cbv = window._cbv || Date.now();
   fetch(EPHEMERIS_FILE + '?v=' + cbv)
-    .then(r => r.text())
-    .then(text => {
-      points = parseOEM(text);
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      points = parseEphemerisJson(data);
       if (points.length > 0) {
         tStart = points[0].metSec;
         tEnd = points[points.length - 1].metSec;
-        if (window.DEBUG) console.log('[Ephemeris] OEM Loaded: ' + points.length + ' points, Meta: ' + meta.creationDate);
+        if (window.DEBUG) console.log('[Ephemeris] JSON loaded: ' + points.length + ' points, Meta: ' + meta.creationDate);
       }
       _resolve();
     })
     .catch(err => {
-      console.error('[Ephemeris] Failed to load OEM:', err);
+      console.error('[Ephemeris] Failed to load ephemeris JSON:', err);
       meta.loadError = true;
       _resolve();
     });
