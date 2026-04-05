@@ -2209,7 +2209,7 @@
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   position: relative;
   background: rgba(4, 6, 16, 0.82);
   border-top: 1px solid rgba(255,140,0,0.18);
@@ -2224,7 +2224,6 @@
   font-weight: 900;
   color: #fff;
   letter-spacing: 0.12em;
-  padding: 0 16px 0 12px;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -2232,15 +2231,20 @@
   color: #00e5ff;
   text-shadow: 0 0 12px rgba(0, 229, 255, 0.55);
 }
+/* Desktop: brand absolutely positioned on left (like old #sa-conn) */
+#ref-brand-desktop {
+  position: absolute;
+  left: 12px;
+  display: flex;
+  align-items: center;
+}
 #ref-brand-mobile { display: none; }
-#sa-share { position: static !important; margin-left: auto; }
 #ref-menu-items {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   height: 100%;
-  flex: 1;
 }
 #ref-nav::-webkit-scrollbar { display: none; }
 
@@ -2714,13 +2718,19 @@ body.ref-modal-active {
     display: flex;
     align-items: center;
     gap: 4px;
-    letter-spacing: 0.05em;
   }
 
+  /* Share row: hidden on collapsed mobile, shown at bottom when open */
   #ref-share-row {
+    display: none;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-top: 1px solid rgba(74, 144, 217, 0.12);
+  }
+  #ref-nav.ref-nav-open #ref-share-row {
     display: flex;
-    align-items: center;
-    gap: 4px;
+    flex-wrap: wrap;
   }
 
   .ref-share-btn {
