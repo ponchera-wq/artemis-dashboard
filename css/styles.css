@@ -94,7 +94,7 @@
     #main-content {
       display: grid;
       /* Row 1 must grow when #ref-nav opens — a fixed 32px row clipped the menu on desktop */
-      grid-template-rows: minmax(32px, auto) 112px 1fr 1fr 36px 38px;
+      grid-template-rows: auto 112px 1fr 1fr 36px 38px;
       grid-template-columns: 1fr 2fr 1fr;
       gap: 6px;
       padding: calc(6px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px));
@@ -2544,6 +2544,8 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
     align-items: stretch;
+    max-height: none;
+    overflow: visible;
   }
   #ref-nav-header {
     display: grid;
@@ -3102,6 +3104,17 @@ body.ref-modal-active {
   overflow-y: auto;
   flex-direction: column;
   align-items: stretch;
+}
+
+#ref-nav-toggle {
+  background: rgba(255, 167, 38, 0.05);
+  border: 1px solid rgba(255, 167, 38, 0.25);
+  transition: all 0.2s ease;
+}
+#ref-nav-toggle:hover {
+  background: rgba(255, 167, 38, 0.12);
+  border-color: rgba(255, 167, 38, 0.6);
+  box-shadow: 0 0 10px rgba(255, 167, 38, 0.2);
 }
 
 #ref-nav.ref-nav-open #ref-menu-items {
