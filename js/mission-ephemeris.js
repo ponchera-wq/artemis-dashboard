@@ -60,10 +60,12 @@
       const p = rawPoints[i];
       
       // Calculate Moon position in EME2000 using Astronomy Engine
+      // GeoVector returns AU — convert to km to match OEM coordinate units
+      const AU_TO_KM = 149597870.7;
       if (window.Astronomy) {
         const astroTime = Astronomy.MakeTime(p.utc);
         const mPos = Astronomy.GeoVector('Moon', astroTime, false);
-        p.moon = { x: mPos.x, y: mPos.y, z: mPos.z };
+        p.moon = { x: mPos.x * AU_TO_KM, y: mPos.y * AU_TO_KM, z: mPos.z * AU_TO_KM };
         const dx = p.orion.x - p.moon.x;
         const dy = p.orion.y - p.moon.y;
         const dz = p.orion.z - p.moon.z;
@@ -74,14 +76,15 @@
       }
       sampled.push(p);
     }
-    
+
     // Ensure final point is included (compare by value, not object reference)
     if (rawPoints.length > 0 && sampled[sampled.length-1].metSec !== rawPoints[rawPoints.length-1].metSec) {
        const p = rawPoints[rawPoints.length-1];
        if (window.Astronomy) {
+         const AU_TO_KM = 149597870.7;
          const astroTime = Astronomy.MakeTime(p.utc);
          const mPos = Astronomy.GeoVector('Moon', astroTime, false);
-         p.moon = { x: mPos.x, y: mPos.y, z: mPos.z };
+         p.moon = { x: mPos.x * AU_TO_KM, y: mPos.y * AU_TO_KM, z: mPos.z * AU_TO_KM };
          const dx = p.orion.x - p.moon.x, dy = p.orion.y - p.moon.y, dz = p.orion.z - p.moon.z;
          p.distMoonKm = Math.sqrt(dx*dx + dy*dy + dz*dz);
        }

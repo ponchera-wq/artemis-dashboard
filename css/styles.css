@@ -2209,7 +2209,7 @@
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   position: relative;
   background: rgba(4, 6, 16, 0.82);
   border-top: 1px solid rgba(255,140,0,0.18);
@@ -2218,12 +2218,29 @@
   height: 32px;
   z-index: 10;
 }
+.ref-brand {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.12em;
+  padding: 0 16px 0 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.ref-brand span {
+  color: #00e5ff;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.55);
+}
+#ref-brand-mobile { display: none; }
+#sa-share { position: static !important; margin-left: auto; }
 #ref-menu-items {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   height: 100%;
+  flex: 1;
 }
 #ref-nav::-webkit-scrollbar { display: none; }
 
@@ -2626,6 +2643,8 @@ body.ref-modal-active {
 #ref-top-row { display: none; } /* Hide on desktop */
 
 @media (max-width: 767px) {
+  #ref-brand-desktop { display: none; }
+  #ref-brand-mobile { display: block; font-size: 0.72rem; letter-spacing: 0.1em; padding: 0 8px; }
   #ref-nav {
     height: auto;
     max-height: 36px;

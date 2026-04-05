@@ -72,22 +72,15 @@
 <div id="dashboard">
 
   <nav id="ref-nav" aria-label="Reference guide navigation">
-    <div id="sa-conn" class="desktop-only" style="position:absolute; left:12px; display:flex; align-items:center; gap:6px;">
-      <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite"></span>
-      <span id="viewer-num" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--green)">—</span>
-      <span style="color:rgba(140,170,200,.6);font-size:.65rem;font-family:var(--font-mono);letter-spacing:0.04em;">WATCHING</span>
-    </div>
+    <div id="ref-brand-desktop" class="ref-brand">ARTEMIS II <span>MISSION</span></div>
 
     <div id="ref-top-row">
       <div style="display:flex; align-items:center; gap:10px;">
         <button id="ref-nav-toggle" aria-label="Toggle reference menu">☰</button>
-        <div id="ref-watching">
-          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite"></span>
-          <span id="viewer-num-mobile">—</span> WATCHING
-        </div>
-        <a href="observer.html" class="ref-observer-btn" title="Open backyard telescope tracking tool">🔭 OBSERVER MODE</a>
+        <div id="ref-brand-mobile" class="ref-brand">ARTEMIS II <span>MISSION</span></div>
       </div>
       <div id="ref-share-row">
+        <a href="observer.html" class="ref-observer-btn" title="Open backyard telescope tracking tool">🔭 OBSERVER MODE</a>
         <button onclick="navigator.clipboard.writeText(window.location.href).then(function(){var b=document.getElementById('ref-ct');b.textContent='COPIED!';setTimeout(function(){b.textContent='LINK'},1500)})"
           class="ref-share-btn" title="Copy Link"><span id="ref-ct">LINK</span></button>
         <button onclick="window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Tracking Artemis II live — first crewed Moon mission in 50 years 🚀🌕')+'&url='+encodeURIComponent(location.href),'_blank','width=550,height=420')"
