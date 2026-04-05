@@ -406,7 +406,7 @@
   }
 
   update();
-  var _dsnInterval = setInterval(update, 10000);
+  var _dsnInterval = setInterval(update, 30000);
 
   // Listen for unit changes from stats.js
   window.addEventListener('unitschanged', () => renderLinks(cachedLinks, lastIsLive));
