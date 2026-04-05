@@ -1817,6 +1817,11 @@
         height: auto; flex-shrink: 0;
       }
       #top-bar > * + * { border-left: none; }
+      /* Grid items default to min-width:auto and overflow their column; constrain direct children */
+      #top-bar > * {
+        min-width: 0;
+        box-sizing: border-box;
+      }
       #tb-met           { grid-area: met;        border-bottom: 1px solid var(--border); padding: 8px 12px; flex: none; width: auto; }
       #tb-phase         { grid-area: phase;      border-bottom: 1px solid var(--border); padding: 6px 12px; flex: none; border-left: 1px solid var(--border); }
       #telem-position   { grid-area: position;   border-bottom: 1px solid var(--border); border-right: 1px solid var(--border); flex: none; padding: 8px; }
@@ -1825,10 +1830,57 @@
       #telem-milestones { grid-area: milestones; border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
       #tb-controls      { grid-area: controls; display: flex; align-items: center; justify-content: center; padding: 6px 12px; border-bottom: 1px solid var(--border); flex: none; }
       #tb-controls .yt-expand-btn, #tb-controls .ref-observer-btn { display: none; }
+      /* Desktop .stat-block has min-width:80px — allow milestone cell to shrink in 2-col grid */
+      #top-bar .stat-block { min-width: 0; }
+      /* Nested column flex stacks inside telemetry cells */
+      #top-bar #telem-earth,
+      #top-bar #telem-moon,
+      #top-bar #telem-odometer,
+      #top-bar #telem-apollo,
+      #top-bar #telem-speed,
+      #top-bar #gforce-block,
+      #top-bar #perilune-block,
+      #top-bar #splashdown-block {
+        min-width: 0;
+        max-width: 100%;
+        align-self: stretch;
+      }
+      #top-bar .telem-val-row {
+        min-width: 0;
+        max-width: 100%;
+      }
+      #top-bar .telem-val-row .telem-value {
+        min-width: 0;
+      }
+      #top-bar #tb-phase #current-phase-name {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #top-bar #tb-met > *,
+      #top-bar #tb-phase > * {
+        min-width: 0;
+        max-width: 100%;
+      }
+      #top-bar #met-display {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #top-bar .stat-value {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
       #unit-toggle { width: auto !important; font-size: 0.69rem !important; padding: 5px 20px !important; }
 
       #met-display { font-size: clamp(1rem, 7vw, 1.5rem); }
-      .telem-value { font-size: clamp(0.85rem, 5.5vw, 1.4rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .telem-value { font-size: clamp(0.85rem, 5.5vw, 1.4rem); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       .telem-label { font-size: 0.69rem !important; }
 
       /* Panels */
