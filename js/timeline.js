@@ -13,10 +13,10 @@
     10: 'DAY 10 \u2014 RE-ENTRY & SPLASHDOWN',
   };
 
-  // Use shared event list
   var EVENTS = MissionEvents.events;
-
   var activePhaseFilter = 'all';
+  /** @type {{ el: HTMLElement, idx: number }[]|null} */
+  var rowRefs = null;
 
   function fmtMet(sec) {
     var h = Math.floor(sec / 3600);
@@ -25,30 +25,45 @@
     return 'T+' + String(h).padStart(h >= 100 ? 3 : 2, '0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
   }
 
-  function renderTimeline() {
-    var nowMet = (Date.now() - LAUNCH_UTC) / 1000;
-    var scroll = document.getElementById('timeline-scroll');
-    if (!scroll) return;
-
-    // Find active event (unfiltered)
+  function getActiveIdx(nowMet) {
     var activeIdx = 0;
     for (var i = 0; i < EVENTS.length; i++) {
       if (EVENTS[i].metSec <= nowMet) activeIdx = i;
       else break;
     }
+    return activeIdx;
+  }
 
-    // Flight day badge
+  function computeEtaStr(evIdx, activeIdx, nowMet) {
+    var isActive = evIdx === activeIdx;
+    var etaStr = '';
+    if (evIdx > activeIdx) {
+      var rem = EVENTS[evIdx].metSec - nowMet;
+      var hh2 = Math.floor(rem / 3600);
+      var mm2 = Math.floor((rem % 3600) / 60);
+      etaStr = hh2 > 0 ? 'in ' + hh2 + 'h ' + mm2 + 'm' : 'in ' + mm2 + 'm';
+    } else if (isActive) {
+      var ago = nowMet - EVENTS[evIdx].metSec;
+      if (ago < 120) etaStr = 'NOW';
+      else { var hh3 = Math.floor(ago / 3600); var mm3 = Math.floor((ago % 3600) / 60); etaStr = hh3 > 0 ? hh3 + 'h ' + mm3 + 'm ago' : mm3 + 'm ago'; }
+    } else if (evIdx >= activeIdx - 3) {
+      var ago2 = nowMet - EVENTS[evIdx].metSec;
+      var hh4 = Math.floor(ago2 / 3600); var mm4 = Math.floor((ago2 % 3600) / 60);
+      etaStr = hh4 > 0 ? hh4 + 'h ' + mm4 + 'm ago' : mm4 + 'm ago';
+    }
+    return etaStr;
+  }
+
+  function updateTimelineChrome(nowMet, activeIdx) {
     var launchMidnight = Date.UTC(2026, 3, 1);
     var nowMidnight = Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
     var flightDay = Math.floor((nowMidnight - launchMidnight) / 86400000) + 1;
     var badge = document.getElementById('flight-day-badge');
     if (badge) badge.textContent = 'FLIGHT DAY ' + Math.max(1, flightDay);
 
-    // Show active event in Mission Phase box
     var curEvEl = document.getElementById('current-event-name');
     if (curEvEl) curEvEl.textContent = '\u25b6 ' + EVENTS[activeIdx].name;
 
-    // Next-event countdown
     var nextEv = EVENTS[activeIdx + 1];
     var tln = document.getElementById('tl-next-event');
     if (tln) {
@@ -68,8 +83,45 @@
         }
       } else { tln.textContent = ''; }
     }
+  }
 
-    // Filter events by phase
+  function updateTimelineRows(nowMet, activeIdx) {
+    if (!rowRefs || !rowRefs.length) return;
+    for (var r = 0; r < rowRefs.length; r++) {
+      var ref = rowRefs[r];
+      var el = ref.el;
+      var evIdx = ref.idx;
+      var isComplete = evIdx < activeIdx;
+      var isActive = evIdx === activeIdx;
+      var cls = isComplete ? 'tl-complete' : isActive ? 'tl-active' : 'tl-upcoming';
+      el.className = 'tl-event ' + cls;
+      var crit = EVENTS[evIdx].crit;
+      var etaStr = computeEtaStr(evIdx, activeIdx, nowMet);
+      var nameDiv = el.querySelector('.tl-name');
+      if (nameDiv) {
+        nameDiv.innerHTML =
+          EVENTS[evIdx].name + (isComplete ? '<span class="tl-check"> \u2713</span>' : '') +
+          '<span class="tl-crit tl-crit-' + crit + '">' + crit + '</span>' +
+          (etaStr ? '<div class="tl-eta">' + etaStr + '</div>' : '');
+      }
+    }
+  }
+
+  function tickTimeline() {
+    var nowMet = (Date.now() - LAUNCH_UTC) / 1000;
+    var activeIdx = getActiveIdx(nowMet);
+    updateTimelineChrome(nowMet, activeIdx);
+    updateTimelineRows(nowMet, activeIdx);
+  }
+
+  function renderTimeline() {
+    var nowMet = (Date.now() - LAUNCH_UTC) / 1000;
+    var activeIdx = getActiveIdx(nowMet);
+    var scroll = document.getElementById('timeline-scroll');
+    if (!scroll) return;
+
+    updateTimelineChrome(nowMet, activeIdx);
+
     var filtered = [];
     for (var i = 0; i < EVENTS.length; i++) {
       var ev = EVENTS[i];
@@ -79,6 +131,7 @@
     }
 
     scroll.innerHTML = '';
+    rowRefs = [];
     var lastDay = null;
     var activeEl = null;
 
@@ -100,22 +153,7 @@
       var localStr = fmtLocal(evDate, true) + ' ' + tzAbbr(evDate);
       var utcStr = fmtUTC(evDate);
 
-      // ETA countdown/ago for each event
-      var etaStr = '';
-      if (ev._i > activeIdx) {
-        var rem = ev.metSec - nowMet;
-        var hh2 = Math.floor(rem / 3600);
-        var mm2 = Math.floor((rem % 3600) / 60);
-        etaStr = hh2 > 0 ? 'in ' + hh2 + 'h ' + mm2 + 'm' : 'in ' + mm2 + 'm';
-      } else if (isActive) {
-        var ago = nowMet - ev.metSec;
-        if (ago < 120) etaStr = 'NOW';
-        else { var hh3 = Math.floor(ago / 3600); var mm3 = Math.floor((ago % 3600) / 60); etaStr = hh3 > 0 ? hh3 + 'h ' + mm3 + 'm ago' : mm3 + 'm ago'; }
-      } else if (ev._i >= activeIdx - 3) {
-        var ago2 = nowMet - ev.metSec;
-        var hh4 = Math.floor(ago2 / 3600); var mm4 = Math.floor((ago2 % 3600) / 60);
-        etaStr = hh4 > 0 ? hh4 + 'h ' + mm4 + 'm ago' : mm4 + 'm ago';
-      }
+      var etaStr = computeEtaStr(ev._i, activeIdx, nowMet);
 
       var detailHtml = '';
       if (ev.desc || ev.crew) {
@@ -137,6 +175,8 @@
         '<div class="tl-name">' + ev.name + (isComplete ? '<span class="tl-check"> \u2713</span>' : '') + '<span class="tl-crit tl-crit-' + ev.crit + '">' + ev.crit + '</span>' + (etaStr ? '<div class="tl-eta">' + etaStr + '</div>' : '') + '</div>' +
         detailHtml;
       scroll.appendChild(el);
+      rowRefs.push({ el: el, idx: ev._i });
+
       if (ev.desc || ev.crew) {
         el.style.cursor = 'pointer';
         el.addEventListener('click', function(e) {
@@ -168,9 +208,8 @@
   }
 
   renderTimeline();
-  var _renderInterval = setInterval(renderTimeline, 30000);
+  window.addEventListener('dashboard-tick', tickTimeline);
 
-  // Phase filter tabs
   var filterBtns = document.querySelectorAll('.tl-filter');
   for (var i = 0; i < filterBtns.length; i++) {
     filterBtns[i].addEventListener('click', function() {
