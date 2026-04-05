@@ -1525,7 +1525,7 @@
     /* ── Placeholder grid positions ── */
     #feed-youtube  { grid-row: 3; grid-column: 1; }
     #feed-arow     { grid-row: 3; grid-column: 2; }
-    #feed-dsn      { grid-row: 4; grid-column: 1; align-self: start; max-height: 50%; }
+    #feed-dsn      { grid-row: 4; grid-column: 1; align-self: stretch; }
     #feed-weather  { grid-row: 3; grid-column: 3; }
     #feed-blog     { grid-row: 4; grid-column: 2; }
     #mission-updates { grid-row: 4; grid-column: 3; }
