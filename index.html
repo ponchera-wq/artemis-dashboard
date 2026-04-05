@@ -244,9 +244,6 @@
         style="font-size:0.42rem;padding:3px 10px;letter-spacing:0.12em;white-space:nowrap;width:100%;" title="Expand telemetry">&#x26F6; EXPAND</button>
       <button id="unit-toggle" title="Switch units"
         style="color:var(--amber);border:1px solid rgba(255,167,38,0.5);background:none;font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.08em;padding:3px 9px;cursor:pointer;white-space:nowrap;width:100%;">KM · MILES</button>
-      <a href="observer.html" class="ref-observer-btn"
-        style="display:flex;width:100%;justify-content:center;font-family:var(--font-ui);font-size:0.42rem;letter-spacing:0.1em;padding:3px 9px;border:1px solid rgba(255,167,38,0.5);color:var(--amber);background:rgba(255,167,38,0.12);border-radius:2px;cursor:pointer;text-decoration:none;white-space:nowrap;margin-top:4px;"
-        title="Open backyard telescope tracking tool">🔭 OBSERVER MODE</a>
     </div>
   </div>
 
@@ -742,7 +739,7 @@
   })();
 </script>
 <script>
-(function(){var _tr=document.getElementById('viewer-num');if(!_tr)return;
+(function(){var _tr=document.getElementById('viewer-num-mobile');if(!_tr)return;
 var _lu=window.LAUNCH_UTC?window.LAUNCH_UTC.getTime():0;
 function _h(s){var x=Math.sin(s*127.1+311.7)*43758.5453;return x-Math.floor(x)}
 function _sx(){var n=Date.now(),m=(n-_lu)/36e5,
