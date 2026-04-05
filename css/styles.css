@@ -1863,14 +1863,14 @@
       .tl-localtime              { font-size: 0.69rem; }
       .tl-eta                    { font-size: 0.69rem; }
       .tl-day-header             { font-size: 0.69rem; }
-      .dsn-link-header           { font-size: 0.69rem; }
-      .dsn-status-bar            { font-size: 0.69rem; }
-      .dsn-complex-name          { font-size: 0.69rem; }
-      .dsn-complex-detail        { font-size: 0.69rem; }
-      .dsn-network-map-title     { font-size: 0.69rem; }
-      .dsn-funstat               { font-size: 0.69rem; }
-      .dsn-nolink                { font-size: 0.69rem; }
-      .dsn-nolink-subs           { font-size: 0.69rem; }
+      .dsn-link-header           { font-size: 0.69rem !important; }
+      .dsn-status-bar            { font-size: 0.69rem !important; }
+      .dsn-complex-name          { font-size: 0.69rem !important; }
+      .dsn-complex-detail        { font-size: 0.69rem !important; }
+      .dsn-network-map-title     { font-size: 0.69rem !important; }
+      .dsn-funstat               { font-size: 0.69rem !important; }
+      .dsn-nolink                { font-size: 0.69rem !important; }
+      .dsn-nolink-subs           { font-size: 0.69rem !important; }
       .footer-disclaimer         { font-size: 0.69rem; }
       .footer-left,
       .footer-center,
@@ -2884,7 +2884,7 @@ body.ref-modal-active {
 }
 
 @media (max-width: 767px) {
-  #ref-nav-toggle { display: block; }
+  #ref-nav-toggle { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
   #ref-nav .ref-nav-btn { display: none; }
   #ref-nav.ref-nav-open .ref-nav-btn {
     display: block; width: 100%; text-align: left;
