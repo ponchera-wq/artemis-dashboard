@@ -151,6 +151,15 @@
     Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
     container.appendChild(renderer.domElement);
 
+    // ── Mobile 3-stat strip (visible only at ≤767px via CSS) ──
+    var mobileStrip = document.createElement('div');
+    mobileStrip.id = 'traj-mobile-strip';
+    mobileStrip.innerHTML =
+      '<div class="tms-stat"><span class="tms-label">EARTH DIST</span><span class="tms-value" id="tms-earth">\u2014</span></div>' +
+      '<div class="tms-stat"><span class="tms-label">SPEED</span><span class="tms-value" id="tms-speed">\u2014</span></div>' +
+      '<div class="tms-stat"><span class="tms-label">PHASE</span><span class="tms-value" id="tms-phase">\u2014</span></div>';
+    container.appendChild(mobileStrip);
+
     // ── Skybox — equirectangular star map ──
     var skyGeo = new THREE.SphereGeometry(300, 32, 32);
     var skyMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide, transparent: true, opacity: 0.25 });
@@ -1474,6 +1483,14 @@
           var hMag=Math.sqrt(hx*hx+hy*hy+hz*hz);
           if (hMag > 0) { incEl.textContent = (Math.acos(Math.max(-1,Math.min(1,hz/hMag)))*(180/Math.PI)).toFixed(1)+'\u00b0'; }
         }
+
+        // ── Mobile strip update ──
+        var tmsEarth = document.getElementById('tms-earth');
+        var tmsSpeed = document.getElementById('tms-speed');
+        var tmsPhase = document.getElementById('tms-phase');
+        if (tmsEarth) tmsEarth.textContent = earthStr + ' ' + earthUnit.toLowerCase();
+        if (tmsSpeed) tmsSpeed.textContent = (isImp ? Math.round(state.speedKms * KM_TO_MI_HUD * 10) / 10 : Math.round(state.speedKms * 10) / 10).toFixed(1) + (isImp ? ' mi/s' : ' km/s');
+        if (tmsPhase) { var tmsPN = document.getElementById('current-phase-name'); tmsPhase.textContent = tmsPN ? tmsPN.textContent.trim() : '\u2014'; }
       } catch (err) { console.warn('[HUD Update Error]', err); }
     }
 

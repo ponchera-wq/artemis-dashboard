@@ -1744,7 +1744,7 @@
       .yt-frame.active { display: block; }
 
       /* Trajectory: fixed height */
-      #feed-arow { height: 290px; flex-shrink: 0; }
+      #feed-arow { height: 380px; flex-shrink: 0; }
 
       /* DSN custom panel */
       #feed-dsn { flex-shrink: 0; min-height: 420px; align-self: stretch; }
@@ -2213,6 +2213,52 @@
 @media (max-width: 767px) {
   .traj-hud { display: none; }
   .hud-toggle { display: none; }
+}
+
+/* ── Mobile trajectory stat strip ── */
+#traj-mobile-strip {
+  display: none;
+}
+@media (max-width: 767px) {
+  #traj-mobile-strip {
+    display: flex;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    background: rgba(0,0,0,0.6);
+    border-top: 1px solid rgba(74,144,217,0.2);
+    padding: 6px 8px;
+    box-sizing: border-box;
+    z-index: 6;
+  }
+  .tms-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+  }
+  .tms-stat + .tms-stat {
+    border-left: 1px solid rgba(74,144,217,0.18);
+  }
+  .tms-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: rgba(74,144,217,0.7);
+    text-transform: uppercase;
+  }
+  .tms-value {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #a8d4ff;
+    white-space: nowrap;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
