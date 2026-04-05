@@ -20,6 +20,28 @@
       --font-body:   'Rajdhani', sans-serif;
     }
 
+    .skip-link {
+      position: absolute;
+      left: 0;
+      top: -120px;
+      z-index: 10000;
+      padding: 10px 18px;
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--amber);
+      text-decoration: none;
+      border-radius: 0 0 4px 0;
+      transition: top 0.15s ease;
+    }
+    .skip-link:focus {
+      top: 0;
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+
     html, body {
       -webkit-text-size-adjust: 100%;
       text-size-adjust: 100%;
@@ -48,7 +70,7 @@
     }
 
     /* ── Root grid ── */
-    #dashboard {
+    #main-content {
       display: grid;
       grid-template-rows: 32px 112px 1fr 1fr 36px 38px;
       grid-template-columns: 1fr 2fr 1fr;
@@ -1665,7 +1687,7 @@
     @media (min-width: 768px) and (max-width: 1199px) {
       html { height: auto; min-height: 100%; overflow-y: auto; overflow-x: hidden; max-width: 100vw; }
       body { height: auto; overflow: visible; overflow-x: hidden; max-width: 100vw; }
-      #dashboard {
+      #main-content {
         grid-template-columns: 1fr 1fr;
         grid-template-rows: 32px auto auto 320px auto 380px 44px;
         height: auto; min-height: 100vh;
@@ -1717,7 +1739,7 @@
       html { height: auto; min-height: 100%; overflow-y: auto; }
       body { height: auto; overflow-y: visible; }
       *, *::before, *::after { max-width: 100%; }
-      #dashboard {
+      #main-content {
         display: flex; flex-direction: column;
         height: auto; min-height: 100vh;
         min-height: 100dvh;

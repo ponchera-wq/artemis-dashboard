@@ -422,7 +422,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
         const el = document.getElementById(id);
         if (el) { el.style.gridRow = ''; el.style.gridColumn = ''; }
       });
-      const dashboard = document.getElementById('dashboard');
+      const dashboard = document.getElementById('main-content');
       dashboard.style.gridTemplateRows = '';
       const crewStrip = document.getElementById('crew-strip');
       if (crewStrip) crewStrip.style.gridRow = '';
@@ -449,7 +449,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
     });
 
     // Expand dashboard grid rows to fit all panel rows
-    const dashboard = document.getElementById('dashboard');
+    const dashboard = document.getElementById('main-content');
     const panelRowCount = maxRow - 2; // rows 3..maxRow (row 1 = ref-nav, row 2 = top-bar)
     dashboard.style.gridTemplateRows =
       `32px 112px ${Array(panelRowCount).fill('1fr').join(' ')} 36px 38px`;
