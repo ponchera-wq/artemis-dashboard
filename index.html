@@ -103,18 +103,14 @@
 
   <nav id="ref-nav" aria-label="Reference guide navigation">
 
-    <!-- Desktop: brand abs-left -->
-    <div id="ref-brand-desktop" class="ref-brand">ARTEMIS II <span>MISSION</span></div>
-
-    <!-- Mobile top row (36px, always visible) -->
-    <div id="ref-top-row">
-      <div style="display:flex;align-items:center;gap:8px;">
+    <!-- Header: hamburger (left) · title · viewer — desktop uses CSS grid; mobile flex -->
+    <div id="ref-nav-header">
+      <div class="ref-nav-header-start">
         <button id="ref-nav-toggle" aria-label="Toggle reference menu">☰</button>
-        <div id="ref-brand-mobile" class="ref-brand">ARTEMIS II <span>MISSION</span></div>
+        <div id="ref-brand-mobile" class="ref-brand">ARTEMIS II&nbsp;<span>MISSION</span></div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span id="ref-watching"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite;margin-right:3px;"></span><span id="viewer-num-mobile">—</span> 👁</span>
-      </div>
+      <div id="ref-brand-desktop" class="ref-brand">ARTEMIS II&nbsp;<span>MISSION</span></div>
+      <span id="ref-watching"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite;margin-right:3px;"></span><span id="viewer-num-mobile">—</span> 👁</span>
     </div>
 
     <!-- Reference guide nav items -->
