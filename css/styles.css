@@ -2267,6 +2267,22 @@
     }
     .dsn-world-svg { width: 100%; height: auto; border-radius: 3px; display: block; }
 
+    /* Activity label */
+    .dsn-activity {
+      font-family: var(--font-ui); font-size: 0.41rem; letter-spacing: 0.1em;
+      color: rgba(168,212,255,0.65); padding: 3px 8px 5px;
+      border-bottom: 1px solid rgba(74,144,217,0.1); margin-bottom: 6px;
+    }
+    .dsn-activity-label {
+      color: rgba(74,144,217,0.55); margin-right: 4px;
+    }
+
+    /* Approach / recession indicator */
+    .dsn-approach {
+      font-family: var(--font-ui); font-size: 0.4rem; letter-spacing: 0.1em;
+      margin-top: 2px;
+    }
+
     /* Fun stat */
     .dsn-funstat {
       font-family: var(--font-mono); font-size: 0.37rem; color: rgba(74,144,217,0.35);

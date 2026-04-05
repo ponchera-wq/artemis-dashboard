@@ -49,11 +49,34 @@
       title: 'SIGNAL POWER (dBm)',
       body:  'The strength of the radio signal received from Orion. Measured in dBm (decibels relative to 1 milliwatt). Deep space signals are incredibly faint, often arriving at -120 dBm or lower—roughly a billionth of a billionth of a watt.',
     },
+    freq: {
+      title: 'SIGNAL FREQUENCY',
+      body:  'The precise radio frequency in use for this link. Within a band, specific channels are allocated by international treaty (ITU). The uplink and downlink use different frequencies to prevent self-interference — the dish transmits on one while listening on another simultaneously.',
+    },
+    wind: {
+      title: 'WIND SPEED AT DISH',
+      body:  'Current wind speed measured at the antenna complex. At high winds (typically above 50 km/h), large dishes must be stowed to prevent structural damage. Even moderate wind introduces mechanical vibration that degrades pointing accuracy, which becomes critical when tracking a spacecraft 400,000 km away.',
+    },
+    approach: {
+      title: 'APPROACH / RECESSION',
+      body:  'Derived from the difference between upleg and downleg ranges. The upleg range is the distance when the ground station transmits; the downleg range is the distance when the signal returns. If downleg &gt; upleg, Orion is moving away. If downleg &lt; upleg, Orion is approaching. The rate of change gives the radial velocity component.',
+    },
+    activity: {
+      title: 'STATION ACTIVITY',
+      body:  'The current operational mode reported by the DSN for this dish. Common activities include Spacecraft Telemetry, Tracking, and Command (routine ops), Maintenance, or Test. This label comes directly from the DSN operations system.',
+    },
   };
 
   const rtltHistory = [];
   const MAX_HIST = 30;
 
+  function fmtFreq(hz) {
+    hz = parseFloat(hz);
+    if (!hz || hz <= 0) return null;
+    if (hz >= 1e9) return (hz / 1e9).toFixed(4) + ' GHz';
+    if (hz >= 1e6) return (hz / 1e6).toFixed(3) + ' MHz';
+    return hz + ' Hz';
+  }
   function fmtRate(bps) {
     bps = parseInt(bps) || 0;
     if (bps <= 0) return '—';
@@ -103,16 +126,19 @@
           const dn   = sigs.find(s => s.tagName==='downSignal' && s.getAttribute('active')==='true');
           const dNum = node.getAttribute('name').replace(/\D/g,'');
           links.push({
-            station: curStation,
-            dish:    'DSS-' + dNum,
-            dishNum: dNum,
-            target:  tName,
-            up:  up ? { rate: up.getAttribute('dataRate'), band: up.getAttribute('band'), freq: up.getAttribute('frequency'), pwr: up.getAttribute('power') } : null,
-            dn:  dn ? { rate: dn.getAttribute('dataRate'), band: dn.getAttribute('band'), freq: dn.getAttribute('frequency'), pwr: dn.getAttribute('power') } : null,
-            rtlt:  tgt.getAttribute('rtlt'),
-            range: tgt.getAttribute('uplegRange'),
-            az: parseFloat(node.getAttribute('azimuthAngle'))   || null,
-            el: parseFloat(node.getAttribute('elevationAngle')) || null,
+            station:   curStation,
+            dish:      'DSS-' + dNum,
+            dishNum:   dNum,
+            target:    tName,
+            up:  up ? { rate: up.getAttribute('dataRate'), band: up.getAttribute('band'), freq: up.getAttribute('frequency'), pwr: up.getAttribute('power'), type: up.getAttribute('signalType') } : null,
+            dn:  dn ? { rate: dn.getAttribute('dataRate'), band: dn.getAttribute('band'), freq: dn.getAttribute('frequency'), pwr: dn.getAttribute('power'), type: dn.getAttribute('signalType') } : null,
+            rtlt:        tgt.getAttribute('rtlt'),
+            range:       tgt.getAttribute('uplegRange'),
+            downlegRange: tgt.getAttribute('downlegRange'),
+            az:          parseFloat(node.getAttribute('azimuthAngle'))   || null,
+            el:          parseFloat(node.getAttribute('elevationAngle')) || null,
+            windSpeed:   node.getAttribute('windSpeed'),
+            activity:    node.getAttribute('activity'),
           });
         }
       }
@@ -210,26 +236,54 @@
     const downStr = hasDn ? fmtRate(link.dn.rate) : '—';
     const upStr   = hasUp ? fmtRate(link.up.rate) : '—';
 
-    // Az/El
-    const azEl = (link.az !== null && link.el !== null)
-      ? `DISH POINTING · AZ: ${link.az.toFixed(1)}° · EL: ${link.el.toFixed(1)}°` : '';
-
-    // Secondary metrics to fill the gap
-    const rawR = parseFloat(link.range) || 384400; // fallback if no XML range
+    // Units
     const btnText = document.getElementById('unit-toggle')?.textContent || '';
-    const isMi = btnText.includes('KM'); // If button says "MI - KM", it means we ARE in MI mode
+    const isMi = btnText.includes('KM');
     const unit = isMi ? 'MI' : 'KM';
+
+    // Range + approach/recession
+    const rawR    = parseFloat(link.range)        || 384400;
+    const rawDn   = parseFloat(link.downlegRange) || 0;
     const rangeVal = unit === 'MI' ? (rawR * 0.621371) : rawR;
     const rangeStr = rangeVal.toLocaleString(undefined, {maximumFractionDigits:0}) + ' ' + unit;
+    let approachHTML = '';
+    if (rawDn > 0 && rawR > 0) {
+      const delta = rawDn - rawR; // positive = receding, negative = approaching
+      const arrow = delta > 0 ? '↑' : '↓';
+      const label = delta > 0 ? 'RECEDING' : 'APPROACHING';
+      const col   = delta > 0 ? 'rgba(255,167,38,0.8)' : 'rgba(0,230,118,0.8)';
+      const absDeltaKm = Math.abs(delta).toFixed(1);
+      approachHTML = `<div class="dsn-approach" style="color:${col};">${arrow} ${label} <span style="opacity:0.5;font-size:0.75em">(Δ ${absDeltaKm} km)</span> <button class="dsn-info-btn" data-dsn="approach" style="font-size:0.45rem">ⓘ</button></div>`;
+    }
 
+    // Az/El
     const azStr = link.az != null ? link.az.toFixed(1) + '°' : '—';
     const elStr = link.el != null ? link.el.toFixed(1) + '°' : '—';
-    
-    // Simulate power if not in XML (standard DSN is ~ -110 to -140 dBm)
-    const pwrBase = link.dn && link.dn.pwr ? parseFloat(link.dn.pwr) : -114.2;
+
+    // Signal power
+    const pwrBase  = link.dn && link.dn.pwr ? parseFloat(link.dn.pwr) : -114.2;
     const pwrJitter = (Math.random() * 0.4) - 0.2;
-    const pwrFinal = (pwrBase + pwrJitter).toFixed(1);
-    const pwrPct = Math.min(100, Math.max(0, (parseFloat(pwrFinal) + 150) * 2)); // map -150..-100 to 0..100
+    const pwrFinal  = (pwrBase + pwrJitter).toFixed(1);
+    const pwrPct    = Math.min(100, Math.max(0, (parseFloat(pwrFinal) + 150) * 2));
+
+    // Precise signal frequencies
+    const dnFreqStr = hasDn ? fmtFreq(link.dn.freq) : null;
+    const upFreqStr = hasUp ? fmtFreq(link.up.freq) : null;
+
+    // Wind speed
+    const ws = parseFloat(link.windSpeed);
+    const windHTML = (!isNaN(ws) && ws >= 0)
+      ? `<div class="dsn-metric" style="padding-top:8px; border-top:1px solid rgba(74,144,217,0.1);">
+           <div class="dsn-metric-val" style="font-size:0.75rem; color:#a8d4ff;">${ws.toFixed(1)} <span style="font-size:0.55rem; opacity:0.6;">km/h</span> <button class="dsn-info-btn" data-dsn="wind" style="font-size:0.45rem">ⓘ</button></div>
+           <div class="dsn-metric-label">Wind at Dish</div>
+         </div>`
+      : '';
+
+    // Activity label
+    const activityStr = link.activity ? link.activity.replace(/,\s*/g, ' · ') : null;
+    const activityHTML = activityStr
+      ? `<div class="dsn-activity"><span class="dsn-activity-label">ACTIVITY</span> ${activityStr} <button class="dsn-info-btn" data-dsn="activity" style="font-size:0.45rem">ⓘ</button></div>`
+      : '';
 
     return `
       <div class="dsn-link-card">
@@ -246,7 +300,8 @@
           ARTEMIS II ${estimated?'ESTIMATED':'LINKED'}
           ${signalTrackHTML(hasUp, hasDn)}
         </div>
-        
+        ${activityHTML}
+
         <div class="dsn-metrics">
           <!-- Row 1: Primary Telemetry -->
           <div class="dsn-metric dsn-rtlt">
@@ -261,18 +316,19 @@
           </div>
           <div class="dsn-metric">
             <div class="dsn-metric-val">${downStr} <button class="dsn-info-btn" data-dsn="rate">ⓘ</button></div>
-            ${dnBand && dnBand.name ? `<div class="dsn-band-badge" style="border-color:${dnBand.color}44;color:${dnBand.color};">${dnBand.name} <span style="opacity:0.55;font-size:0.9em">${dnBand.freq}</span></div>` : ''}
+            ${dnBand && dnBand.name ? `<div class="dsn-band-badge" style="border-color:${dnBand.color}44;color:${dnBand.color};">${dnBand.name}${dnFreqStr ? ` · <span style="opacity:0.8">${dnFreqStr}</span>` : ` <span style="opacity:0.55;font-size:0.9em">${dnBand.freq}</span>`} <button class="dsn-info-btn" data-dsn="freq" style="font-size:0.45rem">ⓘ</button></div>` : ''}
             <div class="dsn-metric-label">↓ Downlink</div>
           </div>
           <div class="dsn-metric">
             <div class="dsn-metric-val">${upStr}</div>
-            ${upBand && upBand.name ? `<div class="dsn-band-badge" style="border-color:${upBand.color}44;color:${upBand.color};">${upBand.name} <span style="opacity:0.55;font-size:0.9em">${upBand.freq}</span></div>` : ''}
+            ${upBand && upBand.name ? `<div class="dsn-band-badge" style="border-color:${upBand.color}44;color:${upBand.color};">${upBand.name}${upFreqStr ? ` · <span style="opacity:0.8">${upFreqStr}</span>` : ` <span style="opacity:0.55;font-size:0.9em">${upBand.freq}</span>`} <button class="dsn-info-btn" data-dsn="freq" style="font-size:0.45rem">ⓘ</button></div>` : ''}
             <div class="dsn-metric-label">↑ Uplink</div>
           </div>
 
-          <!-- Row 2: Enriched Metrics (Filling the Gap) -->
+          <!-- Row 2: Enriched Metrics -->
           <div class="dsn-metric" style="padding-top:8px; border-top:1px solid rgba(74,144,217,0.1);">
             <div class="dsn-metric-val" style="font-size:0.75rem; color:#a8d4ff;">${rangeStr} <button class="dsn-info-btn" data-dsn="range" style="font-size:0.45rem">ⓘ</button></div>
+            ${approachHTML}
             <div class="dsn-metric-label">Spacecraft Range</div>
           </div>
           <div class="dsn-metric" style="padding-top:8px; border-top:1px solid rgba(74,144,217,0.1);">
@@ -289,6 +345,7 @@
             </div>
             <div class="dsn-metric-label">Azimuth / Elevation</div>
           </div>
+          ${windHTML}
         </div>
       </div>`;
   }
