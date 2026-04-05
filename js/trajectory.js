@@ -753,6 +753,7 @@
 
     // ── Zoom controls ──
     var ctrlDiv = document.createElement('div');
+    ctrlDiv.className = 'traj-controls';
     Object.assign(ctrlDiv.style, { display:'flex',flexDirection:'row',gap:'3px',marginLeft:'6px',paddingLeft:'6px',borderLeft:'1px solid rgba(74,144,217,0.3)',alignItems:'center' });
     [{text:'+',fn:function(){exitPreset();sph.r=Math.max(5,sph.r*0.8);applyCam();stopAuto();}},{text:'\u2212',fn:function(){exitPreset();sph.r=Math.min(200,sph.r*1.2);applyCam();stopAuto();}},{text:'\u27f2',fn:function(){exitPreset();Object.assign(sph,JSON.parse(JSON.stringify(SPH_DEFAULT)));camLookAt.copy(trajCenter);applyCam();autoRotate=true;activePreset='overview';updatePresetBtns();}}].forEach(function(b) {
       var btn = document.createElement('button'); btn.textContent = b.text;

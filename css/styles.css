@@ -1728,15 +1728,15 @@
       #telem-milestones { grid-area: milestones; border-bottom: 1px solid var(--border); flex: none; padding: 8px; }
       #tb-controls      { grid-area: controls; display: flex; align-items: center; justify-content: center; padding: 6px 12px; border-bottom: 1px solid var(--border); flex: none; }
       #tb-controls .yt-expand-btn, #tb-controls .ref-observer-btn { display: none; }
-      #unit-toggle { width: auto !important; font-size: 0.52rem !important; padding: 5px 20px !important; }
+      #unit-toggle { width: auto !important; font-size: 0.69rem !important; padding: 5px 20px !important; }
 
       #met-display { font-size: clamp(1rem, 7vw, 1.5rem); }
       .telem-value { font-size: clamp(1.1rem, 7vw, 1.8rem); }
-      .telem-label { font-size: 0.4rem; }
+      .telem-label { font-size: 0.69rem !important; }
 
       /* Panels */
       .panel        { border-radius: 2px; }
-      .panel-header { font-size: 0.52rem; padding: 5px 10px 4px; }
+      .panel-header { font-size: 0.69rem; padding: 5px 10px 4px; }
 
       /* YouTube: 16:9 */
       #feed-youtube { flex-shrink: 0; height: auto; }
@@ -1750,7 +1750,7 @@
       #feed-dsn { flex-shrink: 0; min-height: 420px; align-self: stretch; }
       .dsn-metric-val { font-size: 1.1rem; }
       .dsn-rtlt .dsn-metric-val { font-size: 1.5rem; }
-      .dsn-metric-label { font-size: 0.44rem; }
+      .dsn-metric-label { font-size: 0.69rem; }
       .dsn-link-card { padding: 10px 12px; }
       .dsn-metrics { gap: 8px; }
 
@@ -1768,7 +1768,7 @@
         pointer-events: none;
         z-index: 1;
       }
-      .news-tab { flex: 0 0 auto; min-width: 60px; min-height: 44px; padding: 10px 16px; font-size: 0.58rem; }
+      .news-tab { flex: 0 0 auto; min-width: 60px; min-height: 44px; padding: 10px 16px; font-size: 0.69rem; }
 
       /* Timeline */
       #feed-blog { height: 420px; max-height: 420px; flex-shrink: 0; }
@@ -2760,8 +2760,8 @@ body.ref-modal-active {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 28px;
-    height: 24px;
+    min-width: 44px;
+    min-height: 44px;
     background: rgba(255, 167, 38, 0.1);
     border: 1px solid rgba(255, 167, 38, 0.4);
     color: var(--amber);
@@ -2946,4 +2946,25 @@ a:focus-visible,
   outline: 2px solid rgba(0, 229, 255, 0.75);
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+/* ── Mobile touch targets (min 44×44px) ───────────────────────── */
+@media (max-width: 767px) {
+  #ref-modal-close,
+  #crew-modal-close,
+  #sw-full-close,
+  .sw-info-btn,
+  .dsn-info-btn,
+  .traj-controls button {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ref-share-btn {
+    min-height: 44px;
+    padding: 10px 12px;
+  }
 }
