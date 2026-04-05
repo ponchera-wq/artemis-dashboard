@@ -127,6 +127,8 @@
 
       var el = document.createElement('div');
       el.className = 'tl-event ' + cls;
+      el.setAttribute('tabindex', '0');
+      el.setAttribute('role', 'button');
       el.innerHTML =
         '<div class="tl-dot"></div>' +
         '<div class="tl-met">' + fmtMet(ev.metSec) +
@@ -146,6 +148,12 @@
           if (!wasExpanded) target.classList.add('tl-expanded');
         });
       }
+      el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.click();
+        }
+      });
       if (isActive) activeEl = el;
     }
 

@@ -136,6 +136,13 @@ if (signalPill) {
     signalAcquired = !signalAcquired;
     applySignalState();
   });
+  signalPill.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      signalAcquired = !signalAcquired;
+      applySignalState();
+    }
+  });
 }
 
 })();

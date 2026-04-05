@@ -163,5 +163,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCrewMod
 
 document.querySelectorAll('.crew-strip-member[data-crew]').forEach(el => {
   el.addEventListener('click', () => openCrewModal(el.dataset.crew));
+  el.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openCrewModal(el.dataset.crew);
+    }
+  });
 });
 })();
