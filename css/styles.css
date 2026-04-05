@@ -1844,6 +1844,51 @@
         padding: 0 10px;
         font-size: 1rem;
       }
+
+      /* ── Mobile font floor: 11px minimum (0.6875rem) ── */
+      .telem-unit                { font-size: 0.69rem !important; }
+      .telem-val-row .telem-unit { font-size: 0.69rem !important; }
+      .stat-label                { font-size: 0.69rem !important; }
+      .stat-sub                  { font-size: 0.69rem !important; }
+      .tb-sect-label             { font-size: 0.69rem; }
+      .met-sub                   { font-size: 0.69rem; }
+      #utc-display               { font-size: 0.69rem; }
+      #signal-pill               { font-size: 0.69rem; }
+      #flight-day-display        { font-size: 0.69rem !important; }
+      #current-event-name        { font-size: 0.69rem !important; }
+      #moon-annotation           { font-size: 0.69rem !important; }
+      .phase-node-label          { font-size: 0.69rem; }
+      .tl-filter                 { font-size: 0.69rem; }
+      .tl-crit                   { font-size: 0.69rem; }
+      .tl-localtime              { font-size: 0.69rem; }
+      .tl-eta                    { font-size: 0.69rem; }
+      .tl-day-header             { font-size: 0.69rem; }
+      .dsn-link-header           { font-size: 0.69rem; }
+      .dsn-status-bar            { font-size: 0.69rem; }
+      .dsn-complex-name          { font-size: 0.69rem; }
+      .dsn-complex-detail        { font-size: 0.69rem; }
+      .dsn-network-map-title     { font-size: 0.69rem; }
+      .dsn-funstat               { font-size: 0.69rem; }
+      .dsn-nolink                { font-size: 0.69rem; }
+      .dsn-nolink-subs           { font-size: 0.69rem; }
+      .footer-disclaimer         { font-size: 0.69rem; }
+      .footer-left,
+      .footer-center,
+      .footer-right              { font-size: 0.69rem; }
+      #tl-next-event             { font-size: 0.69rem; }
+      .tl-next-label             { font-size: 0.69rem; }
+      .tl-next-when              { font-size: 0.69rem; }
+      #local-time-display        { font-size: 0.69rem; }
+      .yt-tab                    { font-size: 0.69rem; }
+      /* Telemetry overlay */
+      .to-extra-label            { font-size: 0.69rem; }
+      .to-extra-item > div:not(.to-extra-label):not(.to-extra-val) { font-size: 0.69rem !important; }
+      #to-flight-day             { font-size: 0.69rem !important; }
+      #to-unit-toggle            { font-size: 0.69rem; }
+      #stat-gforce               { font-size: 0.75rem !important; }
+      /* Weather panel */
+      #xray-label                { font-size: 0.69rem !important; }
+      #feed-weather a            { font-size: 0.69rem !important; }
     }
 
     /* ══════════════════════════════════════════════════════════════════
@@ -2247,7 +2292,7 @@
   }
   .tms-label {
     font-family: 'Share Tech Mono', monospace;
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.1em;
     color: rgba(74,144,217,0.7);
     text-transform: uppercase;
@@ -2701,7 +2746,7 @@ body.ref-modal-active {
   .ref-crew-grid,
   .ref-cubesat-grid,
   .ref-two-col { grid-template-columns: 1fr; }
-  .ref-nav-btn { padding: 4px 10px; font-size: 0.50rem; }
+  .ref-nav-btn { padding: 4px 10px; font-size: 0.69rem; }
 }
 
 /* ── Consolidated Mobile Header ── */
@@ -2743,7 +2788,7 @@ body.ref-modal-active {
 
   .ref-observer-btn {
     font-family: var(--font-ui);
-    font-size: 0.42rem;
+    font-size: 0.69rem;
     letter-spacing: 0.08em;
     padding: 3px 8px;
     border: 1px solid rgba(255,167,38,0.5);
@@ -2774,7 +2819,7 @@ body.ref-modal-active {
 
   #ref-watching {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: 0.69rem;
     color: var(--green);
     display: flex;
     align-items: center;
@@ -2799,7 +2844,7 @@ body.ref-modal-active {
     border: 1px solid rgba(74, 144, 217, 0.2);
     color: var(--text-dim);
     font-family: var(--font-mono);
-    font-size: 0.6rem;
+    font-size: 0.69rem;
     padding: 2px 6px;
     border-radius: 2px;
     cursor: pointer;
@@ -2823,7 +2868,7 @@ body.ref-modal-active {
     text-align: left;
     padding: 12px 16px;
     border-bottom: 1px solid rgba(74, 144, 217, 0.1);
-    font-size: 0.65rem;
+    font-size: 0.69rem;
     color: var(--text);
   }
   #ref-nav .ref-nav-btn:last-child { border-bottom: none; }
