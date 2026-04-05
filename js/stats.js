@@ -99,9 +99,19 @@ function tickTelem() {
   var metSec = (Date.now() - LAUNCH_UTC) / 1000;
   var state = MissionEphemeris.getState(metSec);
 
-  var earthKm = state.distEarthKm;
-  var moonKm  = state.distMoonKm;
+  var earthKm  = state.distEarthKm;
+  var moonKm   = state.distMoonKm;
   var speedKmh = state.speedKms * 3600; // km/s -> km/h
+
+  // Override with higher-fidelity Horizons data when available
+  var hz = ObserverHorizons.isReady() ? ObserverHorizons.getAll(metSec) : null;
+  if (hz) {
+    earthKm  = hz.earthDist_km;
+    moonKm   = hz.moonDist_km;
+    speedKmh = hz.vEarth_km_s * 3600;
+    var illuEl = document.getElementById('stat-illum');
+    if (illuEl) illuEl.textContent = hz.illu_pct.toFixed(1) + '%';
+  }
 
   // Badge: OEM data vs out-of-range estimate
   setTelemBadge(state.inDataRange ? 'OEM' : 'EST');
@@ -204,6 +214,7 @@ if (_unitToggle) _unitToggle.addEventListener('click', function() {
 
 // Wait for ephemeris data before starting ticks
 MissionEphemeris.ready.then(function() {
+  ObserverHorizons.load();
   tickTelem();
   window.addEventListener('dashboard-tick', tickTelem);
 });
