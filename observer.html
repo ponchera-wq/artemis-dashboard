@@ -518,6 +518,63 @@
       pointer-events: none;
     }
     .section-header.is-collapsed .sh-toggle, .panel-header.is-collapsed .sh-toggle { color: rgba(0,229,255,0.7); }
+
+    /* ── Weather stats chips ──────────────────────────────────────── */
+    .wx-stat {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.58rem;
+      background: rgba(0,0,0,0.4); border: 1px solid rgba(0,229,255,0.15);
+      border-radius: 3px; padding: 2px 7px; color: rgba(232,234,246,0.55);
+      white-space: nowrap;
+    }
+    #vc-weather-stats { display: none; margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
+
+    /* ── Weather Info Popup ───────────────────────────────────────── */
+    #wx-info-popup { display: none; position: fixed; inset: 0; z-index: 3000; align-items: center; justify-content: center; }
+    #wx-info-popup.open { display: flex; }
+    .wx-popup-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.78); backdrop-filter: blur(4px); }
+    .wx-popup-panel {
+      position: relative; z-index: 1; width: min(560px, 94vw); max-height: 85vh;
+      background: #060d1a; border: 1px solid rgba(0,229,255,0.25); border-radius: 8px;
+      display: flex; flex-direction: column; overflow: hidden;
+      box-shadow: 0 0 40px rgba(0,229,255,0.08);
+    }
+    .wx-popup-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid rgba(0,229,255,0.12);
+      font-family: 'Orbitron', sans-serif; font-size: 0.52rem; letter-spacing: 0.18em;
+      color: #00e5ff; flex-shrink: 0;
+    }
+    #wx-info-close {
+      background: none; border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.5);
+      border-radius: 3px; width: 22px; height: 22px; cursor: pointer; font-size: 1rem; line-height: 1;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0;
+    }
+    #wx-info-close:hover { border-color: rgba(0,229,255,0.4); color: #00e5ff; }
+    .wx-popup-body { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+    .wx-popup-intro { font-family: 'Rajdhani', sans-serif; font-size: 0.78rem; color: rgba(232,234,246,0.7); margin: 0; line-height: 1.5; }
+    .wx-factor {
+      padding: 10px 12px; background: rgba(0,229,255,0.03);
+      border: 1px solid rgba(0,229,255,0.1); border-radius: 5px;
+    }
+    .wx-factor-head {
+      font-family: 'Orbitron', sans-serif; font-size: 0.46rem; letter-spacing: 0.14em;
+      color: #00e5ff; margin-bottom: 5px; text-transform: uppercase;
+    }
+    .wx-factor-body { font-family: 'Rajdhani', sans-serif; font-size: 0.75rem; color: rgba(232,234,246,0.65); line-height: 1.5; margin-bottom: 8px; }
+    .wx-factor-scale { display: flex; flex-direction: column; gap: 4px; }
+    .wx-scale-row { display: flex; align-items: center; gap: 8px; }
+    .wx-scale-desc { font-family: 'Rajdhani', sans-serif; font-size: 0.72rem; color: rgba(232,234,246,0.5); }
+    .wxs {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.54rem;
+      padding: 2px 8px; border-radius: 3px; white-space: nowrap; flex-shrink: 0;
+    }
+    .wxs.green { background: rgba(0,230,118,0.1); color: #00e676; border: 1px solid rgba(0,230,118,0.3); }
+    .wxs.amber { background: rgba(255,167,38,0.1); color: #ffa726; border: 1px solid rgba(255,167,38,0.3); }
+    .wxs.red   { background: rgba(239,83,80,0.1);  color: #ef5350; border: 1px solid rgba(239,83,80,0.3); }
+    .wx-popup-credit {
+      font-family: 'Share Tech Mono', monospace; font-size: 0.48rem; color: rgba(74,144,217,0.45);
+      border-top: 1px solid rgba(0,229,255,0.08); padding-top: 10px; line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -845,10 +902,19 @@
 
         <!-- WEATHER verdict -->
         <div class="verdict-card" id="vc-weather">
-          <div class="verdict-icon" id="vc-weather-icon">🌡</div>
-          <div class="verdict-title">LOCAL WEATHER</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+            <div class="verdict-icon" id="vc-weather-icon" style="margin-bottom:0;">🌡</div>
+            <div class="verdict-title" style="flex:1;padding-top:0;">LOCAL WEATHER</div>
+            <button id="wx-info-btn" class="sh-help-icon" style="margin-left:0;flex-shrink:0;cursor:pointer;" aria-label="About these conditions">(i)</button>
+          </div>
           <div class="verdict-main" id="vc-weather-main">FETCHING...</div>
-          <div class="verdict-detail" id="vc-weather-detail">Checking cloud cover from Open-Meteo...</div>
+          <div class="verdict-detail" id="vc-weather-detail">Checking conditions from Open-Meteo...</div>
+          <div id="vc-weather-stats">
+            <span class="wx-stat" id="ws-cloud"></span>
+            <span class="wx-stat" id="ws-wind"></span>
+            <span class="wx-stat" id="ws-humid"></span>
+            <span class="wx-stat" id="ws-dew"></span>
+          </div>
         </div>
 
         </div><!-- /.verdict-grid -->
@@ -892,6 +958,72 @@
     </div>
 
   </div><!-- /.guided-page -->
+
+  <!-- ── Local Weather Info Popup ─────────────────────────────────── -->
+  <div id="wx-info-popup" role="dialog" aria-modal="true" aria-labelledby="wx-popup-title">
+    <div class="wx-popup-backdrop" id="wx-popup-backdrop"></div>
+    <div class="wx-popup-panel">
+      <div class="wx-popup-header">
+        <span id="wx-popup-title">LOCAL OBSERVING CONDITIONS — GUIDE</span>
+        <button id="wx-info-close" aria-label="Close">×</button>
+      </div>
+      <div class="wx-popup-body">
+        <p class="wx-popup-intro">Five factors determine whether your sky is ready for astrophotography. The verdict combines all of them into a single readiness rating.</p>
+
+        <div class="wx-factor">
+          <div class="wx-factor-head">☁ Cloud Cover</div>
+          <div class="wx-factor-body">The most critical factor. Even thin cirrus scatters light and kills contrast. Any cloud above 20% will measurably degrade your images — above 60% the sky is effectively blocked.</div>
+          <div class="wx-factor-scale">
+            <div class="wx-scale-row"><span class="wxs green">0–20%</span><span class="wx-scale-desc">Excellent transparency</span></div>
+            <div class="wx-scale-row"><span class="wxs amber">20–60%</span><span class="wx-scale-desc">Patchy — session at risk</span></div>
+            <div class="wx-scale-row"><span class="wxs red">60–100%</span><span class="wx-scale-desc">Overcast — no-go</span></div>
+          </div>
+        </div>
+
+        <div class="wx-factor">
+          <div class="wx-factor-head">💨 Wind Speed</div>
+          <div class="wx-factor-body">Wind drives atmospheric turbulence ("seeing") that blurs star images even in a perfectly clear sky. At higher speeds your mount will also struggle to track and long exposures will smear.</div>
+          <div class="wx-factor-scale">
+            <div class="wx-scale-row"><span class="wxs green">&lt;10 km/h</span><span class="wx-scale-desc">Steady seeing — optimal</span></div>
+            <div class="wx-scale-row"><span class="wxs amber">10–25 km/h</span><span class="wx-scale-desc">Marginal seeing</span></div>
+            <div class="wx-scale-row"><span class="wxs red">&gt;25 km/h</span><span class="wx-scale-desc">Poor seeing / tracking issues</span></div>
+          </div>
+        </div>
+
+        <div class="wx-factor">
+          <div class="wx-factor-head">💧 Humidity</div>
+          <div class="wx-factor-body">High humidity reduces sky transparency through haze and dramatically increases dew risk on exposed optics. Mirrors, lenses, and camera sensors can fog within minutes above 80%.</div>
+          <div class="wx-factor-scale">
+            <div class="wx-scale-row"><span class="wxs green">&lt;60%</span><span class="wx-scale-desc">Low risk</span></div>
+            <div class="wx-scale-row"><span class="wxs amber">60–80%</span><span class="wx-scale-desc">Monitor closely — dew heater advised</span></div>
+            <div class="wx-scale-row"><span class="wxs red">&gt;80%</span><span class="wx-scale-desc">High fogging / dew risk</span></div>
+          </div>
+        </div>
+
+        <div class="wx-factor">
+          <div class="wx-factor-head">∆T Dew Point Margin</div>
+          <div class="wx-factor-body">The gap between air temperature and dew point. When this closes to under 3°C, water condenses on any cool surface — your primary mirror or camera front element will fog. A dew heater is essential when ∆T is small.</div>
+          <div class="wx-factor-scale">
+            <div class="wx-scale-row"><span class="wxs green">&gt;5°C</span><span class="wx-scale-desc">Safe — no condensation risk</span></div>
+            <div class="wx-scale-row"><span class="wxs amber">2–5°C</span><span class="wx-scale-desc">Dew heater strongly recommended</span></div>
+            <div class="wx-scale-row"><span class="wxs red">&lt;2°C</span><span class="wx-scale-desc">Condensation likely — optics at risk</span></div>
+          </div>
+        </div>
+
+        <div class="wx-factor">
+          <div class="wx-factor-head">👁 Visibility</div>
+          <div class="wx-factor-body">Surface visibility reflects haze, smoke, dust, and aerosols in the lower atmosphere. Even without cloud, smoke or dust layers reduce contrast and limit how faint an object you can detect.</div>
+          <div class="wx-factor-scale">
+            <div class="wx-scale-row"><span class="wxs green">10+ km</span><span class="wx-scale-desc">Excellent transparency</span></div>
+            <div class="wx-scale-row"><span class="wxs amber">5–10 km</span><span class="wx-scale-desc">Some haze — reduced contrast</span></div>
+            <div class="wx-scale-row"><span class="wxs red">&lt;5 km</span><span class="wx-scale-desc">Heavy haze or fog — no-go</span></div>
+          </div>
+        </div>
+
+        <div class="wx-popup-credit">Weather data: Open-Meteo API (free, no key required). All calculations are performed locally — no location data is stored or transmitted beyond the weather API request.</div>
+      </div>
+    </div>
+  </div>
 
   <!-- Hidden legacy elements kept for JS compatibility -->
   <div id="ui-vis-chip"       style="display:none;"></div>
@@ -963,6 +1095,15 @@
     s.src = "/_vercel/insights/script.js";
     document.head.appendChild(s);
   }
+</script>
+
+<script>
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="Ii init Di qi Sr Bi Zi Pi capture calculateEventProperties Yi register register_once register_for_session unregister unregister_for_session Xi getFeatureFlag getFeatureFlagPayload getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey displaySurvey cancelPendingSurvey canRenderSurvey canRenderSurveyAsync Ji identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException startExceptionAutocapture stopExceptionAutocapture loadToolbar get_property getSessionProperty Wi Vi createPersonProfile setInternalOrTestUser Gi Fi Ki opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing get_explicit_consent_status is_capturing clear_opt_in_out_capturing $i debug Tr Ui getPageViewId captureTraceFeedback captureTraceMetric Ri".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('phc_rXvoBUDKYrX4FSdSFN4JR92yoUEDvRLkNzx6CivdNmNR', {
+        api_host: 'https://us.i.posthog.com',
+        defaults: '2026-01-30',
+        person_profiles: 'identified_only',
+    });
 </script>
 </body>
 </html>
