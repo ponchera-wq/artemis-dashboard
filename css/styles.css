@@ -1655,7 +1655,7 @@
       #ref-nav         { grid-row: 1; grid-column: 1 / -1; }
       #top-bar         { grid-row: 2; grid-column: 1 / -1; }
       #feed-youtube    { grid-row: 3; grid-column: 1; min-height: 260px; }
-      #feed-dsn        { grid-row: 5; grid-column: 1; min-height: 420px; }
+      #feed-dsn        { grid-row: 5; grid-column: 1; min-height: 420px; align-self: stretch; }
       #feed-arow       { grid-row: 4; grid-column: 1 / -1; }
       #feed-weather    { grid-row: 3; grid-column: 2; min-height: 240px; }
       #feed-blog       { grid-row: 5; grid-column: 2; min-height: 240px; }
@@ -1746,7 +1746,7 @@
       #feed-arow { height: 290px; flex-shrink: 0; }
 
       /* DSN custom panel */
-      #feed-dsn { flex-shrink: 0; min-height: 420px; }
+      #feed-dsn { flex-shrink: 0; min-height: 420px; align-self: stretch; }
       .dsn-metric-val { font-size: 1.1rem; }
       .dsn-rtlt .dsn-metric-val { font-size: 1.5rem; }
       .dsn-metric-label { font-size: 0.44rem; }
