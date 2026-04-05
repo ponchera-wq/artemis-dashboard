@@ -2472,13 +2472,13 @@
   grid-column: 1 / -1;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   position: relative;
   background: rgba(4, 6, 16, 0.82);
   border-top: 1px solid rgba(255,140,0,0.18);
   border-bottom: 1px solid rgba(255,140,0,0.18);
   flex-shrink: 0;
-  height: 32px;
+  height: 36px;
   z-index: 10;
 }
 .ref-brand {
@@ -2498,12 +2498,12 @@
 #ref-brand-desktop {
   position: absolute;
   left: 12px;
-  display: flex;
+  display: none;
   align-items: center;
 }
 #ref-brand-mobile { display: none; }
 #ref-menu-items {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   gap: 4px;
@@ -2909,10 +2909,17 @@ body.ref-modal-active {
 }
 
 /* ── Consolidated Mobile Header ── */
-#ref-top-row { display: none; } /* Hide on desktop */
+#ref-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  width: 100%;
+}
 
 @media (max-width: 767px) {
-  #ref-brand-desktop { display: none; }
   #ref-brand-mobile { display: block; font-size: 0.72rem; letter-spacing: 0.1em; padding: 0 8px; }
   #ref-nav {
     height: auto;
@@ -2932,19 +2939,8 @@ body.ref-modal-active {
   }
 
   #ref-nav.ref-nav-open {
-    max-height: 100vh;
     max-height: 100dvh;
-    overflow-y: auto;
     overscroll-behavior: contain;
-  }
-
-  #ref-top-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 36px;
-    padding: 0 10px;
-    flex-shrink: 0;
   }
 
   .ref-observer-btn {
@@ -2963,17 +2959,9 @@ body.ref-modal-active {
   }
 
   #ref-nav-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 44px;
-    min-height: 44px;
     background: rgba(255, 167, 38, 0.1);
     border: 1px solid rgba(255, 167, 38, 0.4);
-    color: var(--amber);
-    font-size: 1rem;
     border-radius: 3px;
-    cursor: pointer;
     position: static;
     transform: none;
   }
@@ -3012,50 +3000,48 @@ body.ref-modal-active {
     transition: all 0.2s;
   }
   .ref-share-btn:active { background: rgba(0, 229, 255, 0.2); color: #fff; }
-
-  #ref-menu-items {
-    display: none;
-    flex-direction: column;
-    border-top: 1px solid rgba(74, 144, 217, 0.1);
-  }
-
-  #ref-nav.ref-nav-open #ref-menu-items {
-    display: flex;
-  }
-
-  #ref-nav .ref-nav-btn {
-    display: block !important;
-    width: 100%;
-    text-align: left;
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(74, 144, 217, 0.1);
-    font-size: 0.69rem;
-    color: var(--text);
-  }
-  #ref-nav .ref-nav-btn:last-child { border-bottom: none; }
 }
 
 /* ── Reference nav hamburger ── */
 #ref-nav-toggle {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   background: none; border: 1px solid rgba(255,167,38,0.5);
   color: var(--amber); font-size: 1rem; padding: 2px 8px;
   border-radius: 4px; cursor: pointer; z-index: 11;
   font-family: var(--font-mono);
 }
 
-@media (max-width: 767px) {
-  #ref-nav-toggle { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
-  #ref-nav .ref-nav-btn { display: none; }
-  #ref-nav.ref-nav-open .ref-nav-btn {
-    display: block; width: 100%; text-align: left;
-    padding: 10px 16px; border-bottom: 1px solid rgba(74,144,217,0.15);
-  }
-  #ref-nav.ref-nav-open {
-    flex-direction: column; align-items: stretch;
-    position: relative; z-index: 20;
-  }
+#ref-nav.ref-nav-open {
+  flex-direction: column;
+  align-items: stretch;
+  max-height: 100vh;
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+  z-index: 9000;
 }
+
+#ref-nav.ref-nav-open #ref-menu-items {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(74,144,217,0.1);
+}
+
+#ref-nav .ref-nav-btn {
+  display: block !important;
+  width: 100%;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(74,144,217,0.1);
+  font-size: 0.69rem;
+  color: var(--text);
+}
+
+#ref-nav .ref-nav-btn:last-child { border-bottom: none; }
 
 /* ── Crew strip 2x2 grid on mobile ── */
 @media (max-width: 767px) {
