@@ -3106,6 +3106,24 @@ body.ref-modal-active {
   align-items: stretch;
 }
 
+/* Desktop: expanded nav must overflow its grid row and float above panels.
+   These rules come AFTER the global open rule so they win on equal specificity. */
+@media (min-width: 768px) {
+  #ref-nav.ref-nav-open {
+    overflow: visible;
+    max-height: none;
+  }
+  #ref-nav.ref-nav-open #ref-menu-items,
+  #ref-nav.ref-nav-open #ref-share-row {
+    background: rgba(4, 6, 16, 0.97);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #ref-nav.ref-nav-open #ref-share-row {
+    box-shadow: 0 12px 32px rgba(0,0,0,0.6);
+  }
+}
+
 #ref-nav-toggle {
   background: rgba(255, 167, 38, 0.05);
   border: 1px solid rgba(255, 167, 38, 0.25);
