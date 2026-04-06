@@ -579,7 +579,7 @@
       new THREE.Vector3(0, 0, 0), // Earth
       new THREE.Vector3(initMoonPos.x * 0.4, initMoonPos.y * 0.4 + 1.5, initMoonPos.z * 0.4 - 1.2), // Outbound High & Wide
       new THREE.Vector3(initMoonPos.x * 0.9, initMoonPos.y * 0.9 + 0.8, initMoonPos.z * 0.9 - 0.4), // Approach
-      new THREE.Vector3(initMoonPos.x + moonCA_R * 1.8, initMoonPos.y + moonCA_R * 0.8, initMoonPos.z), // Far Side Loop
+      new THREE.Vector3(initMoonPos.x + moonCA_R * 0.5, initMoonPos.y + moonCA_R * 0.3, initMoonPos.z + moonCA_R * 0.3), // Far Side Loop
       new THREE.Vector3(initMoonPos.x * 0.9, initMoonPos.y * 0.9 - 0.8, initMoonPos.z * 0.9 + 0.4), // Cross Inbound
       new THREE.Vector3(initMoonPos.x * 0.2, initMoonPos.y * 0.2 - 1.5, initMoonPos.z * 0.2 + 1.2), // Return Low & Wide
       new THREE.Vector3(0, 0, 0) // Earth
