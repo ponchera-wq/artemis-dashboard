@@ -51,8 +51,8 @@ def compute_moon_positions(points):
 
     for p in points:
         t = ts.from_datetime(p['dt'])
-        # Moon position relative to Earth barycenter in ICRF (km)
-        moon_pos = earth.at(t).observe(moon_body).position.km
+        # Geocentric Moon position in ICRF/J2000 (≈ EME2000), no light-time correction
+        moon_pos = (moon_body - earth).at(t).position.km
         p['moon_x'] = float(moon_pos[0])
         p['moon_y'] = float(moon_pos[1])
         p['moon_z'] = float(moon_pos[2])
@@ -113,7 +113,7 @@ def to_json(points):
             'launchUtc': '2026-04-01T22:35:12Z',
             'frame': 'EME2000',
             'oemSource': 'artemis2_oem.asc',
-            'moonSource': 'DE440s via skyfield',
+            'moonSource': 'skyfield/de440s.bsp',
             'generated': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             'pointCount': len(rows),
         },
