@@ -792,10 +792,8 @@
     container.appendChild(popupEl);
     var popupOpen = false;
 
-    // ── Osculating orbit overlay ──
-    if (typeof OsculatingOrbit !== 'undefined') {
-      OsculatingOrbit.init({ scene: scene, camera: camera, lctx: lctx, toScene: toScene, rotMat: rotMat, popupEl: popupEl });
-    }
+    OsculatingOrbit.init(scene, THREE, toScene, rotMat, SCENE_SCALE, popupEl, lctx, camera, W, H);
+
     function closePopup() { popupEl.style.display = 'none'; popupOpen = false; }
     function openPopup(wp, sx, sy) {
       var nowMet = (Date.now()-LAUNCH_UTC)/1000;
@@ -1021,6 +1019,8 @@
       var orionResult = getPosByMet(metSec);
       orionGroup.position.copy(orionResult.pos);
       var gt = orionResult.frac;
+
+      OsculatingOrbit.update(metSec);
 
       // Orient spacecraft: align local +Y with velocity tangent
       var velDir = getOrionVelocityDir(metSec);

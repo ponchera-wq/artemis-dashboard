@@ -227,12 +227,12 @@ var OsculatingOrbit = (function () {
 
   // ── Public API ────────────────────────────────────────────────────
 
-  function init(opts) {
-    _scene   = opts.scene;
-    _toScene = opts.toScene;
-    _popupEl = opts.popupEl;
-    _lctx    = opts.lctx;
-    _camera  = opts.camera;
+  function init(scene, THREE_unused, toScene, rotMat_unused, SCENE_SCALE_unused, popupEl, lctx, camera, W_unused, H_unused) {
+    _scene   = scene;
+    _toScene = toScene;
+    _popupEl = popupEl;
+    _lctx    = lctx;
+    _camera  = camera;
     // rotMat is baked into toScene — we use toScene() for all conversions
     _loadData();
   }
