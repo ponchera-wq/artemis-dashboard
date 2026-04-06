@@ -1097,7 +1097,7 @@
       orionGroup.quaternion.slerp(quat, 0.1);
 
       // Exhaust pulse
-      exhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
+      if (exhaustOuter) exhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
       
       if (apExhaustOuter && apExhaustInner) {
         apExhaustOuter.material.opacity = 0.3 + 0.3 * Math.sin(now / 500);
@@ -1105,7 +1105,7 @@
         apExhaustInner.material.opacity = 0.4 + 0.4 * Math.sin(now / 300);
         apExhaustInner.scale.setScalar(1.0 + 0.5 * Math.sin(now / 150));
       }
-      exhaustInner.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
+      if (exhaustInner) exhaustInner.material.opacity = 0.3 + 0.3 * Math.sin(now / 430);
       var ng = orionGroup.userData.nozzleGlow;
       if (ng) ng.material.opacity = 0.5 + 0.3 * Math.sin(now / 180);
 
