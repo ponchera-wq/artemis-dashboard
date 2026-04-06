@@ -236,8 +236,7 @@
     var cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.008, 48, 48), cloudMat);
     earth.add(cloudMesh); // child of earth so it inherits rotation
     loadTex([
-      'https://unpkg.com/three-globe/example/img/earth-clouds.png',
-      'https://raw.githubusercontent.com/turban/webgl-earth/master/images/fair_clouds_4k.jpg',
+      'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_atmos_2048.jpg',
     ], function(tex) { cloudMat.alphaMap = tex; cloudMat.color = new THREE.Color(0xffffff); cloudMat.needsUpdate = true; });
 
     // Atmosphere glow
