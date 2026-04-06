@@ -1497,24 +1497,25 @@
     // ── Mini Timeline ──
     var miniTimeline = document.createElement('div');
     miniTimeline.id = 'mini-timeline';
-    document.head.insertAdjacentHTML('beforeend', '<style>@media (max-width: 768px) { #mini-timeline { display: none !important; } #mt-toggle { display: none !important; } } #mini-timeline::-webkit-scrollbar { width: 4px; } #mini-timeline::-webkit-scrollbar-thumb { background: rgba(0, 255, 170, 0.3); border-radius: 2px; } #mini-timeline::-webkit-scrollbar-track { background: transparent; }</style>');
+    document.head.insertAdjacentHTML('beforeend', '<style>@media (max-width: 768px) { #mini-timeline { display: none !important; } #mt-toggle { display: none !important; } } #mini-timeline::-webkit-scrollbar { width: 4px; } #mini-timeline::-webkit-scrollbar-thumb { background: rgba(168,224,0,0.25); border-radius: 2px; } #mini-timeline::-webkit-scrollbar-track { background: transparent; }</style>');
     Object.assign(miniTimeline.style, {
       position: 'absolute',
       right: '10px',
       top: '10px',
       maxHeight: 'calc(100% - 48px)',
-      width: '140px',
-      background: 'rgba(5, 12, 30, 0.85)',
-      border: '1px solid rgba(74, 144, 217, 0.3)',
+      width: '150px',
+      background: 'rgba(4, 8, 18, 0.82)',
+      border: '1px solid rgba(168, 224, 0, 0.22)',
       borderRadius: '4px',
       zIndex: '4',
       overflowY: 'auto',
       pointerEvents: 'auto',
       display: 'flex',
       flexDirection: 'column',
-      padding: '8px 0',
-      boxShadow: '0 0 15px rgba(0,0,0,0.5)',
-      fontFamily: "'Share Tech Mono', monospace",
+      padding: '4px 0',
+      fontFamily: "'Space Mono', monospace",
+      backdropFilter: 'blur(4px)',
+      WebkitBackdropFilter: 'blur(4px)',
       transition: 'transform 0.3s ease, opacity 0.3s ease'
     });
 
@@ -1529,9 +1530,9 @@
       width: '20px',
       height: '28px',
       background: 'rgba(4, 8, 18, 0.82)',
-      border: '1px solid rgba(74, 144, 217, 0.3)',
+      border: '1px solid rgba(168, 224, 0, 0.3)',
       borderRadius: '3px 0 0 3px',
-      color: 'rgba(74, 144, 217, 0.7)',
+      color: 'rgba(168, 224, 0, 0.7)',
       fontSize: '11px',
       cursor: 'pointer',
       display: 'flex',
@@ -1553,12 +1554,14 @@
     
     var mtHeader = document.createElement('div');
     Object.assign(mtHeader.style, {
-      padding: '0 12px 6px',
-      borderBottom: '1px solid rgba(74, 144, 217, 0.2)',
-      marginBottom: '6px',
-      fontSize: '9px',
-      color: 'rgba(74, 144, 217, 0.8)',
-      textAlign: 'center'
+      padding: '4px 8px',
+      borderBottom: '1px solid rgba(168, 224, 0, 0.10)',
+      marginBottom: '2px',
+      fontSize: '7.5px',
+      color: 'rgba(168, 224, 0, 0.50)',
+      letterSpacing: '0.14em',
+      textAlign: 'left',
+      textTransform: 'uppercase'
     });
     var mtNextTitle = document.createElement('div');
     mtNextTitle.textContent = 'NEXT WAYPOINT';
@@ -1566,10 +1569,11 @@
     mtNextTime.id = 'mt-next-time';
     mtNextTime.textContent = '—';
     Object.assign(mtNextTime.style, {
-      fontSize: '12px',
+      fontSize: '9.5px',
       color: '#ffd700',
-      fontWeight: 'bold',
-      marginTop: '3px'
+      fontWeight: 'normal',
+      marginTop: '2px',
+      letterSpacing: '0.06em'
     });
     mtHeader.appendChild(mtNextTitle);
     mtHeader.appendChild(mtNextTime);
@@ -1580,22 +1584,24 @@
       var item = document.createElement('div');
       item.textContent = wp.label;
       Object.assign(item.style, {
-        padding: '6px 12px',
-        fontSize: '9px',
-        color: 'rgba(121, 134, 168, 0.8)',
+        padding: '3px 8px',
+        fontSize: '9.5px',
+        color: 'rgba(168, 212, 255, 0.40)',
         cursor: 'pointer',
         borderLeft: '2px solid transparent',
         transition: 'all 0.15s',
-        backgroundColor: 'transparent'
+        backgroundColor: 'transparent',
+        letterSpacing: '0.04em',
+        lineHeight: '1.55'
       });
       item.addEventListener('mouseenter', function() {
-        item.style.backgroundColor = 'rgba(74, 144, 217, 0.15)';
-        item.style.color = '#fff';
+        item.style.backgroundColor = 'rgba(168,224,0,0.06)';
+        item.style.color = '#a8d4ff';
       });
       item.addEventListener('mouseleave', function() {
         item.style.backgroundColor = 'transparent';
         var ws = wpGetState(wp, (Date.now()-LAUNCH_UTC)/1000);
-        item.style.color = ws === 'done' ? '#00e676' : ws === 'active' ? '#ffd700' : 'rgba(121, 134, 168, 0.8)';
+        item.style.color = ws === 'done' ? '#ccff00' : ws === 'active' ? '#ffd700' : 'rgba(168,212,255,0.40)';
       });
       item.addEventListener('click', function(e) {
         var targetPos = wpScenePos(wp);
