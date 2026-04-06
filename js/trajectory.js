@@ -1053,6 +1053,11 @@
       orionGroup.position.copy(orionResult.pos);
       var gt = orionResult.frac;
 
+      // ── Moon position ──
+      var moonPos = toScene(state.moon.x, state.moon.y, state.moon.z);
+      moon.position.copy(moonPos);
+      moonGlow.position.copy(moon.position);
+
       OsculatingOrbit.update(metSec);
 
       // Orient spacecraft: align local +Y with velocity tangent
