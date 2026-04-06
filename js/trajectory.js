@@ -1090,7 +1090,7 @@
       moon.position.copy(moonPos);
       moonGlow.position.copy(moon.position);
 
-      OsculatingOrbit.update(metSec);
+      if (typeof OsculatingOrbit !== 'undefined') OsculatingOrbit.update(metSec);
 
       // Orient spacecraft: align local +Y with velocity tangent
       var velDir = getOrionVelocityDir(metSec);
