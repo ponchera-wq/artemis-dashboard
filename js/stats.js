@@ -78,10 +78,10 @@ function tickPerilune(metSec) {
         var h = Math.floor(secsLeft / 3600);
         var m = Math.floor((secsLeft % 3600) / 60);
         var s = Math.floor(secsLeft % 60);
-        str = 'Perilune in ' + pad(h) + ':' + pad(m) + ':' + pad(s);
+        str = 'PERILUNE IN ' + pad(h) + ':' + pad(m) + ':' + pad(s);
         if (secsLeft < 6 * 3600) cls += ' imminent';
       } else {
-        str = 'Perilune passed \u2013 closest approach 8,281 km';
+        str = 'PERILUNE PASSED \u00b7 8,281 km';
         cls += ' complete';
       }
       elPerilune.textContent = str;
