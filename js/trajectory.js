@@ -1140,7 +1140,7 @@
       var shadowFactor = illu / 100;
       if (orionGroup.userData.hullMat) orionGroup.userData.hullMat.emissive.setHex(0x050810).lerp(new THREE.Color(0x181818), shadowFactor);
       orionLight.intensity = 0.5 * shadowFactor;
-      glowMat.opacity = (0.08 + pulse * 0.15) * (0.3 + 0.7 * shadowFactor);
+      if (glowMat) glowMat.opacity = (0.08 + pulse * 0.15) * (0.3 + 0.7 * shadowFactor);
       orionLight.position.copy(orionGroup.position);
 
       // Trail
