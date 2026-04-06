@@ -545,7 +545,7 @@
     }
     
     orionGroup.userData.label = 'ORION';
-    orionGroup.scale.set(2, 2, 2);
+    orionGroup.scale.set(0.1, 0.1, 0.1);
     scene.add(orionGroup);
 
     // ── Apollo 13 Model and Path ──
@@ -1323,7 +1323,8 @@
       var orionSpeedStr = isImp ? Math.round(state.speedKms * 3600 * 0.621371).toLocaleString() + ' MPH' : Math.round(state.speedKms * 3600).toLocaleString() + ' KM/H';
       var orionEarthDist = orionGroup.position.distanceTo(earth.position);
       
-      drawCallout('ORION \u00b7 ' + orionSpeedStr + ' \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, orionGroup.position.y + (orionEarthDist < 1.8 ? -3.0 : -2.2), orionGroup.position.z), '#00ffaa', 0, -24, true, orionGroup.position);
+      var _orionLabelY = orionGroup.position.y - Math.max(1.5, Math.min(4.0, 80 / Math.max(1, camera.position.distanceTo(orionGroup.position))));
+      drawCallout('ORION \u00b7 ' + orionSpeedStr + ' \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, _orionLabelY, orionGroup.position.z), '#00ffaa', 0, -30, true, orionGroup.position);
 
       drawCallout('ISS', new THREE.Vector3(issGroup.position.x, issGroup.position.y + 0.35, issGroup.position.z), '#00ccff', 0, -10, false, issGroup.position);
 
