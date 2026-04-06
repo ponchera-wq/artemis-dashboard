@@ -236,8 +236,9 @@
     var cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.008, 48, 48), cloudMat);
     earth.add(cloudMesh); // child of earth so it inherits rotation
     loadTex([
-      'https://unpkg.com/three-globe/example/img/earth-water.png',
-    ], function(tex) { cloudMat.alphaMap = tex; cloudMat.map = tex; cloudMat.needsUpdate = true; });
+      'https://unpkg.com/three-globe/example/img/earth-clouds.png',
+      'https://raw.githubusercontent.com/turban/webgl-earth/master/images/fair_clouds_4k.jpg',
+    ], function(tex) { cloudMat.alphaMap = tex; cloudMat.color = new THREE.Color(0xffffff); cloudMat.needsUpdate = true; });
 
     // Atmosphere glow
     scene.add(new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.018, 32, 32),
@@ -609,7 +610,7 @@
     scene.add(new THREE.Points(trailGeo, new THREE.PointsMaterial({ color: 0x00ffaa, size: 0.28, sizeAttenuation: true, transparent: true, opacity: 0.4 })));
     var trailIdx = 0, trailFrame = 0;
 
-    var arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 0.8, 0x00ffcc, 0.2, 0.1);
+    var arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 0.8, 0xff6600, 0.2, 0.1);
     scene.add(arrow);
 
     var edBuf = new Float32Array(6), mdBuf = new Float32Array(6);
