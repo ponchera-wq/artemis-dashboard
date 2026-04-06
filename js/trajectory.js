@@ -142,6 +142,9 @@
     }
 
     var scene = new THREE.Scene();
+    // Kick off real sun/moon orientation data load (async, safe to call multiple times)
+    if (typeof FlybyLighting !== 'undefined') FlybyLighting.load();
+
     var W = container.clientWidth || 400;
     var H = container.clientHeight || 300;
     var camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 1000);
@@ -659,7 +662,17 @@
       iss: { label:'\ud83d\udef0\ufe0f', title:'ISS', pos:function(){ return issGroup.position.clone().add(new THREE.Vector3(0, 0.4, 0.8)); }, look:function(){ return issGroup.position.clone(); } },
       apollo: { label:'\ud83d\ude80\u2081\u2083', title:'Apollo 13', pos:function(){ return apolloGroup.position.clone().add(new THREE.Vector3(0, 1, 2)); }, look:function(){ return apolloGroup.position.clone(); } },
       orion: { label:'\ud83d\ude80', title:'Orion', pos:function(){ var p=orionGroup.position.clone(); var metS=(Date.now()-LAUNCH_UTC)/1000; var t=getOrionVelocityDir(metS); var side=new THREE.Vector3().crossVectors(t,new THREE.Vector3(0,1,0)).normalize(); return p.clone().add(side.multiplyScalar(6)).add(new THREE.Vector3(0,3,0)); }, look:function(){return orionGroup.position.clone();} },
-      moon: { label:'\ud83c\udf19', title:'Moon', pos:function(){return moon.position.clone().add(new THREE.Vector3(0, 4, 12));}, look:function(){return moon.position.clone();} }
+      moon: { label:'\ud83c\udf19', title:'Moon', pos:function(){return moon.position.clone().add(new THREE.Vector3(0, 4, 12));}, look:function(){return moon.position.clone();} },
+      moonview: {
+        label: '\ud83c\udf19\ud83d\udc41', title: 'Moon View',
+        pos: function() {
+          var toMoon = new THREE.Vector3().subVectors(moon.position, orionGroup.position).normalize();
+          var side   = new THREE.Vector3().crossVectors(toMoon, new THREE.Vector3(0, 1, 0)).normalize();
+          if (side.lengthSq() < 0.1) side.set(1, 0, 0);
+          return orionGroup.position.clone().add(side.multiplyScalar(2)).add(new THREE.Vector3(0, 1, 0));
+        },
+        look: function() { return moon.position.clone(); }
+      }
     };
 
     // ── Preset buttons bar ──
@@ -680,10 +693,11 @@
       btn.addEventListener('mouseenter', function() { if(activePreset!==key){btn.style.borderColor='#4A90D9';btn.style.color='#fff';} });
       btn.addEventListener('mouseleave', function() { if(activePreset!==key){btn.style.borderColor='rgba(74,144,217,0.35)';btn.style.color='#7986a8';} });
       btn.addEventListener('click', function() {
-        if (activePreset === key && key !== 'orion' && key !== 'earthview' && key !== 'iss' && key !== 'apollo') { exitPreset(); stopAuto(); return; }
+        if (activePreset === key && key !== 'orion' && key !== 'earthview' && key !== 'iss' && key !== 'apollo' && key !== 'moonview') { exitPreset(); stopAuto(); return; }
         activePreset = key; updatePresetBtns(); velTheta = 0; velPhi = 0;
         if (key === 'overview') { Object.assign(sph, JSON.parse(JSON.stringify(SPH_DEFAULT))); camLookAt.copy(trajCenter); startLerp(sphToPos(), trajCenter.clone(), 1.0, 'lerp'); return; }
-        var mode = (key === 'orion' || key === 'earthview' || key === 'iss' || key === 'apollo') ? 'track' : 'lerp';
+        var mode = (key === 'orion' || key === 'earthview' || key === 'iss' || key === 'apollo' || key === 'moonview') ? 'track' : 'lerp';
+        if (key === 'moonview') { showMoonviewPopup(); }
         startLerp(p.pos(), p.look(), 1.0, mode);
       });
       presetBtns[key] = btn; presetBar.appendChild(btn);
@@ -692,8 +706,12 @@
     container.appendChild(presetWrapper);
 
     function updatePresetBtns() {
+      var _nowMetS = (Date.now() - LAUNCH_UTC) / 1000;
+      var _CA_MET  = points[caIdx].metSec;
+      var _nearFlyby = Math.abs(_nowMetS - _CA_MET) < 6 * 3600; // ±6 h window
       Object.entries(presetBtns).forEach(function(entry) {
         var key = entry[0], btn = entry[1];
+        if (key === 'moonview') { btn.style.display = _nearFlyby ? '' : 'none'; }
         if (key === activePreset) { btn.style.borderColor = '#00e5ff'; btn.style.color = '#00e5ff'; btn.style.boxShadow = '0 0 8px rgba(0,229,255,0.4)'; }
         else { btn.style.borderColor = 'rgba(74,144,217,0.35)'; btn.style.color = '#7986a8'; btn.style.boxShadow = 'none'; }
       });
@@ -944,6 +962,27 @@
       if (wpPopup && !wpPopup.contains(e.target)) { wpPopup.remove(); wpPopup = null; }
     });
 
+    function showMoonviewPopup() {
+      var _existing = container.querySelector('.moonview-popup');
+      if (_existing) _existing.remove();
+      var _pop = document.createElement('div');
+      _pop.className = 'moonview-popup';
+      _pop.style.cssText = 'position:absolute;z-index:20;background:rgba(5,12,30,0.95);border:1px solid rgba(200,195,180,0.4);border-radius:6px;padding:14px 18px;font-family:"Share Tech Mono",monospace;box-shadow:0 0 20px rgba(200,195,180,0.2);max-width:290px;left:50%;top:60px;transform:translateX(-50%);text-align:center;pointer-events:none;';
+      var _nowMetPop = (Date.now() - LAUNCH_UTC) / 1000;
+      var _caMet   = points[caIdx].metSec;
+      var _cdSec   = _caMet - _nowMetPop;
+      var _caKmPop = points[caIdx].distMoonKm;
+      var _fmtDur = function(s) { var h=Math.floor(Math.abs(s)/3600), m=Math.floor((Math.abs(s)%3600)/60); return (h>0?h+'h ':'') + m+'m'; };
+      var _timeStr = _cdSec > 0 ? ('T\u2212' + _fmtDur(_cdSec)) : 'flyby complete';
+      _pop.innerHTML =
+        '<div style="color:#ccc8b8;font-size:0.9rem;margin-bottom:6px;">\ud83c\udf19 LUNAR FLYBY VIEW</div>' +
+        '<div style="color:#8899aa;font-size:0.68rem;margin-bottom:8px;">Camera locked to Orion \u00b7 Looking at Moon</div>' +
+        '<div style="color:#ffd700;font-size:0.75rem;">Closest approach: ' + Math.round(_caKmPop).toLocaleString() + ' km</div>' +
+        '<div style="color:#7986a8;font-size:0.68rem;margin-top:4px;">' + _timeStr + '</div>';
+      container.appendChild(_pop);
+      setTimeout(function() { if (_pop.parentElement) _pop.remove(); }, 6000);
+    }
+
     var _animFrameId;
     function scheduleNextFrame() {
       _animFrameId = requestAnimationFrame(function() {
@@ -965,6 +1004,15 @@
       var elapsed = now - LAUNCH_UTC;
       var metSec = elapsed / 1000;
       var pulse = 0.5 + 0.5 * Math.sin(now / 430);
+
+      // ── Update sun direction from JPL data ──
+      if (typeof FlybyLighting !== 'undefined' && FlybyLighting.isReady()) {
+        var _flybySD = FlybyLighting.getSunDir(metSec);
+        if (_flybySD) {
+          var _flybySV = new THREE.Vector3(_flybySD.x, _flybySD.y, _flybySD.z).applyMatrix4(rotMat);
+          sunLight.position.copy(_flybySV.multiplyScalar(50));
+        }
+      }
 
       // ── Get current state from shared ephemeris ──
       var state = MissionEphemeris.getState(metSec);
@@ -1128,7 +1176,18 @@
         wpMeshes[i].scale.setScalar(ws === 'active' ? 1.0 + pulse * 0.2 : 1.0);
       });
 
-      earth.rotation.y += 0.00175; moon.rotation.y += 0.0003;
+      earth.rotation.y += 0.00175;
+      // Real sub-solar orientation from JPL data; fall back to slow spin when not ready
+      if (typeof FlybyLighting !== 'undefined' && FlybyLighting.isReady()) {
+        var _mOri = FlybyLighting.getMoonOrientation(metSec);
+        var _mSD  = FlybyLighting.getSunDir(metSec);
+        if (_mOri && _mSD) {
+          var _msv = new THREE.Vector3(_mSD.x, _mSD.y, _mSD.z).applyMatrix4(rotMat).normalize();
+          moon.rotation.y = Math.atan2(_msv.x, _msv.z) - _mOri.sunLonDeg * Math.PI / 180;
+        }
+      } else {
+        moon.rotation.y += 0.0003;
+      }
 
       // ── Camera ──
       if (camMode === 'lerp' && lerpT < 1) {
@@ -1142,6 +1201,7 @@
         else if (activePreset === 'earthview') { var ep=orionGroup.position.clone().add(new THREE.Vector3(0,0.2,0)),el2=new THREE.Vector3(0,0,0); if(lerpT<1){lerpT=Math.min(1,lerpT+(1/60)/lerpDuration);var e3=smoothEase(lerpT);camera.position.lerpVectors(lerpFrom.pos,ep,e3);camLookAt.lerpVectors(lerpFrom.look,el2,e3);} else{camera.position.lerp(ep,0.05);camLookAt.lerp(el2,0.05);} camera.lookAt(camLookAt); }
         else if (activePreset === 'iss') { var ip=PRESETS.iss.pos(),il=issGroup.position.clone(); if(lerpT<1){lerpT=Math.min(1,lerpT+(1/60)/lerpDuration);var e4=smoothEase(lerpT);camera.position.lerpVectors(lerpFrom.pos,ip,e4);camLookAt.lerpVectors(lerpFrom.look,il,e4);} else{camera.position.lerp(ip,0.05);camLookAt.lerp(il,0.05);} camera.lookAt(camLookAt); }
         else if (activePreset === 'apollo') { var ap=PRESETS.apollo.pos(),al=apolloGroup.position.clone(); if(lerpT<1){lerpT=Math.min(1,lerpT+(1/60)/lerpDuration);var e5=smoothEase(lerpT);camera.position.lerpVectors(lerpFrom.pos,ap,e5);camLookAt.lerpVectors(lerpFrom.look,al,e5);} else{camera.position.lerp(ap,0.05);camLookAt.lerp(al,0.05);} camera.lookAt(camLookAt); }
+        else if (activePreset === 'moonview') { var mvp=PRESETS.moonview.pos(),mvl=moon.position.clone(); if(lerpT<1){lerpT=Math.min(1,lerpT+(1/60)/lerpDuration);var e6=smoothEase(lerpT);camera.position.lerpVectors(lerpFrom.pos,mvp,e6);camLookAt.lerpVectors(lerpFrom.look,mvl,e6);} else{camera.position.lerp(mvp,0.05);camLookAt.lerp(mvl,0.05);} camera.lookAt(camLookAt); }
       } else {
         if (!isDrag && !isPan && (Math.abs(velTheta) > 0.0001 || Math.abs(velPhi) > 0.0001)) { sph.theta += velTheta; sph.phi = Math.max(0.1, Math.min(Math.PI-0.1, sph.phi + velPhi)); velTheta *= damping; velPhi *= damping; applyCam(); }
         if (autoRotate) { sph.theta += 0.0008; applyCam(); }
@@ -1200,6 +1260,35 @@
       
       drawCallout('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.4, earth.position.z), 'rgba(100,170,255,0.85)', 0, 0, false, earth.position);
       drawCallout('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 1.0, moon.position.z), 'rgba(200,195,180,0.85)', 0, 0, false, moon.position);
+
+      // ── Flyby proximity HUD ──────────────────────────────────────────────────
+      (function() {
+        var _caMetSec = points[caIdx].metSec;
+        var _caCountdown = _caMetSec - nowMet;
+        if (Math.abs(_caCountdown) < 6 * 3600) {
+          var _caKm = points[caIdx].distMoonKm;
+          var _fmtSec = function(s) { var h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=Math.floor(s%60); return (h>0?h+'h ':'') + String(m).padStart(2,'0') + 'm ' + String(ss).padStart(2,'0') + 's'; };
+          var _line1 = _caCountdown > 0 ? ('CA T\u2212' + _fmtSec(_caCountdown)) : 'FLYBY COMPLETE';
+          var _caDistDisp = isImp ? Math.round(_caKm * KM_TO_MI).toLocaleString() + ' mi' : Math.round(_caKm).toLocaleString() + ' km';
+          var _line2 = 'MIN DIST: ' + _caDistDisp;
+          lctx.save();
+          lctx.font = 'bold 11px "Share Tech Mono",monospace';
+          var _bw = Math.max(lctx.measureText(_line1).width, lctx.measureText(_line2).width) + 24;
+          var _bx = W / 2 - _bw / 2, _by = 10;
+          lctx.fillStyle = 'rgba(0,8,20,0.88)';
+          lctx.fillRect(_bx, _by, _bw, 44);
+          lctx.strokeStyle = _caCountdown > 0 ? '#ffd700' : '#00e676';
+          lctx.lineWidth = 1;
+          lctx.strokeRect(_bx, _by, _bw, 44);
+          lctx.fillStyle = _caCountdown > 0 ? '#ffd700' : '#00e676';
+          lctx.textAlign = 'center';
+          lctx.fillText(_line1, W / 2, _by + 16);
+          lctx.font = '10px "Share Tech Mono",monospace';
+          lctx.fillStyle = 'rgba(200,195,180,0.85)';
+          lctx.fillText(_line2, W / 2, _by + 32);
+          lctx.restore();
+        }
+      }());
 
       var emMid = new THREE.Vector3().addVectors(earth.position, moon.position).multiplyScalar(0.5); emMid.y += 0.7;
       var emKm = Math.sqrt(state.moon.x*state.moon.x + state.moon.y*state.moon.y + state.moon.z*state.moon.z);
