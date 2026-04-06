@@ -16,6 +16,10 @@ python3 -m http.server 8080
 
 There are no tests, no linter config, and no CI pipeline.
 
+## Ignored Directories
+The following directories contain generated reference files only — do not read, edit, or include in context:
+- `docs/`
+
 ## Architecture
 ### Core App
 index.html, observer.html

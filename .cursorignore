@@ -8,6 +8,7 @@ data/skyfield-data/
 data/mission-ephemeris.json
 *.pdf
 *.bsp
+docs/
 
 # === Git ===
 .git/

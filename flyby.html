@@ -5,30 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Artemis II — Lunar Flyby Replay</title>
 <meta name="description" content="Cinematic replay of the Artemis II crewed lunar flyby — Orion's hyperbolic arc around the Moon, driven by NASA JPL telemetry data.">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --cyan:   #00ffcc;
-  --amber:  #ff8844;
-  --gold:   #ffd700;
-  --bg:     #000;
-  --panel:  rgba(4, 8, 20, 0.97);
-  --border: rgba(0, 255, 204, 0.18);
-  --text:   #9aabb8;
-  --fh:     'Orbitron', sans-serif;
-  --fm:     'Share Tech Mono', monospace;
+  --cyan:       #ccff00;
+  --cyan-dim:   rgba(204,255,0,0.12);
+  --amber:      #ff2800;
+  --gold:       #a8e000;
+  --bg:         #06070d;
+  --panel:      #0b0d16;
+  --panel-card: #10121e;
+  --border:     rgba(255,255,255,0.07);
+  --border-top: rgba(168,224,0,0.20);
+  --text:       #f0f0f2;
+  --text-dim:   #5a5c70;
+  --fh:         'Exo 2', sans-serif;
+  --fm:         'Space Mono', monospace;
+  --glow:       0 0 12px rgba(204,255,0,0.45);
 }
 
 html, body {
-  background: var(--bg);
+  background: radial-gradient(ellipse at 50% 0%, rgba(12,16,32,0.9) 0%, rgba(6,7,13,0.98) 70%), #06070d;
   color: var(--text);
   font-family: var(--fm);
   height: 100%;
   overflow: hidden;
+}
+
+/* Scanline overlay */
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(0,0,0,0.04) 4px, rgba(0,0,0,0.04) 5px);
+  pointer-events: none;
+  z-index: 9999;
 }
 
 /* ── HEADER ────────────────────────────────────────────────────────────────── */
@@ -38,15 +53,16 @@ html, body {
   justify-content: space-between;
   padding: 0 1.25rem;
   height: 46px;
-  background: rgba(0, 4, 14, 0.99);
+  background: var(--panel);
   border-bottom: 1px solid var(--border);
+  border-top: 2px solid rgba(204,255,0,0.35);
   position: relative;
   z-index: 10;
   flex-shrink: 0;
 }
 
 .header-back {
-  color: var(--cyan);
+  color: var(--gold);
   text-decoration: none;
   font-family: var(--fh);
   font-size: 0.6rem;
@@ -59,7 +75,7 @@ html, body {
   align-items: center;
   gap: 0.3rem;
 }
-.header-back:hover { opacity: 1; }
+.header-back:hover { opacity: 1; color: var(--cyan); }
 
 .header-title {
   font-family: var(--fh);
@@ -73,7 +89,7 @@ html, body {
 .header-title .accent { color: var(--cyan); }
 
 .header-tag {
-  font-family: var(--fh);
+  font-family: var(--fm);
   font-size: 0.5rem;
   letter-spacing: 0.12em;
   color: var(--gold);
@@ -109,8 +125,8 @@ html, body {
   pointer-events: none;
   font-family: var(--fm);
   font-size: 0.58rem;
-  color: #4488ff;
-  text-shadow: 0 0 8px rgba(68,136,255,0.8);
+  color: #a8e000;
+  text-shadow: 0 0 8px rgba(168,224,0,0.7);
   white-space: nowrap;
   transform: translate(-50%, -180%);
   display: none;
@@ -119,7 +135,7 @@ html, body {
 #end-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.62);
+  background: rgba(6, 7, 13, 0.72);
   display: none;
   flex-direction: column;
   align-items: center;
@@ -134,12 +150,12 @@ html, body {
   font-weight: 900;
   color: var(--cyan);
   letter-spacing: 0.25em;
+  text-shadow: var(--glow);
 }
 .end-sub {
   font-size: 0.68rem;
-  color: var(--text);
+  color: var(--text-dim);
   letter-spacing: 0.08em;
-  opacity: 0.7;
 }
 .btn-replay-big {
   font-family: var(--fh);
@@ -154,6 +170,7 @@ html, body {
   margin-top: 0.5rem;
   clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
   transition: opacity 0.15s;
+  box-shadow: var(--glow);
 }
 .btn-replay-big:hover { opacity: 0.82; }
 
@@ -183,10 +200,22 @@ html, body {
   font-size: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: var(--cyan);
+  color: var(--gold);
   margin-bottom: 0.45rem;
   padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.telem-hdr::before {
+  content: '';
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: var(--glow);
+  flex-shrink: 0;
 }
 
 .telem-row { margin-bottom: 0.5rem; }
@@ -194,7 +223,7 @@ html, body {
 .telem-lbl {
   font-size: 0.44rem;
   letter-spacing: 0.12em;
-  color: rgba(154,171,184,0.45);
+  color: var(--text-dim);
   text-transform: uppercase;
   margin-bottom: 0.1rem;
 }
@@ -202,15 +231,16 @@ html, body {
 .telem-val {
   font-family: var(--fm);
   font-size: 0.82rem;
-  color: #dde8f0;
+  color: var(--text);
   letter-spacing: 0.02em;
   line-height: 1.1;
 }
 .telem-val.large {
-  font-family: var(--fh);
+  font-family: var(--fm);
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--cyan);
+  text-shadow: var(--glow);
 }
 
 .illu-bar {
@@ -224,32 +254,33 @@ html, body {
   display: inline-block;
   padding: 0.05rem 0.28rem;
   font-size: 0.44rem;
-  font-family: var(--fh);
+  font-family: var(--fm);
   font-weight: 700;
   letter-spacing: 0.08em;
   vertical-align: middle;
   margin-left: 0.25rem;
 }
-.badge.elliptic  { color: var(--cyan);  border: 1px solid rgba(0,255,204,0.6); }
-.badge.hyperbolic { color: var(--amber); border: 1px solid rgba(255,136,68,0.6); }
+.badge.elliptic   { color: var(--cyan);  border: 1px solid rgba(204,255,0,0.4); }
+.badge.hyperbolic { color: var(--amber); border: 1px solid rgba(255,40,0,0.4); }
 
 .telem-div {
   border: none;
-  border-top: 1px solid rgba(0,255,204,0.08);
+  border-top: 1px solid rgba(255,255,255,0.05);
   margin: 0.45rem 0;
 }
 
 .approach-record {
-  font-family: var(--fh);
+  font-family: var(--fm);
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--cyan);
+  text-shadow: var(--glow);
 }
 .approach-record small {
   font-size: 0.5rem;
   font-family: var(--fm);
   font-weight: 400;
-  color: rgba(255,215,0,0.5);
+  color: var(--text-dim);
   margin-left: 0.2rem;
 }
 
@@ -266,12 +297,13 @@ html, body {
 }
 
 .time-center {
-  font-family: var(--fh);
+  font-family: var(--fm);
   font-size: 1.05rem;
   font-weight: 700;
   color: var(--cyan);
   text-align: center;
   letter-spacing: 0.12em;
+  text-shadow: var(--glow);
 }
 
 .event-ticks {
@@ -287,8 +319,8 @@ html, body {
   cursor: pointer;
   border-radius: 1px;
 }
-.event-tick.crit-HIGH     { background: var(--amber); }
-.event-tick.crit-CRITICAL { background: var(--gold);  }
+.event-tick.crit-HIGH     { background: var(--gold); }
+.event-tick.crit-CRITICAL { background: var(--cyan); box-shadow: var(--glow); }
 .event-tick::after {
   content: attr(data-tip);
   position: absolute;
@@ -296,9 +328,9 @@ html, body {
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.45rem;
-  font-family: var(--fh);
+  font-family: var(--fm);
   color: #fff;
-  background: rgba(4,8,20,0.95);
+  background: var(--panel-card);
   border: 1px solid var(--border);
   padding: 0.15rem 0.35rem;
   white-space: nowrap;
@@ -316,7 +348,7 @@ input[type="range"].scrubber {
   appearance: none;
   width: 100%;
   height: 3px;
-  background: rgba(0,255,204,0.12);
+  background: rgba(204,255,0,0.10);
   border-radius: 2px;
   outline: none;
   cursor: pointer;
@@ -327,7 +359,7 @@ input[type="range"].scrubber::-webkit-slider-thumb {
   height: 14px;
   border-radius: 50%;
   background: var(--cyan);
-  box-shadow: 0 0 10px rgba(0,255,204,0.7);
+  box-shadow: var(--glow);
   cursor: pointer;
 }
 input[type="range"].scrubber::-moz-range-thumb {
@@ -336,7 +368,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   border-radius: 50%;
   background: var(--cyan);
   border: none;
-  box-shadow: 0 0 10px rgba(0,255,204,0.7);
+  box-shadow: var(--glow);
   cursor: pointer;
 }
 
@@ -344,7 +376,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   display: flex;
   justify-content: space-between;
   font-size: 0.5rem;
-  color: rgba(154,171,184,0.35);
+  color: var(--text-dim);
   margin-top: 0.25rem;
   letter-spacing: 0.04em;
 }
@@ -365,10 +397,22 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.18em;
-  color: var(--cyan);
+  color: var(--gold);
   margin-bottom: 0.45rem;
   padding-bottom: 0.35rem;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.event-panel-hdr::before {
+  content: '';
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: var(--glow);
+  flex-shrink: 0;
 }
 
 .event-item {
@@ -377,11 +421,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   gap: 0.45rem;
   padding: 0.45rem 0.3rem;
   cursor: pointer;
-  border-bottom: 1px solid rgba(0,255,204,0.04);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
   transition: background 0.15s;
   border-radius: 2px;
 }
-.event-item:hover { background: rgba(0,255,204,0.03); }
+.event-item:hover { background: rgba(204,255,0,0.03); }
 .event-item:last-child { border-bottom: none; }
 
 .evt-icon {
@@ -393,9 +437,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   text-align: center;
 }
 
-.event-item.passed .evt-icon  { color: #22cc66; }
+.event-item.passed .evt-icon  { color: var(--cyan); }
 .event-item.active .evt-icon  { color: var(--gold); }
-.event-item.upcoming .evt-icon { color: rgba(154,171,184,0.25); }
+.event-item.upcoming .evt-icon { color: var(--text-dim); }
 
 @keyframes gold-pulse {
   0%, 100% { opacity: 1; }
@@ -411,13 +455,13 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: 0.6rem;
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: #dde8f0;
+  color: var(--text);
   margin-bottom: 0.1rem;
   line-height: 1.25;
 }
 .evt-label {
   font-size: 0.48rem;
-  color: rgba(154,171,184,0.45);
+  color: var(--text-dim);
   letter-spacing: 0.08em;
 }
 .evt-time {
@@ -434,7 +478,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   justify-content: center;
   gap: 0.45rem;
   padding: 0.45rem 1rem;
-  background: rgba(0, 3, 10, 0.99);
+  background: var(--panel);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
   flex-wrap: wrap;
@@ -445,9 +489,9 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-size: 0.58rem;
   font-weight: 600;
   letter-spacing: 0.09em;
-  color: var(--text);
-  background: rgba(0,255,204,0.04);
-  border: 1px solid rgba(0,255,204,0.2);
+  color: var(--text-dim);
+  background: rgba(204,255,0,0.04);
+  border: 1px solid rgba(255,255,255,0.10);
   padding: 0.38rem 0.85rem;
   cursor: pointer;
   transition: all 0.15s;
@@ -455,19 +499,20 @@ input[type="range"].scrubber::-moz-range-thumb {
   line-height: 1;
 }
 .ctrl-btn:hover {
-  background: rgba(0,255,204,0.1);
-  border-color: var(--cyan);
-  color: #fff;
+  background: rgba(204,255,0,0.08);
+  border-color: rgba(204,255,0,0.35);
+  color: var(--cyan);
 }
 .ctrl-btn.primary {
   color: var(--cyan);
-  border-color: rgba(0,255,204,0.5);
-  background: rgba(0,255,204,0.07);
+  border-color: rgba(204,255,0,0.4);
+  background: rgba(204,255,0,0.07);
 }
 .ctrl-btn.active {
   background: var(--cyan);
   color: #000;
   border-color: var(--cyan);
+  box-shadow: var(--glow);
 }
 
 .ctrl-sep {
@@ -482,10 +527,10 @@ input[type="range"].scrubber::-moz-range-thumb {
 .speed-group .ctrl-btn:last-child { border-right-width: 1px; }
 
 .ctrl-label {
-  font-family: var(--fh);
+  font-family: var(--fm);
   font-size: 0.5rem;
   letter-spacing: 0.12em;
-  color: rgba(154,171,184,0.4);
+  color: var(--text-dim);
 }
 
 /* ── EVENT CARD OVERLAY ─────────────────────────────────────────────────────── */
@@ -496,7 +541,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   align-items: center;
   justify-content: center;
   z-index: 500;
-  background: rgba(0, 0, 0, 0.38);
+  background: rgba(6, 7, 13, 0.55);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s;
@@ -507,9 +552,10 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 
 .event-card {
-  background: rgba(4, 8, 20, 0.97);
-  border: 1px solid rgba(0,255,204,0.45);
-  box-shadow: 0 0 50px rgba(0,255,204,0.12), 0 8px 60px rgba(0,0,0,0.9);
+  background: var(--panel-card);
+  border: 1px solid rgba(204,255,0,0.25);
+  border-top: 2px solid rgba(204,255,0,0.55);
+  box-shadow: 0 0 50px rgba(204,255,0,0.08), 0 8px 60px rgba(0,0,0,0.9);
   padding: 1.75rem 2rem;
   max-width: 440px;
   width: 92%;
@@ -543,20 +589,21 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 
 .card-highlight {
-  font-family: var(--fh);
-  font-size: 0.88rem;
+  font-family: var(--fm);
+  font-size: 0.82rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--cyan);
   padding: 0.5rem 0.7rem;
-  border-left: 3px solid var(--gold);
-  background: rgba(255,215,0,0.05);
+  border-left: 3px solid var(--cyan);
+  background: rgba(204,255,0,0.04);
   margin-bottom: 0.9rem;
   letter-spacing: 0.04em;
+  text-shadow: var(--glow);
 }
 
 .card-desc {
   font-size: 0.68rem;
-  color: var(--text);
+  color: var(--text-dim);
   line-height: 1.65;
   margin-bottom: 1.2rem;
 }
@@ -579,6 +626,7 @@ input[type="range"].scrubber::-moz-range-thumb {
   cursor: pointer;
   flex-shrink: 0;
   transition: opacity 0.15s;
+  box-shadow: var(--glow);
 }
 .btn-continue:hover { opacity: 0.82; }
 
@@ -590,7 +638,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 }
 .countdown-lbl {
   font-size: 0.52rem;
-  color: rgba(154,171,184,0.4);
+  color: var(--text-dim);
   flex-shrink: 0;
   min-width: 1.5rem;
   text-align: right;
@@ -598,7 +646,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .countdown-track {
   flex: 1;
   height: 3px;
-  background: rgba(0,255,204,0.12);
+  background: rgba(204,255,0,0.10);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -614,7 +662,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 #loading-overlay {
   position: fixed;
   inset: 0;
-  background: #000;
+  background: #06070d;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -625,7 +673,7 @@ input[type="range"].scrubber::-moz-range-thumb {
 .loader-ring {
   width: 38px;
   height: 38px;
-  border: 2px solid rgba(0,255,204,0.12);
+  border: 2px solid rgba(204,255,0,0.12);
   border-top-color: var(--cyan);
   border-radius: 50%;
   animation: spin 0.75s linear infinite;
@@ -637,11 +685,11 @@ input[type="range"].scrubber::-moz-range-thumb {
   font-weight: 700;
   color: var(--cyan);
   letter-spacing: 0.22em;
+  text-shadow: var(--glow);
 }
 .loader-sub {
   font-size: 0.65rem;
-  color: var(--text);
-  opacity: 0.5;
+  color: var(--text-dim);
   letter-spacing: 0.08em;
 }
 .error-msg {
@@ -818,7 +866,6 @@ input[type="range"].scrubber::-moz-range-thumb {
   <div class="loader-sub" id="loader-sub">Fetching flyby data…</div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 'use strict';
 
@@ -931,8 +978,9 @@ function initScene() {
 
   scene  = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 500000);
-  camera.position.set(0, 15000, 35000);
-  camera.lookAt(0, 0, 0);
+  // Look down at XZ plane from above — perilune is at (0,0,-8281), arc spans ±18000 on XZ
+  camera.position.set(0, 28000, 8000);
+  camera.lookAt(0, 0, -2000);
 
   // ── Lighting ──────────────────────────────────────────────────────────────
   scene.add(new THREE.AmbientLight(0x111133, 0.15));
@@ -995,18 +1043,51 @@ function initScene() {
     scene.add(earthMesh);
   }
 
-  // ── Orion ─────────────────────────────────────────────────────────────────
+  // ── Orion spacecraft ──────────────────────────────────────────────────────
   {
-    orionMesh = new THREE.Mesh(
-      new THREE.SphereGeometry(120, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0x00ffcc })
-    );
-    orionMesh.add(new THREE.Mesh(
-      new THREE.SphereGeometry(58, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffffff })
-    ));
-    const ol = new THREE.PointLight(0x00ffcc, 0.4, 8000);
-    orionMesh.add(ol);
+    const group = new THREE.Group();
+
+    // Crew module — bell/gumdrop shape via LatheGeometry
+    const cmPts = [];
+    for (let i = 0; i <= 12; i++) {
+      const t = i / 12;
+      const y = t * 480 - 120;
+      const r = 220 * Math.sin(t * Math.PI * 0.85 + 0.15);
+      cmPts.push(new THREE.Vector2(r, y));
+    }
+    const cmG = new THREE.LatheGeometry(cmPts, 16);
+    const cmM = new THREE.MeshPhongMaterial({ color: 0xd0d8e0, shininess: 40 });
+    group.add(new THREE.Mesh(cmG, cmM));
+
+    // ESM cylinder below crew module
+    const esmG = new THREE.CylinderGeometry(200, 200, 380, 12);
+    const esmM = new THREE.MeshPhongMaterial({ color: 0x888899, shininess: 20 });
+    const esm = new THREE.Mesh(esmG, esmM);
+    esm.position.y = -380;
+    group.add(esm);
+
+    // Solar arrays — 4 wings in X pattern
+    const panelMat = new THREE.MeshBasicMaterial({ color: 0x1a3a6e, side: THREE.DoubleSide });
+    [0, Math.PI/2, Math.PI, -Math.PI/2].forEach((angle, i) => {
+      const wing = new THREE.Group();
+      wing.rotation.y = angle;
+      for (let p = 0; p < 3; p++) {
+        const pg = new THREE.PlaneGeometry(280, 90);
+        const panel = new THREE.Mesh(pg, panelMat);
+        panel.position.set(200 + p * 160, -380, 0);
+        panel.rotation.x = Math.PI / 2;
+        wing.add(panel);
+      }
+      group.add(wing);
+    });
+
+    // Glow point light
+    const ol = new THREE.PointLight(0xccff00, 0.3, 6000);
+    group.add(ol);
+
+    // Scale to visible size in scene
+    group.scale.setScalar(0.38);
+    orionMesh = group;
     scene.add(orionMesh);
   }
 
@@ -1029,8 +1110,8 @@ function initScene() {
     scene.add(l);
     return l;
   }
-  dashedLine(approachPts,  0xff8844);
-  dashedLine(departurePts, 0x00ffcc);
+  dashedLine(approachPts,  0xff8844);   // amber approach
+  dashedLine(departurePts, 0xccff00);   // neon-green departure
 
   // Dynamic "travelled" lines — pre-allocated
   function dynLine(maxPts, color) {
@@ -1046,14 +1127,14 @@ function initScene() {
     return { line, buf, geom };
   }
   trvApproach = dynLine(PERI_ARC_IDX + 2, 0xff8844);
-  trvDepart   = dynLine(arcArr.length - PERI_ARC_IDX + 1, 0x00ffcc);
+  trvDepart   = dynLine(arcArr.length - PERI_ARC_IDX + 1, 0xccff00);
 
   // ── Periapsis marker ──────────────────────────────────────────────────────
   {
-    const pp = arcArr[PERI_ARC_IDX] || [PERI_MET, 8280.7, 0];
+    const pp = arcArr[PERI_ARC_IDX] || [PERI_MET, 0, -8280.7];
     periMark = new THREE.Mesh(
       new THREE.SphereGeometry(80, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffd700 })
+      new THREE.MeshBasicMaterial({ color: 0xccff00 })
     );
     periMark.position.set(pp[1], 0, pp[2]);
     scene.add(periMark);
@@ -1093,8 +1174,15 @@ function updateScene(met, animT) {
   const mo = interp(moonOrArr, met);
   if (mo) moonMesh.rotation.y = -mo[3] * Math.PI / 180;
 
-  // Camera sinusoidal drift (±800 km over full animation)
-  camera.position.y = 15000 + 800 * Math.sin(2 * Math.PI * (animT / WIN_DUR));
+  // Camera gentle drift — slight Z shift over animation
+  camera.position.z = 8000 + 2000 * Math.sin(2 * Math.PI * (animT / WIN_DUR));
+
+  // Orient Orion to face direction of travel
+  const arc2 = interp(arcArr, met + 60);
+  if (arc && arc2) {
+    const dir = new THREE.Vector3(arc2[1] - arc[1], 0, arc2[2] - arc[2]).normalize();
+    if (dir.length() > 0.001) orionMesh.lookAt(orionMesh.position.clone().add(dir));
+  }
 
   // Travelled arc lines
   updateTravelled(met);
