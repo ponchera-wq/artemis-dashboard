@@ -456,7 +456,7 @@
     var flameGlowPosBuf = _preallocPos(flameGlowGeo, MAX_FLAME);
 
     // ── Waypoints from shared MissionEvents ──
-    var WAYPOINTS = MissionEvents.getWaypoints();
+    var WAYPOINTS = (typeof MissionEvents !== 'undefined' && MissionEvents.getWaypoints) ? MissionEvents.getWaypoints() : [];
 
     function wpScenePos(wp) {
       var state = MissionEphemeris.getState(wp.metSec);
