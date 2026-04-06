@@ -94,7 +94,7 @@ html, body {
   position: relative;
   flex: 1 1 0;
   min-height: 200px;
-  background: #000;
+  background: radial-gradient(ellipse at 50% 0%, rgba(12,16,32,0.85) 0%, rgba(6,7,13,0.97) 70%), url('dashbg2.jpg') center/cover;
   overflow: hidden;
 }
 
@@ -924,10 +924,10 @@ function initScene() {
   const W = sceneWrap.offsetWidth;
   const H = sceneWrap.offsetHeight;
 
-  renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true });
+  renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.setSize(W, H);
-  renderer.setClearColor(0x000000, 1);
+  renderer.setClearColor(0x000000, 0);
 
   scene  = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 500000);
