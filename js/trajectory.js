@@ -15,6 +15,13 @@
   var loader = new THREE.TextureLoader();
   loader.crossOrigin = 'anonymous';
 
+  function earthGMST(date) {
+    // GMST in radians — matches Matteo Beu's A4() formula
+    var JD = date.getTime() / 86400000 + 2440587.5;
+    var T = JD - 2451545.0;
+    return (0.779057273264 + 1.0027378119113546 * T) * 2 * Math.PI;
+  }
+
   // Wait for shared ephemeris to load, then initialize
   MissionEphemeris.ready.then(function() {
     if (!MissionEphemeris.points || MissionEphemeris.points.length === 0) {
@@ -208,17 +215,35 @@
     }
 
     // ── Earth ──
-    var earthMat = new THREE.MeshPhongMaterial({ color: 0x1a5fa8, emissive: 0x051828, shininess: 35, specular: 0x3377bb });
-    var earth = new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R, 32, 32), earthMat);
+    var earthMat = new THREE.MeshPhongMaterial({ color: 0x2255aa, emissive: 0x051828, shininess: 25, specular: 0x224466 });
+    var earth = new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R, 48, 48), earthMat);
+    earth.rotation.order = 'YXZ';
     scene.add(earth);
+
+    // Day texture
     loadTex([
       'https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg',
       'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
     ], function(tex) { earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; });
-    scene.add(new THREE.Mesh(new THREE.SphereGeometry(0.95, 32, 32),
-      new THREE.MeshBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.15, side: THREE.BackSide })));
-    scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.08, 32, 32),
-      new THREE.MeshBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.08, side: THREE.BackSide })));
+
+    // Night lights (emissive map — city lights on dark side)
+    loadTex([
+      'https://unpkg.com/three-globe/example/img/earth-night.jpg',
+    ], function(tex) { earthMat.emissiveMap = tex; earthMat.emissive.set(0x888888); earthMat.needsUpdate = true; });
+
+    // Cloud layer mesh
+    var cloudMat = new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.35, depthWrite: false });
+    var cloudMesh = new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.008, 48, 48), cloudMat);
+    earth.add(cloudMesh); // child of earth so it inherits rotation
+    loadTex([
+      'https://unpkg.com/three-globe/example/img/earth-water.png',
+    ], function(tex) { cloudMat.alphaMap = tex; cloudMat.map = tex; cloudMat.needsUpdate = true; });
+
+    // Atmosphere glow
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.018, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.12, side: THREE.BackSide })));
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.08, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.06, side: THREE.BackSide })));
 
     // LEO orbit ring
     var leoPts = [];
@@ -1182,7 +1207,8 @@
         wpMeshes[i].scale.setScalar(ws === 'active' ? 1.0 + pulse * 0.2 : 1.0);
       });
 
-      earth.rotation.y += 0.00175;
+      earth.rotation.y = earthGMST(new Date(LAUNCH_UTC + nowMet * 1000)) + Math.PI; // +PI aligns Americas
+      cloudMesh.rotation.y += 0.00012; // slow relative cloud drift
       // Real sub-solar orientation from JPL data; fall back to slow spin when not ready
       if (typeof FlybyLighting !== 'undefined' && FlybyLighting.isReady()) {
         var _mOri = FlybyLighting.getMoonOrientation(metSec);
