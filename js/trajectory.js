@@ -854,7 +854,7 @@
       console.log('[WP Click] Checking ' + wpClickAreas.length + ' areas at (' + mx.toFixed(0) + ',' + my.toFixed(0) + ')');
 
       // Check osculating orbit periapsis dot (30 px radius)
-      if (typeof OsculatingOrbit !== 'undefined' && OsculatingOrbit.handleClick(mx, my)) return;
+      if (typeof OsculatingOrbit !== 'undefined' && OsculatingOrbit.handleClick(mx, my)) { popupOpen = true; return; }
 
       // Check 2D label hit areas first
       for (var wi = wpClickAreas.length - 1; wi >= 0; wi--) {
