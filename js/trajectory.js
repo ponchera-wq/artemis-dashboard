@@ -630,12 +630,10 @@
     allPts.forEach(function(p) { bbox.expandByPoint(p); });
     var trajCenter = new THREE.Vector3();
     bbox.getCenter(trajCenter);
-    // Bias look-at toward Earth side so both Earth and Moon are visible at default zoom
-    trajCenter.multiplyScalar(0.45);
 
     var camLookAt = trajCenter.clone();
-    var sph = { theta: 0.3, phi: 1.05, r: 130 };
-    var SPH_DEFAULT = { theta: 0.3, phi: 1.05, r: 130 };
+    var sph = { theta: 0.3, phi: 1.05, r: 95 };
+    var SPH_DEFAULT = { theta: 0.3, phi: 1.05, r: 95 };
     var reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var isDrag = false, isPan = false, lastMx = 0, lastMy = 0, autoRotate = !reduceMotion, rotTimer = null;
     var lastReducedRenderMs = 0;
