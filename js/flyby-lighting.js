@@ -1,138 +1,151 @@
-// flyby-lighting.js — Sun direction and Moon orientation data for the lunar flyby
-// Loads data/flyby-lighting.json, binary-searches + linearly interpolates on metSec.
-// Exposes: load(), isReady(), getSunDir(metSec), getMoonOrientation(metSec)
-(function () {
-  const DATA_FILE = 'data/flyby-lighting.json';
-
-  var sunRows  = null;  // Array of [metSec, sx, sy, sz]
-  var moonRows = null;  // Array of [metSec, obs_lon_deg, obs_lat_deg, sun_lon_deg, sun_lat_deg, np_ang_deg, np_dist_deg]
-  var meta     = null;
-  var ready    = false;
-  var _resolve;
-  var readyPromise = new Promise(function (resolve) { _resolve = resolve; });
-
-  // ── helpers ──────────────────────────────────────────────────────────────
-
-  function lerp(a, b, f) { return a + (b - a) * f; }
+/**
+ * FlybyLighting — Sun direction and Moon orientation interpolation
+ * Loads data/flyby-lighting.json and provides methods to query:
+ * - getSunDir(metSec): unit vector in EME2000 frame
+ * - getMoonOrientation(metSec): sub-Earth and sub-Solar points, rotation angle
+ * 
+ * Binary search with linear interpolation on metSec.
+ * Graceful no-op if data fails to load.
+ */
+window.FlybyLighting = (() => {
+  const module = {
+    ready: false,
+    data: null,
+    error: null,
+  };
 
   /**
-   * Binary-search rows (sorted by rows[i][0]) for the pair bracketing t.
-   * Returns { lo, hi, f } where f is the fractional distance between them.
-   * Clamps to the first/last row when t is out of range.
+   * Binary search for the two entries bracketing metSec
+   * Returns { lower, upper } or null if outside range
    */
-  function findBracket(rows, t) {
-    var n = rows.length;
-    if (n === 0) return null;
-    if (t <= rows[0][0])     return { lo: 0, hi: 0, f: 0 };
-    if (t >= rows[n - 1][0]) return { lo: n - 1, hi: n - 1, f: 0 };
+  function binarySearch(arr, metSec) {
+    if (!arr || arr.length === 0) return null;
 
-    var lo = 0, hi = n - 1;
-    while (lo < hi - 1) {
-      var mid = (lo + hi) >> 1;
-      if (rows[mid][0] <= t) lo = mid; else hi = mid;
+    let left = 0;
+    let right = arr.length - 1;
+
+    if (metSec < arr[0][0]) return null;
+    if (metSec > arr[right][0]) return null;
+
+    while (left < right) {
+      const mid = Math.floor((left + right) / 2);
+      if (arr[mid][0] <= metSec) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
     }
 
-    var f = (t - rows[lo][0]) / (rows[hi][0] - rows[lo][0]);
-    return { lo: lo, hi: hi, f: f };
+    const upperIdx = left;
+    const lowerIdx = left - 1;
+
+    if (lowerIdx < 0 || upperIdx >= arr.length) return null;
+
+    return {
+      lower: { idx: lowerIdx, entry: arr[lowerIdx] },
+      upper: { idx: upperIdx, entry: arr[upperIdx] },
+    };
   }
 
-  // ── public API ────────────────────────────────────────────────────────────
-
   /**
-   * Fetch and parse the data file.  Returns the readyPromise so callers can await it.
-   * Safe to call multiple times; subsequent calls return the same promise.
+   * Linear interpolation between two values
    */
-  function load() {
-    if (!ready && sunRows === null) {
-      var cbv = window._cbv || Date.now();
-      fetch(DATA_FILE + '?v=' + cbv)
-        .then(function (r) { return r.json(); })
-        .then(function (data) {
-          meta     = data.meta  || {};
-          sunRows  = data.sun   || [];
-          moonRows = data.moon  || [];
-          ready    = true;
-          if (window.DEBUG) {
-            console.log('[FlybyLighting] loaded: ' + sunRows.length + ' sun rows, ' + moonRows.length + ' moon rows');
-          }
-          _resolve();
-        })
-        .catch(function (err) {
-          console.error('[FlybyLighting] failed to load ' + DATA_FILE, err);
-          sunRows  = [];
-          moonRows = [];
-          meta     = { loadError: true };
-          ready    = true;
-          _resolve();
-        });
-    }
-    return readyPromise;
+  function lerp(t, v0, v1) {
+    return v0 + t * (v1 - v0);
   }
 
-  /** Returns true once the JSON has been fetched and parsed (or failed). */
-  function isReady() { return ready; }
+  /**
+   * Load and parse the JSON data file
+   */
+  async function load() {
+    try {
+      const response = await fetch('data/flyby-lighting.json');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const json = await response.json();
+      
+      if (!json.meta || !json.sun || !json.moon) {
+        throw new Error('Invalid data structure: missing meta, sun, or moon');
+      }
+
+      module.data = json;
+      module.ready = true;
+      module.error = null;
+      return true;
+    } catch (err) {
+      module.error = err.message || String(err);
+      module.ready = false;
+      module.data = null;
+      console.warn('[FlybyLighting] Failed to load data:', module.error);
+      return false;
+    }
+  }
 
   /**
-   * Returns the unit sun-direction vector in EME2000 at the given mission-elapsed seconds.
-   * @param  {number} metSec
-   * @returns {{ x: number, y: number, z: number } | null}
+   * Check if data is loaded and ready
+   */
+  function isReady() {
+    return module.ready && module.data !== null;
+  }
+
+  /**
+   * Get interpolated Sun direction at metSec
+   * Returns { x, y, z } unit vector in EME2000 frame, or null if unavailable
    */
   function getSunDir(metSec) {
-    if (!ready || !sunRows || sunRows.length === 0) return null;
-    var b = findBracket(sunRows, metSec);
-    if (!b) return null;
-    if (b.lo === b.hi) {
-      var r = sunRows[b.lo];
-      return { x: r[1], y: r[2], z: r[3] };
-    }
-    var lo = sunRows[b.lo], hi = sunRows[b.hi], f = b.f;
-    return {
-      x: lerp(lo[1], hi[1], f),
-      y: lerp(lo[2], hi[2], f),
-      z: lerp(lo[3], hi[3], f)
-    };
+    if (!isReady()) return null;
+
+    const bracket = binarySearch(module.data.sun, metSec);
+    if (!bracket) return null;
+
+    const { lower, upper } = bracket;
+    const t0 = lower.entry[0];
+    const t1 = upper.entry[0];
+    const t = (metSec - t0) / (t1 - t0);
+
+    const x = lerp(t, lower.entry[1], upper.entry[1]);
+    const y = lerp(t, lower.entry[2], upper.entry[2]);
+    const z = lerp(t, lower.entry[3], upper.entry[3]);
+
+    return { x, y, z };
   }
 
   /**
-   * Returns Moon orientation data interpolated at the given mission-elapsed seconds.
-   * All angular values are in degrees.
-   * @param  {number} metSec
-   * @returns {{
-   *   obsLonDeg:  number,   // sub-Earth longitude on Moon (MOON_ME, east-positive)
-   *   obsLatDeg:  number,   // sub-Earth latitude  on Moon
-   *   sunLonDeg:  number,   // sub-solar longitude on Moon
-   *   sunLatDeg:  number,   // sub-solar latitude  on Moon
-   *   npAngDeg:   number,   // north-pole position angle (deg, from north toward east)
-   *   npDistDeg:  number    // angular distance to north pole (deg)
-   * } | null}
+   * Get interpolated Moon orientation at metSec
+   * Returns {
+   *   obsLon: observer longitude (sub-Earth point) in degrees,
+   *   obsLat: observer latitude (sub-Earth point) in degrees,
+   *   sunLon: Sun longitude (sub-Solar point) in degrees,
+   *   sunLat: Sun latitude (sub-Solar point) in degrees,
+   *   npAng: North pole angle in degrees
+   * }
+   * Or null if unavailable
    */
   function getMoonOrientation(metSec) {
-    if (!ready || !moonRows || moonRows.length === 0) return null;
-    var b = findBracket(moonRows, metSec);
-    if (!b) return null;
-    if (b.lo === b.hi) {
-      var r = moonRows[b.lo];
-      return { obsLonDeg: r[1], obsLatDeg: r[2], sunLonDeg: r[3], sunLatDeg: r[4], npAngDeg: r[5], npDistDeg: r[6] };
-    }
-    var lo = moonRows[b.lo], hi = moonRows[b.hi], f = b.f;
-    return {
-      obsLonDeg: lerp(lo[1], hi[1], f),
-      obsLatDeg: lerp(lo[2], hi[2], f),
-      sunLonDeg: lerp(lo[3], hi[3], f),
-      sunLatDeg: lerp(lo[4], hi[4], f),
-      npAngDeg:  lerp(lo[5], hi[5], f),
-      npDistDeg: lerp(lo[6], hi[6], f)
-    };
+    if (!isReady()) return null;
+
+    const bracket = binarySearch(module.data.moon, metSec);
+    if (!bracket) return null;
+
+    const { lower, upper } = bracket;
+    const t0 = lower.entry[0];
+    const t1 = upper.entry[0];
+    const t = (metSec - t0) / (t1 - t0);
+
+    const obsLon = lerp(t, lower.entry[1], upper.entry[1]);
+    const obsLat = lerp(t, lower.entry[2], upper.entry[2]);
+    const sunLon = lerp(t, lower.entry[3], upper.entry[3]);
+    const sunLat = lerp(t, lower.entry[4], upper.entry[4]);
+    const npAng = lerp(t, lower.entry[5], upper.entry[5]);
+
+    return { obsLon, obsLat, sunLon, sunLat, npAng };
   }
 
-  // ── bootstrap ─────────────────────────────────────────────────────────────
-
-  window.FlybyLighting = {
-    ready:              readyPromise,
-    load:               load,
-    isReady:            isReady,
-    getSunDir:          getSunDir,
-    getMoonOrientation: getMoonOrientation,
-    get meta() { return meta; }
+  return {
+    load,
+    isReady,
+    getSunDir,
+    getMoonOrientation,
   };
 })();
