@@ -248,6 +248,11 @@ var OsculatingOrbit = (function () {
     var moonDistKm = (typeof MissionEphemeris !== 'undefined')
       ? MissionEphemeris.getState(metSec).distMoonKm
       : 1e9;
+    if (moonDistKm < 20000) {
+      if (_orbitLine) { _scene.remove(_orbitLine); _orbitLine.geometry.dispose(); _orbitMat.dispose(); _orbitLine = null; _orbitMat = null; }
+      if (_periDot)   { _scene.remove(_periDot);   _periDot.geometry.dispose();   _periMat.dispose();   _periDot = null;   _periMat = null; }
+      return;
+    }
     var lineOpacity = (moonDistKm * SCENE_SCALE < 5) ? 0.15 : 0.35;
 
     // Rebuild geometry every 10 frames for performance
