@@ -741,26 +741,6 @@
     presetWrapper.appendChild(presetBar);
     container.appendChild(presetWrapper);
 
-    var apolloToggleBtn = document.createElement('button');
-    apolloToggleBtn.textContent = '🚀₁₃';
-    apolloToggleBtn.title = 'Toggle Apollo 13';
-    Object.assign(apolloToggleBtn.style, {
-      position:'absolute', top:'10px', right:'10px', zIndex:'5',
-      padding:'4px 10px', background:'rgba(8,12,26,0.85)',
-      border:'1px solid rgba(223,0,255,0.4)', borderRadius:'12px',
-      color:'rgba(223,0,255,0.8)', fontSize:'12px', cursor:'pointer',
-      fontFamily:"'Share Tech Mono',monospace", transition:'all 0.2s'
-    });
-    apolloToggleBtn.addEventListener('click', function() {
-      showApollo = !showApollo;
-      apolloGroup.visible = showApollo;
-      apolloPathLine.visible = showApollo;
-      apGlowLines.forEach(function(l) { l.visible = showApollo; });
-      apolloToggleBtn.style.opacity = showApollo ? '1' : '0.35';
-      apolloToggleBtn.style.textDecoration = showApollo ? 'none' : 'line-through';
-    });
-    container.appendChild(apolloToggleBtn);
-
     function updatePresetBtns() {
       var _nowMetS = (Date.now() - LAUNCH_UTC) / 1000;
       var _inFlybyWindow = _nowMetS > 345600 && _nowMetS < 518400; // Day 4–6
@@ -840,6 +820,34 @@
       btn.addEventListener('click', b.fn); ctrlDiv.appendChild(btn);
     });
     presetBar.appendChild(ctrlDiv);
+
+    var apolloToggleBtn = document.createElement('button');
+    apolloToggleBtn.textContent = 'Apollo 13';
+    apolloToggleBtn.title = 'Toggle Apollo 13';
+    Object.assign(apolloToggleBtn.style, {
+      padding:'3px 10px', background:'rgba(8,12,26,0.85)',
+      border:'1px solid rgba(223,0,255,0.4)', borderRadius:'12px',
+      color:'rgba(223,0,255,0.8)', fontSize:'10px', cursor:'pointer',
+      fontFamily:"'Share Tech Mono',monospace", transition:'all 0.2s',
+      lineHeight:'1.2', whiteSpace:'nowrap'
+    });
+    apolloToggleBtn.addEventListener('mouseenter', function() {
+      apolloToggleBtn.style.borderColor = 'rgba(223,0,255,0.8)';
+      apolloToggleBtn.style.color = 'rgba(223,0,255,1)';
+    });
+    apolloToggleBtn.addEventListener('mouseleave', function() {
+      apolloToggleBtn.style.borderColor = showApollo ? 'rgba(223,0,255,0.4)' : 'rgba(223,0,255,0.2)';
+      apolloToggleBtn.style.color = showApollo ? 'rgba(223,0,255,0.8)' : 'rgba(223,0,255,0.4)';
+    });
+    apolloToggleBtn.addEventListener('click', function() {
+      showApollo = !showApollo;
+      apolloGroup.visible = showApollo;
+      apolloPathLine.visible = showApollo;
+      apGlowLines.forEach(function(l) { l.visible = showApollo; });
+      apolloToggleBtn.style.opacity = showApollo ? '1' : '0.35';
+      apolloToggleBtn.style.textDecoration = showApollo ? 'none' : 'line-through';
+    });
+    ctrlDiv.appendChild(apolloToggleBtn);
 
     // ── Waypoint popup ──
     var popupEl = document.createElement('div');
