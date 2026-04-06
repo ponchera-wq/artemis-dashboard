@@ -204,6 +204,83 @@ function createOrionModel(THREE) {
     });
   });
 
+  // ── 8. Exhaust glow (outer) ───────────────────────────────────────────────────
+  var exOuter = new THREE.Mesh(
+    new THREE.SphereGeometry(0.5, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xff6600, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  exOuter.position.y = -5.25;
+  group.add(exOuter);
+
+  // ── 9. Exhaust glow (inner) ───────────────────────────────────────────────────
+  var exInner = new THREE.Mesh(
+    new THREE.SphereGeometry(0.2, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  exInner.position.y = -5.25;
+  group.add(exInner);
+
+  // ── 10. Glow halo ─────────────────────────────────────────────────────────────
+  var haloMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(5.0, 16, 16),
+    new THREE.MeshBasicMaterial({ color: 0x44aaff, transparent: true, opacity: 0.04, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  group.add(haloMesh);
+
+  // ── 11. Nozzle glow ───────────────────────────────────────────────────────────
+  var nozzleGlow = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xffeeaa, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  nozzleGlow.position.y = -5.25;
+  group.add(nozzleGlow);
+
+  // ── 12. Particle exhaust system ───────────────────────────────────────────────
+  var PARTICLE_COUNT = 60;
+  var pPositions = new Float32Array(PARTICLE_COUNT * 3);
+  var pColors = new Float32Array(PARTICLE_COUNT * 3);
+  var pLifetimes = new Float32Array(PARTICLE_COUNT);
+  var pVelocities = [];
+  function resetParticle(i) {
+    pPositions[i*3]   = (Math.random()-0.5)*0.24;
+    pPositions[i*3+1] = -5.25;
+    pPositions[i*3+2] = (Math.random()-0.5)*0.24;
+    pColors[i*3]=1.0; pColors[i*3+1]=1.0; pColors[i*3+2]=0.9;
+    pLifetimes[i]=0;
+    pVelocities[i]={x:(Math.random()-0.5)*0.06, y:-(0.12+Math.random()*0.1), z:(Math.random()-0.5)*0.06};
+  }
+  for (var ppi=0; ppi<PARTICLE_COUNT; ppi++) { resetParticle(ppi); pLifetimes[ppi]=Math.random(); }
+  var pCanvas=document.createElement('canvas'); pCanvas.width=32; pCanvas.height=32;
+  var pCtx=pCanvas.getContext('2d');
+  var pGrad=pCtx.createRadialGradient(16,16,0,16,16,16);
+  pGrad.addColorStop(0,'rgba(255,255,255,1)'); pGrad.addColorStop(0.25,'rgba(255,220,180,0.9)');
+  pGrad.addColorStop(0.55,'rgba(255,100,20,0.5)'); pGrad.addColorStop(1,'rgba(255,30,0,0)');
+  pCtx.fillStyle=pGrad; pCtx.fillRect(0,0,32,32);
+  var pGeo=new THREE.BufferGeometry();
+  pGeo.setAttribute('position',new THREE.BufferAttribute(pPositions,3));
+  pGeo.setAttribute('color',new THREE.BufferAttribute(pColors,3));
+  var pMat=new THREE.PointsMaterial({size:0.8,map:new THREE.CanvasTexture(pCanvas),vertexColors:true,transparent:true,opacity:1.0,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true});
+  var exhaustParticles=new THREE.Points(pGeo,pMat);
+  exhaustParticles.frustumCulled=false;
+  group.add(exhaustParticles);
+
+  // ── 13. userData exports (consumed by trajectory.js) ─────────────────────────
+  group.userData.exhaustOuter     = exOuter;
+  group.userData.exhaustInner     = exInner;
+  group.userData.hullMat          = MAT.bodyWhite;
+  group.userData.glowMat          = haloMesh.material;
+  group.userData.nozzleGlow       = nozzleGlow;
+  group.userData.exhaustParticles = exhaustParticles;
+  group.userData.particleData     = {
+    positions:  pPositions,
+    colors:     pColors,
+    lifetimes:  pLifetimes,
+    velocities: pVelocities,
+    geo:        pGeo,
+    count:      PARTICLE_COUNT,
+    reset:      resetParticle,
+  };
+
   return group;
 }
 
