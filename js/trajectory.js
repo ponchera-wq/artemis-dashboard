@@ -854,7 +854,7 @@
     container.appendChild(popupEl);
     var popupOpen = false;
 
-    OsculatingOrbit.init(scene, THREE, toScene, rotMat, SCENE_SCALE, popupEl, lctx, camera, W, H);
+    if (typeof OsculatingOrbit !== 'undefined') OsculatingOrbit.init(scene, THREE, toScene, rotMat, SCENE_SCALE, popupEl, lctx, camera, W, H);
 
     function closePopup() { popupEl.style.display = 'none'; popupOpen = false; }
     function openPopup(wp, sx, sy) {
