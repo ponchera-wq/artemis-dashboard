@@ -545,7 +545,7 @@
     }
     
     orionGroup.userData.label = 'ORION';
-    orionGroup.scale.set(4, 4, 4);
+    orionGroup.scale.set(2, 2, 2);
     scene.add(orionGroup);
 
     // ── Apollo 13 Model and Path ──
@@ -553,7 +553,7 @@
     if (typeof createApolloModel !== 'undefined') {
       apolloGroup = createApolloModel(THREE);
     }
-    apolloGroup.scale.set(4, 4, 4); // Match Orion scale
+    apolloGroup.scale.set(2, 2, 2); // Match Orion scale
     scene.add(apolloGroup);
 
     // Apollo 13 Exhaust (Thrusters)
@@ -642,6 +642,7 @@
     var lerpTo = { pos: new THREE.Vector3(), look: new THREE.Vector3() };
     var lerpT = 1, lerpDuration = 1.0;
     var activePreset = null;
+    var showApollo = true;
 
     function sphToPos() {
       return new THREE.Vector3(
@@ -738,6 +739,26 @@
     });
     presetWrapper.appendChild(presetBar);
     container.appendChild(presetWrapper);
+
+    var apolloToggleBtn = document.createElement('button');
+    apolloToggleBtn.textContent = '🚀₁₃';
+    apolloToggleBtn.title = 'Toggle Apollo 13';
+    Object.assign(apolloToggleBtn.style, {
+      position:'absolute', top:'10px', right:'10px', zIndex:'5',
+      padding:'4px 10px', background:'rgba(8,12,26,0.85)',
+      border:'1px solid rgba(223,0,255,0.4)', borderRadius:'12px',
+      color:'rgba(223,0,255,0.8)', fontSize:'12px', cursor:'pointer',
+      fontFamily:"'Share Tech Mono',monospace", transition:'all 0.2s'
+    });
+    apolloToggleBtn.addEventListener('click', function() {
+      showApollo = !showApollo;
+      apolloGroup.visible = showApollo;
+      apolloPathLine.visible = showApollo;
+      apGlowLines.forEach(function(l) { l.visible = showApollo; });
+      apolloToggleBtn.style.opacity = showApollo ? '1' : '0.35';
+      apolloToggleBtn.style.textDecoration = showApollo ? 'none' : 'line-through';
+    });
+    container.appendChild(apolloToggleBtn);
 
     function updatePresetBtns() {
       var _nowMetS = (Date.now() - LAUNCH_UTC) / 1000;
@@ -1254,29 +1275,32 @@
       issGroup.quaternion.copy(issQuat);
 
       // ── Animate Apollo 13 ──
-      var apolloFrac = (metSec / T_SPAN_MET) % 1.0; 
-      var pA13 = apolloSpline.getPointAt(apolloFrac);
-      apolloGroup.position.copy(pA13);
-      var tgA13 = apolloSpline.getTangentAt(apolloFrac).normalize();
-      
-      // Apollo faces Moon at flyby: calculate distance to Moon for orientation weight
-      var apMoonDist = pA13.distanceTo(moon.position);
-      var lookMoon = new THREE.Vector3().subVectors(moon.position, pA13).normalize();
-      
-      // Orient Apollo: blend between following trajectory and looking at Moon during CA
-      var apDir = tgA13.clone();
-      if (apMoonDist < 4.5) {
-        var weight = 1 - Math.min(1, Math.max(0, (apMoonDist - 1.2) / 3.3));
-        apDir.lerp(lookMoon, weight * 0.75).normalize();
+      var distA13Str = '';
+      if (showApollo) {
+        var apolloFrac = (metSec / T_SPAN_MET) % 1.0; 
+        var pA13 = apolloSpline.getPointAt(apolloFrac);
+        apolloGroup.position.copy(pA13);
+        var tgA13 = apolloSpline.getTangentAt(apolloFrac).normalize();
+        
+        // Apollo faces Moon at flyby: calculate distance to Moon for orientation weight
+        var apMoonDist = pA13.distanceTo(moon.position);
+        var lookMoon = new THREE.Vector3().subVectors(moon.position, pA13).normalize();
+        
+        // Orient Apollo: blend between following trajectory and looking at Moon during CA
+        var apDir = tgA13.clone();
+        if (apMoonDist < 4.5) {
+          var weight = 1 - Math.min(1, Math.max(0, (apMoonDist - 1.2) / 3.3));
+          apDir.lerp(lookMoon, weight * 0.75).normalize();
+        }
+        
+        var apolloQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), apDir);
+        apolloGroup.quaternion.slerp(apolloQuat, 0.2);
+        
+        var distA13Km = apolloGroup.position.length() * (EARTH_R_KM / SCENE_EARTH_R);
+        var _tuEarthA = document.getElementById('tu-earth');
+        var isImp = _tuEarthA ? _tuEarthA.textContent.trim() === 'MI' : false;
+        distA13Str = isImp ? Math.round(distA13Km * 0.621371).toLocaleString() + ' mi' : Math.round(distA13Km).toLocaleString() + ' km';
       }
-      
-      var apolloQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), apDir);
-      apolloGroup.quaternion.slerp(apolloQuat, 0.2);
-      
-       var distA13Km = apolloGroup.position.length() * (EARTH_R_KM / SCENE_EARTH_R);
-       var _tuEarthA = document.getElementById('tu-earth');
-       var isImp = _tuEarthA ? _tuEarthA.textContent.trim() === 'MI' : false;
-       var distA13Str = isImp ? Math.round(distA13Km * 0.621371).toLocaleString() + ' mi' : Math.round(distA13Km).toLocaleString() + ' km';
 
       renderer.render(scene, camera);
 
@@ -1295,8 +1319,10 @@
 
       drawCallout('ISS', new THREE.Vector3(issGroup.position.x, issGroup.position.y + 0.35, issGroup.position.z), '#00ccff', 0, -10, false, issGroup.position);
 
-      drawCallout('APOLLO 13 \u00b7 ' + distA13Str, new THREE.Vector3(apolloGroup.position.x, apolloGroup.position.y + 1.2, apolloGroup.position.z), '#df00ff', 0, -20, true, apolloGroup.position);
-      
+      if (showApollo) {
+        drawCallout('APOLLO 13 \u00b7 ' + distA13Str, new THREE.Vector3(apolloGroup.position.x, apolloGroup.position.y + 1.2, apolloGroup.position.z), '#df00ff', 0, -20, true, apolloGroup.position);
+      }
+
       drawCallout('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.4, earth.position.z), 'rgba(100,170,255,0.85)', 0, 0, false, earth.position);
       drawCallout('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 1.0, moon.position.z), 'rgba(200,195,180,0.85)', 0, 0, false, moon.position);
 
