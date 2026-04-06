@@ -267,14 +267,16 @@
     scene.add(issGroup);
 
     // ── Moon — positioned dynamically from ephemeris ──
-    var MOON_SCENE_R = 0.45;
-    var moonMat = new THREE.MeshPhongMaterial({ color: 0xaaa89e, emissive: 0x0a0a09, shininess: 4 });
-    var moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_SCENE_R, 32, 32), moonMat);
+    var MOON_SCENE_R = 0.245; // realistic: Moon is 27.3% of Earth radius (0.9 * 0.273)
+    var moonMat = new THREE.MeshPhongMaterial({ color: 0xaaa89e, emissive: 0x050503, shininess: 3 });
+    var moon = new THREE.Mesh(new THREE.SphereGeometry(MOON_SCENE_R, 48, 48), moonMat);
     scene.add(moon);
     loadTex(['https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg'],
       function(tex) { moonMat.map = tex; moonMat.color.set(0xdddddd); moonMat.needsUpdate = true; });
-    var moonGlow = new THREE.Mesh(new THREE.SphereGeometry(MOON_SCENE_R * 1.2, 32, 32),
-      new THREE.MeshBasicMaterial({ color: 0xccccbb, transparent: true, opacity: 0.08, side: THREE.BackSide }));
+    loadTex(['https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/moon_1024.jpg'],
+      function(tex) { moonMat.bumpMap = tex; moonMat.bumpScale = 0.003; moonMat.needsUpdate = true; });
+    var moonGlow = new THREE.Mesh(new THREE.SphereGeometry(MOON_SCENE_R * 1.15, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0xccccbb, transparent: true, opacity: 0.06, side: THREE.BackSide }));
     scene.add(moonGlow);
 
     var initMoonPos = toScene(caPt.moon.x, caPt.moon.y, caPt.moon.z);
