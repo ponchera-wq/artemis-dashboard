@@ -154,7 +154,7 @@
 
     var W = container.clientWidth || 400;
     var H = container.clientHeight || 300;
-    var camera = new THREE.PerspectiveCamera(45, W / H, 0.01, 1000);
+    var camera = new THREE.PerspectiveCamera(50, W / H, 0.01, 2000);
 
     var renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -630,10 +630,12 @@
     allPts.forEach(function(p) { bbox.expandByPoint(p); });
     var trajCenter = new THREE.Vector3();
     bbox.getCenter(trajCenter);
+    // Bias look-at toward Earth side so both Earth and Moon are visible at default zoom
+    trajCenter.multiplyScalar(0.45);
 
     var camLookAt = trajCenter.clone();
-    var sph = { theta: 0.3, phi: 1.05, r: 85 };
-    var SPH_DEFAULT = { theta: 0.3, phi: 1.05, r: 85 };
+    var sph = { theta: 0.3, phi: 1.05, r: 130 };
+    var SPH_DEFAULT = { theta: 0.3, phi: 1.05, r: 130 };
     var reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var isDrag = false, isPan = false, lastMx = 0, lastMy = 0, autoRotate = !reduceMotion, rotTimer = null;
     var lastReducedRenderMs = 0;
