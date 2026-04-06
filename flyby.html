@@ -1,0 +1,1480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artemis II — Lunar Flyby Replay</title>
+<meta name="description" content="Cinematic replay of the Artemis II crewed lunar flyby — Orion's hyperbolic arc around the Moon, driven by NASA JPL telemetry data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --cyan:   #00ffcc;
+  --amber:  #ff8844;
+  --gold:   #ffd700;
+  --bg:     #000;
+  --panel:  rgba(4, 8, 20, 0.97);
+  --border: rgba(0, 255, 204, 0.18);
+  --text:   #9aabb8;
+  --fh:     'Orbitron', sans-serif;
+  --fm:     'Share Tech Mono', monospace;
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--fm);
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── HEADER ────────────────────────────────────────────────────────────────── */
+.flyby-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.25rem;
+  height: 46px;
+  background: rgba(0, 4, 14, 0.99);
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+}
+
+.header-back {
+  color: var(--cyan);
+  text-decoration: none;
+  font-family: var(--fh);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  opacity: 0.75;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.header-back:hover { opacity: 1; }
+
+.header-title {
+  font-family: var(--fh);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: #fff;
+  text-align: center;
+  white-space: nowrap;
+}
+.header-title .accent { color: var(--cyan); }
+
+.header-tag {
+  font-family: var(--fh);
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  opacity: 0.65;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ── LAYOUT ─────────────────────────────────────────────────────────────────── */
+.flyby-main {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 46px);
+}
+
+/* ── SCENE ──────────────────────────────────────────────────────────────────── */
+#scene-wrapper {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 200px;
+  background: #000;
+  overflow: hidden;
+}
+
+#gl-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#earth-label {
+  position: absolute;
+  pointer-events: none;
+  font-family: var(--fm);
+  font-size: 0.58rem;
+  color: #4488ff;
+  text-shadow: 0 0 8px rgba(68,136,255,0.8);
+  white-space: nowrap;
+  transform: translate(-50%, -180%);
+  display: none;
+}
+
+#end-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.62);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+#end-overlay.active { display: flex; }
+
+.end-title {
+  font-family: var(--fh);
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--cyan);
+  letter-spacing: 0.25em;
+}
+.end-sub {
+  font-size: 0.68rem;
+  color: var(--text);
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+.btn-replay-big {
+  font-family: var(--fh);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #000;
+  background: var(--cyan);
+  border: none;
+  padding: 0.7rem 2rem;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+  transition: opacity 0.15s;
+}
+.btn-replay-big:hover { opacity: 0.82; }
+
+/* ── BOTTOM PANEL ROW ───────────────────────────────────────────────────────── */
+#panel-row {
+  display: flex;
+  flex-direction: row;
+  flex-shrink: 0;
+  height: 190px;
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* ── TELEMETRY ──────────────────────────────────────────────────────────────── */
+#telemetry-panel {
+  flex: 0 0 210px;
+  padding: 0.65rem 1rem;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--panel);
+  scrollbar-width: none;
+}
+#telemetry-panel::-webkit-scrollbar { display: none; }
+
+.telem-hdr {
+  font-family: var(--fh);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--cyan);
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.telem-row { margin-bottom: 0.5rem; }
+
+.telem-lbl {
+  font-size: 0.44rem;
+  letter-spacing: 0.12em;
+  color: rgba(154,171,184,0.45);
+  text-transform: uppercase;
+  margin-bottom: 0.1rem;
+}
+
+.telem-val {
+  font-family: var(--fm);
+  font-size: 0.82rem;
+  color: #dde8f0;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+.telem-val.large {
+  font-family: var(--fh);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+.illu-bar {
+  font-size: 0.58rem;
+  color: var(--gold);
+  letter-spacing: -0.04em;
+  margin-top: 0.05rem;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.05rem 0.28rem;
+  font-size: 0.44rem;
+  font-family: var(--fh);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+  margin-left: 0.25rem;
+}
+.badge.elliptic  { color: var(--cyan);  border: 1px solid rgba(0,255,204,0.6); }
+.badge.hyperbolic { color: var(--amber); border: 1px solid rgba(255,136,68,0.6); }
+
+.telem-div {
+  border: none;
+  border-top: 1px solid rgba(0,255,204,0.08);
+  margin: 0.45rem 0;
+}
+
+.approach-record {
+  font-family: var(--fh);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+.approach-record small {
+  font-size: 0.5rem;
+  font-family: var(--fm);
+  font-weight: 400;
+  color: rgba(255,215,0,0.5);
+  margin-left: 0.2rem;
+}
+
+/* ── SCRUBBER / CENTER ──────────────────────────────────────────────────────── */
+#scrubber-panel {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0.6rem 1.25rem;
+  background: var(--panel);
+  gap: 0.45rem;
+}
+
+.time-center {
+  font-family: var(--fh);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--cyan);
+  text-align: center;
+  letter-spacing: 0.12em;
+}
+
+.event-ticks {
+  position: relative;
+  height: 10px;
+}
+
+.event-tick {
+  position: absolute;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 8px;
+  cursor: pointer;
+  border-radius: 1px;
+}
+.event-tick.crit-HIGH     { background: var(--amber); }
+.event-tick.crit-CRITICAL { background: var(--gold);  }
+.event-tick::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.45rem;
+  font-family: var(--fh);
+  color: #fff;
+  background: rgba(4,8,20,0.95);
+  border: 1px solid var(--border);
+  padding: 0.15rem 0.35rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+  letter-spacing: 0.06em;
+}
+.event-tick:hover::after { opacity: 1; }
+
+.scrubber-wrap { position: relative; }
+
+input[type="range"].scrubber {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 3px;
+  background: rgba(0,255,204,0.12);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"].scrubber::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 10px rgba(0,255,204,0.7);
+  cursor: pointer;
+}
+input[type="range"].scrubber::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cyan);
+  border: none;
+  box-shadow: 0 0 10px rgba(0,255,204,0.7);
+  cursor: pointer;
+}
+
+.scrubber-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.5rem;
+  color: rgba(154,171,184,0.35);
+  margin-top: 0.25rem;
+  letter-spacing: 0.04em;
+}
+
+/* ── EVENT PANEL ────────────────────────────────────────────────────────────── */
+#event-panel {
+  flex: 0 0 205px;
+  padding: 0.65rem 1rem;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+  background: var(--panel);
+  scrollbar-width: none;
+}
+#event-panel::-webkit-scrollbar { display: none; }
+
+.event-panel-hdr {
+  font-family: var(--fh);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--cyan);
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.event-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.45rem 0.3rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0,255,204,0.04);
+  transition: background 0.15s;
+  border-radius: 2px;
+}
+.event-item:hover { background: rgba(0,255,204,0.03); }
+.event-item:last-child { border-bottom: none; }
+
+.evt-icon {
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  padding-top: 0.05rem;
+  line-height: 1;
+  width: 1rem;
+  text-align: center;
+}
+
+.event-item.passed .evt-icon  { color: #22cc66; }
+.event-item.active .evt-icon  { color: var(--gold); }
+.event-item.upcoming .evt-icon { color: rgba(154,171,184,0.25); }
+
+@keyframes gold-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+.event-item.active { animation: gold-pulse 1.6s ease-in-out infinite; }
+.event-item.upcoming .evt-name { opacity: 0.38; }
+.event-item.upcoming .evt-time { opacity: 0.25; }
+
+.evt-info { flex: 1; min-width: 0; }
+.evt-name {
+  font-family: var(--fh);
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #dde8f0;
+  margin-bottom: 0.1rem;
+  line-height: 1.25;
+}
+.evt-label {
+  font-size: 0.48rem;
+  color: rgba(154,171,184,0.45);
+  letter-spacing: 0.08em;
+}
+.evt-time {
+  font-size: 0.48rem;
+  color: var(--cyan);
+  letter-spacing: 0.06em;
+  opacity: 0.65;
+}
+
+/* ── CONTROLS BAR ───────────────────────────────────────────────────────────── */
+#controls-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.45rem 1rem;
+  background: rgba(0, 3, 10, 0.99);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.ctrl-btn {
+  font-family: var(--fh);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  color: var(--text);
+  background: rgba(0,255,204,0.04);
+  border: 1px solid rgba(0,255,204,0.2);
+  padding: 0.38rem 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1;
+}
+.ctrl-btn:hover {
+  background: rgba(0,255,204,0.1);
+  border-color: var(--cyan);
+  color: #fff;
+}
+.ctrl-btn.primary {
+  color: var(--cyan);
+  border-color: rgba(0,255,204,0.5);
+  background: rgba(0,255,204,0.07);
+}
+.ctrl-btn.active {
+  background: var(--cyan);
+  color: #000;
+  border-color: var(--cyan);
+}
+
+.ctrl-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.speed-group { display: flex; }
+.speed-group .ctrl-btn { border-right-width: 0; }
+.speed-group .ctrl-btn:last-child { border-right-width: 1px; }
+
+.ctrl-label {
+  font-family: var(--fh);
+  font-size: 0.5rem;
+  letter-spacing: 0.12em;
+  color: rgba(154,171,184,0.4);
+}
+
+/* ── EVENT CARD OVERLAY ─────────────────────────────────────────────────────── */
+#event-card-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  background: rgba(0, 0, 0, 0.38);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+#event-card-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.event-card {
+  background: rgba(4, 8, 20, 0.97);
+  border: 1px solid rgba(0,255,204,0.45);
+  box-shadow: 0 0 50px rgba(0,255,204,0.12), 0 8px 60px rgba(0,0,0,0.9);
+  padding: 1.75rem 2rem;
+  max-width: 440px;
+  width: 92%;
+}
+
+.card-crit {
+  font-family: var(--fh);
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: var(--gold);
+  margin-bottom: 0.7rem;
+}
+
+.card-name {
+  font-family: var(--fh);
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  margin-bottom: 0.2rem;
+}
+
+.card-label {
+  font-size: 0.65rem;
+  color: var(--cyan);
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+  opacity: 0.85;
+}
+
+.card-highlight {
+  font-family: var(--fh);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--gold);
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid var(--gold);
+  background: rgba(255,215,0,0.05);
+  margin-bottom: 0.9rem;
+  letter-spacing: 0.04em;
+}
+
+.card-desc {
+  font-size: 0.68rem;
+  color: var(--text);
+  line-height: 1.65;
+  margin-bottom: 1.2rem;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.btn-continue {
+  font-family: var(--fh);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #000;
+  background: var(--cyan);
+  border: none;
+  padding: 0.5rem 1.1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+.btn-continue:hover { opacity: 0.82; }
+
+.countdown-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.countdown-lbl {
+  font-size: 0.52rem;
+  color: rgba(154,171,184,0.4);
+  flex-shrink: 0;
+  min-width: 1.5rem;
+  text-align: right;
+}
+.countdown-track {
+  flex: 1;
+  height: 3px;
+  background: rgba(0,255,204,0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.countdown-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--cyan);
+  border-radius: 2px;
+}
+@keyframes cd-anim { from { width: 0%; } to { width: 100%; } }
+
+/* ── LOADING / ERROR ─────────────────────────────────────────────────────────── */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  z-index: 1000;
+}
+.loader-ring {
+  width: 38px;
+  height: 38px;
+  border: 2px solid rgba(0,255,204,0.12);
+  border-top-color: var(--cyan);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-title {
+  font-family: var(--fh);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--cyan);
+  letter-spacing: 0.22em;
+}
+.loader-sub {
+  font-size: 0.65rem;
+  color: var(--text);
+  opacity: 0.5;
+  letter-spacing: 0.08em;
+}
+.error-msg {
+  font-size: 0.7rem;
+  color: var(--amber);
+  text-align: center;
+  max-width: 380px;
+  line-height: 1.65;
+  padding: 0 1.5rem;
+}
+
+/* ── RESPONSIVE ──────────────────────────────────────────────────────────────── */
+@media (max-width: 820px) {
+  #event-panel { flex: 0 0 170px; }
+  #telemetry-panel { flex: 0 0 170px; }
+}
+
+@media (max-width: 640px) {
+  html, body { overflow: auto; }
+  .flyby-main { height: auto; overflow: auto; }
+  #scene-wrapper { height: 42vw; min-height: 220px; flex: none; }
+  #panel-row {
+    flex-direction: column;
+    height: auto;
+    border-top: 1px solid var(--border);
+    overflow: visible;
+  }
+  #telemetry-panel { flex: none; border-right: none; border-bottom: 1px solid var(--border); }
+  #scrubber-panel   { flex: none; }
+  #event-panel      { flex: none; border-left: none; border-top: 1px solid var(--border); }
+  .header-tag       { display: none; }
+  .header-title     { font-size: 0.62rem; }
+  .ctrl-btn         { padding: 0.35rem 0.6rem; font-size: 0.52rem; }
+}
+
+@media (max-width: 400px) {
+  #event-panel { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="flyby-header">
+  <a href="index.html" class="header-back">← ARTEMIS&nbsp;II</a>
+  <div class="header-title">🌙 <span class="accent">LUNAR FLYBY</span> REPLAY</div>
+  <div class="header-tag">NASA JPL DATA</div>
+</header>
+
+<!-- MAIN -->
+<main class="flyby-main">
+
+  <!-- 3D SCENE -->
+  <div id="scene-wrapper">
+    <canvas id="gl-canvas"></canvas>
+    <div id="earth-label"></div>
+
+    <!-- END OVERLAY -->
+    <div id="end-overlay">
+      <div class="end-title">FLYBY COMPLETE</div>
+      <div class="end-sub">Orion has completed the lunar gravity assist</div>
+      <button class="btn-replay-big" id="btn-end-replay">↺ REPLAY</button>
+    </div>
+  </div>
+
+  <!-- PANEL ROW -->
+  <div id="panel-row">
+
+    <!-- TELEMETRY -->
+    <div id="telemetry-panel">
+      <div class="telem-hdr">TELEMETRY</div>
+
+      <div class="telem-row">
+        <div class="telem-lbl">TIME FROM PERILUNE</div>
+        <div class="telem-val large" id="t-rel">T-04:00:00</div>
+      </div>
+      <div class="telem-row">
+        <div class="telem-lbl">MOON ALTITUDE</div>
+        <div class="telem-val" id="moon-alt">—</div>
+      </div>
+      <div class="telem-row">
+        <div class="telem-lbl">SPEED vs MOON</div>
+        <div class="telem-val" id="speed-moon">—</div>
+      </div>
+      <div class="telem-row">
+        <div class="telem-lbl">APPROACH RATE</div>
+        <div class="telem-val" id="approach-rate">—</div>
+      </div>
+      <div class="telem-row">
+        <div class="telem-lbl">ILLUMINATION</div>
+        <div class="telem-val" id="illu-pct">—</div>
+        <div class="illu-bar" id="illu-bar">░░░░░░░░░░░░░░░</div>
+      </div>
+      <div class="telem-row">
+        <div class="telem-lbl">EARTH DISTANCE</div>
+        <div class="telem-val" id="earth-dist">—</div>
+      </div>
+      <div class="telem-row">
+        <div class="telem-lbl">ECCENTRICITY</div>
+        <div class="telem-val" id="eccentricity">—</div>
+      </div>
+
+      <hr class="telem-div">
+
+      <div class="telem-row">
+        <div class="telem-lbl">CLOSEST APPROACH</div>
+        <div class="approach-record">8,281 km <small>(record)</small></div>
+      </div>
+    </div>
+
+    <!-- SCRUBBER -->
+    <div id="scrubber-panel">
+      <div class="time-center" id="time-center">T-04:00:00</div>
+      <div class="event-ticks" id="event-ticks"></div>
+      <div class="scrubber-wrap">
+        <input type="range" class="scrubber" id="scrubber"
+               min="0" max="28800" value="0" step="1">
+      </div>
+      <div class="scrubber-labels">
+        <span>T-04:00:00</span>
+        <span>PERILUNE T+0</span>
+        <span>T+04:00:00</span>
+      </div>
+    </div>
+
+    <!-- EVENT PANEL -->
+    <div id="event-panel">
+      <div class="event-panel-hdr">MISSION EVENTS</div>
+      <div id="event-list"></div>
+    </div>
+
+  </div>
+
+  <!-- CONTROLS -->
+  <div id="controls-bar">
+    <button class="ctrl-btn primary" id="btn-play-pause">▶ PLAY</button>
+    <button class="ctrl-btn" id="btn-replay">↺ REPLAY</button>
+    <div class="ctrl-sep"></div>
+    <span class="ctrl-label">SPEED</span>
+    <div class="speed-group" id="speed-group">
+      <button class="ctrl-btn" data-speed="60">1×</button>
+      <button class="ctrl-btn active" data-speed="120">2×</button>
+      <button class="ctrl-btn" data-speed="240">4×</button>
+      <button class="ctrl-btn" data-speed="480">8×</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- EVENT CARD OVERLAY -->
+<div id="event-card-overlay">
+  <div class="event-card">
+    <div class="card-crit"  id="card-crit"></div>
+    <div class="card-name"  id="card-name"></div>
+    <div class="card-label" id="card-label"></div>
+    <div class="card-highlight" id="card-hl"></div>
+    <div class="card-desc"  id="card-desc"></div>
+    <div class="card-footer">
+      <button class="btn-continue" id="btn-continue">▶ Continue</button>
+      <div class="countdown-wrap">
+        <span class="countdown-lbl" id="cd-lbl">5s</span>
+        <div class="countdown-track">
+          <div class="countdown-fill" id="cd-fill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading-overlay">
+  <div class="loader-ring"></div>
+  <div class="loader-title">LOADING TELEMETRY</div>
+  <div class="loader-sub" id="loader-sub">Fetching flyby data…</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+
+// ── CONSTANTS ──────────────────────────────────────────────────────────────────
+const WIN_START    = 419120;
+const WIN_END      = 447920;
+const WIN_DUR      = 28800;   // 8 h in mission seconds
+const PERI_OFFSET  = 14400;   // animTime of perilune (T+00:00:00)
+const PERI_MET     = 433520;
+const MOON_R       = 1737.4;  // km
+
+// ── STATE ──────────────────────────────────────────────────────────────────────
+let DATA = null;
+let obsArr, sunArr, moonOrArr, oscArr, arcArr;
+let evts = [];
+
+let animTime      = 0;
+let speed         = 120;       // 2× default
+let playing       = false;
+let lastRealMs    = null;
+let isDragging    = false;
+let ended         = false;
+let triggered     = new Set();
+let prevCheckT    = -1;        // sentinel so event 0 fires on frame 1
+let cardOpen      = false;
+let cdInterval    = null;
+let cdTimeout     = null;
+
+// Three.js refs
+let renderer, scene, camera;
+let moonMesh, orionMesh;
+let sunLight, earthMesh;
+let periMark;
+let trvApproach, trvDepart;   // { line, buf, geom }
+let PERI_ARC_IDX  = 0;
+
+// DOM
+const $ = id => document.getElementById(id);
+const loadOvl   = $('loading-overlay');
+const loaderSub = $('loader-sub');
+const sceneWrap = $('scene-wrapper');
+const glCanvas  = $('gl-canvas');
+const endOvl    = $('end-overlay');
+const earthLbl  = $('earth-label');
+const tRel      = $('t-rel');
+const timeCenter= $('time-center');
+const moonAltEl = $('moon-alt');
+const speedMoon = $('speed-moon');
+const approachR = $('approach-rate');
+const illuPctEl = $('illu-pct');
+const illuBarEl = $('illu-bar');
+const earthDistEl = $('earth-dist');
+const eccEl     = $('eccentricity');
+const scrubber  = $('scrubber');
+const btnPlay   = $('btn-play-pause');
+const btnReplay = $('btn-replay');
+const speedGrp  = $('speed-group');
+const evtList   = $('event-list');
+const evtTicks  = $('event-ticks');
+const cardOvl   = $('event-card-overlay');
+const cdFill    = $('cd-fill');
+const cdLbl     = $('cd-lbl');
+const btnCont   = $('btn-continue');
+const btnEndRep = $('btn-end-replay');
+
+// ── UTILS ──────────────────────────────────────────────────────────────────────
+function fmt(n, d=0) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+
+function fmtT(t) {
+  const d = t - PERI_OFFSET;
+  const s = d < 0 ? '-' : '+';
+  const a = Math.abs(d);
+  const h = Math.floor(a / 3600);
+  const m = Math.floor((a % 3600) / 60);
+  const sc = Math.floor(a % 60);
+  return `T${s}${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sc).padStart(2,'0')}`;
+}
+
+function bsearch(arr, met) {
+  let lo = 0, hi = arr.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (arr[mid][0] <= met) lo = mid; else hi = mid - 1;
+  }
+  return lo;
+}
+
+function interp(arr, met) {
+  if (!arr || !arr.length) return null;
+  if (met <= arr[0][0]) return arr[0].slice();
+  if (met >= arr[arr.length-1][0]) return arr[arr.length-1].slice();
+  const i = bsearch(arr, met);
+  if (i >= arr.length - 1) return arr[arr.length-1].slice();
+  const a = arr[i], b = arr[i+1];
+  const t = (met - a[0]) / (b[0] - a[0]);
+  return a.map((v, j) => j === 0 ? met : a[j] + (b[j] - a[j]) * t);
+}
+
+// ── THREE.JS ───────────────────────────────────────────────────────────────────
+function initScene() {
+  const W = sceneWrap.offsetWidth;
+  const H = sceneWrap.offsetHeight;
+
+  renderer = new THREE.WebGLRenderer({ canvas: glCanvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(W, H);
+  renderer.setClearColor(0x000000, 1);
+
+  scene  = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 500000);
+  camera.position.set(0, 15000, 35000);
+  camera.lookAt(0, 0, 0);
+
+  // ── Lighting ──────────────────────────────────────────────────────────────
+  scene.add(new THREE.AmbientLight(0x111133, 0.15));
+
+  sunLight = new THREE.DirectionalLight(0xfff5e0, 1.4);
+  sunLight.position.set(50000, 20000, 10000);
+  scene.add(sunLight);
+
+  const earthshine = new THREE.PointLight(0x4488ff, 0.08, 80000);
+  earthshine.position.set(0, 20000, 0);
+  scene.add(earthshine);
+
+  // ── Stars ─────────────────────────────────────────────────────────────────
+  {
+    const N = 2000;
+    const pos = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      const phi   = Math.acos(2 * Math.random() - 1);
+      const theta = Math.random() * Math.PI * 2;
+      const r     = 185000 + Math.random() * 30000;
+      pos[i*3]   = r * Math.sin(phi) * Math.cos(theta);
+      pos[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+      pos[i*3+2] = r * Math.cos(phi);
+    }
+    const sg = new THREE.BufferGeometry();
+    sg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    scene.add(new THREE.Points(sg, new THREE.PointsMaterial({
+      color: 0xaabbcc, size: 28, transparent: true, opacity: 0.55
+    })));
+  }
+
+  // ── Moon ──────────────────────────────────────────────────────────────────
+  {
+    // Atmosphere glow (rendered BackSide, slightly larger)
+    const atmG = new THREE.SphereGeometry(MOON_R * 1.05, 32, 32);
+    const atmM = new THREE.MeshBasicMaterial({
+      color: 0x334455, transparent: true, opacity: 0.12, side: THREE.BackSide
+    });
+    scene.add(new THREE.Mesh(atmG, atmM));
+
+    const moonG = new THREE.SphereGeometry(MOON_R, 64, 64);
+    const moonM = new THREE.MeshPhongMaterial({ color: 0xbbbbbb, shininess: 4 });
+    moonMesh = new THREE.Mesh(moonG, moonM);
+    scene.add(moonMesh);
+
+    new THREE.TextureLoader().load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/moon_1024.jpg',
+      tex => { moonM.map = tex; moonM.color.set(0xffffff); moonM.needsUpdate = true; },
+      undefined,
+      () => { /* fallback: grey already set */ }
+    );
+  }
+
+  // ── Earth (distant reference) ──────────────────────────────────────────────
+  {
+    earthMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(1800, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0x1a5fa8 })
+    );
+    scene.add(earthMesh);
+  }
+
+  // ── Orion ─────────────────────────────────────────────────────────────────
+  {
+    orionMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(120, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0x00ffcc })
+    );
+    orionMesh.add(new THREE.Mesh(
+      new THREE.SphereGeometry(58, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    ));
+    const ol = new THREE.PointLight(0x00ffcc, 0.4, 8000);
+    orionMesh.add(ol);
+    scene.add(orionMesh);
+  }
+
+  // ── Arc geometry ──────────────────────────────────────────────────────────
+  PERI_ARC_IDX = arcArr.findIndex(p => p[0] >= PERI_MET);
+  if (PERI_ARC_IDX < 0) PERI_ARC_IDX = Math.floor(arcArr.length / 2);
+
+  const approachPts = arcArr.slice(0, PERI_ARC_IDX + 1)
+                            .map(p => new THREE.Vector3(p[1], 0, p[2]));
+  const departurePts= arcArr.slice(PERI_ARC_IDX)
+                            .map(p => new THREE.Vector3(p[1], 0, p[2]));
+
+  function dashedLine(pts, color) {
+    const g = new THREE.BufferGeometry().setFromPoints(pts);
+    const m = new THREE.LineDashedMaterial({
+      color, dashSize: 280, gapSize: 120, transparent: true, opacity: 0.38
+    });
+    const l = new THREE.Line(g, m);
+    l.computeLineDistances();
+    scene.add(l);
+    return l;
+  }
+  dashedLine(approachPts,  0xff8844);
+  dashedLine(departurePts, 0x00ffcc);
+
+  // Dynamic "travelled" lines — pre-allocated
+  function dynLine(maxPts, color) {
+    const buf  = new Float32Array(maxPts * 3);
+    const geom = new THREE.BufferGeometry();
+    const attr = new THREE.BufferAttribute(buf, 3);
+    attr.setUsage(THREE.DynamicDrawUsage);
+    geom.setAttribute('position', attr);
+    geom.setDrawRange(0, 0);
+    const line = new THREE.Line(geom, new THREE.LineBasicMaterial({ color }));
+    line.renderOrder = 1;
+    scene.add(line);
+    return { line, buf, geom };
+  }
+  trvApproach = dynLine(PERI_ARC_IDX + 2, 0xff8844);
+  trvDepart   = dynLine(arcArr.length - PERI_ARC_IDX + 1, 0x00ffcc);
+
+  // ── Periapsis marker ──────────────────────────────────────────────────────
+  {
+    const pp = arcArr[PERI_ARC_IDX] || [PERI_MET, 8280.7, 0];
+    periMark = new THREE.Mesh(
+      new THREE.SphereGeometry(80, 8, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffd700 })
+    );
+    periMark.position.set(pp[1], 0, pp[2]);
+    scene.add(periMark);
+  }
+
+  window.addEventListener('resize', onResize);
+  onResize();
+}
+
+function onResize() {
+  const W = sceneWrap.offsetWidth;
+  const H = sceneWrap.offsetHeight;
+  camera.aspect = W / H;
+  camera.updateProjectionMatrix();
+  renderer.setSize(W, H);
+}
+
+// ── SCENE UPDATE ───────────────────────────────────────────────────────────────
+function updateScene(met, animT) {
+  // Orion position
+  const arc = interp(arcArr, met);
+  if (arc) orionMesh.position.set(arc[1], 0, arc[2]);
+
+  // Sun direction → sunlight + Earth placement
+  const sun = interp(sunArr, met);
+  if (sun) {
+    sunLight.position.set(sun[1] * 50000, sun[2] * 50000, sun[3] * 50000);
+    // Earth opposite Sun at a readable display distance
+    const obs = interp(obsArr, met);
+    const ed  = obs ? obs[5] : 410000;
+    // Scale to fit comfortably in scene (Earth is ~390000 km away — beyond our scene FAR, so cap)
+    const EDisp = Math.min(ed, 350000);
+    earthMesh.position.set(-sun[1] * EDisp, -sun[2] * EDisp, -sun[3] * EDisp);
+  }
+
+  // Moon rotation from sub-solar longitude
+  const mo = interp(moonOrArr, met);
+  if (mo) moonMesh.rotation.y = -mo[3] * Math.PI / 180;
+
+  // Camera sinusoidal drift (±800 km over full animation)
+  camera.position.y = 15000 + 800 * Math.sin(2 * Math.PI * (animT / WIN_DUR));
+
+  // Travelled arc lines
+  updateTravelled(met);
+
+  // Earth label screen projection
+  if (earthMesh) {
+    const ep = earthMesh.position.clone().project(camera);
+    const W  = sceneWrap.offsetWidth, H = sceneWrap.offsetHeight;
+    const sx = (ep.x * 0.5 + 0.5) * W;
+    const sy = (-ep.y * 0.5 + 0.5) * H;
+    if (ep.z < 1 && sx > 20 && sx < W - 20 && sy > 20 && sy < H - 20) {
+      const obs = interp(obsArr, met);
+      earthLbl.textContent = obs ? `EARTH · ${fmt(obs[5])} km` : 'EARTH';
+      earthLbl.style.display = 'block';
+      earthLbl.style.left = sx + 'px';
+      earthLbl.style.top  = sy + 'px';
+    } else {
+      earthLbl.style.display = 'none';
+    }
+  }
+}
+
+function updateTravelled(met) {
+  // Approach: arc[0..PERI_ARC_IDX] clipped to current met
+  {
+    let n = 0;
+    const buf = trvApproach.buf;
+    for (let i = 0; i <= PERI_ARC_IDX && i < arcArr.length; i++) {
+      const p = arcArr[i];
+      if (p[0] > met) break;
+      buf[n*3] = p[1]; buf[n*3+1] = 0; buf[n*3+2] = p[2];
+      n++;
+    }
+    trvApproach.geom.attributes.position.needsUpdate = true;
+    trvApproach.geom.setDrawRange(0, n);
+  }
+  // Departure: arc[PERI_ARC_IDX..end] clipped to current met
+  if (met >= PERI_MET) {
+    let n = 0;
+    const buf = trvDepart.buf;
+    for (let i = PERI_ARC_IDX; i < arcArr.length; i++) {
+      const p = arcArr[i];
+      if (p[0] > met) break;
+      buf[n*3] = p[1]; buf[n*3+1] = 0; buf[n*3+2] = p[2];
+      n++;
+    }
+    trvDepart.geom.attributes.position.needsUpdate = true;
+    trvDepart.geom.setDrawRange(0, n);
+  } else {
+    trvDepart.geom.setDrawRange(0, 0);
+    trvDepart.geom.attributes.position.needsUpdate = true;
+  }
+}
+
+// ── TELEMETRY UPDATE ───────────────────────────────────────────────────────────
+function updateTelemetry(met, animT) {
+  const obs = interp(obsArr, met);
+  const osc = interp(oscArr, met);
+
+  const ts = fmtT(animT);
+  tRel.textContent = ts;
+  timeCenter.textContent = ts;
+  scrubber.value = Math.round(animT);
+
+  if (!obs) return;
+  const moonDist = obs[1];
+  const moonDot  = obs[2];
+  const illu     = obs[3];
+  const vMoon    = obs[4];
+  const earthD   = obs[5];
+
+  moonAltEl.textContent = `${fmt(moonDist)} km`;
+  speedMoon.textContent = `${vMoon.toFixed(4)} km/s`;
+
+  const arr   = moonDot <= 0 ? '↓' : '↑';
+  const aClr  = moonDot <= 0 ? 'var(--cyan)' : 'var(--amber)';
+  approachR.innerHTML = `<span style="color:${aClr}">${arr}</span> ${Math.abs(moonDot).toFixed(4)} km/s`;
+
+  illuPctEl.textContent = `${illu.toFixed(1)}%`;
+  const BARS  = 15;
+  const filled = Math.max(0, Math.round(illu / 100 * BARS));
+  illuBarEl.textContent = '▓'.repeat(filled) + '░'.repeat(BARS - filled);
+
+  earthDistEl.textContent = `${fmt(earthD)} km`;
+
+  if (osc) {
+    const ec    = osc[1];
+    const etype = ec < 1 ? 'elliptic' : 'hyperbolic';
+    const elbl  = ec < 1 ? 'ELLIPTIC' : 'HYPERBOLIC';
+    eccEl.innerHTML = `${ec.toFixed(4)} <span class="badge ${etype}">${elbl}</span>`;
+  }
+}
+
+// ── EVENT PANEL ────────────────────────────────────────────────────────────────
+function updateEventPanel(animT) {
+  const items = evtList.querySelectorAll('.event-item');
+  items.forEach((el, i) => {
+    const ev = evts[i];
+    el.classList.remove('passed', 'active', 'upcoming');
+    const icon = el.querySelector('.evt-icon');
+    if (animT > ev.animTime + 60) {
+      el.classList.add('passed');
+      icon.textContent = '✓';
+    } else if (Math.abs(animT - ev.animTime) <= 120) {
+      el.classList.add('active');
+      icon.textContent = '▶';
+    } else {
+      el.classList.add('upcoming');
+      icon.textContent = '·';
+    }
+  });
+}
+
+// ── BUILD UI ───────────────────────────────────────────────────────────────────
+function buildUI() {
+  evts.forEach((ev, i) => {
+    // Event list item
+    const el = document.createElement('div');
+    el.className = 'event-item upcoming';
+    el.innerHTML = `
+      <div class="evt-icon">·</div>
+      <div class="evt-info">
+        <div class="evt-name">${ev.name}</div>
+        <div class="evt-label">${ev.label}</div>
+        <div class="evt-time">${fmtT(ev.animTime)}</div>
+      </div>`;
+    el.addEventListener('click', () => scrubTo(ev.animTime));
+    evtList.appendChild(el);
+
+    // Tick on scrubber
+    const tick = document.createElement('div');
+    tick.className = `event-tick crit-${ev.crit}`;
+    tick.style.left = `${(ev.animTime / WIN_DUR) * 100}%`;
+    tick.setAttribute('data-tip', ev.label);
+    tick.addEventListener('click', () => scrubTo(ev.animTime));
+    evtTicks.appendChild(tick);
+  });
+}
+
+function scrubTo(t) {
+  animTime = Math.max(0, Math.min(WIN_DUR, t));
+  triggeredEvts_reset(animTime);
+  scrubber.value = animTime;
+  lastRealMs = null;
+  if (ended) { ended = false; endOvl.classList.remove('active'); }
+}
+
+function triggeredEvts_reset(toT) {
+  // Clear all triggers — events ahead of toT can re-fire
+  triggered.clear();
+  prevCheckT = toT - 0.001;
+}
+
+// ── EVENT CARD ─────────────────────────────────────────────────────────────────
+function showCard(idx) {
+  if (cardOpen) return;
+  const ev = evts[idx];
+  cardOpen = true;
+  playing  = false;
+  updatePlayBtn();
+
+  $('card-crit').textContent  = `⚡ ${ev.crit} EVENT`;
+  $('card-name').textContent  = ev.name;
+  $('card-label').textContent = ev.label;
+  $('card-desc').textContent  = ev.desc;
+
+  const obs = interp(obsArr, ev.metSec);
+  $('card-hl').textContent = obs
+    ? `${fmt(obs[1])} km from Moon · ${obs[3].toFixed(1)}% illuminated`
+    : '';
+
+  // Restart countdown bar
+  cdFill.style.animation = 'none';
+  void cdFill.offsetHeight; // reflow
+  cdFill.style.animation = 'cd-anim 5s linear forwards';
+
+  let secs = 5;
+  cdLbl.textContent = `${secs}s`;
+  clearInterval(cdInterval);
+  clearTimeout(cdTimeout);
+  cdInterval = setInterval(() => {
+    secs--;
+    cdLbl.textContent = `${secs}s`;
+    if (secs <= 0) dismissCard(true);
+  }, 1000);
+  cdTimeout = setTimeout(() => dismissCard(true), 5100);
+
+  cardOvl.classList.add('visible');
+}
+
+function dismissCard(resume) {
+  if (!cardOpen) return;
+  cardOpen = false;
+  clearInterval(cdInterval);
+  clearTimeout(cdTimeout);
+  cardOvl.classList.remove('visible');
+  if (resume && !ended) {
+    playing = true;
+    lastRealMs = null;
+    updatePlayBtn();
+  }
+}
+
+// ── CONTROLS ───────────────────────────────────────────────────────────────────
+function updatePlayBtn() {
+  btnPlay.textContent = playing ? '⏸ PAUSE' : '▶ PLAY';
+  if (playing) btnPlay.classList.add('primary');
+  else btnPlay.classList.remove('primary');
+}
+
+function doReplay() {
+  animTime = 0;
+  playing  = true;
+  ended    = false;
+  lastRealMs = null;
+  prevCheckT = -1;
+  triggered.clear();
+  dismissCard(false);
+  endOvl.classList.remove('active');
+  scrubber.value = 0;
+  updatePlayBtn();
+}
+
+btnPlay.addEventListener('click', () => {
+  if (ended) { doReplay(); return; }
+  if (cardOpen) { dismissCard(true); return; }
+  playing = !playing;
+  if (playing) lastRealMs = null;
+  updatePlayBtn();
+});
+
+btnReplay.addEventListener('click', doReplay);
+btnEndRep.addEventListener('click', doReplay);
+btnCont.addEventListener('click', () => dismissCard(true));
+
+speedGrp.querySelectorAll('.ctrl-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    speed = parseInt(btn.dataset.speed, 10);
+    speedGrp.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// Scrubber drag
+let scrubWasPlaying = false;
+scrubber.addEventListener('mousedown',  () => { scrubWasPlaying = playing; isDragging = true; playing = false; dismissed_for_scrub(); });
+scrubber.addEventListener('touchstart', () => { scrubWasPlaying = playing; isDragging = true; playing = false; dismissed_for_scrub(); }, { passive: true });
+
+function dismissed_for_scrub() {
+  dismissCard(false);
+  updatePlayBtn();
+}
+
+scrubber.addEventListener('input', () => {
+  animTime = parseInt(scrubber.value, 10);
+  if (ended) { ended = false; endOvl.classList.remove('active'); }
+  lastRealMs = null;
+  triggeredEvts_reset(animTime);
+  const met = WIN_START + animTime;
+  updateScene(met, animTime);
+  updateTelemetry(met, animTime);
+  updateEventPanel(animTime);
+});
+
+document.addEventListener('mouseup', () => {
+  if (isDragging) {
+    isDragging = false;
+    playing = scrubWasPlaying;
+    if (playing) lastRealMs = null;
+    updatePlayBtn();
+  }
+});
+document.addEventListener('touchend', () => {
+  if (isDragging) {
+    isDragging = false;
+    playing = scrubWasPlaying;
+    if (playing) lastRealMs = null;
+    updatePlayBtn();
+  }
+});
+
+// Spacebar
+document.addEventListener('keydown', e => {
+  if (e.code !== 'Space') return;
+  if (e.target !== document.body && e.target.tagName !== 'CANVAS') return;
+  e.preventDefault();
+  if (cardOpen) { dismissCard(true); return; }
+  if (ended) { doReplay(); return; }
+  playing = !playing;
+  if (playing) lastRealMs = null;
+  updatePlayBtn();
+});
+
+// ── ANIMATION LOOP ─────────────────────────────────────────────────────────────
+const MAX_DELTA = 1000 / 30; // cap to 30fps for slow devices
+
+function loop(nowMs) {
+  requestAnimationFrame(loop);
+
+  if (playing && !isDragging && !ended) {
+    if (lastRealMs !== null) {
+      const dMs      = Math.min(nowMs - lastRealMs, MAX_DELTA);
+      const dMission = (dMs / 1000) * speed;
+      animTime = Math.min(animTime + dMission, WIN_DUR);
+    }
+    lastRealMs = nowMs;
+
+    // Check waypoint events
+    evts.forEach((ev, i) => {
+      if (!triggered.has(i) && prevCheckT < ev.animTime && animTime >= ev.animTime) {
+        triggered.add(i);
+        showCard(i);
+      }
+    });
+    prevCheckT = animTime;
+
+    // End of animation
+    if (animTime >= WIN_DUR) {
+      animTime = WIN_DUR;
+      playing  = false;
+      ended    = true;
+      updatePlayBtn();
+      endOvl.classList.add('active');
+    }
+  }
+
+  const met = WIN_START + animTime;
+  updateScene(met, animTime);
+  updateTelemetry(met, animTime);
+  updateEventPanel(animTime);
+  renderer.render(scene, camera);
+}
+
+// ── BOOTSTRAP ──────────────────────────────────────────────────────────────────
+(async function main() {
+  try {
+    loaderSub.textContent = 'Fetching flyby-animation-data.json…';
+    const res = await fetch('data/flyby-animation-data.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+    DATA = await res.json();
+  } catch (err) {
+    // Error state
+    loadOvl.querySelector('.loader-ring').style.display = 'none';
+    const t = loadOvl.querySelector('.loader-title');
+    t.textContent = 'LOAD ERROR';
+    t.style.color = 'var(--amber)';
+    loaderSub.textContent = '';
+    const em = document.createElement('div');
+    em.className = 'error-msg';
+    em.textContent = `Could not load flyby data: ${err.message}. Serve the page from a local server (e.g. python3 -m http.server 8080) so fetch() can access data/.`;
+    loadOvl.appendChild(em);
+    return;
+  }
+
+  obsArr   = DATA.obs;
+  sunArr   = DATA.sun;
+  moonOrArr= DATA.moon_orient;
+  oscArr   = DATA.osc;
+  arcArr   = DATA.arc;
+
+  // Build events with animTime
+  evts = DATA.events.map(ev => ({
+    ...ev,
+    animTime: Math.max(0, ev.metSec - WIN_START)
+  }));
+
+  // Hide loading screen
+  loadOvl.style.display = 'none';
+
+  // Init Three.js
+  initScene();
+
+  // Build UI
+  buildUI();
+
+  // Start playing
+  playing = true;
+  updatePlayBtn();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
