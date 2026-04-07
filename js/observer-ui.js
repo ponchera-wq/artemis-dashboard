@@ -2039,7 +2039,7 @@ function initObserverUI() {
     // ── PRO: Mission Phase Timeline ──────────────────────────────────
     function updateMissionTimeline(met) {
         if (!timelineProgress) return;
-        const totalDuration = 757488; // Launch to Splashdown (nominal MET)
+        const totalDuration = 783960; // Launch to Splashdown MET (T+9/01:46 per NASA final timeline)
         const pct = Math.min(100, Math.max(0, (met / totalDuration) * 100));
         timelineProgress.style.width = pct + "%";
         

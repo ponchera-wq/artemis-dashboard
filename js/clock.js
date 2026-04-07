@@ -7,10 +7,10 @@ const PHASES = [
   { name: 'TLI BURN',       label: 'TLI',       startMin:  25 * 60,        endMin:  25 * 60 + 30 },
   { name: 'OUTBOUND COAST', label: 'OUTBOUND',  startMin:  25 * 60 + 30,   endMin:  4 * 24 * 60 },
   { name: 'LUNAR FLYBY',    label: 'LUNAR FLY', startMin:  4 * 24 * 60,    endMin:  5 * 24 * 60 },
-  /* Phase boundaries in minutes from launch; splash MET 757488 s ≈ 12624.8 min */
-  { name: 'RETURN COAST',   label: 'RETURN',    startMin:  5 * 24 * 60,    endMin:  12559 },
-  { name: 'ENTRY',          label: 'ENTRY',     startMin:  12559,           endMin:  12624 },
-  { name: 'SPLASHDOWN',     label: 'SPLASHDOWN',startMin:  12624,           endMin:  Infinity },
+  /* Phase boundaries in minutes from launch; splash MET 783960 s ≈ 13066 min (2026-04-11T00:21Z) */
+  { name: 'RETURN COAST',   label: 'RETURN',    startMin:  5 * 24 * 60,    endMin:  13050 },
+  { name: 'ENTRY',          label: 'ENTRY',     startMin:  13050,           endMin:  13066 },
+  { name: 'SPLASHDOWN',     label: 'SPLASHDOWN',startMin:  13066,           endMin:  Infinity },
 ];
 
 // ── MET CLOCK ───────────────────────────────────────────────────────

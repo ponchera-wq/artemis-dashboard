@@ -4,10 +4,10 @@
 
 window.NASA_API_KEY = 'NkWaGNE5rQyjA2k7cwhJhPzzSblE9MILSMEBP6yD';
 window.LAUNCH_UTC = new Date('2026-04-01T22:35:12Z');
-/* Nominal splashdown 2026-04-10T17:00:00Z; MET = 757,488 s (763,488 would be 18:40 UTC) */
-window.SPLASHDOWN_MET_SEC = 757488;
+/* Splashdown per NASA final timeline T+9/01:46 = MET 783,960 s ≈ 2026-04-11T00:21Z */
+window.SPLASHDOWN_MET_SEC = 783960;
 window.SPLASHDOWN_UTC = new Date(window.LAUNCH_UTC.getTime() + window.SPLASHDOWN_MET_SEC * 1000);
-window.PERILUNE_MET_SEC = 433611.319;
+window.PERILUNE_MET_SEC = 434079;
 window.PERILUNE_UTC = new Date(window.LAUNCH_UTC.getTime() + window.PERILUNE_MET_SEC * 1000);
 
 window.userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -62,36 +62,6 @@ window.computeOdometer = function(metSec) {
     total += Math.sqrt(fdx*fdx + fdy*fdy + fdz*fdz);
   }
   return total; // km
-};
-
-// ── Apollo 13 Earth-distance profile (historical free-return flyby) ───────
-var APOLLO13_PROFILE = [
-  { metSec: 0,      earthKm: 0 },
-  { metSec: 10800,  earthKm: 1850 },
-  { metSec: 21600,  earthKm: 5200 },
-  { metSec: 36000,  earthKm: 13000 },
-  { metSec: 86400,  earthKm: 61300 },
-  { metSec: 172800, earthKm: 185000 },
-  { metSec: 259200, earthKm: 296000 },
-  { metSec: 320000, earthKm: 358000 },
-  { metSec: 345600, earthKm: 400000 },
-  { metSec: 432000, earthKm: 350000 },
-  { metSec: 518400, earthKm: 250000 },
-  { metSec: 604800, earthKm: 120000 },
-  { metSec: 692700, earthKm: 0 }
-];
-
-window.getApollo13DistAtMet = function(metSec) {
-  var p = APOLLO13_PROFILE;
-  if (metSec <= p[0].metSec) return p[0].earthKm;
-  if (metSec >= p[p.length-1].metSec) return p[p.length-1].earthKm;
-  for (var i = 1; i < p.length; i++) {
-    if (metSec <= p[i].metSec) {
-      var f = (metSec - p[i-1].metSec) / (p[i].metSec - p[i-1].metSec);
-      return p[i-1].earthKm + (p[i].earthKm - p[i-1].earthKm) * f;
-    }
-  }
-  return 0;
 };
 
 // ── G-force from velocity delta between ephemeris points ──────────────────
