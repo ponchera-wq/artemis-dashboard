@@ -472,7 +472,7 @@
     .telem-val-row { display: flex; align-items: baseline; gap: 0.3em; }
     .telem-val-row .telem-unit { font-size: 0.55rem; letter-spacing: 0.08em; }
 
-    /* ── Earth block sub-stats (odometer + Apollo 13) ──────────────── */
+    /* ── Earth block sub-stats (odometer) ────────────────────────── */
     .earth-extras {
       display: flex; flex-direction: column; align-items: center;
       width: 100%; margin-top: 2px; padding-top: 2px;
@@ -496,10 +496,6 @@
       font-size: 0.27rem; color: var(--text-dim);
       letter-spacing: 0.03em; text-align: center;
     }
-    .earth-extra-row.apollo-tint .earth-extra-lbl { color: rgba(255,40,0,0.65); opacity: 1; }
-    .earth-extra-row.apollo-tint .earth-extra-val  { color: rgba(255,40,0,0.6); }
-    .earth-extra-sub.apollo-tint { color: rgba(255,40,0,0.45); }
-
     /* ── Stat blocks (splashdown / perilune countdowns + analogy) ─── */
     .stat-block { border-left: 1px solid rgba(168,224,0,0.15); min-width: 80px; flex-shrink: 1; }
     .stat-label {
@@ -529,10 +525,6 @@
     .stat-value.warn     { color: var(--amber); text-shadow: 0 0 8px rgba(255,40,0,0.5); }
     .stat-value.complete { color: var(--green); text-shadow: 0 0 8px rgba(204,255,0,0.5); }
     .stat-value.good     { color: var(--green); text-shadow: 0 0 8px rgba(204,255,0,0.5); }
-    /* Historical data blocks (Apollo 13) — subtle amber tint */
-    .tb-telem.historical { border-color: rgba(255,40,0,0.25); background: rgba(255,40,0,0.04); }
-    .tb-telem.historical .stat-label { color: rgba(255,40,0,0.65); }
-
     /* Perilune imminent pulse — cyan glow alternating with transparent */
     @keyframes perilune-pulse {
       0%, 100% { text-shadow: 0 0 12px rgba(204,255,51,0.9), 0 0 24px rgba(204,255,51,0.4); }
@@ -950,6 +942,32 @@
     }
     .tl-filter:hover { color: var(--text); }
     .tl-filter.active { color: var(--blue-light); border-bottom-color: var(--blue-light); }
+    .tl-filter-crew { border-color: rgba(99,179,237,0.35) !important; }
+    .tl-filter-crew.active { color: #63b3ed; border-bottom-color: #63b3ed; }
+
+    /* Crew activity rows in timeline */
+    .tl-activity {
+      opacity: 0.82;
+      border-left-width: 2px !important;
+    }
+    .tl-activity .tl-met { font-size: 0.6rem; }
+    .tl-activity .tl-name { font-size: 0.72rem; font-weight: 400; }
+    .tl-activity.tl-complete { border-left-color: rgba(72,187,120,0.4) !important; }
+    .tl-activity.tl-active   { border-left-color: var(--amber) !important; }
+    .tl-activity.tl-upcoming { border-left-color: rgba(99,179,237,0.25) !important; }
+    .tl-activity.tl-complete .tl-dot { width: 6px; height: 6px; }
+    /* Category badge (crew ops) */
+    .tl-cat {
+      font-family: var(--font-mono); font-size: 0.58em;
+      padding: 1px 5px; border-radius: 3px; border: 1px solid;
+      margin-left: 6px; flex-shrink: 0; white-space: nowrap;
+      background: rgba(0,0,0,0.25);
+    }
+    /* Duration chip */
+    .tl-dur {
+      font-family: var(--font-mono); font-size: 0.58em; color: rgba(168,224,0,0.45);
+      margin-left: 5px; flex-shrink: 0;
+    }
 
     /* Criticality badges */
     .tl-crit {
@@ -1836,7 +1854,6 @@
       #top-bar #telem-earth,
       #top-bar #telem-moon,
       #top-bar #telem-odometer,
-      #top-bar #telem-apollo,
       #top-bar #telem-speed,
       #top-bar #gforce-block,
       #top-bar #perilune-block,

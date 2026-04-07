@@ -15,7 +15,7 @@
 
   var EVENTS = MissionEvents.events;
   var activePhaseFilter = 'all';
-  /** @type {{ el: HTMLElement, idx: number }[]|null} */
+  /** @type {{ el: HTMLElement, idx: number, isActivity: boolean, metSec: number }[]|null} */
   var rowRefs = null;
 
   function fmtMet(sec) {
@@ -23,6 +23,13 @@
     var m = Math.floor((sec % 3600) / 60);
     var s = sec % 60;
     return 'T+' + String(h).padStart(h >= 100 ? 3 : 2, '0') + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  }
+
+  function fmtDur(sec) {
+    if (sec <= 0) return '';
+    var h = Math.floor(sec / 3600);
+    var m = Math.floor((sec % 3600) / 60);
+    return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
   }
 
   function getActiveIdx(nowMet) {
@@ -52,6 +59,16 @@
       etaStr = hh4 > 0 ? hh4 + 'h ' + mm4 + 'm ago' : mm4 + 'm ago';
     }
     return etaStr;
+  }
+
+  function computeActivityEtaStr(metSec, nowMet) {
+    var diff = metSec - nowMet;
+    if (Math.abs(diff) < 120) return 'NOW';
+    var abs = Math.abs(diff);
+    var hh = Math.floor(abs / 3600);
+    var mm = Math.floor((abs % 3600) / 60);
+    var str = hh > 0 ? hh + 'h ' + mm + 'm' : mm + 'm';
+    return diff > 0 ? 'in ' + str : str + ' ago';
   }
 
   function updateTimelineChrome(nowMet, activeIdx) {
@@ -90,6 +107,27 @@
     for (var r = 0; r < rowRefs.length; r++) {
       var ref = rowRefs[r];
       var el = ref.el;
+
+      // Crew activity rows — update completion based on MET, not event index
+      if (ref.isActivity) {
+        var actComplete = ref.metSec < nowMet;
+        var actOngoing = ref.metSec <= nowMet && ref.endMet > nowMet;
+        var actCls = actOngoing ? 'tl-active' : actComplete ? 'tl-complete' : 'tl-upcoming';
+        el.className = 'tl-event tl-activity ' + actCls;
+        var nameDiv = el.querySelector('.tl-name');
+        if (nameDiv) {
+          var etaA = (Math.abs(ref.metSec - nowMet) < 7200 || ref.metSec > nowMet)
+            ? computeActivityEtaStr(ref.metSec, nowMet) : '';
+          nameDiv.innerHTML =
+            ref.name + (actComplete && !actOngoing ? '<span class="tl-check"> \u2713</span>' : '') +
+            '<span class="tl-cat" style="color:' + ref.catColor + ';border-color:' + ref.catColor + '40">' +
+            ref.catEmoji + ' ' + ref.catName + '</span>' +
+            (etaA ? '<div class="tl-eta">' + etaA + '</div>' : '');
+        }
+        continue;
+      }
+
+      // Mission event rows
       var evIdx = ref.idx;
       var isComplete = evIdx < activeIdx;
       var isActive = evIdx === activeIdx;
@@ -97,14 +135,57 @@
       el.className = 'tl-event ' + cls;
       var crit = EVENTS[evIdx].crit;
       var etaStr = computeEtaStr(evIdx, activeIdx, nowMet);
-      var nameDiv = el.querySelector('.tl-name');
-      if (nameDiv) {
-        nameDiv.innerHTML =
+      var nameDiv2 = el.querySelector('.tl-name');
+      if (nameDiv2) {
+        nameDiv2.innerHTML =
           EVENTS[evIdx].name + (isComplete ? '<span class="tl-check"> \u2713</span>' : '') +
           '<span class="tl-crit tl-crit-' + crit + '">' + crit + '</span>' +
           (etaStr ? '<div class="tl-eta">' + etaStr + '</div>' : '');
       }
     }
+  }
+
+  function buildCrewFilter(nowMet) {
+    var acts = window.CREW_ACTIVITIES || [];
+    var cats = window.CREW_ACTIVITY_CATEGORIES || {};
+    var filtered = [];
+
+    // All mission events
+    for (var i = 0; i < EVENTS.length; i++) {
+      var ev = EVENTS[i];
+      filtered.push({
+        metSec: ev.metSec, name: ev.name, day: ev.day, crit: ev.crit,
+        phase: ev.phase, _i: i, desc: ev.desc || null, crew: ev.crew || null,
+        _isActivity: false,
+      });
+    }
+
+    // All crew activities (skip pre-launch)
+    for (var j = 0; j < acts.length; j++) {
+      var act = acts[j];
+      if (act.startMet < 0) continue;
+      var catDef = cats[act.category] || {};
+      filtered.push({
+        metSec: act.startMet,
+        name: act.label,
+        day: act.fd,
+        crit: null,
+        phase: 'crew',
+        _i: -(j + 1),
+        _isActivity: true,
+        _category: act.category,
+        _catEmoji: catDef.emoji || '\u2022',
+        _catColor: catDef.color || '#888888',
+        _catName: catDef.name || act.category,
+        _endMet: act.endMet,
+        desc: act.detail || null,
+        crew: null,
+      });
+    }
+
+    // Sort chronologically
+    filtered.sort(function(a, b) { return a.metSec - b.metSec; });
+    return filtered;
   }
 
   function tickTimeline() {
@@ -123,10 +204,14 @@
     updateTimelineChrome(nowMet, activeIdx);
 
     var filtered = [];
-    for (var i = 0; i < EVENTS.length; i++) {
-      var ev = EVENTS[i];
-      if (activePhaseFilter === 'all' || ev.phase === activePhaseFilter) {
-        filtered.push({ metSec: ev.metSec, name: ev.name, day: ev.day, crit: ev.crit, phase: ev.phase, _i: i, desc: ev.desc || null, crew: ev.crew || null });
+    if (activePhaseFilter === 'crew') {
+      filtered = buildCrewFilter(nowMet);
+    } else {
+      for (var i = 0; i < EVENTS.length; i++) {
+        var ev = EVENTS[i];
+        if (activePhaseFilter === 'all' || ev.phase === activePhaseFilter) {
+          filtered.push({ metSec: ev.metSec, name: ev.name, day: ev.day, crit: ev.crit, phase: ev.phase, _i: i, desc: ev.desc || null, crew: ev.crew || null, _isActivity: false });
+        }
       }
     }
 
@@ -141,19 +226,43 @@
         lastDay = ev.day;
         var dh = document.createElement('div');
         dh.className = 'tl-day-header';
-        dh.textContent = DAY_LABELS[ev.day] || ('DAY ' + ev.day);
+        dh.textContent = DAY_LABELS[ev.day] || ('FLIGHT DAY ' + ev.day);
         scroll.appendChild(dh);
       }
 
-      var isComplete = ev._i < activeIdx;
-      var isActive = ev._i === activeIdx;
-      var cls = isComplete ? 'tl-complete' : isActive ? 'tl-active' : 'tl-upcoming';
+      var isActivity = !!ev._isActivity;
+      var isComplete, isActive, isOngoing, cls;
+      isOngoing = false;
+
+      if (isActivity) {
+        isComplete = ev.metSec < nowMet;
+        isOngoing = ev.metSec <= nowMet && ev._endMet > nowMet;
+        cls = isOngoing ? 'tl-active' : isComplete ? 'tl-complete' : 'tl-upcoming';
+      } else {
+        isComplete = ev._i < activeIdx;
+        isActive = ev._i === activeIdx;
+        cls = isComplete ? 'tl-complete' : isActive ? 'tl-active' : 'tl-upcoming';
+      }
 
       var evDate = new Date(LAUNCH_UTC.getTime() + ev.metSec * 1000);
       var localStr = fmtLocal(evDate, true) + ' ' + tzAbbr(evDate);
       var utcStr = fmtUTC(evDate);
 
-      var etaStr = computeEtaStr(ev._i, activeIdx, nowMet);
+      var badgeHtml, dotHtml, etaStr;
+
+      if (isActivity) {
+        var dur = ev._endMet > ev.metSec ? fmtDur(ev._endMet - ev.metSec) : '';
+        etaStr = (Math.abs(ev.metSec - nowMet) < 7200 || ev.metSec > nowMet)
+          ? computeActivityEtaStr(ev.metSec, nowMet) : '';
+        dotHtml = '<div class="tl-dot" style="background:' + ev._catColor + '"></div>';
+        badgeHtml = '<span class="tl-cat" style="color:' + ev._catColor + ';border-color:' + ev._catColor + '40">' +
+          ev._catEmoji + '\u00a0' + ev._catName + '</span>' +
+          (dur ? '<span class="tl-dur">' + dur + '</span>' : '');
+      } else {
+        etaStr = computeEtaStr(ev._i, activeIdx, nowMet);
+        dotHtml = '<div class="tl-dot"></div>';
+        badgeHtml = '<span class="tl-crit tl-crit-' + ev.crit + '">' + ev.crit + '</span>';
+      }
 
       var detailHtml = '';
       if (ev.desc || ev.crew) {
@@ -164,35 +273,43 @@
       }
 
       var el = document.createElement('div');
-      el.className = 'tl-event ' + cls;
+      el.className = 'tl-event ' + cls + (isActivity ? ' tl-activity' : '');
       el.setAttribute('tabindex', '0');
       el.setAttribute('role', 'button');
       el.innerHTML =
-        '<div class="tl-dot"></div>' +
+        dotHtml +
         '<div class="tl-met">' + fmtMet(ev.metSec) +
           '<div class="tl-localtime">' + localStr + '<br>' + utcStr + '</div>' +
         '</div>' +
-        '<div class="tl-name">' + ev.name + (isComplete ? '<span class="tl-check"> \u2713</span>' : '') + '<span class="tl-crit tl-crit-' + ev.crit + '">' + ev.crit + '</span>' + (etaStr ? '<div class="tl-eta">' + etaStr + '</div>' : '') + '</div>' +
+        '<div class="tl-name">' +
+          ev.name + (isComplete && !isOngoing ? '<span class="tl-check"> \u2713</span>' : '') +
+          badgeHtml +
+          (etaStr ? '<div class="tl-eta">' + etaStr + '</div>' : '') +
+        '</div>' +
         detailHtml;
+
       scroll.appendChild(el);
-      rowRefs.push({ el: el, idx: ev._i });
+      rowRefs.push({
+        el: el, idx: ev._i, isActivity: isActivity,
+        metSec: ev.metSec, endMet: ev._endMet || ev.metSec,
+        name: ev.name,
+        catColor: ev._catColor || '', catEmoji: ev._catEmoji || '', catName: ev._catName || '',
+      });
 
       if (ev.desc || ev.crew) {
         el.style.cursor = 'pointer';
-        el.addEventListener('click', function(e) {
-          e.stopPropagation();
-          var target = this;
-          var wasExpanded = target.classList.contains('tl-expanded');
-          var allExpanded = scroll.querySelectorAll('.tl-expanded');
-          for (var j = 0; j < allExpanded.length; j++) allExpanded[j].classList.remove('tl-expanded');
-          if (!wasExpanded) target.classList.add('tl-expanded');
-        });
+        el.addEventListener('click', (function(target) {
+          return function(e) {
+            e.stopPropagation();
+            var wasExpanded = target.classList.contains('tl-expanded');
+            var allExpanded = scroll.querySelectorAll('.tl-expanded');
+            for (var j = 0; j < allExpanded.length; j++) allExpanded[j].classList.remove('tl-expanded');
+            if (!wasExpanded) target.classList.add('tl-expanded');
+          };
+        })(el));
       }
       el.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          this.click();
-        }
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.click(); }
       });
       if (isActive) activeEl = el;
     }

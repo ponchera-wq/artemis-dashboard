@@ -184,7 +184,7 @@
       </div>
     </div>
 
-    <!-- Traveled & Apollo 13 Info -->
+    <!-- Traveled Info -->
     <div class="tb-telem" id="telem-info" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:6px; padding: 2px 4px;">
       <div id="telem-odometer" style="display:flex; flex-direction:column; align-items:center;">
         <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em;">TOTAL TRAVELED</div>
@@ -193,17 +193,6 @@
           <div class="telem-unit" style="font-size:0.45rem; margin-left:4px; color:var(--cyan);">KM</div>
         </div>
         <div class="stat-sub" id="stat-odometer-sub" style="font-size:0.38rem; text-align:center;"></div>
-      </div>
-      
-      <div style="height:1px; width:60%; background:var(--border); margin:0 auto;"></div>
-
-      <div id="telem-apollo" style="display:flex; flex-direction:column; align-items:center;">
-        <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em;">APOLLO 13</div>
-        <div class="telem-val-row" style="align-items:baseline;">
-          <div class="telem-value" id="stat-apollo13" style="font-size:0.95rem; line-height:1; color:#ffd740; text-shadow:0 0 10px rgba(255,215,64,0.4);">—</div>
-          <div class="telem-unit" style="font-size:0.45rem; margin-left:4px; color:#ffd740;">KM</div>
-        </div>
-        <div class="stat-sub" id="stat-apollo13-sub" style="font-size:0.38rem; text-align:center; color:rgba(255,215,64,0.6);"></div>
       </div>
     </div>
 
@@ -354,11 +343,6 @@
           <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-odometer-sub"></div>
         </div>
         <div class="to-extra-item">
-          <div class="to-extra-label">APOLLO 13 AT MET</div>
-          <div class="to-extra-val"><span id="to-apollo13">—</span> KM</div>
-          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-apollo13-sub"></div>
-        </div>
-        <div class="to-extra-item">
           <div class="to-extra-label">G-FORCE</div>
           <div class="to-extra-val" id="to-gforce">—</div>
           <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-gforce-sub"></div>
@@ -433,12 +417,6 @@
           <div class="hud-row"><span class="hud-key">DAY</span><span class="hud-val" id="hud-day">&mdash;</span></div>
           <div class="hud-row"><span class="hud-key">NEXT</span><span class="hud-val" id="hud-next">&mdash;</span></div>
           <div class="hud-row"><span class="hud-key">&Delta;v REM</span><span class="hud-val" id="hud-dv">&mdash;</span></div>
-        </div>
-        <div class="hud-section" style="border-color:rgba(215,0,255,0.4)">
-          <div class="hud-section-label" style="color:#df00ff">LEGACY: APOLLO 13</div>
-          <div class="hud-row"><span class="hud-key">CALC. DIST</span><span class="hud-val" id="hud-apollo-dist" style="color:#df00ff">&mdash;</span></div>
-          <div class="hud-row"><span class="hud-key">EST. VEL</span><span class="hud-val" id="hud-apollo-vel" style="color:#df00ff">&mdash;</span></div>
-          <div class="hud-row"><span class="hud-key">LUNAR CA</span><span class="hud-val" style="color:#df00ff">254 km</span></div>
         </div>
       </div>
       <button id="hud-toggle" class="hud-toggle" title="Toggle telemetry HUD">&#9666;</button>
@@ -589,6 +567,7 @@
       <button class="tl-filter" data-phase="translunar">TLI</button>
       <button class="tl-filter" data-phase="lunar">LUNAR</button>
       <button class="tl-filter" data-phase="return">RETURN</button>
+      <button class="tl-filter tl-filter-crew" data-phase="crew">CREW OPS</button>
     </div>
     <div id="tl-next-event"></div>
     <div class="timeline-scroll" id="timeline-scroll"></div>
@@ -745,7 +724,7 @@
       'js/shared.js','js/mission-ephemeris.js','js/mission-events.js',
       'js/clock.js','js/stats.js','js/timeline.js',
       'js/news.js','js/crew.js','js/weather.js','js/orion-model.js',
-      'js/apollo-model.js','js/iss-model.js','js/trajectory.js',
+      'js/iss-model.js','js/trajectory.js',
       'js/dsn.js','js/crew-activity.js','js/crew-activity-ui.js','js/ui.js','js/reference.js'
     ];
     scripts.forEach(function(src) {
