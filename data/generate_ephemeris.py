@@ -108,6 +108,7 @@ def to_json(points):
             'distMoonKm': p['dist_moon_km'],
             'speedKms': p['speed_kms'],
         })
+    perilune = min(points, key=lambda p: p['dist_moon_km'])
     return {
         'meta': {
             'launchUtc': '2026-04-01T22:35:12Z',
@@ -116,6 +117,7 @@ def to_json(points):
             'moonSource': 'skyfield/de440s.bsp',
             'generated': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
             'pointCount': len(rows),
+            'periluneMetSec': round(perilune['met_sec'], 3),
         },
         'points': rows,
     }
