@@ -251,8 +251,8 @@
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leoPts), new THREE.LineBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.2 })));
 
     // ── ISS & ISS Orbit ──
-    var ISS_ALT_KM = 400;
-    var ISS_SCENE_R = (EARTH_R_KM + ISS_ALT_KM) * SCENE_SCALE; // ≈ 0.956
+    var ISS_ALT_KM = 800; // visually raised above atmosphere glow layers (actual ISS ≈ 400 km)
+    var ISS_SCENE_R = (EARTH_R_KM + ISS_ALT_KM) * SCENE_SCALE; // ≈ 1.013, clear of outer glow (0.972)
     var issOrbitPts = [];
     for (var i = 0; i <= 80; i++) { 
       var a = (i/80)*Math.PI*2; 
