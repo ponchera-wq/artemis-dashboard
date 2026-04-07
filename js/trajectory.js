@@ -545,7 +545,7 @@
     }
     
     orionGroup.userData.label = 'ORION';
-    orionGroup.scale.set(0.1, 0.1, 0.1);
+    orionGroup.scale.set(0.35, 0.35, 0.35);
     scene.add(orionGroup);
 
     // ── Apollo 13 Model and Path ──
@@ -777,7 +777,7 @@
       }
       lastMx = e.clientX; lastMy = e.clientY;
     });
-    renderer.domElement.addEventListener('wheel', function(e) { exitPreset(); sph.r = Math.max(5, Math.min(200, sph.r + e.deltaY * 0.08)); applyCam(); stopAuto(); e.preventDefault(); }, { passive: false });
+    renderer.domElement.addEventListener('wheel', function(e) { exitPreset(); sph.r = Math.max(0.5, Math.min(200, sph.r + e.deltaY * sph.r * 0.0015)); applyCam(); stopAuto(); e.preventDefault(); }, { passive: false });
 
     renderer.domElement.addEventListener('dblclick', function(e) {
       exitPreset(); stopAuto();
@@ -786,7 +786,7 @@
       var rc = new THREE.Raycaster(); rc.setFromCamera(new THREE.Vector2(mx, my), camera);
       var hits = rc.intersectObjects(scene.children, true);
       if (hits.length) { var pt = hits[0].point; var dir = new THREE.Vector3().subVectors(camera.position, pt).normalize(); startLerp(pt.clone().add(dir.multiplyScalar(3)), pt.clone(), 0.8, 'lerp'); }
-      else { sph.r = Math.max(3, sph.r * 0.6); applyCam(); }
+      else { sph.r = Math.max(0.5, sph.r * 0.6); applyCam(); }
     });
 
     var lastTx = 0, lastTy = 0;
@@ -811,7 +811,7 @@
     var ctrlDiv = document.createElement('div');
     ctrlDiv.className = 'traj-controls';
     Object.assign(ctrlDiv.style, { display:'flex',flexDirection:'row',gap:'3px',marginLeft:'6px',paddingLeft:'6px',borderLeft:'1px solid rgba(74,144,217,0.3)',alignItems:'center' });
-    [{text:'+',fn:function(){exitPreset();sph.r=Math.max(5,sph.r*0.8);applyCam();stopAuto();}},{text:'\u2212',fn:function(){exitPreset();sph.r=Math.min(200,sph.r*1.2);applyCam();stopAuto();}},{text:'\u27f2',fn:function(){exitPreset();Object.assign(sph,JSON.parse(JSON.stringify(SPH_DEFAULT)));camLookAt.copy(trajCenter);applyCam();autoRotate=true;activePreset='overview';updatePresetBtns();}}].forEach(function(b) {
+    [{text:'+',fn:function(){exitPreset();sph.r=Math.max(0.5,sph.r*0.8);applyCam();stopAuto();}},{text:'\u2212',fn:function(){exitPreset();sph.r=Math.min(200,sph.r*1.2);applyCam();stopAuto();}},{text:'\u27f2',fn:function(){exitPreset();Object.assign(sph,JSON.parse(JSON.stringify(SPH_DEFAULT)));camLookAt.copy(trajCenter);applyCam();autoRotate=true;activePreset='overview';updatePresetBtns();}}].forEach(function(b) {
       var btn = document.createElement('button'); btn.textContent = b.text;
       Object.assign(btn.style, { width:'26px',height:'26px',background:'rgba(8,12,26,0.85)',border:'1px solid rgba(74,144,217,0.45)',borderRadius:'3px',color:'#4A90D9',fontSize:'14px',fontFamily:"'Share Tech Mono',monospace",cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',lineHeight:'1',padding:'0' });
       btn.addEventListener('mouseenter', function() { btn.style.borderColor='#4A90D9'; btn.style.color='#fff'; });
@@ -1083,9 +1083,12 @@
       var gt = orionResult.frac;
 
       // ── Moon position ──
-      var moonPos = toScene(state.moon.x, state.moon.y, state.moon.z);
-      moon.position.copy(moonPos);
-      moonGlow.position.copy(moon.position);
+      // Pin Moon at its closest-approach position so it visually anchors the
+      // figure-8 trajectory loop (which is drawn in a frame whose +x axis is
+      // Earth→Moon-at-CA). The live Earth-Moon distance is still shown via
+      // state.distMoonKm in the HUD/labels.
+      moon.position.copy(initMoonPos);
+      moonGlow.position.copy(initMoonPos);
 
       if (typeof OsculatingOrbit !== 'undefined') OsculatingOrbit.update(metSec);
 
