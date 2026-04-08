@@ -170,7 +170,25 @@
     var camera = new THREE.PerspectiveCamera(50, W / H, 0.01, 1200);
 
     var _isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
-    var renderer = new THREE.WebGLRenderer({ alpha: false, antialias: !_isMobile, logarithmicDepthBuffer: true });
+
+    var renderer;
+    try {
+      // logarithmicDepthBuffer requires EXT_frag_depth — not universally supported on Android
+      renderer = new THREE.WebGLRenderer({ alpha: false, antialias: !_isMobile, logarithmicDepthBuffer: !_isMobile });
+    } catch(e1) {
+      try {
+        renderer = new THREE.WebGLRenderer({ alpha: false, antialias: false, logarithmicDepthBuffer: false });
+      } catch(e2) {
+        var msg = document.createElement('div');
+        Object.assign(msg.style, { position:'absolute', inset:'0', display:'flex', alignItems:'center', justifyContent:'center',
+          color:'rgba(168,224,0,0.7)', fontFamily:'Space Mono,monospace', fontSize:'12px', textAlign:'center', padding:'16px' });
+        msg.textContent = 'WebGL is not available in this browser. Try enabling hardware acceleration or use a different browser.';
+        container.appendChild(msg);
+        console.error('[Trajectory] WebGL context creation failed:', e2);
+        return;
+      }
+    }
+
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, _isMobile ? 1.5 : 2));
     renderer.setSize(W, H);
     renderer.setClearColor(0x030810, 1);
@@ -937,6 +955,15 @@
         },
         look: function() { return moon.position.clone(); },
         isFlyby: true
+      },
+      splash: {
+        label: '\ud83d\udca7', title: 'Splashdown Zone',
+        pos: function() {
+          var wp = new THREE.Vector3(); splashGroup.getWorldPosition(wp);
+          var outward = wp.clone().normalize();
+          return wp.clone().add(outward.multiplyScalar(3));
+        },
+        look: function() { var wp = new THREE.Vector3(); splashGroup.getWorldPosition(wp); return wp; }
       }
     };
 
