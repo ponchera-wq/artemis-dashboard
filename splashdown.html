@@ -8,6 +8,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script>
+    // Register service worker (same one index.html uses) so this page benefits
+    // from caching and isn't dependent on having visited the dashboard first.
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('/service-worker.js').catch(function(){});
+      });
+    }
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/ColladaLoader.js"></script>
   <script src="js/murtha-model.js"></script>
@@ -90,9 +99,9 @@
       transform: translate(-50%, -130%);
     }
     #label-orion    { color: #00e5ff; }
-    #label-ship     { color: #ffa500; }
-    #label-splashdown { color: #ff6633; }
-    #label-reentry  { color: #ff4422; }
+    #label-ship     { color: #ffa500; transform: translate(-50%, 90%); }
+    #label-splashdown { color: #ff6633; transform: translate(-50%, -180%); }
+    #label-reentry  { color: #ff4422; transform: translate(-50%, -380%); }
     #label-iss {
       color: #cc55ff;
       white-space: normal;
@@ -456,7 +465,12 @@
       border-radius: 3px;
       transition: background 0.15s;
     }
-    #label-ship:hover { background: rgba(255,165,0,0.15); }
+    #label-ship {
+      background: rgba(255,165,0,0.08);
+      border: 1px solid rgba(255,165,0,0.45);
+    }
+    #label-ship:hover { background: rgba(255,165,0,0.22); border-color: #ffbe40; }
+    #label-ship .click-hint { opacity: 0.75; margin-left: 4px; font-size: 0.85em; }
 
     /* ── MOBILE ── */
     @media (max-width: 768px) {
@@ -482,7 +496,7 @@
 
 <!-- LABELS -->
 <div id="label-orion"    class="map-label">INTEGRITY &mdash; Inbound</div>
-<div id="label-ship"     class="map-label">USS John P. Murtha</div>
+<div id="label-ship"     class="map-label">⚓ USS John P. Murtha<span class="click-hint">▸ details</span></div>
 <div id="label-splashdown" class="map-label">SPLASHDOWN ZONE</div>
 <div id="label-reentry"  class="map-label">Re-entry Corridor</div>
 <div id="label-iss" class="map-label">
@@ -516,13 +530,17 @@
       style="display:none"
     ></iframe>
     <div id="ship-fallback">
-      <div class="fb-icon">🚢</div>
+      <div class="fb-icon">⚓</div>
       <div class="fb-msg">
-        Live AIS tracking unavailable<br>
-        (content policy or network block)
+        Live position is shown in the<br>
+        mission HUD (left panel).<br><br>
+        For full AIS history & charts:
       </div>
       <a href="https://www.marinetraffic.com/en/ais/home/shipid:5523365" target="_blank" rel="noopener noreferrer">
-        Visit MarineTraffic — MMSI: 368926266 ↗
+        MarineTraffic ↗
+      </a>
+      <a href="https://www.vesselfinder.com/vessels/details/9697822" target="_blank" rel="noopener noreferrer">
+        VesselFinder ↗
       </a>
     </div>
   </div>
@@ -644,14 +662,25 @@
     <div class="panel-section">
       <div class="panel-label">Primary Site</div>
       <div class="panel-data">~50nm SW of San Diego</div>
-      <div class="panel-data">32.5°N, 117.5°W</div>
+      <div class="panel-data">32.1°N, 117.9°W</div>
     </div>
   </div>
 </div>
 
 <script>
-(function () {
+function bootSplashdownScene() {
   'use strict';
+
+  // Guard: if THREE or ColladaLoader hasn't loaded yet, retry briefly.
+  if (typeof THREE === 'undefined' || typeof THREE.ColladaLoader === 'undefined') {
+    if (!bootSplashdownScene._retries) bootSplashdownScene._retries = 0;
+    if (bootSplashdownScene._retries++ < 40) {
+      setTimeout(bootSplashdownScene, 100);
+      return;
+    }
+    console.error('[splashdown] THREE / ColladaLoader failed to load after retries');
+    return;
+  }
 
   // ── SCENE SETUP ──────────────────────────────────────────────────────────────
   const container = document.getElementById('canvas-container');
@@ -750,7 +779,7 @@
     [24.0, -140.0],
     [28.0, -132.0],
     [31.0, -124.0],
-    [32.5, -117.5]
+    [32.1, -117.9]
   ];
 
   const arcRadius = 1.04;
@@ -826,26 +855,51 @@
   const shipLabelPos = defaultShipPos.clone();
 
   // ── SPLASHDOWN ZONE ──────────────────────────────────────────────────────────
-  const splashPos = latLonToVec3(32.5, -117.5, 1.001);
+  const splashPos = latLonToVec3(32.1, -117.9, 1.001);
   const splashNormal = splashPos.clone().normalize();
 
-  const splashDiscGeo = new THREE.CircleGeometry(0.04, 32);
-  const splashDiscMat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
-  const splashDisc = new THREE.Mesh(splashDiscGeo, splashDiscMat);
-  splashDisc.position.copy(splashPos);
-  splashDisc.lookAt(new THREE.Vector3(0, 0, 0));
-  splashDisc.rotateX(Math.PI); // face outward
-  earthGroup.add(splashDisc);
+  // Target reticle: 3 concentric rings + crosshair lines + center dot, oriented tangent to Earth
+  const splashTarget = new THREE.Group();
+  splashTarget.position.copy(splashPos);
+  splashTarget.lookAt(new THREE.Vector3(0, 0, 0));
+  splashTarget.rotateX(Math.PI);
+  earthGroup.add(splashTarget);
 
-  const splashRingGeo = new THREE.RingGeometry(0.038, 0.044, 32);
-  const splashRingMat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
-  const splashRing = new THREE.Mesh(splashRingGeo, splashRingMat);
-  splashRing.position.copy(splashPos);
-  splashRing.lookAt(new THREE.Vector3(0, 0, 0));
-  splashRing.rotateX(Math.PI);
-  earthGroup.add(splashRing);
+  const targetMatBright = new THREE.MeshBasicMaterial({ color: 0xff6a1a, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
+  const targetMatDim    = new THREE.MeshBasicMaterial({ color: 0xff6a1a, transparent: true, opacity: 0.55, side: THREE.DoubleSide });
 
-  const splashLabelPos = latLonToVec3(32.5, -117.5, 1.06);
+  // Three concentric rings
+  [[0.018, 0.021], [0.030, 0.033], [0.044, 0.047]].forEach(function(r, i) {
+    const g = new THREE.RingGeometry(r[0], r[1], 48);
+    const m = new THREE.Mesh(g, i === 2 ? targetMatBright : targetMatDim);
+    splashTarget.add(m);
+  });
+
+  // Crosshair lines (horizontal + vertical, with a gap at the center)
+  const crossMat = new THREE.LineBasicMaterial({ color: 0xff6a1a, transparent: true, opacity: 0.85 });
+  const crossGap = 0.008, crossLen = 0.052;
+  [
+    [[-crossLen, 0, 0.001], [-crossGap, 0, 0.001]],
+    [[ crossGap, 0, 0.001], [ crossLen, 0, 0.001]],
+    [[0, -crossLen, 0.001], [0, -crossGap, 0.001]],
+    [[0,  crossGap, 0.001], [0,  crossLen, 0.001]],
+  ].forEach(function(seg) {
+    const g = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(seg[0][0], seg[0][1], seg[0][2]),
+      new THREE.Vector3(seg[1][0], seg[1][1], seg[1][2])
+    ]);
+    splashTarget.add(new THREE.Line(g, crossMat));
+  });
+
+  // Center dot
+  const centerDot = new THREE.Mesh(
+    new THREE.CircleGeometry(0.005, 16),
+    new THREE.MeshBasicMaterial({ color: 0xffaa55, transparent: true, opacity: 1.0, side: THREE.DoubleSide })
+  );
+  centerDot.position.set(0, 0, 0.002);
+  splashTarget.add(centerDot);
+
+  const splashLabelPos = latLonToVec3(32.1, -117.9, 1.06);
 
   // ── RE-ENTRY CORRIDOR ────────────────────────────────────────────────────────
   // Approach bearing: 036° (opposite of COG 216°)
@@ -861,9 +915,9 @@
     return latLonToVec3(lat2 * 180 / Math.PI, lon2 * 180 / Math.PI, radius);
   }
 
-  const corridorOrigin = latLonToVec3(32.5, -117.5, 1.02);
-  const corridorEnd1   = bearingOffset(32.5, -117.5, 36 - 8, 800, 1.02);
-  const corridorEnd2   = bearingOffset(32.5, -117.5, 36 + 8, 800, 1.02);
+  const corridorOrigin = latLonToVec3(32.1, -117.9, 1.02);
+  const corridorEnd1   = bearingOffset(32.1, -117.9, 36 - 8, 800, 1.02);
+  const corridorEnd2   = bearingOffset(32.1, -117.9, 36 + 8, 800, 1.02);
 
   const corridorMat = new THREE.LineBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0.25 });
   const corGeo1 = new THREE.BufferGeometry().setFromPoints([corridorOrigin, corridorEnd1]);
@@ -871,7 +925,7 @@
   earthGroup.add(new THREE.Line(corGeo1, corridorMat));
   earthGroup.add(new THREE.Line(corGeo2, corridorMat));
 
-  const reentryLabelPos = bearingOffset(32.5, -117.5, 36, 350, 1.06);
+  const reentryLabelPos = bearingOffset(32.1, -117.9, 36, 350, 1.06);
 
   // ── FLYBY LIGHTING (real-time sun direction) ──────────────────────────────────
   // NOTE: LAUNCH_UTC here is 2026-04-01T22:35:12Z. If trajectory.js differs, MET to
@@ -1151,10 +1205,9 @@
     // Pulse Orion dot
     orionDotMat.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 0.003));
 
-    // Pulse splashdown zone
+    // Pulse splashdown target reticle
     const pScale = 0.92 + 0.16 * (0.5 + 0.5 * Math.sin(t * 0.002));
-    splashDisc.scale.setScalar(pScale);
-    splashRing.scale.setScalar(pScale);
+    splashTarget.scale.setScalar(pScale);
 
     // Update labels
     updateLabel(labelOrion,   orionLabelPos);
@@ -1214,7 +1267,12 @@
   // ── SHIP LABEL CLICK → MODAL ─────────────────────────────────────────────────
   document.getElementById('label-ship').addEventListener('click', openShipModal);
 
-})();
+}
+if (document.readyState === 'complete') {
+  bootSplashdownScene();
+} else {
+  window.addEventListener('load', bootSplashdownScene);
+}
 
 // ── PANEL TOGGLES ────────────────────────────────────────────────────────────
 function toggleInfoPanel() {
@@ -1236,35 +1294,18 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeShipModal();
 });
 
-// ── IFRAME FALLBACK ──────────────────────────────────────────────────────────
+// ── SHIP TRACKER PANEL — show fallback link card ─────────────────────────────
+// Both MarineTraffic and VesselFinder embeds load (HTTP 200) but render blank /
+// blocked content for LPD-26, so old auto-detection never triggered the fallback.
+// Live position is already shown in the left HUD via /api/ship; the side panel
+// just provides a quick link out to the public trackers.
 (function() {
-  const iframeMT  = document.getElementById('ship-iframe');
-  const iframeVF  = document.getElementById('ship-iframe-vf');
-  const fallback  = document.getElementById('ship-fallback');
-
-  // Tier 2: try VesselFinder
-  function tryVesselFinder() {
-    iframeMT.style.display = 'none';
-    iframeVF.src = 'https://www.vesselfinder.com/aismap?mmsi=368926266&zoom=9';
-    iframeVF.style.display = '';
-    let vfLoaded = false;
-    iframeVF.addEventListener('load', function() { vfLoaded = true; });
-    setTimeout(function() {
-      if (!vfLoaded) {
-        iframeVF.style.display = 'none';
-        fallback.classList.add('visible');
-      }
-    }, 12000);
-  }
-
-  // Tier 1: MarineTraffic — fires load even when content-blocked, so we
-  // use a short timer: if it loads fast it's probably real; if it never
-  // fires within 10s assume blocked.
-  let mtLoaded = false;
-  iframeMT.addEventListener('load', function() { mtLoaded = true; });
-  setTimeout(function() {
-    if (!mtLoaded) tryVesselFinder();
-  }, 10000);
+  const iframeMT = document.getElementById('ship-iframe');
+  const iframeVF = document.getElementById('ship-iframe-vf');
+  const fallback = document.getElementById('ship-fallback');
+  if (iframeMT) iframeMT.style.display = 'none';
+  if (iframeVF) iframeVF.style.display = 'none';
+  if (fallback) fallback.classList.add('visible');
 })();
 </script>
 </body>

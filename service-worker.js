@@ -1,8 +1,12 @@
-const CACHE_NAME = 'artemis-dashboard-v14';
+const CACHE_NAME = 'artemis-dashboard-v15';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/observer.html',
+  '/splashdown.html',
+  '/js/murtha-model.js',
+  '/js/flyby-lighting.js',
+  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/ColladaLoader.js',
   '/data/mission-ephemeris.json',
   '/css/styles.css',
   '/js/shared.js',
