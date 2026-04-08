@@ -338,4 +338,26 @@
     });
   }
 
+  // ── Public API for Gantt integration ────────────────────────────────────
+  window.MissionTimeline = {
+    setPhaseFilter: function (phase) {
+      activePhaseFilter = phase;
+      var btns = document.querySelectorAll('.tl-filter');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].classList.toggle('active', btns[i].dataset.phase === phase);
+      }
+      renderTimeline();
+    },
+    scrollToEvent: function (metSec) {
+      if (!rowRefs) return;
+      for (var i = 0; i < rowRefs.length; i++) {
+        var ref = rowRefs[i];
+        if (!ref.isActivity && ref.metSec === metSec) {
+          ref.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+      }
+    },
+  };
+
 })();
