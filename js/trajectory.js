@@ -287,10 +287,10 @@
       'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_atmos_2048.jpg',
     ], function(tex) { cloudMat.alphaMap = tex; cloudMat.color = new THREE.Color(0xffffff); cloudMat.needsUpdate = true; });
 
-    // Atmosphere glow
+    // Atmosphere glow — kept below ISS orbit (1.064×) to avoid BackSide depth conflicts
     scene.add(new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.018, 32, 32),
       new THREE.MeshBasicMaterial({ color: 0x4488ff, transparent: true, opacity: 0.12, side: THREE.BackSide })));
-    scene.add(new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.08, 32, 32),
+    scene.add(new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R * 1.05, 32, 32),
       new THREE.MeshBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.06, side: THREE.BackSide })));
 
     // LEO orbit ring
@@ -1131,7 +1131,7 @@
       lctx.save();
       if (lineToV3) {
         var s2 = proj(lineToV3);
-        if (s2.vis) { lctx.beginPath(); lctx.moveTo(s2.x, s2.y); lctx.lineTo(x, y); lctx.strokeStyle = color.replace(')', ',0.3)').replace('rgb','rgba').replace('rgba(','rgba(') || 'rgba(0,255,170,0.3)'; lctx.setLineDash([3, 3]); lctx.lineWidth = 0.5; lctx.stroke(); lctx.setLineDash([]); }
+        if (s2.vis) { lctx.beginPath(); lctx.moveTo(s2.x, s2.y); lctx.lineTo(x, y); lctx.strokeStyle = color.replace(')', ',0.3)').replace('rgb','rgba').replace('rgba(','rgba(') || 'rgba(0,255,170,0.3)'; lctx.setLineDash([4, 4]); lctx.lineWidth = 1.2; lctx.globalAlpha = 0.75; lctx.stroke(); lctx.setLineDash([]); lctx.globalAlpha = 1.0; }
       }
       lctx.font = (bold ? 'bold ' : '') + '12px "Share Tech Mono",monospace';
       lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
@@ -1492,7 +1492,9 @@
       (function() {
         if (Date.now() < SPLASHDOWN_MS) {
           var _swp = splashGroup.getWorldPosition(new THREE.Vector3());
-          var _swpLbl = _swp.clone(); _swpLbl.y += 0.06;
+          // Push label out along surface normal into space (~half an Earth-radius above surface)
+          var _swpNorm = _swp.clone().normalize();
+          var _swpLbl = _swp.clone().addScaledVector(_swpNorm, 0.45);
           drawCallout('SPLASHDOWN', _swpLbl, '#ffd700', 0, -10, false, _swp);
         }
       }());
