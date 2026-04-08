@@ -24,14 +24,40 @@
     return (0.779057273264 + 1.0027378119113546 * T) * 2 * Math.PI;
   }
 
+  function showFatal(label, err) {
+    console.error('[Trajectory] ' + label, err);
+    var info = '';
+    try {
+      var c = document.createElement('canvas');
+      var gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+      if (gl) {
+        var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+        if (dbg) info = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) + ' / ' + gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL);
+        else info = gl.getParameter(gl.RENDERER) + ' / ' + gl.getParameter(gl.VENDOR);
+      } else {
+        info = 'no webgl context';
+      }
+    } catch(_){}
+    var msg = document.createElement('div');
+    Object.assign(msg.style, { position:'absolute', inset:'0', display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', color:'rgba(255,120,120,0.9)',
+      fontFamily:'Space Mono,monospace', fontSize:'10px', textAlign:'center', padding:'12px',
+      lineHeight:'1.4', overflow:'auto', zIndex:'20' });
+    msg.innerHTML = '<div style="color:#ff8;margin-bottom:6px">[' + label + ']</div>' +
+      '<div>' + ((err && (err.message || err.toString())) || 'unknown error') + '</div>' +
+      '<div style="margin-top:6px;color:#888">' + info + '</div>' +
+      '<div style="margin-top:4px;color:#666">UA: ' + navigator.userAgent.slice(0,80) + '</div>';
+    container.appendChild(msg);
+  }
+
   // Wait for shared ephemeris to load, then initialize
   MissionEphemeris.ready.then(function() {
     if (!MissionEphemeris.points || MissionEphemeris.points.length === 0) {
-      console.error('[Trajectory] No ephemeris data available');
+      showFatal('NO EPHEMERIS', new Error('MissionEphemeris.points is empty'));
       return;
     }
-    init();
-  });
+    try { init(); } catch (e) { showFatal('INIT THREW', e); }
+  }, function(err) { showFatal('EPHEMERIS REJECTED', err); });
 
   function init() {
     var points = MissionEphemeris.points;

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artemis-dashboard-v15';
+const CACHE_NAME = 'artemis-dashboard-v16';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -101,8 +101,10 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // JS/CSS/HTML: network-first so updates are always picked up; fall back to cache offline
-  var isCode = url.pathname.match(/\.(js|css|html)(\?|$)/) || url.pathname === '/' || url.pathname.endsWith('/');
+  // JS/CSS/HTML/JSON: network-first so updates are always picked up; fall back to cache offline.
+  // JSON is included because mission-ephemeris.json updates regularly and a stale copy
+  // can break the trajectory init on returning visitors.
+  var isCode = url.pathname.match(/\.(js|css|html|json)(\?|$)/) || url.pathname === '/' || url.pathname.endsWith('/');
   if (isCode) {
     event.respondWith(
       fetch(event.request).then(function(response) {
