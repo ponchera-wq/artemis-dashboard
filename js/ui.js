@@ -429,6 +429,7 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
     }
 
     let row = 3, col = 1, maxRow = 3;
+    const rowPanels = {};
 
     state.order.forEach(id => {
       const el = document.getElementById(id);
@@ -442,16 +443,21 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
       el.style.gridRow    = String(row);
       el.style.gridColumn = span > 1 ? `${col} / span ${span}` : String(col);
       maxRow = Math.max(maxRow, row);
+      (rowPanels[row] = rowPanels[row] || []).push(id);
 
       col += span;
       if (col > COLS) { row++; col = 1; }
     });
 
-    // Expand dashboard grid rows to fit all panel rows
+    // Expand dashboard grid rows to fit all panel rows.
+    // Rows containing only gantt-panel use 'auto' to avoid excess blank space.
     const dashboard = document.getElementById('main-content');
-    const panelRowCount = maxRow - 2; // rows 3..maxRow (row 1 = ref-nav, row 2 = top-bar)
-    dashboard.style.gridTemplateRows =
-      `32px 112px ${Array(panelRowCount).fill('1fr').join(' ')} 38px`;
+    const rowSizes = [];
+    for (let r = 3; r <= maxRow; r++) {
+      const rp = rowPanels[r] || [];
+      rowSizes.push(rp.length === 1 && rp[0] === 'gantt-panel' ? 'auto' : '1fr');
+    }
+    dashboard.style.gridTemplateRows = `32px 112px ${rowSizes.join(' ')} 38px`;
 
     // Move footer to correct last row
     const siteFooter = document.getElementById('site-footer');

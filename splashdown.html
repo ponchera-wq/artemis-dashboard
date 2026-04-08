@@ -482,10 +482,16 @@
   <div id="ship-iframe-wrap">
     <iframe
       id="ship-iframe"
-      src="https://www.marinetraffic.com/en/ais/embed/zoom:7/centery:32.5/centerx:-118/maptype:0/shownames:true/mmsi:368926266/shipid:5523365/fleet:/fleet_id:/vtypes:/showmenu:false/remember:false"
+      src="https://www.marinetraffic.com/en/ais/embed/zoom:8/centery:32.7/centerx:-117.8/maptype:0/shownames:true/mmsi:368926266/shipid:5523365/showmenu:false/remember:false"
       frameborder="0"
-      referrerpolicy="no-referrer"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+    ></iframe>
+    <iframe
+      id="ship-iframe-vf"
+      src=""
+      frameborder="0"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      style="display:none"
     ></iframe>
     <div id="ship-fallback">
       <div class="fb-icon">🚢</div>
@@ -493,7 +499,7 @@
         Live AIS tracking unavailable<br>
         (content policy or network block)
       </div>
-      <a href="https://www.marinetraffic.com/en/ais/home/shipid:5523365/zoom:8" target="_blank" rel="noopener noreferrer">
+      <a href="https://www.marinetraffic.com/en/ais/home/shipid:5523365" target="_blank" rel="noopener noreferrer">
         Visit MarineTraffic — MMSI: 368926266 ↗
       </a>
     </div>
@@ -1165,23 +1171,33 @@ document.addEventListener('keydown', function(e) {
 
 // ── IFRAME FALLBACK ──────────────────────────────────────────────────────────
 (function() {
-  const iframe = document.getElementById('ship-iframe');
-  const fallback = document.getElementById('ship-fallback');
-  let loaded = false;
+  const iframeMT  = document.getElementById('ship-iframe');
+  const iframeVF  = document.getElementById('ship-iframe-vf');
+  const fallback  = document.getElementById('ship-fallback');
 
-  iframe.addEventListener('load', function() {
-    loaded = true;
-    // MarineTraffic may load but show a blocked page — we can't detect that
-    // cross-origin, so just trust the load event and keep the iframe visible.
-  });
+  // Tier 2: try VesselFinder
+  function tryVesselFinder() {
+    iframeMT.style.display = 'none';
+    iframeVF.src = 'https://www.vesselfinder.com/aismap?mmsi=368926266&zoom=9';
+    iframeVF.style.display = '';
+    let vfLoaded = false;
+    iframeVF.addEventListener('load', function() { vfLoaded = true; });
+    setTimeout(function() {
+      if (!vfLoaded) {
+        iframeVF.style.display = 'none';
+        fallback.classList.add('visible');
+      }
+    }, 12000);
+  }
 
-  // If the iframe hasn't fired load within 12s, assume it's blocked.
+  // Tier 1: MarineTraffic — fires load even when content-blocked, so we
+  // use a short timer: if it loads fast it's probably real; if it never
+  // fires within 10s assume blocked.
+  let mtLoaded = false;
+  iframeMT.addEventListener('load', function() { mtLoaded = true; });
   setTimeout(function() {
-    if (!loaded) {
-      iframe.style.display = 'none';
-      fallback.classList.add('visible');
-    }
-  }, 12000);
+    if (!mtLoaded) tryVesselFinder();
+  }, 10000);
 })();
 </script>
 </body>

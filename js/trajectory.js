@@ -403,6 +403,15 @@
     var murthaGroup = new THREE.Group();
     earth.add(murthaGroup);
 
+    // 3-D Collada model — loaded async; group starts empty
+    var murthaModelGroup = null;
+    var _murthaBaseSp   = new THREE.Vector3();
+    var _murthaBaseNorm = new THREE.Vector3();
+    if (typeof createMurthaModel !== 'undefined') {
+      murthaModelGroup = createMurthaModel(THREE);
+      murthaGroup.add(murthaModelGroup);
+    }
+
     // Ship marker — amber diamond (OctahedronGeometry ∈ r128)
     var shipMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffc200 });
     var shipMarkerGeo = new THREE.OctahedronGeometry(0.012, 0);
@@ -468,6 +477,14 @@
       shipMarker.position.copy(sp);
       shipRing.position.copy(sp);
       shipRing.quaternion.copy(qm);
+
+      // Position/orient the 3-D model; store base values for bob animation
+      if (murthaModelGroup) {
+        _murthaBaseSp.copy(sp);
+        _murthaBaseNorm.copy(norm);
+        murthaModelGroup.position.copy(sp);
+        murthaModelGroup.quaternion.copy(qm);
+      }
 
       var histPts = greatCircleLocal(
         MURTHA_WAYPOINTS[0].lat, MURTHA_WAYPOINTS[0].lng,
@@ -1534,6 +1551,12 @@
       if (now - _murthaLastUpdate > 1000) {
         _murthaLastUpdate = now;
         updateMurthaPanel();
+      }
+
+      // ── Murtha model: gentle bob along surface normal ──
+      if (murthaModelGroup && _murthaBaseNorm.lengthSq() > 0) {
+        var _bob = Math.sin(now * 0.0008) * 0.003;
+        murthaModelGroup.position.copy(_murthaBaseSp).addScaledVector(_murthaBaseNorm, _bob);
       }
 
       // Pulsing splashdown rings

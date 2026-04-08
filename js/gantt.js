@@ -121,7 +121,7 @@
   function ttCrew(act, cat) {
     var s = metToDate(act.startMet), e = metToDate(act.endMet);
     return '<b>' + (cat.emoji || '') + ' ' + act.label + '</b>' +
-      '<br>' + cat.name + ' \u00b7 ' + fmtDur(act.endMet - act.startMet) +
+      '<br>' + (cat.emoji ? cat.emoji + ' ' : '') + cat.name + ' \u00b7 ' + fmtDur(act.endMet - act.startMet) +
       '<br>' + fmtMET(act.startMet) + ' \u2192 ' + fmtMET(act.endMet) +
       '<br>' + fmtLocal(s, true) + ' ' + tzAbbr(s) + ' \u2192 ' + fmtLocal(e, true) + ' ' + tzAbbr(e);
   }
@@ -237,10 +237,17 @@
         left: ax + 'px', width: aw + 'px',
         background: cat.color + '2a',  borderColor: cat.color + '66',
       });
-      if (aw > 16) {
+      if (aw >= 60) {
         var cl = el('span', 'gantt-blabel');
-        cl.textContent = cat.emoji + ' ' + act.label;
+        cl.textContent = (cat.emoji || '') + ' ' + act.label;
         cb.appendChild(cl);
+      } else if (aw >= 20) {
+        var ce = el('span', null, {
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          height: '100%', fontSize: '10px', lineHeight: '1', pointerEvents: 'none',
+        });
+        ce.textContent = cat.emoji || '';
+        cb.appendChild(ce);
       }
       (function (a, c) {
         addHover(cb, function () { return ttCrew(a, c); }, function () {
