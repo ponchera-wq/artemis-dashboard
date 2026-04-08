@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "posthog-js": "^1.364.7",
-    "posthog-node": "^5.28.11"
+    "posthog-node": "^5.28.11",
+    "ws": "^8.0.0"
   }
 }

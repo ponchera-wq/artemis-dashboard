@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#08080e;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Artemis II — Splashdown</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 100%; height: 100%;
+      background: #08080e;
+      color: #e0e8ff;
+      font-family: 'Exo 2', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── NAV ── */
+    #splash-nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 18px;
+      background: rgba(8,8,14,0.82);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    #splash-nav .brand {
+      font-family: 'Exo 2', sans-serif;
+      font-weight: 900;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      color: #e0e8ff;
+      text-transform: uppercase;
+      margin-right: auto;
+    }
+    #splash-nav .brand span { color: #4a9eff; }
+
+    #splash-nav a {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      padding: 5px 12px;
+      border-radius: 4px;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #a0b0cc;
+      transition: all 0.15s;
+      text-transform: uppercase;
+    }
+    #splash-nav a:hover { color: #e0e8ff; border-color: rgba(255,255,255,0.3); }
+    #splash-nav a.active {
+      color: #ff6b35;
+      border-color: rgba(255,107,53,0.5);
+      background: rgba(255,107,53,0.08);
+    }
+
+    /* ── CANVAS ── */
+    #canvas-container {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 1;
+    }
+    #canvas-container canvas { display: block; }
+
+    /* ── LABELS ── */
+    .map-label {
+      position: fixed;
+      z-index: 50;
+      pointer-events: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      text-shadow: 0 0 8px currentColor, 0 1px 3px rgba(0,0,0,0.9);
+      transform: translate(-50%, -130%);
+    }
+    #label-orion    { color: #00e5ff; }
+    #label-ship     { color: #ffa500; }
+    #label-splashdown { color: #ff6633; }
+    #label-reentry  { color: #ff4422; }
+
+    /* ── INFO PANEL ── */
+    #info-panel {
+      position: fixed;
+      bottom: 24px;
+      left: 18px;
+      z-index: 60;
+      width: 280px;
+      background: rgba(8,8,14,0.88);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 16px;
+      backdrop-filter: blur(12px);
+      font-size: 0.72rem;
+      line-height: 1.6;
+    }
+
+    .panel-title {
+      font-family: 'Exo 2', sans-serif;
+      font-weight: 700;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      color: #e0e8ff;
+      margin-bottom: 10px;
+    }
+
+    .panel-section {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .panel-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: #6080a0;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    #countdown-display {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #ff6b35;
+      letter-spacing: 0.04em;
+      margin: 2px 0;
+    }
+
+    .panel-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: #a0b8d0;
+    }
+
+    .panel-data {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: #c0d0e8;
+    }
+
+    .ais-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .ais-dot.live { background: #00ff88; box-shadow: 0 0 5px #00ff88; }
+    .ais-dot.fallback { background: #ffa500; box-shadow: 0 0 5px #ffa500; }
+
+    /* ── MOBILE ── */
+    @media (max-width: 600px) {
+      #info-panel { width: calc(100vw - 36px); bottom: 16px; left: 18px; font-size: 0.68rem; }
+      #countdown-display { font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="splash-nav">
+  <div class="brand">ARTEMIS II&nbsp;<span>MISSION</span></div>
+  <a href="index.html">← Dashboard</a>
+  <a href="splashdown.html" class="active">Splashdown</a>
+</nav>
+
+<!-- 3D CANVAS -->
+<div id="canvas-container"></div>
+
+<!-- LABELS -->
+<div id="label-orion"    class="map-label">ORION &mdash; Inbound</div>
+<div id="label-ship"     class="map-label">USS John P. Murtha</div>
+<div id="label-splashdown" class="map-label">SPLASHDOWN ZONE</div>
+<div id="label-reentry"  class="map-label">Re-entry Corridor</div>
+
+<!-- INFO PANEL -->
+<div id="info-panel">
+  <div class="panel-title">🚀 ARTEMIS II — RETURN PHASE</div>
+  <div class="panel-data">Mission Day: <span id="mission-day">—</span></div>
+
+  <div class="panel-section">
+    <div class="panel-label">Splashdown Countdown</div>
+    <div id="countdown-display">--d --h --m --s</div>
+    <div class="panel-date">April 10, 2026 &nbsp;·&nbsp; 08:07 UTC&nbsp;/&nbsp;18:07 AEST</div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-label">Entry Profile</div>
+    <div class="panel-data">Speed: ~25,000 mph</div>
+    <div class="panel-data">Profile: Loft maneuver</div>
+    <div class="panel-data">Heat shield: Modified descent</div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-label">Recovery Ship</div>
+    <div class="panel-data">USS John P. Murtha (LPD-26)</div>
+    <div class="panel-data">Lat: <span id="ship-lat">—</span> &nbsp; Lon: <span id="ship-lon">—</span></div>
+    <div class="panel-data">SOG: <span id="ship-sog">—</span> kt &nbsp;·&nbsp; COG: <span id="ship-cog">—</span>°</div>
+    <div class="panel-data" style="margin-top:3px;">
+      <span class="ais-dot fallback" id="ais-dot"></span>
+      AIS: <span id="ais-status">LAST KNOWN</span>
+    </div>
+    <div class="panel-data" style="color:#6080a0;">Last update: <span id="ship-ts">—</span></div>
+  </div>
+
+  <div class="panel-section">
+    <div class="panel-label">Primary Site</div>
+    <div class="panel-data">~50nm SW of San Diego</div>
+    <div class="panel-data">32.5°N, 117.5°W</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── SCENE SETUP ──────────────────────────────────────────────────────────────
+  const container = document.getElementById('canvas-container');
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  container.appendChild(renderer.domElement);
+
+  const scene = new THREE.Scene();
+
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.01, 1000);
+  camera.position.set(0, 0.4, 2.8);
+  camera.lookAt(0, 0, 0);
+
+  // ── COORDINATE HELPER ────────────────────────────────────────────────────────
+  function latLonToVec3(lat, lon, radius) {
+    const phi   = (90 - lat) * (Math.PI / 180);
+    const theta = (lon + 180) * (Math.PI / 180);
+    return new THREE.Vector3(
+      -radius * Math.sin(phi) * Math.cos(theta),
+       radius * Math.cos(phi),
+       radius * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  // ── STARS ────────────────────────────────────────────────────────────────────
+  (function buildStars() {
+    const count = 3000;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi   = Math.acos(2 * Math.random() - 1);
+      const r     = 50;
+      positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, sizeAttenuation: true });
+    scene.add(new THREE.Points(geo, mat));
+  })();
+
+  // ── EARTH ────────────────────────────────────────────────────────────────────
+  const earthGroup = new THREE.Group();
+  scene.add(earthGroup);
+
+  const earthGeo = new THREE.SphereGeometry(1.0, 64, 64);
+  const earthMat = new THREE.MeshBasicMaterial({
+    map: new THREE.TextureLoader().load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_atmos_2048.jpg'
+    )
+  });
+  const earth = new THREE.Mesh(earthGeo, earthMat);
+  earthGroup.add(earth);
+
+  // Atmosphere glow
+  const atmoGeo = new THREE.SphereGeometry(1.02, 64, 64);
+  const atmoMat = new THREE.MeshBasicMaterial({
+    color: 0x4488ff, transparent: true, opacity: 0.08, side: THREE.BackSide
+  });
+  earthGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
+
+  // Ambient light
+  scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+
+  // ── ORION TRAJECTORY ARC ─────────────────────────────────────────────────────
+  const orionWaypoints = [
+    [10.0, -155.0],
+    [18.0, -148.0],
+    [24.0, -140.0],
+    [28.0, -132.0],
+    [31.0, -124.0],
+    [32.5, -117.5]
+  ];
+
+  const arcRadius = 1.04;
+  const arcCurvePoints = orionWaypoints.map(([lat, lon]) => latLonToVec3(lat, lon, arcRadius));
+  const arcCurve = new THREE.CatmullRomCurve3(arcCurvePoints);
+  const arcPoints = arcCurve.getPoints(120);
+
+  // Primary arc
+  const arcGeo1 = new THREE.BufferGeometry().setFromPoints(arcPoints);
+  earthGroup.add(new THREE.Line(arcGeo1, new THREE.LineBasicMaterial({ color: 0x00e5ff, linewidth: 2 })));
+
+  // Glow arc
+  const arcGeo2 = new THREE.BufferGeometry().setFromPoints(arcPoints);
+  earthGroup.add(new THREE.Line(arcGeo2, new THREE.LineBasicMaterial({
+    color: 0x00e5ff, transparent: true, opacity: 0.2, linewidth: 4
+  })));
+
+  // Orion position dot (pulsing sphere) at 10°N 155°W
+  const orionDotGeo = new THREE.SphereGeometry(0.018, 16, 16);
+  const orionDotMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.8 });
+  const orionDot = new THREE.Mesh(orionDotGeo, orionDotMat);
+  orionDot.position.copy(latLonToVec3(10.0, -155.0, arcRadius));
+  earthGroup.add(orionDot);
+
+  // Label anchor (world-space position, updated each frame via earthGroup transform)
+  const orionLabelPos = latLonToVec3(10.0, -155.0, arcRadius);
+
+  // ── SHIP TRACK ───────────────────────────────────────────────────────────────
+  const shipTrackRadius = 1.025;
+  const staticTrackWaypoints = [
+    [32.70, -117.20],
+    [32.60, -118.00],
+    [32.40, -119.50],
+    [32.3417, -119.6177]
+  ];
+
+  let shipTrackPoints = staticTrackWaypoints.map(([lat, lon]) => latLonToVec3(lat, lon, shipTrackRadius));
+  const shipTrackGeo = new THREE.BufferGeometry().setFromPoints(shipTrackPoints);
+  const shipTrackLine = new THREE.Line(shipTrackGeo, new THREE.LineBasicMaterial({
+    color: 0xffa500, transparent: true, opacity: 0.5
+  }));
+  earthGroup.add(shipTrackLine);
+
+  // Estimated future track
+  const futureTrackWaypoints = [
+    [32.3417, -119.6177],
+    [31.8,    -120.5],
+    [31.3,    -121.2]
+  ];
+  const futureTrackPoints = futureTrackWaypoints.map(([lat, lon]) => latLonToVec3(lat, lon, 1.022));
+  const futureTrackGeo = new THREE.BufferGeometry().setFromPoints(futureTrackPoints);
+  earthGroup.add(new THREE.Line(futureTrackGeo, new THREE.LineBasicMaterial({
+    color: 0xffa500, transparent: true, opacity: 0.2
+  })));
+
+  // Ship marker (cone)
+  const shipConeGeo = new THREE.ConeGeometry(0.015, 0.04, 8);
+  const shipConeMat = new THREE.MeshBasicMaterial({ color: 0xffa500 });
+  const shipCone = new THREE.Mesh(shipConeGeo, shipConeMat);
+  // Default position
+  const defaultShipPos = latLonToVec3(32.3417, -119.6177, shipTrackRadius);
+  shipCone.position.copy(defaultShipPos);
+  // Orient cone to point outward from Earth surface
+  shipCone.up.copy(defaultShipPos.clone().normalize());
+  const tempQ = new THREE.Quaternion();
+  tempQ.setFromUnitVectors(new THREE.Vector3(0, 1, 0), defaultShipPos.clone().normalize());
+  shipCone.quaternion.copy(tempQ);
+  earthGroup.add(shipCone);
+
+  const shipLabelPos = defaultShipPos.clone();
+
+  // ── SPLASHDOWN ZONE ──────────────────────────────────────────────────────────
+  const splashPos = latLonToVec3(32.5, -117.5, 1.001);
+  const splashNormal = splashPos.clone().normalize();
+
+  const splashDiscGeo = new THREE.CircleGeometry(0.04, 32);
+  const splashDiscMat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+  const splashDisc = new THREE.Mesh(splashDiscGeo, splashDiscMat);
+  splashDisc.position.copy(splashPos);
+  splashDisc.lookAt(new THREE.Vector3(0, 0, 0));
+  splashDisc.rotateX(Math.PI); // face outward
+  earthGroup.add(splashDisc);
+
+  const splashRingGeo = new THREE.RingGeometry(0.038, 0.044, 32);
+  const splashRingMat = new THREE.MeshBasicMaterial({ color: 0xff4400, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
+  const splashRing = new THREE.Mesh(splashRingGeo, splashRingMat);
+  splashRing.position.copy(splashPos);
+  splashRing.lookAt(new THREE.Vector3(0, 0, 0));
+  splashRing.rotateX(Math.PI);
+  earthGroup.add(splashRing);
+
+  const splashLabelPos = latLonToVec3(32.5, -117.5, 1.06);
+
+  // ── RE-ENTRY CORRIDOR ────────────────────────────────────────────────────────
+  // Approach bearing: 036° (opposite of COG 216°)
+  // Start slightly above surface, fan two lines ~800km along 036°
+  function bearingOffset(lat, lon, bearingDeg, distKm, radius) {
+    const R = 6371;
+    const d = distKm / R;
+    const brng = bearingDeg * Math.PI / 180;
+    const lat1 = lat * Math.PI / 180;
+    const lon1 = lon * Math.PI / 180;
+    const lat2 = Math.asin(Math.sin(lat1) * Math.cos(d) + Math.cos(lat1) * Math.sin(d) * Math.cos(brng));
+    const lon2 = lon1 + Math.atan2(Math.sin(brng) * Math.sin(d) * Math.cos(lat1), Math.cos(d) - Math.sin(lat1) * Math.sin(lat2));
+    return latLonToVec3(lat2 * 180 / Math.PI, lon2 * 180 / Math.PI, radius);
+  }
+
+  const corridorOrigin = latLonToVec3(32.5, -117.5, 1.02);
+  const corridorEnd1   = bearingOffset(32.5, -117.5, 36 - 8, 800, 1.02);
+  const corridorEnd2   = bearingOffset(32.5, -117.5, 36 + 8, 800, 1.02);
+
+  const corridorMat = new THREE.LineBasicMaterial({ color: 0xff2200, transparent: true, opacity: 0.25 });
+  const corGeo1 = new THREE.BufferGeometry().setFromPoints([corridorOrigin, corridorEnd1]);
+  const corGeo2 = new THREE.BufferGeometry().setFromPoints([corridorOrigin, corridorEnd2]);
+  earthGroup.add(new THREE.Line(corGeo1, corridorMat));
+  earthGroup.add(new THREE.Line(corGeo2, corridorMat));
+
+  const reentryLabelPos = bearingOffset(32.5, -117.5, 36, 350, 1.06);
+
+  // ── LABEL PROJECTION ─────────────────────────────────────────────────────────
+  function projectToScreen(vec3world, cam, rend) {
+    // vec3world is in earthGroup local space; transform to world first
+    const worldVec = vec3world.clone().applyMatrix4(earthGroup.matrixWorld);
+    const v = worldVec.clone().project(cam);
+    const w = rend.domElement.clientWidth;
+    const h = rend.domElement.clientHeight;
+    return {
+      x: (v.x * 0.5 + 0.5) * w,
+      y: (-v.y * 0.5 + 0.5) * h,
+      visible: v.z < 1.0
+    };
+  }
+
+  function updateLabel(el, pos) {
+    const s = projectToScreen(pos, camera, renderer);
+    if (s.visible) {
+      el.style.display = 'block';
+      el.style.left = s.x + 'px';
+      el.style.top  = s.y + 'px';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  const labelOrion     = document.getElementById('label-orion');
+  const labelShip      = document.getElementById('label-ship');
+  const labelSplash    = document.getElementById('label-splashdown');
+  const labelReentry   = document.getElementById('label-reentry');
+
+  // ── MOUSE / TOUCH CONTROLS ───────────────────────────────────────────────────
+  let isDragging = false;
+  let prevMouse  = { x: 0, y: 0 };
+  const SENSITIVITY = 0.005;
+
+  renderer.domElement.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    prevMouse = { x: e.clientX, y: e.clientY };
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - prevMouse.x;
+    const dy = e.clientY - prevMouse.y;
+    earthGroup.rotation.y += dx * SENSITIVITY;
+    earthGroup.rotation.x += dy * SENSITIVITY;
+    prevMouse = { x: e.clientX, y: e.clientY };
+  });
+  window.addEventListener('mouseup', () => { isDragging = false; });
+
+  renderer.domElement.addEventListener('wheel', (e) => {
+    camera.position.z = Math.max(1.5, Math.min(5.0, camera.position.z + e.deltaY * 0.005));
+    e.preventDefault();
+  }, { passive: false });
+
+  // Touch
+  let touchStart = null;
+  renderer.domElement.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, { passive: true });
+  renderer.domElement.addEventListener('touchmove', (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - touchStart.x;
+    const dy = e.touches[0].clientY - touchStart.y;
+    earthGroup.rotation.y += dx * SENSITIVITY;
+    earthGroup.rotation.x += dy * SENSITIVITY;
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+  renderer.domElement.addEventListener('touchend', () => { isDragging = false; });
+
+  // ── RESIZE ───────────────────────────────────────────────────────────────────
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // ── COUNTDOWN ────────────────────────────────────────────────────────────────
+  const SPLASHDOWN_UTC = new Date('2026-04-10T08:07:00Z');
+  const LAUNCH_UTC     = new Date('2026-04-01T22:35:12Z');
+
+  function updateCountdown() {
+    const now  = Date.now();
+    const diff = SPLASHDOWN_UTC.getTime() - now;
+    const el   = document.getElementById('countdown-display');
+    const mday = document.getElementById('mission-day');
+
+    const missionMs = now - LAUNCH_UTC.getTime();
+    const missionDay = Math.floor(missionMs / 86400000) + 1;
+    mday.textContent = missionDay > 0 ? missionDay : '—';
+
+    if (diff <= 0) {
+      el.textContent = 'SPLASHDOWN';
+      return;
+    }
+    const d  = Math.floor(diff / 86400000);
+    const h  = Math.floor((diff % 86400000) / 3600000);
+    const m  = Math.floor((diff % 3600000) / 60000);
+    const s  = Math.floor((diff % 60000) / 1000);
+    el.textContent =
+      String(d).padStart(2,'0') + 'd ' +
+      String(h).padStart(2,'0') + 'h ' +
+      String(m).padStart(2,'0') + 'm ' +
+      String(s).padStart(2,'0') + 's';
+  }
+
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // ── SHIP POSITION UPDATE ─────────────────────────────────────────────────────
+  function updateShipMarker(data) {
+    const lat = parseFloat(data.lat);
+    const lon = parseFloat(data.lon);
+    if (isNaN(lat) || isNaN(lon)) return;
+
+    const newPos = latLonToVec3(lat, lon, shipTrackRadius);
+    shipCone.position.copy(newPos);
+    // Orient cone outward along surface normal
+    const q = new THREE.Quaternion();
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), newPos.clone().normalize());
+    shipCone.quaternion.copy(q);
+    shipLabelPos.copy(newPos);
+
+    // Extend track line to include live position if different from last static waypoint
+    const lastStatic = staticTrackWaypoints[staticTrackWaypoints.length - 1];
+    if (Math.abs(lat - lastStatic[0]) > 0.001 || Math.abs(lon - lastStatic[1]) > 0.001) {
+      const extended = [...shipTrackPoints, newPos];
+      shipTrackGeo.setFromPoints(extended);
+    }
+  }
+
+  function updateInfoPanel(data) {
+    const dot = document.getElementById('ais-dot');
+    const status = document.getElementById('ais-status');
+
+    if (data.source === 'live') {
+      dot.className = 'ais-dot live';
+      status.textContent = 'LIVE';
+    } else {
+      dot.className = 'ais-dot fallback';
+      status.textContent = 'LAST KNOWN';
+    }
+
+    if (data.lat != null) document.getElementById('ship-lat').textContent = Number(data.lat).toFixed(4) + '°N';
+    if (data.lon != null) document.getElementById('ship-lon').textContent = Number(data.lon).toFixed(4) + '°W';
+    if (data.sog != null) document.getElementById('ship-sog').textContent = Number(data.sog).toFixed(1);
+    if (data.cog != null) document.getElementById('ship-cog').textContent = Number(data.cog).toFixed(1);
+    if (data.timestamp) {
+      const ts = new Date(data.timestamp);
+      document.getElementById('ship-ts').textContent = isNaN(ts)
+        ? data.timestamp
+        : ts.toUTCString().replace(' GMT', ' UTC');
+    }
+  }
+
+  // Load fallback immediately so panel is populated
+  updateInfoPanel({
+    lat: 32.341703, lon: -119.617667,
+    sog: 13.3, cog: 216.3,
+    timestamp: '2026-04-08T01:53:13.000000Z',
+    source: 'fallback'
+  });
+
+  async function fetchShipPosition() {
+    try {
+      const res = await fetch('/api/ship');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      updateShipMarker(data);
+      updateInfoPanel(data);
+    } catch (e) {
+      console.warn('Ship fetch failed:', e.message);
+    }
+  }
+
+  fetchShipPosition();
+  setInterval(fetchShipPosition, 5 * 60 * 1000);
+
+  // ── ANIMATION LOOP ───────────────────────────────────────────────────────────
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const t = Date.now();
+
+    // Auto-rotate
+    if (!isDragging) {
+      earthGroup.rotation.y += 0.0008;
+    }
+
+    // Pulse Orion dot
+    orionDotMat.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 0.003));
+
+    // Pulse splashdown zone
+    const pScale = 0.92 + 0.16 * (0.5 + 0.5 * Math.sin(t * 0.002));
+    splashDisc.scale.setScalar(pScale);
+    splashRing.scale.setScalar(pScale);
+
+    // Update labels
+    updateLabel(labelOrion,   orionLabelPos);
+    updateLabel(labelShip,    shipLabelPos);
+    updateLabel(labelSplash,  splashLabelPos);
+    updateLabel(labelReentry, reentryLabelPos);
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+})();
+</script>
+</body>
+</html>
