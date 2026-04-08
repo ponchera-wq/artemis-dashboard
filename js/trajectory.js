@@ -1852,6 +1852,26 @@
     console.log('[DIAG] Moon-Orion dist at CA:', _diagMoonCA.distanceTo(_diagOrionCA).toFixed(2), 'scene units');
     console.log('[DIAG] initMoonPos:', initMoonPos.x.toFixed(2), initMoonPos.y.toFixed(2), initMoonPos.z.toFixed(2));
 
+    // On mobile the panel may be off-screen when Three.js initialises, leaving
+    // the canvas at 0×0 and the scene black.  Force a resize + re-render the
+    // first time the container scrolls into view.
+    if (typeof IntersectionObserver !== 'undefined') {
+      var _visObs = new IntersectionObserver(function(entries) {
+        if (entries[0].isIntersecting) {
+          var vW = container.clientWidth  || 400;
+          var vH = container.clientHeight || 380;
+          renderer.setSize(vW, vH);
+          lc.width  = vW;
+          lc.height = vH;
+          camera.aspect = vW / vH;
+          camera.updateProjectionMatrix();
+          if (!_loopStarted) animate();
+          _visObs.disconnect();
+        }
+      }, { threshold: 0.1 });
+      _visObs.observe(container);
+    }
+
     animate();
 
     // ── Mini Timeline ──

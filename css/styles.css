@@ -1981,8 +1981,8 @@
       #ref-nav         { order: 0; }
       #top-bar         { order: 1; }
       #feed-arow       { order: 3; }
-      #feed-blog       { order: 4; }
-      #feed-youtube    { order: 5; }
+      #feed-youtube    { order: 4; }
+      #feed-blog       { order: 5; }
       #feed-dsn        { order: 7; }
       #feed-weather    { order: 6; }
       #mission-updates { order: 8; }

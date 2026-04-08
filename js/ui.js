@@ -501,8 +501,8 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
   if (window.innerWidth >= 768) return;
 
   const COLLAPSIBLE     = ['feed-arow', 'feed-blog', 'feed-youtube', 'feed-dsn', 'feed-weather', 'mission-updates'];
-  const DEFAULT_CLOSED  = new Set(['feed-dsn', 'feed-weather', 'mission-updates']);
-  const STORAGE_KEY     = 'artemis-mobile-collapse-v2';
+  const DEFAULT_CLOSED  = new Set(['feed-blog', 'feed-dsn', 'feed-weather', 'mission-updates']);
+  const STORAGE_KEY     = 'artemis-mobile-collapse-v3';
 
   let colState;
   try { colState = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null'); } catch(e) { colState = null; }
