@@ -685,8 +685,25 @@ function bootSplashdownScene() {
   // ── SCENE SETUP ──────────────────────────────────────────────────────────────
   const container = document.getElementById('canvas-container');
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const _isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: !_isMobile, alpha: true });
+  } catch(e1) {
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+    } catch(e2) {
+      const msg = document.createElement('div');
+      Object.assign(msg.style, { position:'fixed', inset:'0', display:'flex', alignItems:'center', justifyContent:'center',
+        color:'rgba(168,224,0,0.7)', fontFamily:'Space Mono,monospace', fontSize:'13px', textAlign:'center',
+        background:'#000', padding:'24px' });
+      msg.textContent = 'WebGL is not available in this browser. Try enabling hardware acceleration or use a different browser.';
+      document.body.appendChild(msg);
+      console.error('[splashdown] WebGL context creation failed:', e2);
+      return;
+    }
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, _isMobile ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
   container.appendChild(renderer.domElement);
 
