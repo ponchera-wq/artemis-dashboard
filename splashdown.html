@@ -410,6 +410,26 @@
       letter-spacing: 0.04em;
     }
 
+    .modal-history-item {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.63rem;
+      color: #c0d0e8;
+      line-height: 1.8;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .modal-history-item .key { color: #ffa500; flex-shrink: 0; }
+    .modal-history-item .hist-text { flex: 1; }
+    .modal-ext-link {
+      font-size: 0.58rem;
+      color: #4a6888;
+      text-decoration: none;
+      flex-shrink: 0;
+      transition: color 0.15s;
+    }
+    .modal-ext-link:hover { color: #ffa500; }
+
     /* ── SHIP LABEL — make clickable ── */
     #label-ship {
       pointer-events: auto;
@@ -508,7 +528,7 @@
     <div class="modal-section">
       <div class="modal-section-title">Artemis II Recovery Role</div>
       <div class="modal-fact">
-        <span class="key">·</span> Primary Orion capsule &amp; crew recovery vessel<br>
+        <span class="key">·</span> Primary Integrity capsule &amp; crew recovery vessel<br>
         <span class="key">·</span> Splashdown zone: ~50–80 miles off San Diego coast, Pacific Ocean<br>
         <span class="key">·</span> Air support: HSC-23 "Wildcards" MH-60S Sea Hawks (NAS North Island)<br>
         <span class="sub">&nbsp;&nbsp;&nbsp;— Track capsule descent through atmosphere</span><br>
@@ -523,6 +543,35 @@
     <div class="modal-quote">
       <p>"It is a fitting tribute to Congressman Murtha... that the ship bearing his name will be integral to this historic moment in space exploration."</p>
       <cite>— Capt. Erik Kenny, CO USS John P. Murtha</cite>
+    </div>
+
+    <div class="modal-section" style="margin-top:18px;">
+      <div class="modal-section-title">NASA History</div>
+      <div class="modal-history-item">
+        <span class="key">·</span>
+        <span class="hist-text"><span class="key">URT-7</span> (Nov 2018) — First NASA recovery test aboard Murtha; day/night ops, all objectives met</span>
+        <a class="modal-ext-link" href="https://www.dvidshub.net/news/298260/uss-john-p-murtha-underway-nasas-orion-mission" target="_blank" rel="noopener noreferrer">[↗]</a>
+      </div>
+      <div class="modal-history-item">
+        <span class="key">·</span>
+        <span class="hist-text"><span class="key">URT-8</span> (Mar 2020) — First full Artemis I mission profile test in the Pacific</span>
+        <a class="modal-ext-link" href="https://www.nasa.gov/image-article/test-version-of-orion-capsule-recovered-pacific-ocean/" target="_blank" rel="noopener noreferrer">[↗]</a>
+      </div>
+      <div class="modal-history-item">
+        <span class="key">·</span>
+        <span class="hist-text"><span class="key">URT-10</span> (Aug 2023) — First crewed recovery simulation; introduced astronaut exit "front porch"</span>
+        <a class="modal-ext-link" href="https://www.spacecom.mil/Newsroom/News/Article-Display/Article/3481623/department-of-defense-completes-underway-recovery-test-10-with-nasa/" target="_blank" rel="noopener noreferrer">[↗]</a>
+      </div>
+      <div class="modal-history-item">
+        <span class="key">·</span>
+        <span class="hist-text"><span class="key">Pre-mission training</span> (Jan 2026) — Final Artemis II rehearsal, full-scale capsule test article</span>
+        <a class="modal-ext-link" href="https://www.dvidshub.net/unit/LPD-26" target="_blank" rel="noopener noreferrer">[↗]</a>
+      </div>
+      <div class="modal-history-item">
+        <span class="key">·</span>
+        <span class="hist-text"><span class="key">Artemis II</span> (Apr 2026) — <span style="color:#00ff88;">LIVE:</span> Primary recovery of Integrity and 4-crew, ~50–80mi off San Diego</span>
+        <a class="modal-ext-link" href="https://www.navy.mil/Press-Office/News-Stories/display-news/Article/4452625/uss-john-p-murtha-to-support-nasas-artemis-ii-mission/" target="_blank" rel="noopener noreferrer">[↗]</a>
+      </div>
     </div>
   </div>
 </div>
