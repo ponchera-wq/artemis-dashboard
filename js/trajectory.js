@@ -330,6 +330,10 @@
     if (typeof createISSModel !== 'undefined') {
       issGroup = createISSModel(THREE);
     }
+    // Scale the stylised ISS model down so its ~0.2 half-extent doesn't clip
+    // into Earth. ISS altitude is only 0.0576 scene units above the globe,
+    // so the model must be small enough to clear.
+    issGroup.scale.set(0.1, 0.1, 0.1);
     scene.add(issGroup);
 
     // Velocity direction arrow — repositioned every frame in render loop
@@ -756,13 +760,13 @@
     var wpVisible = WAYPOINTS.filter(function(wp) { return wp.metSec >= T_START_MET; });
     wpVisible.forEach(function(wp) {
       var mat = new THREE.MeshBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.9 });
-      var mesh = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), mat);
+      var mesh = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), mat);
       mesh.position.copy(wpScenePos(wp));
       mesh.userData = wp;
       wpMeshes.push(mesh); wpMats.push(mat);
       scene.add(mesh);
       var wpGlow = new THREE.Mesh(
-        new THREE.SphereGeometry(0.15, 8, 8),
+        new THREE.SphereGeometry(0.075, 8, 8),
         new THREE.MeshBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.15, side: THREE.BackSide, blending: THREE.AdditiveBlending, depthWrite: false })
       );
       wpGlow.position.copy(wpScenePos(wp));
@@ -1094,6 +1098,12 @@
       }
       hoveredWpIdx = hoveredWi;
       if (hoveringLabel) { renderer.domElement.style.cursor = 'pointer'; if (tooltipEl) tooltipEl.style.opacity = '0'; return; }
+      if (_murthaClickBox && mx2 >= _murthaClickBox.x && mx2 <= _murthaClickBox.x + _murthaClickBox.w &&
+          my2 >= _murthaClickBox.y && my2 <= _murthaClickBox.y + _murthaClickBox.h) {
+        renderer.domElement.style.cursor = 'pointer';
+        if (tooltipEl) { tooltipEl.textContent = 'Open splashdown view'; tooltipEl.style.left=(e.clientX-rect.left+12)+'px'; tooltipEl.style.top=(e.clientY-rect.top-8)+'px'; tooltipEl.style.opacity='1'; }
+        return;
+      }
       if (!tooltipEl) return;
       mouse3.x = ((e.clientX-rect.left)/rect.width)*2-1; mouse3.y = -((e.clientY-rect.top)/rect.height)*2+1;
       raycaster.setFromCamera(mouse3, camera);
@@ -1113,6 +1123,13 @@
 
       // Check osculating orbit periapsis dot (30 px radius)
       if (typeof OsculatingOrbit !== 'undefined' && OsculatingOrbit.handleClick(mx, my)) { popupOpen = true; return; }
+
+      // Check Murtha label → navigate to splashdown view
+      if (_murthaClickBox && mx >= _murthaClickBox.x && mx <= _murthaClickBox.x + _murthaClickBox.w &&
+          my >= _murthaClickBox.y && my <= _murthaClickBox.y + _murthaClickBox.h) {
+        window.location.href = 'splashdown.html';
+        e.stopPropagation(); return;
+      }
 
       // Check 2D label hit areas first
       for (var wi = wpClickAreas.length - 1; wi >= 0; wi--) {
@@ -1148,7 +1165,7 @@
     function proj(v3) { _pv.copy(v3).project(camera); return { x:(_pv.x*0.5+0.5)*W, y:(_pv.y*-0.5+0.5)*H, vis: _pv.z < 1.0 }; }
 
     function drawCallout(text, v3, color, ox, oy, bold, lineToV3) {
-      var s = proj(v3); if (!s.vis) return;
+      var s = proj(v3); if (!s.vis) return null;
       var x = s.x + (ox||0), y = s.y + (oy||0);
       lctx.save();
       if (lineToV3) {
@@ -1163,7 +1180,11 @@
       lctx.globalAlpha = 1.0; lctx.fillStyle = color;
       if (bold) { lctx.shadowColor = color; lctx.shadowBlur = 8; }
       lctx.fillText(text, x, y); lctx.restore();
+      return { x: x - bw/2, y: y - bh/2, w: bw, h: bh };
     }
+
+    // Hitbox for the "USS John P Murtha" label (updated every render frame)
+    var _murthaClickBox = null;
 
     var _velDir = new THREE.Vector3();
     var _upVec = new THREE.Vector3(0, 1, 0);
@@ -1519,7 +1540,13 @@
 
       // ── ISS multi-line purple stats label ──
       (function() {
-        var _lp = new THREE.Vector3(issGroup.position.x, issGroup.position.y + 0.45, issGroup.position.z);
+        // Anchor the label outward along the ISS's radial vector (Earth-center → ISS),
+        // so it always sits in empty space on the "outside" of the globe regardless of
+        // camera angle. Earlier this used a fixed +Y world offset, which — once the
+        // scene basis became equatorial — pointed the label toward the north pole and
+        // right through Earth's bulk.
+        var _radial = issGroup.position.clone().normalize();
+        var _lp = issGroup.position.clone().addScaledVector(_radial, 0.55);
         var _ls = proj(_lp); if (!_ls.vis) return;
         var _is = proj(issGroup.position);
         lctx.save();
@@ -1556,12 +1583,12 @@
         lctx.restore();
       }());
 
-      // ── USS Murtha callout ──
+      // ── USS John P Murtha callout (clickable → splashdown.html) ──
       (function() {
         var _mwp = shipMarker.getWorldPosition(new THREE.Vector3());
         var _mwpLbl = _mwp.clone();
         _mwpLbl.y += 0.08;
-        drawCallout('\u2693 MURTHA', _mwpLbl, '#ffc200', 0, -10, false, _mwp);
+        _murthaClickBox = drawCallout('\u2693 USS John P Murtha', _mwpLbl, '#ffc200', 0, -10, false, _mwp);
       }());
 
       // ── Splashdown target callout (only while ship is not there yet) ──
