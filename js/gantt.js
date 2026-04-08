@@ -42,7 +42,7 @@
   var state = {
     zoom: (function () {
       try { return localStorage.getItem('gantt.zoom') || null; } catch (e) { return null; }
-    })() || (window.innerWidth < 600 ? 'day' : 'full'),
+    })() || 'day',
     pxPerSec: 1,
     collapsed: false,
   };
@@ -309,7 +309,7 @@
       b.classList.toggle('active', b.dataset.zoom === z);
     });
     renderGantt();
-    if (z !== 'full') setTimeout(scrollToNow, 50);
+    setTimeout(scrollToNow, 50);
   }
 
   // ── Build panel DOM ──────────────────────────────────────────────────────
@@ -369,7 +369,7 @@
     mobileTT = panel.querySelector('#gantt-mob-tt');
     initTT();
     renderGantt();
-    if (state.zoom !== 'full') setTimeout(scrollToNow, 50);
+    setTimeout(scrollToNow, 50);
   }
 
   // ── CSS injection ────────────────────────────────────────────────────────
@@ -416,10 +416,38 @@
     document.head.appendChild(s);
   }
 
+  // ── Drag-to-pan ───────────────────────────────────────────────────────────
+  function initDragPan() {
+    var scroll = document.getElementById('gantt-scroll');
+    if (!scroll) return;
+    var dragging = false, startX = 0, startLeft = 0;
+
+    scroll.addEventListener('mousedown', function (e) {
+      // Ignore clicks on interactive children
+      if (e.target.closest && e.target.closest('.gantt-block, .gantt-mstone, button')) return;
+      dragging = true;
+      startX = e.pageX;
+      startLeft = scroll.scrollLeft;
+      scroll.style.cursor = 'grabbing';
+      scroll.style.userSelect = 'none';
+      e.preventDefault();
+    });
+    document.addEventListener('mouseup', function () {
+      if (!dragging) return;
+      dragging = false;
+      if (scroll) { scroll.style.cursor = ''; scroll.style.userSelect = ''; }
+    });
+    document.addEventListener('mousemove', function (e) {
+      if (!dragging) return;
+      scroll.scrollLeft = startLeft - (e.pageX - startX);
+    });
+  }
+
   // ── Init ─────────────────────────────────────────────────────────────────
   function init() {
     injectCSS();
     buildPanel();
+    initDragPan();
 
     // Keyboard zoom: +/= to zoom in, - to zoom out
     var zoomLevels = ['full', 'day', '6h'];
