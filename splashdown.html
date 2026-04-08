@@ -100,11 +100,22 @@
       background: rgba(8,8,14,0.88);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 8px;
-      padding: 16px;
       backdrop-filter: blur(12px);
       font-size: 0.72rem;
       line-height: 1.6;
+      overflow: hidden;
     }
+
+    #info-panel-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 14px 10px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      transition: background 0.15s;
+    }
+    #info-panel-header:hover { background: rgba(255,255,255,0.04); }
 
     .panel-title {
       font-family: 'Exo 2', sans-serif;
@@ -112,8 +123,25 @@
       font-size: 0.8rem;
       letter-spacing: 0.1em;
       color: #e0e8ff;
-      margin-bottom: 10px;
+      flex: 1;
     }
+
+    .panel-toggle {
+      font-size: 0.75rem;
+      color: #4a6080;
+      line-height: 1;
+      transition: transform 0.2s, color 0.15s;
+      margin-left: 6px;
+    }
+    #info-panel.collapsed .panel-toggle { transform: rotate(180deg); }
+    #info-panel-header:hover .panel-toggle { color: #8090a8; }
+
+    #info-panel-body {
+      padding: 10px 14px 14px;
+      transition: none;
+    }
+    #info-panel.collapsed #info-panel-body { display: none; }
+    #info-panel.collapsed #info-panel-header { border-bottom: none; }
 
     .panel-section {
       margin-top: 10px;
@@ -187,10 +215,19 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      cursor: pointer;
       user-select: none;
     }
-    #ship-tracker-header:hover { background: rgba(255,165,0,0.13); }
+    #ship-tracker-panel.collapsed #ship-tracker-header { border-bottom: none; }
+
+    #ship-tracker-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      cursor: pointer;
+      min-width: 0;
+    }
+    #ship-tracker-header-left:hover .tracker-title { color: #ffbe40; }
 
     #ship-tracker-header .tracker-title {
       font-family: 'Space Mono', monospace;
@@ -198,20 +235,37 @@
       letter-spacing: 0.1em;
       color: #ffa500;
       text-transform: uppercase;
-      flex: 1;
+      transition: color 0.15s;
     }
     #ship-tracker-header .tracker-hint {
       font-family: 'Space Mono', monospace;
       font-size: 0.55rem;
       color: rgba(255,165,0,0.5);
       letter-spacing: 0.05em;
+      white-space: nowrap;
     }
+
+    #ship-panel-toggle {
+      background: none;
+      border: none;
+      color: #4a6080;
+      font-size: 0.75rem;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+      line-height: 1;
+      flex-shrink: 0;
+      transition: transform 0.2s, color 0.15s;
+    }
+    #ship-panel-toggle:hover { color: #ffa500; }
+    #ship-tracker-panel.collapsed #ship-panel-toggle { transform: rotate(180deg); }
 
     #ship-iframe-wrap {
       flex: 1;
       position: relative;
       min-height: 0;
     }
+    #ship-tracker-panel.collapsed #ship-iframe-wrap { display: none; }
 
     #ship-iframe {
       width: 100%; height: 100%;
@@ -301,8 +355,18 @@
       letter-spacing: 0.1em;
       color: #ffa500;
       text-transform: uppercase;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
       padding-right: 24px;
+    }
+
+    #modal-ship-photo {
+      width: 100%;
+      border-radius: 6px;
+      border: 1px solid rgba(255,165,0,0.2);
+      display: block;
+      margin-bottom: 16px;
+      object-fit: cover;
+      max-height: 200px;
     }
 
     .modal-section { margin-bottom: 16px; }
@@ -386,9 +450,12 @@
 
 <!-- SHIP TRACKER PANEL (right) -->
 <div id="ship-tracker-panel">
-  <div id="ship-tracker-header" onclick="openShipModal()">
-    <span class="tracker-title">⚓ USS John P. Murtha — LPD-26 Live Position</span>
-    <span class="tracker-hint">tap for details ›</span>
+  <div id="ship-tracker-header">
+    <div id="ship-tracker-header-left" onclick="openShipModal()">
+      <span class="tracker-title">⚓ USS John P. Murtha — LPD-26 Live Position</span>
+      <span class="tracker-hint">details ›</span>
+    </div>
+    <button id="ship-panel-toggle" onclick="toggleShipPanel()" aria-label="Collapse panel">▲</button>
   </div>
   <div id="ship-iframe-wrap">
     <iframe
@@ -417,6 +484,7 @@
   <div id="ship-modal-box">
     <button id="ship-modal-close" onclick="closeShipModal()" aria-label="Close">×</button>
     <div class="modal-title">⚓ USS John P. Murtha (LPD-26)</div>
+    <img id="modal-ship-photo" src="img/murtharecovery.jpg" alt="USS John P. Murtha recovery operations" onerror="this.style.display='none'">
 
     <div class="modal-section">
       <div class="modal-section-title">Vessel</div>
@@ -461,38 +529,43 @@
 
 <!-- INFO PANEL -->
 <div id="info-panel">
-  <div class="panel-title">🚀 ARTEMIS II — RETURN PHASE</div>
-  <div class="panel-data">Mission Day: <span id="mission-day">—</span></div>
-
-  <div class="panel-section">
-    <div class="panel-label">Splashdown Countdown</div>
-    <div id="countdown-display">--d --h --m --s</div>
-    <div class="panel-date">April 10, 2026 &nbsp;·&nbsp; 08:07 UTC&nbsp;/&nbsp;18:07 AEST</div>
+  <div id="info-panel-header" onclick="toggleInfoPanel()">
+    <div class="panel-title">🚀 ARTEMIS II — RETURN PHASE</div>
+    <span class="panel-toggle" aria-hidden="true">▲</span>
   </div>
+  <div id="info-panel-body">
+    <div class="panel-data" style="margin-bottom:6px;">Mission Day: <span id="mission-day">—</span></div>
 
-  <div class="panel-section">
-    <div class="panel-label">Entry Profile</div>
-    <div class="panel-data">Speed: ~25,000 mph</div>
-    <div class="panel-data">Profile: Loft maneuver</div>
-    <div class="panel-data">Heat shield: Modified descent</div>
-  </div>
-
-  <div class="panel-section">
-    <div class="panel-label">Recovery Ship</div>
-    <div class="panel-data">USS John P. Murtha (LPD-26)</div>
-    <div class="panel-data">Lat: <span id="ship-lat">—</span> &nbsp; Lon: <span id="ship-lon">—</span></div>
-    <div class="panel-data">SOG: <span id="ship-sog">—</span> kt &nbsp;·&nbsp; COG: <span id="ship-cog">—</span>°</div>
-    <div class="panel-data" style="margin-top:3px;">
-      <span class="ais-dot fallback" id="ais-dot"></span>
-      AIS: <span id="ais-status">LAST KNOWN</span>
+    <div class="panel-section">
+      <div class="panel-label">Splashdown Countdown</div>
+      <div id="countdown-display">--d --h --m --s</div>
+      <div class="panel-date">April 10, 2026 &nbsp;·&nbsp; 08:07 UTC&nbsp;/&nbsp;18:07 AEST</div>
     </div>
-    <div class="panel-data" style="color:#6080a0;">Last update: <span id="ship-ts">—</span></div>
-  </div>
 
-  <div class="panel-section">
-    <div class="panel-label">Primary Site</div>
-    <div class="panel-data">~50nm SW of San Diego</div>
-    <div class="panel-data">32.5°N, 117.5°W</div>
+    <div class="panel-section">
+      <div class="panel-label">Entry Profile</div>
+      <div class="panel-data">Speed: ~25,000 mph</div>
+      <div class="panel-data">Profile: Loft maneuver</div>
+      <div class="panel-data">Heat shield: Modified descent</div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-label">Recovery Ship</div>
+      <div class="panel-data">USS John P. Murtha (LPD-26)</div>
+      <div class="panel-data">Lat: <span id="ship-lat">—</span> &nbsp; Lon: <span id="ship-lon">—</span></div>
+      <div class="panel-data">SOG: <span id="ship-sog">—</span> kt &nbsp;·&nbsp; COG: <span id="ship-cog">—</span>°</div>
+      <div class="panel-data" style="margin-top:3px;">
+        <span class="ais-dot fallback" id="ais-dot"></span>
+        AIS: <span id="ais-status">LAST KNOWN</span>
+      </div>
+      <div class="panel-data" style="color:#6080a0;">Last update: <span id="ship-ts">—</span></div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-label">Primary Site</div>
+      <div class="panel-data">~50nm SW of San Diego</div>
+      <div class="panel-data">32.5°N, 117.5°W</div>
+    </div>
   </div>
 </div>
 
@@ -912,6 +985,14 @@
   document.getElementById('label-ship').addEventListener('click', openShipModal);
 
 })();
+
+// ── PANEL TOGGLES ────────────────────────────────────────────────────────────
+function toggleInfoPanel() {
+  document.getElementById('info-panel').classList.toggle('collapsed');
+}
+function toggleShipPanel() {
+  document.getElementById('ship-tracker-panel').classList.toggle('collapsed');
+}
 
 // ── MODAL OPEN / CLOSE ───────────────────────────────────────────────────────
 function openShipModal() {
