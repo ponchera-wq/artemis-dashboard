@@ -571,9 +571,13 @@
     if (data.cog != null) document.getElementById('ship-cog').textContent = Number(data.cog).toFixed(1);
     if (data.timestamp) {
       const ts = new Date(data.timestamp);
-      document.getElementById('ship-ts').textContent = isNaN(ts)
-        ? data.timestamp
-        : ts.toUTCString().replace(' GMT', ' UTC');
+      if (isNaN(ts)) {
+        document.getElementById('ship-ts').textContent = data.timestamp;
+      } else {
+        const utcStr = ts.toUTCString().replace(' GMT', ' UTC');
+        const localStr = ts.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
+        document.getElementById('ship-ts').textContent = utcStr + ' / ' + localStr + ' local';
+      }
     }
   }
 
