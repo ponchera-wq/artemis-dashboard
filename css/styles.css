@@ -86,7 +86,7 @@
     #main-content {
       display: grid;
       /* Row 1 must grow when #ref-nav opens — a fixed 32px row clipped the menu on desktop */
-      grid-template-rows: auto 112px auto 1fr 1fr 36px 38px;
+      grid-template-rows: auto 112px auto 1fr 1fr 38px;
       grid-template-columns: 1fr 2fr 1fr;
       gap: 6px;
       padding: calc(6px + env(safe-area-inset-top, 0px)) calc(6px + env(safe-area-inset-right, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)) calc(6px + env(safe-area-inset-left, 0px));
@@ -97,7 +97,7 @@
 
     /* ── Site footer ── */
     #site-footer {
-      grid-row: 7; grid-column: 1 / -1;
+      grid-row: 6; grid-column: 1 / -1;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -632,14 +632,7 @@
        CREW STRIP — bottom row
     ════════════════════════════════ */
     #crew-strip {
-      grid-row: 6; grid-column: 1 / -1;
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
-      gap: 0;
+      display: none;
     }
 
     .crew-strip-label {
@@ -1758,7 +1751,7 @@
       body { height: auto; overflow: visible; overflow-x: hidden; max-width: 100vw; }
       #main-content {
         grid-template-columns: 1fr 1fr;
-        grid-template-rows: minmax(32px, auto) auto auto auto 320px auto 380px 44px;
+        grid-template-rows: minmax(32px, auto) auto auto auto 320px auto 380px;
         height: auto; min-height: 100vh;
         min-height: 100dvh;
         overflow-x: hidden; max-width: 100%;
@@ -1772,8 +1765,6 @@
       #feed-weather    { grid-row: 4; grid-column: 2; min-height: 240px; }
       #feed-blog       { grid-row: 6; grid-column: 2; min-height: 240px; }
       #mission-updates { grid-row: 7; grid-column: 1 / -1; }
-      #crew-strip      { grid-row: 8; grid-column: 1 / -1; overflow-x: hidden; }
-
       .crew-strip-members { flex-wrap: wrap; }
       #reset-layout-btn { display: none; }
 
@@ -1995,8 +1986,7 @@
       #feed-dsn        { order: 7; }
       #feed-weather    { order: 6; }
       #mission-updates { order: 8; }
-      #crew-strip      { order: 9; }
-      #site-footer     { order: 10; }
+      #site-footer     { order: 9; }
 
       /* ── Mobile panel collapse ── */
       .panel.mobile-collapsed {
@@ -3151,7 +3141,8 @@ body.ref-modal-active {
     max-height: none;
   }
   #ref-nav.ref-nav-open #ref-menu-items,
-  #ref-nav.ref-nav-open #ref-share-row {
+  #ref-nav.ref-nav-open #ref-share-row,
+  #ref-nav.ref-nav-open #crew-strip {
     background: rgba(4, 6, 16, 0.97);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -3176,6 +3167,35 @@ body.ref-modal-active {
   display: flex;
   flex-direction: column;
   border-top: 1px solid rgba(168,224,0,0.1);
+}
+
+/* Crew strip inside hamburger nav */
+#ref-nav #crew-strip {
+  background: transparent;
+  border: none;
+  border-top: 1px solid rgba(168,224,0,0.1);
+  border-radius: 0;
+  padding: 10px 16px;
+  width: 100%;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+}
+#ref-nav.ref-nav-open #crew-strip {
+  display: flex;
+}
+@media (min-width: 768px) {
+  #ref-nav #crew-strip {
+    grid-column: 1;
+    grid-row: 3;
+    background: rgba(4, 6, 16, 0.97);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #ref-nav #ref-share-row {
+    grid-row: 4;
+  }
 }
 
 #ref-nav .ref-nav-btn {

@@ -89,8 +89,8 @@
       }
     });
 
-    // Shift crew-strip and site-footer up by 1 (ui.js sets these too)
-    ['crew-strip', 'site-footer'].forEach(function (id) {
+    // Shift site-footer up by 1 (ui.js sets these too)
+    ['site-footer'].forEach(function (id) {
       var el = document.getElementById(id);
       if (el && el.style.gridRow) {
         var r = parseInt(el.style.gridRow, 10);

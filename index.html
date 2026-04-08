@@ -122,6 +122,41 @@
     <!-- Reference guide nav items -->
     <div id="ref-menu-items"></div>
 
+    <!-- Crew strip — shows inside hamburger menu when open -->
+    <div id="crew-strip">
+      <h2 class="crew-strip-label">CREW</h2>
+      <div class="crew-strip-members">
+        <div class="crew-strip-member" data-crew="wiseman" title="Click for bio" tabindex="0" role="button">
+          <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016434-alt.jpg" alt="Reid Wiseman" onerror="this.style.display='none'">
+          <span class="crew-strip-flag">🇺🇸</span>
+          <span class="crew-strip-name">REID WISEMAN</span>
+          <span class="crew-strip-role">CDR</span>
+        </div>
+        <div class="crew-strip-sep"></div>
+        <div class="crew-strip-member" data-crew="glover" title="Click for bio" tabindex="0" role="button">
+          <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016433-alt.jpg" alt="Victor Glover" onerror="this.style.display='none'">
+          <span class="crew-strip-flag">🇺🇸</span>
+          <span class="crew-strip-name">VICTOR GLOVER</span>
+          <span class="crew-strip-role">PLT</span>
+        </div>
+        <div class="crew-strip-sep"></div>
+        <div class="crew-strip-member" data-crew="koch" title="Click for bio" tabindex="0" role="button">
+          <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016435-alt.jpg" alt="Christina Koch" onerror="this.style.display='none'">
+          <span class="crew-strip-flag">🇺🇸</span>
+          <span class="crew-strip-name">CHRISTINA KOCH</span>
+          <span class="crew-strip-role">MS</span>
+        </div>
+        <div class="crew-strip-sep"></div>
+        <div class="crew-strip-member" data-crew="hansen" title="Click for bio" tabindex="0" role="button">
+          <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016436-alt.jpg" alt="Jeremy Hansen" onerror="this.style.display='none'">
+          <span class="crew-strip-flag">🇨🇦</span>
+          <span class="crew-strip-name">JEREMY HANSEN</span>
+          <span class="crew-strip-role">MS · CSA</span>
+        </div>
+      </div>
+      <button id="reset-layout-btn" title="Reset panel layout to default">↺ RESET LAYOUT</button>
+    </div>
+
     <!-- Mobile-only share row — shows at bottom when menu is open -->
     <div id="ref-share-row">
       <button onclick="navigator.clipboard.writeText(window.location.href).then(function(){var b=document.getElementById('ref-ct');b.textContent='COPIED!';setTimeout(function(){b.textContent='LINK'},1500)})"
@@ -575,41 +610,6 @@
     <div id="tl-next-event"></div>
     <div class="timeline-scroll" id="timeline-scroll"></div>
 <div class="corner-tl"></div><div class="corner-br"></div>
-  </div>
-
-  <!-- CREW STRIP -->
-  <div id="crew-strip">
-    <h2 class="crew-strip-label">CREW</h2>
-    <div class="crew-strip-members">
-      <div class="crew-strip-member" data-crew="wiseman" title="Click for bio" tabindex="0" role="button">
-        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016434-alt.jpg" alt="Reid Wiseman" onerror="this.style.display='none'">
-        <span class="crew-strip-flag">🇺🇸</span>
-        <span class="crew-strip-name">REID WISEMAN</span>
-        <span class="crew-strip-role">CDR</span>
-      </div>
-      <div class="crew-strip-sep"></div>
-      <div class="crew-strip-member" data-crew="glover" title="Click for bio" tabindex="0" role="button">
-        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016433-alt.jpg" alt="Victor Glover" onerror="this.style.display='none'">
-        <span class="crew-strip-flag">🇺🇸</span>
-        <span class="crew-strip-name">VICTOR GLOVER</span>
-        <span class="crew-strip-role">PLT</span>
-      </div>
-      <div class="crew-strip-sep"></div>
-      <div class="crew-strip-member" data-crew="koch" title="Click for bio" tabindex="0" role="button">
-        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016435-alt.jpg" alt="Christina Koch" onerror="this.style.display='none'">
-        <span class="crew-strip-flag">🇺🇸</span>
-        <span class="crew-strip-name">CHRISTINA KOCH</span>
-        <span class="crew-strip-role">MS</span>
-      </div>
-      <div class="crew-strip-sep"></div>
-      <div class="crew-strip-member" data-crew="hansen" title="Click for bio" tabindex="0" role="button">
-        <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016436-alt.jpg" alt="Jeremy Hansen" onerror="this.style.display='none'">
-        <span class="crew-strip-flag">🇨🇦</span>
-        <span class="crew-strip-name">JEREMY HANSEN</span>
-        <span class="crew-strip-role">MS · CSA</span>
-      </div>
-    </div>
-    <button id="reset-layout-btn" title="Reset panel layout to default">↺ RESET LAYOUT</button>
   </div>
 
   <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->

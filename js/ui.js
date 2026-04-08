@@ -425,8 +425,6 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
       });
       const dashboard = document.getElementById('main-content');
       dashboard.style.gridTemplateRows = '';
-      const crewStrip = document.getElementById('crew-strip');
-      if (crewStrip) crewStrip.style.gridRow = '';
       return;
     }
 
@@ -453,13 +451,11 @@ document.querySelectorAll('#feed-youtube .yt-tab').forEach(tab => {
     const dashboard = document.getElementById('main-content');
     const panelRowCount = maxRow - 2; // rows 3..maxRow (row 1 = ref-nav, row 2 = top-bar)
     dashboard.style.gridTemplateRows =
-      `32px 112px ${Array(panelRowCount).fill('1fr').join(' ')} 36px 38px`;
+      `32px 112px ${Array(panelRowCount).fill('1fr').join(' ')} 38px`;
 
-    // Move crew-strip and footer to correct last rows
-    const crewStrip = document.getElementById('crew-strip');
-    if (crewStrip) crewStrip.style.gridRow = String(maxRow + 1);
+    // Move footer to correct last row
     const siteFooter = document.getElementById('site-footer');
-    if (siteFooter) siteFooter.style.gridRow = String(maxRow + 2);
+    if (siteFooter) siteFooter.style.gridRow = String(maxRow + 1);
 
     // Persist
     try { localStorage.setItem('artemis-layout-v5', JSON.stringify(state)); } catch(e) {}

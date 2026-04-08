@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/flyby-lighting.js"></script>
+  <script src="js/iss-model.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -545,7 +547,8 @@
       <cite>— Capt. Erik Kenny, CO USS John P. Murtha</cite>
     </div>
 
-    <div class="modal-section" style="margin-top:18px;">
+    <hr style="border:none;border-top:1px solid rgba(255,165,0,0.25);margin:18px 0 14px;">
+    <div class="modal-section">
       <div class="modal-section-title">NASA History</div>
       <div class="modal-history-item">
         <span class="key">·</span>
@@ -647,36 +650,54 @@
     );
   }
 
-  // ── STARS ────────────────────────────────────────────────────────────────────
-  (function buildStars() {
-    const count = 3000;
-    const positions = new Float32Array(count * 3);
-    for (let i = 0; i < count; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi   = Math.acos(2 * Math.random() - 1);
-      const r     = 50;
-      positions[i * 3]     = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = r * Math.cos(phi);
+  // ── SKYBOX — equirectangular star map ────────────────────────────────────────
+  const skyLoader = new THREE.TextureLoader();
+  const skyMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide });
+  const skyMesh = new THREE.Mesh(new THREE.SphereGeometry(300, 32, 32), skyMat);
+  scene.add(skyMesh);
+  const skyPaths = ['bg-3dtraj.jpg', 'css/bg-3dtraj.jpg', './css/bg-3dtraj.jpg', '/css/bg-3dtraj.jpg', 'img/bg-3dtraj.jpg'];
+  let skyLoaded = false;
+  (function trySkyPath(idx) {
+    if (idx >= skyPaths.length) {
+      if (!skyLoaded) {
+        // All paths failed — fall back to procedural starfield
+        const count = 3000, pos = new Float32Array(count * 3);
+        for (let i = 0; i < count; i++) {
+          const th = Math.random() * Math.PI * 2, ph = Math.acos(2 * Math.random() - 1);
+          pos[i*3] = 50*Math.sin(ph)*Math.cos(th); pos[i*3+1] = 50*Math.sin(ph)*Math.sin(th); pos[i*3+2] = 50*Math.cos(ph);
+        }
+        const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, sizeAttenuation: true })));
+      }
+      return;
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.08, sizeAttenuation: true });
-    scene.add(new THREE.Points(geo, mat));
-  })();
+    skyLoader.load(skyPaths[idx],
+      function(tex) { skyLoaded = true; skyMat.map = tex; skyMat.color.set(0xffffff); skyMat.needsUpdate = true; },
+      undefined,
+      function() { trySkyPath(idx + 1); }
+    );
+  })(0);
 
   // ── EARTH ────────────────────────────────────────────────────────────────────
   const earthGroup = new THREE.Group();
   scene.add(earthGroup);
 
   const earthGeo = new THREE.SphereGeometry(1.0, 64, 64);
-  const earthMat = new THREE.MeshBasicMaterial({
-    map: new THREE.TextureLoader().load(
-      'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_atmos_2048.jpg'
-    )
-  });
+  const earthMat = new THREE.MeshPhongMaterial({ color: 0x2255aa, emissive: 0x051828, shininess: 25, specular: 0x224466 });
   const earth = new THREE.Mesh(earthGeo, earthMat);
   earthGroup.add(earth);
+
+  // Earth day texture
+  new THREE.TextureLoader().load(
+    'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_atmos_2048.jpg',
+    function(tex) { earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; }
+  );
+  // Night lights emissive map (city lights on dark side)
+  new THREE.TextureLoader().load(
+    'https://unpkg.com/three-globe/example/img/earth-night.jpg',
+    function(tex) { earthMat.emissiveMap = tex; earthMat.emissive.set(0x888888); earthMat.needsUpdate = true; },
+    undefined, function() { /* night map unavailable, skip */ }
+  );
 
   // Atmosphere glow
   const atmoGeo = new THREE.SphereGeometry(1.02, 64, 64);
@@ -685,8 +706,14 @@
   });
   earthGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
 
-  // Ambient light
-  scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+  // Three-light setup: ambient (deep blue) + sun directional + fill point
+  scene.add(new THREE.AmbientLight(0x1a2a6a, 0.2));
+  const sunLight = new THREE.DirectionalLight(0xfff5e0, 1.2);
+  sunLight.position.set(20, 8, 14); // placeholder, updated each frame by FlybyLighting
+  scene.add(sunLight);
+  const fillLight = new THREE.PointLight(0x2244aa, 0.3, 80);
+  fillLight.position.set(-10, -5, -8);
+  scene.add(fillLight);
 
   // ── ORION TRAJECTORY ARC ─────────────────────────────────────────────────────
   const orionWaypoints = [
@@ -814,6 +841,70 @@
   earthGroup.add(new THREE.Line(corGeo2, corridorMat));
 
   const reentryLabelPos = bearingOffset(32.5, -117.5, 36, 350, 1.06);
+
+  // ── FLYBY LIGHTING (real-time sun direction) ──────────────────────────────────
+  // NOTE: LAUNCH_UTC here is 2026-04-01T22:35:12Z. If trajectory.js differs, MET to
+  // FlybyLighting.getSunDir() will be off by that delta — a separate consistency issue.
+  if (typeof FlybyLighting !== 'undefined') FlybyLighting.load();
+
+  // ── ISS ──────────────────────────────────────────────────────────────────────
+  // TLE epoch: 2026-03-30T12:00:00Z (CelesTrak supplemental, segment 1)
+  // Scale: Earth R = 1.0 scene units → ISS orbit R = (6371+408)/6371 ≈ 1.064
+  const EARTH_R_KM   = 6371;
+  const ISS_ALT_KM   = 408;
+  const ISS_SCENE_R  = 1.0 * (EARTH_R_KM + ISS_ALT_KM) / EARTH_R_KM; // ≈ 1.064
+  const ISS_INC      = 51.6332 * Math.PI / 180;
+  const ISS_RAAN0    = 329.4800 * Math.PI / 180;
+  const ISS_ARGP     = 251.7519 * Math.PI / 180;
+  const ISS_M0       = 176.3009 * Math.PI / 180;
+  const ISS_N_RAD    = 15.48666334 * 2 * Math.PI / 86400;
+  const ISS_RAAN_DOT = -4.86 * Math.PI / 180 / 86400;
+  const ISS_EPOCH_MS = Date.UTC(2026, 2, 30, 12, 0, 0);
+
+  // ECI unit position/velocity vectors (standard ECI, Z=north)
+  function issECIDir(u, raan) {
+    const sinI = Math.sin(ISS_INC), cosI = Math.cos(ISS_INC);
+    const sinR = Math.sin(raan),    cosR = Math.cos(raan);
+    return new THREE.Vector3(
+      Math.cos(u) * cosR - Math.sin(u) * cosI * sinR,
+      Math.cos(u) * sinR + Math.sin(u) * cosI * cosR,
+      Math.sin(u) * sinI
+    );
+  }
+  function issECIVel(u, raan) {
+    const sinI = Math.sin(ISS_INC), cosI = Math.cos(ISS_INC);
+    const sinR = Math.sin(raan),    cosR = Math.cos(raan);
+    return new THREE.Vector3(
+      -Math.sin(u) * cosR - Math.cos(u) * cosI * sinR,
+      -Math.sin(u) * sinR + Math.cos(u) * cosI * cosR,
+       Math.cos(u) * sinI
+    );
+  }
+  // Convert ECI (Z=north) to splashdown scene space (Y=north, right-handed)
+  function eciToScene(v) { return new THREE.Vector3(v.x, v.z, -v.y); }
+
+  // Orbit ring at current RAAN — parented to earthGroup so it drags with the Earth
+  const _issInitRaan = ISS_RAAN0 + ISS_RAAN_DOT * ((Date.now() - ISS_EPOCH_MS) / 1000);
+  const issOrbitPts = [];
+  for (let i = 0; i <= 80; i++) {
+    issOrbitPts.push(eciToScene(issECIDir(ISS_ARGP + (i / 80) * Math.PI * 2, _issInitRaan)).multiplyScalar(ISS_SCENE_R));
+  }
+  earthGroup.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(issOrbitPts),
+    new THREE.LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.15 })
+  ));
+
+  // ISS model or box placeholder
+  let issGroup;
+  if (typeof createISSModel !== 'undefined') {
+    issGroup = createISSModel(THREE);
+  } else {
+    issGroup = new THREE.Mesh(
+      new THREE.BoxGeometry(0.012, 0.004, 0.02),
+      new THREE.MeshPhongMaterial({ color: 0xcccccc, emissive: 0x222244 })
+    );
+  }
+  earthGroup.add(issGroup);
 
   // ── LABEL PROJECTION ─────────────────────────────────────────────────────────
   function projectToScreen(vec3world, cam, rend) {
@@ -1006,11 +1097,6 @@
 
     const t = Date.now();
 
-    // Auto-rotate
-    if (!isDragging) {
-      earthGroup.rotation.y += 0.0008;
-    }
-
     // Pulse Orion dot
     orionDotMat.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 0.003));
 
@@ -1024,6 +1110,28 @@
     updateLabel(labelShip,    shipLabelPos);
     updateLabel(labelSplash,  splashLabelPos);
     updateLabel(labelReentry, reentryLabelPos);
+
+    // ── Sun direction update (real-time day/night terminator) ──
+    if (typeof FlybyLighting !== 'undefined' && FlybyLighting.isReady()) {
+      const metSec = (t - LAUNCH_UTC.getTime()) / 1000;
+      const sd = FlybyLighting.getSunDir(metSec);
+      if (sd) {
+        // getSunDir returns ECI (Z=north). Convert to scene (Y=north), then rotate with
+        // earthGroup so the terminator stays locked to Earth's surface regardless of drag.
+        const sunVec = new THREE.Vector3(sd.x, sd.z, -sd.y);
+        sunVec.applyQuaternion(earthGroup.quaternion);
+        sunLight.position.copy(sunVec.multiplyScalar(50));
+      }
+    }
+
+    // ── ISS propagation (TLE-based, ~92 min orbit) ──
+    const issDtSec = (t - ISS_EPOCH_MS) / 1000;
+    const issRaan  = ISS_RAAN0 + ISS_RAAN_DOT * issDtSec;
+    const issM     = ((ISS_M0 + ISS_N_RAD * issDtSec) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+    const issU     = ISS_ARGP + issM;
+    issGroup.position.copy(eciToScene(issECIDir(issU, issRaan)).normalize().multiplyScalar(ISS_SCENE_R));
+    const issVelScene = eciToScene(issECIVel(issU, issRaan)).normalize();
+    issGroup.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), issVelScene));
 
     renderer.render(scene, camera);
   }
