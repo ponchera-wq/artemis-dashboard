@@ -91,6 +91,19 @@
     #label-ship     { color: #ffa500; }
     #label-splashdown { color: #ff6633; }
     #label-reentry  { color: #ff4422; }
+    #label-iss {
+      color: #cc55ff;
+      white-space: normal;
+      text-align: center;
+      line-height: 1.5;
+      background: rgba(5,0,18,0.82);
+      border: 1px solid rgba(170,68,255,0.7);
+      border-radius: 4px;
+      padding: 4px 9px 5px;
+      text-shadow: 0 0 7px #cc44ff, 0 1px 3px rgba(0,0,0,0.9);
+    }
+    #label-iss .iss-title { font-size: 0.72rem; font-weight: bold; letter-spacing: 0.1em; }
+    #label-iss .iss-stat  { font-size: 0.60rem; opacity: 0.85; display: block; }
 
     /* ── INFO PANEL ── */
     #info-panel {
@@ -469,6 +482,12 @@
 <div id="label-ship"     class="map-label">USS John P. Murtha</div>
 <div id="label-splashdown" class="map-label">SPLASHDOWN ZONE</div>
 <div id="label-reentry"  class="map-label">Re-entry Corridor</div>
+<div id="label-iss" class="map-label">
+  <span class="iss-title">🛰 ISS</span>
+  <span class="iss-stat">ALT 408 km &nbsp;·&nbsp; INC 51.6°</span>
+  <span class="iss-stat">SPD 7.66 km/s &nbsp;·&nbsp; ORB 93 min</span>
+  <span class="iss-stat" id="iss-latlon">LAT — &nbsp; LON —</span>
+</div>
 
 <!-- SHIP TRACKER PANEL (right) -->
 <div id="ship-tracker-panel">
@@ -888,6 +907,11 @@
   }
   // Convert ECI (Z=north) to splashdown scene space (Y=north, right-handed)
   function eciToScene(v) { return new THREE.Vector3(v.x, v.z, -v.y); }
+  function earthGMST(date) {
+    const JD = date.getTime() / 86400000 + 2440587.5;
+    const T  = JD - 2451545.0;
+    return (0.779057273264 + 1.0027378119113546 * T) * 2 * Math.PI;
+  }
 
   // Orbit ring at current RAAN — parented to earthGroup so it drags with the Earth
   const _issInitRaan = ISS_RAAN0 + ISS_RAAN_DOT * ((Date.now() - ISS_EPOCH_MS) / 1000);
@@ -895,10 +919,11 @@
   for (let i = 0; i <= 80; i++) {
     issOrbitPts.push(eciToScene(issECIDir(ISS_ARGP + (i / 80) * Math.PI * 2, _issInitRaan)).multiplyScalar(ISS_SCENE_R));
   }
-  earthGroup.add(new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(issOrbitPts),
-    new THREE.LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.15 })
-  ));
+  const _issOrbitGeo = new THREE.BufferGeometry().setFromPoints(issOrbitPts);
+  const _issOrbitMat = new THREE.LineDashedMaterial({ color: 0xaa44ff, transparent: true, opacity: 0.45, dashSize: 0.055, gapSize: 0.028 });
+  const _issOrbitLine = new THREE.Line(_issOrbitGeo, _issOrbitMat);
+  _issOrbitLine.computeLineDistances();
+  earthGroup.add(_issOrbitLine);
 
   // ISS model or box placeholder
   let issGroup;
@@ -911,6 +936,14 @@
     );
   }
   earthGroup.add(issGroup);
+
+  // ISS velocity direction arrow — updated every frame
+  const _issArrow = new THREE.ArrowHelper(
+    new THREE.Vector3(0, 1, 0),
+    new THREE.Vector3(0, 0, 0),
+    0.14, 0xcc55ff, 0.055, 0.036
+  );
+  earthGroup.add(_issArrow);
 
   // ── LABEL PROJECTION ─────────────────────────────────────────────────────────
   function projectToScreen(vec3world, cam, rend) {
@@ -941,6 +974,8 @@
   const labelShip      = document.getElementById('label-ship');
   const labelSplash    = document.getElementById('label-splashdown');
   const labelReentry   = document.getElementById('label-reentry');
+  const labelISS       = document.getElementById('label-iss');
+  const issLatLonEl    = document.getElementById('iss-latlon');
 
   // ── MOUSE / TOUCH CONTROLS ───────────────────────────────────────────────────
   let isDragging = false;
@@ -1138,6 +1173,21 @@
     issGroup.position.copy(eciToScene(issECIDir(issU, issRaan)).normalize().multiplyScalar(ISS_SCENE_R));
     const issVelScene = eciToScene(issECIVel(issU, issRaan)).normalize();
     issGroup.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), issVelScene));
+
+    // Velocity arrow tracks ISS
+    _issArrow.position.copy(issGroup.position);
+    _issArrow.setDirection(issVelScene);
+
+    // ISS geographic lat/lon (ECI → ECEF via GMST rotation)
+    const _issECI  = issECIDir(issU, issRaan);
+    const _gmst    = earthGMST(new Date());
+    const _cg = Math.cos(_gmst), _sg = Math.sin(_gmst);
+    const _issFx   = _issECI.x * _cg + _issECI.y * _sg;
+    const _issFy   = -_issECI.x * _sg + _issECI.y * _cg;
+    const _issLat  = Math.asin(Math.max(-1, Math.min(1, _issECI.z))) * 180 / Math.PI;
+    const _issLon  = Math.atan2(_issFy, _issFx) * 180 / Math.PI;
+    issLatLonEl.textContent = 'LAT ' + (_issLat >= 0 ? '+' : '') + _issLat.toFixed(1) + '°  LON ' + _issLon.toFixed(1) + '°';
+    updateLabel(labelISS, issGroup.position.clone());
 
     renderer.render(scene, camera);
   }
