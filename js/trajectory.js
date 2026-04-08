@@ -357,6 +357,7 @@
     var murthaLat = MURTHA_WAYPOINTS[0].lat;
     var murthaLng = MURTHA_WAYPOINTS[0].lng;
     var murthaLabel = 'AIS unavailable';
+    var murthaAisSource = 'interpolated';
     var murthaSpeed = null, murthaHeading = null;
     (function() {
       var now = Date.now();
@@ -367,32 +368,35 @@
       murthaLng = MURTHA_WAYPOINTS[0].lng + frac * (MURTHA_WAYPOINTS[1].lng - MURTHA_WAYPOINTS[0].lng);
     }());
 
-    // AIS fetch — wrapped in try/catch, fails gracefully (CORS expected on browser pages)
-    (function() {
-      try {
-        var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-        var timer = ctrl ? setTimeout(function() { ctrl.abort(); }, 5000) : null;
-        var opts = ctrl ? { signal: ctrl.signal } : {};
-        fetch('https://www.marinetraffic.com/en/ais/details/ships/mmsi:368926266', opts)
-          .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
-          .then(function(html) {
-            if (timer) clearTimeout(timer);
-            var latM = html.match(/\"latitude\"[:\s]*\"?([-\d.]+)/i);
-            var lngM = html.match(/\"longitude\"[:\s]*\"?([-\d.]+)/i);
-            var spdM = html.match(/\"speed\"[:\s]*\"?([\d.]+)/i);
-            var hdgM = html.match(/\"course\"[:\s]*\"?([\d.]+)/i);
-            if (latM && lngM) {
-              murthaLat   = parseFloat(latM[1]);
-              murthaLng   = parseFloat(lngM[1]);
-              murthaLabel = 'AIS ' + new Date().toUTCString().slice(17, 22) + ' UTC';
-              if (spdM) murthaSpeed   = parseFloat(spdM[1]);
-              if (hdgM) murthaHeading = parseFloat(hdgM[1]);
-              rebuildMurthaGeometry();
-            }
-          })
-          ['catch'](function() { /* CORS expected — silently use fallback */ });
-      } catch(e) { /* ignore */ }
-    }());
+    // AIS fetch — /api/ship proxy (Vercel serverless → aisstream.io WebSocket)
+    // Response shape: { lat, lon, sog, cog, name, timestamp, source }
+    // source === 'live'     → fresh AIS ping from aisstream.io
+    // source === 'fallback' → last confirmed position (hardcoded in api/ship.js)
+    function fetchMurthaAIS() {
+      fetch('/api/ship')
+        .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function(d) {
+          if (d && d.lat != null && d.lon != null) {
+            murthaLat     = d.lat;
+            murthaLng     = d.lon;
+            murthaSpeed   = d.sog   != null ? d.sog : murthaSpeed;
+            murthaHeading = d.cog   != null ? d.cog : murthaHeading;
+            murthaAisSource = d.source;
+            murthaLabel   = d.source === 'live'
+              ? 'AIS LIVE \u2022 ' + new Date().toUTCString().slice(17, 22) + ' UTC'
+              : 'AIS LAST KNOWN \u2022 ' + (d.timestamp
+                  ? new Date(d.timestamp).toUTCString().slice(17, 22) + ' UTC'
+                  : '\u2014');
+            rebuildMurthaGeometry();
+            updateMurthaPanel();
+          }
+        })
+        ['catch'](function(e) {
+          console.warn('[Murtha AIS] fetch failed, using interpolated fallback:', e.message);
+        });
+    }
+    fetchMurthaAIS();
+    setInterval(fetchMurthaAIS, 5 * 60 * 1000); // refresh every 5 minutes
 
     // ── Build ship geometry (children of earth so they rotate with the globe) ──
     var murthaGroup = new THREE.Group();
@@ -512,10 +516,13 @@
       var aisLine = murthaSpeed !== null
         ? String(murthaSpeed.toFixed(1)) + ' kts &nbsp; HDG ' + Math.round(murthaHeading) + '\u00b0'
         : murthaLabel;
+      var aisColor = murthaAisSource === 'live'
+        ? '#ffc200'
+        : (murthaAisSource === 'fallback' ? '#aa8800' : '#5a4400');
       murthaPanel.innerHTML =
         '<div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">\u2693 USS JOHN P. MURTHA</div>' +
         '<div style="color:#aa8800;">LPD-26 &nbsp;\u00b7\u00b7 MMSI 368926266</div>' +
-        '<div style="margin-top:4px;">' + aisLine + '</div>' +
+        '<div style="margin-top:4px;color:' + aisColor + ';">' + aisLine + '</div>' +
         '<div>to splash: ' + distKm.toFixed(0) + ' km</div>' +
         '<div style="color:#ffd700;">T\u2212splash ' + cdStr + '</div>' +
         '<div style="color:#5a4400;font-size:9px;margin-top:2px;">Splashdown Apr\u00a011 ~17:15 PDT</div>';
