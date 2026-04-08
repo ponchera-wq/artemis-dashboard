@@ -47,58 +47,26 @@
     }
     var caPt = points[caIdx];
 
-    // X axis: Earth-to-Moon direction at closest approach
+    // Build display basis around Earth's EQUATORIAL plane (not the orbital plane).
+    // Scene Y = ECI north pole, so the globe always renders pole-up. xAxis is derived
+    // from the Moon-at-CA direction projected onto the equatorial plane, which keeps
+    // the trajectory framed sensibly while letting the camera view the orbital plane
+    // at its true inclination to the equator.
+    var eciNorth = new THREE.Vector3(0, 0, 1);
+
     var moonAtCA = new THREE.Vector3(caPt.moon.x, caPt.moon.y, caPt.moon.z);
-    var xAxis = moonAtCA.clone().normalize();
+    var xAxis = moonAtCA.clone().projectOnPlane(eciNorth);
+    if (xAxis.lengthSq() < 1e-6) xAxis.set(1, 0, 0); // Moon over a pole — degenerate fallback
+    xAxis.normalize();
 
-    // Compute angular momentum vectors for outbound and inbound legs
-    // to find a viewing normal that reveals the figure-8
-    function angularMomentum(p) {
-      var r = new THREE.Vector3(p.orion.x, p.orion.y, p.orion.z);
-      var v = new THREE.Vector3(p.orion.vx, p.orion.vy, p.orion.vz);
-      return new THREE.Vector3().crossVectors(r, v);
-    }
-
-    // Sample outbound point at ~40% of journey and inbound at ~60%
-    var outIdx = Math.floor(caIdx * 0.4);
-    var inIdx = Math.min(points.length - 1, caIdx + Math.floor((points.length - caIdx) * 0.4));
-    var hOut = angularMomentum(points[outIdx]);
-    var hIn = angularMomentum(points[inIdx]);
-
-    // Average the two angular momentum vectors — this gives a normal
-    // that's tilted between the two orbital planes, revealing the
-    // figure-8 crossing
-    var hAvg = hOut.clone().add(hIn).normalize();
-
-    // Z axis = average angular momentum (orbit normal)
-    var zAxis = hAvg.clone();
-
-    // Make sure Z axis is not parallel to X axis
-    if (Math.abs(xAxis.dot(zAxis)) > 0.95) {
-      // Fallback: use velocity tangent at CA
-      var caIdxPrev = Math.max(caIdx - 1, 0);
-      var caIdxNext = Math.min(caIdx + 1, points.length - 1);
-      var tangent3d = new THREE.Vector3(
-        points[caIdxNext].orion.x - points[caIdxPrev].orion.x,
-        points[caIdxNext].orion.y - points[caIdxPrev].orion.y,
-        points[caIdxNext].orion.z - points[caIdxPrev].orion.z
-      ).normalize();
-      zAxis = new THREE.Vector3().crossVectors(xAxis, tangent3d).normalize();
-    }
-
-    // Y axis = Z cross X (ensures right-handed orthonormal basis)
-    var yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
-    // Re-orthogonalise Z
-    zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
+    var yAxis = eciNorth.clone();                                       // scene Y = Earth's spin axis
+    var zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize(); // right-handed
 
     var rotMat = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis).transpose();
 
-    // Earth's north pole in scene space:
-    // ECI J2000 north pole = [0,0,1]_ECI → rotMat * [0,0,1] = [xAxis.z, yAxis.z, zAxis.z]
-    // (zAxis is the orbital normal, NOT Earth's rotation axis, so this is distinct from [0,0,1]_scene)
-    var northPoleScene = new THREE.Vector3(xAxis.z, yAxis.z, zAxis.z).normalize();
-    // Align sphere's local +Y (north pole) with the true ECI north pole in scene space
-    var earthBaseQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), northPoleScene);
+    // Earth's north pole now coincides with scene +Y by construction.
+    var northPoleScene = new THREE.Vector3(0, 1, 0);
+    var earthBaseQuat = new THREE.Quaternion(); // identity — sphere's +Y is already up
 
     // ── Geo helpers for surface-fixed objects (children of earth mesh) ──
     // Matches Three.js SphereGeometry UV mapping: theta=0 at lng=-180, +Y = north pole
