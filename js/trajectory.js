@@ -93,15 +93,12 @@
 
     var rotMat = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis).transpose();
 
-    // Earth base orientation quaternion:
-    // Three.js sphere: local +X = prime meridian (lon=0°), local +Y = north pole
-    var _earthBaseMat = new THREE.Matrix4().set(
-      xAxis.x, zAxis.x, -yAxis.x, 0,
-      xAxis.y, zAxis.y, -yAxis.y, 0,
-      xAxis.z, zAxis.z, -yAxis.z, 0,
-      0, 0, 0, 1
-    );
-    var earthBaseQuat = new THREE.Quaternion().setFromRotationMatrix(_earthBaseMat);
+    // Earth's north pole in scene space:
+    // ECI J2000 north pole = [0,0,1]_ECI → rotMat * [0,0,1] = [xAxis.z, yAxis.z, zAxis.z]
+    // (zAxis is the orbital normal, NOT Earth's rotation axis, so this is distinct from [0,0,1]_scene)
+    var northPoleScene = new THREE.Vector3(xAxis.z, yAxis.z, zAxis.z).normalize();
+    // Align sphere's local +Y (north pole) with the true ECI north pole in scene space
+    var earthBaseQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), northPoleScene);
 
     // ── Geo helpers for surface-fixed objects (children of earth mesh) ──
     // Matches Three.js SphereGeometry UV mapping: theta=0 at lng=-180, +Y = north pole
@@ -202,10 +199,11 @@
 
     var W = container.clientWidth || 400;
     var H = container.clientHeight || 300;
-    var camera = new THREE.PerspectiveCamera(50, W / H, 0.01, 2000);
+    var camera = new THREE.PerspectiveCamera(50, W / H, 0.01, 1200);
 
-    var renderer = new THREE.WebGLRenderer({ alpha: false, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    var _isMobile = window.innerWidth < 768 || /Mobi|Android/i.test(navigator.userAgent);
+    var renderer = new THREE.WebGLRenderer({ alpha: false, antialias: !_isMobile, logarithmicDepthBuffer: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, _isMobile ? 1.5 : 2));
     renderer.setSize(W, H);
     renderer.setClearColor(0x030810, 1);
     Object.assign(renderer.domElement.style, { position:'absolute',top:'0',left:'0',width:'100%',height:'100%' });
@@ -1419,7 +1417,7 @@
       });
 
       var _egmst = earthGMST(new Date(LAUNCH_UTC + nowMet * 1000)) + Math.PI; // +PI: texture/hemisphere offset
-      var _qEarthSpin = new THREE.Quaternion().setFromAxisAngle(zAxis, _egmst);
+      var _qEarthSpin = new THREE.Quaternion().setFromAxisAngle(northPoleScene, _egmst);
       earth.quaternion.multiplyQuaternions(_qEarthSpin, earthBaseQuat);
       cloudMesh.rotation.y += 0.00012; // slow relative cloud drift
       // Real sub-solar orientation from JPL data; fall back to slow spin when not ready
@@ -1492,10 +1490,14 @@
       (function() {
         if (Date.now() < SPLASHDOWN_MS) {
           var _swp = splashGroup.getWorldPosition(new THREE.Vector3());
-          // Push label out along surface normal into space (~half an Earth-radius above surface)
-          var _swpNorm = _swp.clone().normalize();
-          var _swpLbl = _swp.clone().addScaledVector(_swpNorm, 0.45);
-          drawCallout('SPLASHDOWN', _swpLbl, '#ffd700', 0, -10, false, _swp);
+          // Compute screen-space direction from Earth center → reticle, push label 90px that way
+          var _ec2d = proj(new THREE.Vector3(0, 0, 0));
+          var _sp2d = proj(_swp);
+          var _sdx = _sp2d.x - _ec2d.x, _sdy = _sp2d.y - _ec2d.y;
+          var _slen = Math.sqrt(_sdx * _sdx + _sdy * _sdy) || 1;
+          var _lox = Math.round((_sdx / _slen) * 90);
+          var _loy = Math.round((_sdy / _slen) * 90);
+          drawCallout('SPLASHDOWN', _swp, '#ffd700', _lox, _loy, false, _swp);
         }
       }());
 
