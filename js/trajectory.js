@@ -382,11 +382,12 @@
             murthaSpeed   = d.sog   != null ? d.sog : murthaSpeed;
             murthaHeading = d.cog   != null ? d.cog : murthaHeading;
             murthaAisSource = d.source;
+            var ts = d.source === 'live' ? new Date() : (d.timestamp ? new Date(d.timestamp) : null);
+            var utcStr = ts ? ts.toUTCString().slice(17, 22) : '\u2014';
+            var localStr = ts ? ts.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) : '';
             murthaLabel   = d.source === 'live'
-              ? 'AIS LIVE \u2022 ' + new Date().toUTCString().slice(17, 22) + ' UTC'
-              : 'AIS LAST KNOWN \u2022 ' + (d.timestamp
-                  ? new Date(d.timestamp).toUTCString().slice(17, 22) + ' UTC'
-                  : '\u2014');
+              ? 'AIS LIVE \u2022 ' + utcStr + ' UTC / ' + localStr
+              : 'AIS LAST KNOWN \u2022 ' + (ts ? utcStr + ' UTC / ' + localStr : '\u2014');
             rebuildMurthaGeometry();
             updateMurthaPanel();
           }
