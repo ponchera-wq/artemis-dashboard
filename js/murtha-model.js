@@ -44,7 +44,7 @@ function createMurthaModel(THREE) {
 
   var loader = new THREE.ColladaLoader();
   loader.load(
-    '/public/models/murtha/model.dae',
+    'models/murtha/model.dae',
     function onLoad(collada) {
       var dae = collada.scene;
 
