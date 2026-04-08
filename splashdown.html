@@ -575,8 +575,9 @@
         document.getElementById('ship-ts').textContent = data.timestamp;
       } else {
         const utcStr = ts.toUTCString().replace(' GMT', ' UTC');
+        const tzAbbr = new Intl.DateTimeFormat('en-US', {timeZoneName: 'short'}).formatToParts(ts).find(function(p) { return p.type === 'timeZoneName'; }).value;
         const localStr = ts.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'});
-        document.getElementById('ship-ts').textContent = utcStr + ' / ' + localStr + ' local';
+        document.getElementById('ship-ts').textContent = utcStr + ' / ' + localStr + ' ' + tzAbbr;
       }
     }
   }
