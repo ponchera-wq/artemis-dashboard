@@ -9,6 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/ColladaLoader.js"></script>
+  <script src="public/js/murtha-model.js"></script>
   <script src="js/flyby-lighting.js"></script>
   <script src="js/iss-model.js"></script>
   <style>
@@ -478,7 +480,7 @@
 <div id="canvas-container"></div>
 
 <!-- LABELS -->
-<div id="label-orion"    class="map-label">ORION &mdash; Inbound</div>
+<div id="label-orion"    class="map-label">INTEGRITY &mdash; Inbound</div>
 <div id="label-ship"     class="map-label">USS John P. Murtha</div>
 <div id="label-splashdown" class="map-label">SPLASHDOWN ZONE</div>
 <div id="label-reentry"  class="map-label">Re-entry Corridor</div>
@@ -803,19 +805,22 @@
     color: 0xffa500, transparent: true, opacity: 0.2
   })));
 
-  // Ship marker (cone)
-  const shipConeGeo = new THREE.ConeGeometry(0.015, 0.04, 8);
-  const shipConeMat = new THREE.MeshBasicMaterial({ color: 0xffa500 });
-  const shipCone = new THREE.Mesh(shipConeGeo, shipConeMat);
-  // Default position
+  // Ship marker — 3-D Collada model (cone removed, model loaded async)
   const defaultShipPos = latLonToVec3(32.3417, -119.6177, shipTrackRadius);
-  shipCone.position.copy(defaultShipPos);
-  // Orient cone to point outward from Earth surface
-  shipCone.up.copy(defaultShipPos.clone().normalize());
+  const defaultShipNorm = defaultShipPos.clone().normalize();
   const tempQ = new THREE.Quaternion();
-  tempQ.setFromUnitVectors(new THREE.Vector3(0, 1, 0), defaultShipPos.clone().normalize());
-  shipCone.quaternion.copy(tempQ);
-  earthGroup.add(shipCone);
+  tempQ.setFromUnitVectors(new THREE.Vector3(0, 1, 0), defaultShipNorm);
+
+  // murthaModelGroup returned immediately (empty); mesh added async by ColladaLoader
+  let murthaModelGroup = null;
+  let _murthaBaseSp   = defaultShipPos.clone();
+  let _murthaBaseNorm = defaultShipNorm.clone();
+  if (typeof createMurthaModel !== 'undefined') {
+    murthaModelGroup = createMurthaModel(THREE);
+    murthaModelGroup.position.copy(_murthaBaseSp);
+    murthaModelGroup.quaternion.copy(tempQ);
+    earthGroup.add(murthaModelGroup);
+  }
 
   const shipLabelPos = defaultShipPos.clone();
 
@@ -1065,11 +1070,15 @@
     if (isNaN(lat) || isNaN(lon)) return;
 
     const newPos = latLonToVec3(lat, lon, shipTrackRadius);
-    shipCone.position.copy(newPos);
-    // Orient cone outward along surface normal
+    const newNorm = newPos.clone().normalize();
     const q = new THREE.Quaternion();
-    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), newPos.clone().normalize());
-    shipCone.quaternion.copy(q);
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), newNorm);
+    if (murthaModelGroup) {
+      _murthaBaseSp.copy(newPos);
+      _murthaBaseNorm.copy(newNorm);
+      murthaModelGroup.position.copy(newPos);
+      murthaModelGroup.quaternion.copy(q);
+    }
     shipLabelPos.copy(newPos);
 
     // Extend track line to include live position if different from last static waypoint
@@ -1187,7 +1196,14 @@
     const _issLat  = Math.asin(Math.max(-1, Math.min(1, _issECI.z))) * 180 / Math.PI;
     const _issLon  = Math.atan2(_issFy, _issFx) * 180 / Math.PI;
     issLatLonEl.textContent = 'LAT ' + (_issLat >= 0 ? '+' : '') + _issLat.toFixed(1) + '°  LON ' + _issLon.toFixed(1) + '°';
-    updateLabel(labelISS, issGroup.position.clone());
+    // Push label anchor well outside Earth so it doesn't overlap the model
+    updateLabel(labelISS, issGroup.position.clone().multiplyScalar(2.2));
+
+    // ── Murtha model bob ────────────────────────────────────────────────────
+    if (murthaModelGroup && _murthaBaseNorm.lengthSq() > 0) {
+      const bob = Math.sin(t * 0.0008) * 0.003;
+      murthaModelGroup.position.copy(_murthaBaseSp).addScaledVector(_murthaBaseNorm, bob);
+    }
 
     renderer.render(scene, camera);
   }

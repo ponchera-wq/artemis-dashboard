@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artemis-dashboard-v13';
+const CACHE_NAME = 'artemis-dashboard-v14';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -97,8 +97,8 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // JS/CSS: network-first so updates are always picked up; fall back to cache offline
-  var isCode = url.pathname.match(/\.(js|css)(\?|$)/);
+  // JS/CSS/HTML: network-first so updates are always picked up; fall back to cache offline
+  var isCode = url.pathname.match(/\.(js|css|html)(\?|$)/) || url.pathname === '/' || url.pathname.endsWith('/');
   if (isCode) {
     event.respondWith(
       fetch(event.request).then(function(response) {
