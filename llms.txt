@@ -26,7 +26,6 @@ https://artemis-live-dashboard.vercel.app/
 - **T+0s (MET 0):** Liftoff from Pad 39B
 - **T+2.5h (MET 9,000s):** Trans-Lunar Injection (TLI) burn — Orion departs Earth orbit
 - **T+120.4h (MET 433,479s):** Closest Moon approach — ~6,583 km from lunar surface (far side)
-- **T+~123.7h (MET 445,200s):** Apollo 13 distance record broken — 400,171 km from Earth; Artemis II crew become the farthest humans from home in history
 - **T+~229h (MET ~824,760s):** Splashdown — Pacific Ocean
 
 ## Data Sources

@@ -1,18 +1,18 @@
 {
-  "check_date": "2026-04-05",
+  "check_date": "2026-04-07",
   "check_time": "automated_scheduled_task",
-  "current_date": "Apr 4, 2026",
-  "current_url": "https://www.nasa.gov/wp-content/uploads/2026/03/artemis-ii-oem-2026-04-04-to-ei.zip?emrc=69d1a4ff0a25e",
-  "file_size": "185.68 KB",
+  "current_date": "Apr 6, 2026",
+  "current_url": "https://www.nasa.gov/wp-content/uploads/2026/03/artemis-ii-oem-2026-04-06-pre-otc3-to-ei.zip?emrc=69d4e67033b8a",
+  "file_size": "120.57 KB",
   "is_first_check": false,
-  "previous_date": "Apr 3, 2026",
-  "previous_url": "https://www.nasa.gov/wp-content/uploads/2026/03/artemis-ii-oem-2026-04-03-to-ei.zip?emrc=69d0adf73ecd7",
-  "previous_file_size": "185.81 KB",
+  "previous_date": "Apr 4, 2026",
+  "previous_url": "https://www.nasa.gov/wp-content/uploads/2026/03/artemis-ii-oem-2026-04-04-to-ei.zip?emrc=69d1a4ff0a25e",
+  "previous_file_size": "185.68 KB",
   "is_update": true,
   "changes": {
     "date_changed": true,
     "url_changed": true,
     "file_size_changed": true
   },
-  "notes": "EPHEMERIS DATA UPDATE DETECTED! NASA updated the OEM file from Apr 3 to Apr 4, 2026. File size decreased from 185.81 KB to 185.68 KB."
+  "notes": "🚨 EPHEMERIS DATA UPDATE DETECTED! NASA updated the OEM file from Apr 4 to Apr 6, 2026. Significant change: file size decreased from 185.68 KB to 120.57 KB (~65% reduction). New filename includes 'pre-otc3' designation, indicating potential trajectory correction variant."
 }

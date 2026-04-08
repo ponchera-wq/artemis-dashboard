@@ -80,7 +80,7 @@ TRAJECTORY OVERVIEW
 
 Trajectory type: Free-return (passive return to Earth if propulsion fails post-TLI)
 Closest lunar approach: ~6,583 km from lunar surface (far side of Moon)
-Maximum distance from Earth: ~400,171+ km (exceeds Apollo 13 record)
+Maximum distance from Earth: ~400,171+ km
 Coordinate frame for OEM data: EME2000 (Earth Mean Equator and Equinox of J2000.0)
 OEM data range: MET 16,370s to 782,292s (T+4.5h to T+217.3h)
 OEM data points: 644 pre-computed state vectors
@@ -274,10 +274,6 @@ MET  435900s  | SIGNAL ACQ — Acquisition of Signal — comms restored
 MET  438000s  | Earthrise photography session
   Crew photographs Earthrise over the lunar limb — Earth appears as a blue marble ~400,000 km away.
 
-MET  445200s  | DISTANCE RECORD — Apollo 13 record broken (400,171 km)
-  Orion surpasses 400,171 km from Earth, exceeding the record set by Apollo 13 in April 1970.
-  The Artemis II crew become the farthest humans from home in history.
-
 MET  453600s  | Lunar far side observations begin
   Crew begins observations of the lunar far side.
 
@@ -349,7 +345,7 @@ RECORDS AND FIRSTS
 
 1. First crewed spaceflight beyond low Earth orbit since Apollo 17 (December 1972)
 2. First crewed lunar flyby since Apollo 17
-3. Farthest humans from Earth in history (>400,171 km, surpassing Apollo 13's record)
+3. Farthest humans from Earth in history (>400,171 km)
 4. First crewed test flight of NASA Orion spacecraft
 5. First flight of the European Service Module with crew
 6. First crewed spacecraft to use NASA Deep Space Network for primary communications since Apollo era
@@ -403,7 +399,7 @@ Q: How close will Artemis II get to the Moon?
 A: Approximately 6,583 km from the lunar surface (far side), at MET ~433,479s (~T+120.4 hours after launch).
 
 Q: How far from Earth will Artemis II travel?
-A: Beyond 400,171 km — exceeding the record set by Apollo 13 in April 1970.
+A: Beyond 400,171 km from Earth at maximum distance.
 
 Q: How long is the Artemis II mission?
 A: Approximately 10 days from launch to splashdown.

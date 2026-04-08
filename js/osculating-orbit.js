@@ -184,8 +184,7 @@ var OsculatingOrbit = (function () {
       sub   = 'Trans-Lunar Trajectory';
       meta  = 'EC: ' + ecS + '  |  Periapsis: ' + qrS + ' km  |  Inclination: ' + incS + '\u00b0';
       body  = 'Orion is on a free-return trajectory. If all engines failed right now, ' +
-              'this orbit would loop around the Moon and bring the crew home automatically.<br>' +
-              'Apollo 13 used exactly this technique in 1970.';
+              'this orbit would loop around the Moon and bring the crew home automatically.';
     } else if (phase === 'moon-flyby') {
       title = 'OSCULATING ORBIT';
       sub   = 'Moon Gravity Assist \u2014 Elements Changing Rapidly';

@@ -143,8 +143,8 @@ const CREW_ACTIVITIES = [
   { startMet: hrs(116),  endMet: hrs(117),   category: 'nav',      label: 'Attitude / Nav',            detail: 'Attitude manoeuvre for lunar flyby', fd: 6 },
   { startMet: hrs(117),  endMet: hrs(118),   category: 'lunar',    label: 'Lunar Observation',         detail: 'Crew observing lunar surface — approach', fd: 6 },
   { startMet: hrs(118),  endMet: hrs(119),   category: 'pao',      label: 'NatGeo / PAO',              detail: 'NatGeo filming and PAO for close approach', fd: 6 },
-  // Apollo distance record at ~MET 5/00:29:59 ≈ 432,599s ≈ hrs(120.2)
-  { startMet: _met("5/00:29:59"), endMet: _met("5/00:29:59") + mins(1), category: 'lunar', label: '🌙 Closest Lunar Approach', detail: 'Perilune — ~6,583 km from Moon surface, closest humans have ever been since Apollo', fd: 6 },
+  // Closest lunar approach at ~MET 5/00:29:59 ≈ 432,599s ≈ hrs(120.2)
+  { startMet: _met("5/00:29:59"), endMet: _met("5/00:29:59") + mins(1), category: 'lunar', label: '🌙 Closest Lunar Approach', detail: 'Perilune — ~6,583 km from Moon surface', fd: 6 },
   { startMet: _met("5/00:35"), endMet: _met("5/00:35") + mins(1), category: 'nav', label: '📏 Max Earth Distance', detail: 'Maximum distance from Earth during mission', fd: 6 },
   { startMet: hrs(121),  endMet: hrs(123),   category: 'lunar',    label: 'Lunar Observation',         detail: 'Extended lunar surface observation — far side view', fd: 6 },
   { startMet: hrs(123),  endMet: hrs(124),   category: 'pao',      label: 'SCI Imaging',               detail: 'Science imaging of lunar surface', fd: 6 },

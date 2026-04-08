@@ -162,11 +162,9 @@ function _unlockScroll() { if (--_overflowLocked <= 0) { _overflowLocked = 0; do
     };
     set('to-phase-detail', DETAILS[phase] || phase || '—');
 
-    // Odometer + Apollo 13 + G-force
+    // Odometer + G-force
     mirror('to-odometer', 'stat-odometer');
     mirror('to-odometer-sub', 'stat-odometer-sub');
-    mirror('to-apollo13', 'stat-apollo13');
-    mirror('to-apollo13-sub', 'stat-apollo13-sub');
     const gfSrc = document.getElementById('stat-gforce');
     const toGf  = document.getElementById('to-gforce');
     if (gfSrc && toGf) {

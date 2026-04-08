@@ -182,24 +182,6 @@ function tickTelem() {
     if (odoSubEl) odoSubEl.textContent = (odoKm / 40075).toFixed(1) + '\u00d7 Earth circumference';
   }
 
-  // ── Apollo 13 comparison ─────────────────────────────────────────
-  var a13km = window.getApollo13DistAtMet(metSec);
-  var currentKm = state.distEarthKm;
-  var a13El = document.getElementById('stat-apollo13');
-  var a13SubEl = document.getElementById('stat-apollo13-sub');
-  if (a13El) a13El.textContent = Math.round(a13km).toLocaleString();
-  if (a13SubEl) {
-    var diff = currentKm - a13km;
-    var sign = diff >= 0 ? '+' : '';
-    if (metSec < 692700) {
-      a13SubEl.textContent = 'Artemis II is ' + sign +
-        Math.round(Math.abs(diff)).toLocaleString() +
-        ' km ' + (diff >= 0 ? 'further' : 'closer');
-    } else {
-      a13SubEl.textContent = 'A13 had splashed down by now';
-    }
-  }
-
   // ── G-force readout ──────────────────────────────────────────────
   var gf = window.computeGforce(metSec);
   var gfEl = document.getElementById('stat-gforce');

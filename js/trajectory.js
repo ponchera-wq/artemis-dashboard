@@ -10,8 +10,10 @@
 
   var MISSION_MS = 10 * 24 * 3600 * 1000;
   var EARTH_R_KM = 6371;
-  var SCENE_EARTH_R = 0.9;
+  var SCENE_EARTH_R = 0.9;          // scene units (globe mesh radius)
   var SCENE_SCALE = SCENE_EARTH_R / EARTH_R_KM;
+  var KM_PER_UNIT = EARTH_R_KM / SCENE_EARTH_R; // 1 scene unit = 7079 km
+  var SURFACE_RADIUS = SCENE_EARTH_R * 1.001;    // just above globe mesh, avoids z-fighting
   var loader = new THREE.TextureLoader();
   loader.crossOrigin = 'anonymous';
 
@@ -90,6 +92,52 @@
     zAxis = new THREE.Vector3().crossVectors(xAxis, yAxis).normalize();
 
     var rotMat = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis).transpose();
+
+    // Earth base orientation quaternion:
+    // Three.js sphere: local +X = prime meridian (lon=0°), local +Y = north pole
+    var _earthBaseMat = new THREE.Matrix4().set(
+      xAxis.x, zAxis.x, -yAxis.x, 0,
+      xAxis.y, zAxis.y, -yAxis.y, 0,
+      xAxis.z, zAxis.z, -yAxis.z, 0,
+      0, 0, 0, 1
+    );
+    var earthBaseQuat = new THREE.Quaternion().setFromRotationMatrix(_earthBaseMat);
+
+    // ── Geo helpers for surface-fixed objects (children of earth mesh) ──
+    // Matches Three.js SphereGeometry UV mapping: theta=0 at lng=-180, +Y = north pole
+    function latLngToEarthLocal(lat, lng, r) {
+      var phi   = (90 - lat) * Math.PI / 180;
+      var theta = (lng + 180) * Math.PI / 180;
+      return new THREE.Vector3(
+        -r * Math.cos(theta) * Math.sin(phi),
+         r * Math.cos(phi),
+         r * Math.sin(theta) * Math.sin(phi)
+      );
+    }
+    function greatCircleLocal(lat1, lng1, lat2, lng2, n, r) {
+      var p1 = latLngToEarthLocal(lat1, lng1, 1).normalize();
+      var p2 = latLngToEarthLocal(lat2, lng2, 1).normalize();
+      var pts = [];
+      var dot = Math.max(-1, Math.min(1, p1.dot(p2)));
+      var angle = Math.acos(dot);
+      for (var _i = 0; _i <= n; _i++) {
+        var t = _i / n;
+        var p;
+        if (angle < 0.001) {
+          p = p1.clone().multiplyScalar(r);
+        } else {
+          var sa = Math.sin(angle);
+          p = new THREE.Vector3()
+            .addScaledVector(p1, Math.sin((1 - t) * angle) / sa)
+            .addScaledVector(p2, Math.sin(t * angle) / sa)
+            .multiplyScalar(r);
+        }
+        pts.push(p);
+      }
+      return pts;
+    }
+
+    var scaleDebugVisible = false;
 
     function toScene(x, y, z) {
       var v = new THREE.Vector3(x, y, z).applyMatrix4(rotMat);
@@ -251,12 +299,43 @@
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(leoPts), new THREE.LineBasicMaterial({ color: 0x4A90D9, transparent: true, opacity: 0.2 })));
 
     // ── ISS & ISS Orbit ──
-    var ISS_ALT_KM = 800; // visually raised above atmosphere glow layers (actual ISS ≈ 400 km)
-    var ISS_SCENE_R = (EARTH_R_KM + ISS_ALT_KM) * SCENE_SCALE; // ≈ 1.013, clear of outer glow (0.972)
+    // TLE — CelesTrak supplemental, Segment 1, epoch 2026-089.5 = 2026-03-30T12:00:00Z
+    var ISS_ALT_KM   = 408; // real ISS altitude ≈ 408 km → orbit r = 6779 km, ratio 1.064
+    var ISS_SCENE_R  = (EARTH_R_KM + ISS_ALT_KM) * SCENE_SCALE; // 0.9 * (6779/6371) = 0.9576
+    var ISS_INC      = 51.6332 * Math.PI / 180;
+    var ISS_RAAN0    = 329.4800 * Math.PI / 180;  // RAAN at TLE epoch
+    var ISS_ARGP     = 251.7519 * Math.PI / 180;  // argument of perigee
+    var ISS_M0       = 176.3009 * Math.PI / 180;  // mean anomaly at TLE epoch
+    var ISS_N_RAD    = 15.48666334 * 2 * Math.PI / 86400; // mean motion rad/s
+    var ISS_RAAN_DOT = -4.86 * Math.PI / 180 / 86400;    // nodal precession rad/s (from TLE pair)
+    var ISS_EPOCH_MS = Date.UTC(2026, 2, 30, 12, 0, 0);  // 2026-03-30T12:00:00Z
+
+    // ECI unit position/velocity vectors for ISS at argument-of-latitude u, RAAN raan
+    function issECIDir(u, raan) {
+      var sinI = Math.sin(ISS_INC), cosI = Math.cos(ISS_INC);
+      var sinR = Math.sin(raan),    cosR = Math.cos(raan);
+      return new THREE.Vector3(
+        Math.cos(u) * cosR - Math.sin(u) * cosI * sinR,
+        Math.cos(u) * sinR + Math.sin(u) * cosI * cosR,
+        Math.sin(u) * sinI
+      );
+    }
+    function issECIVel(u, raan) {
+      var sinI = Math.sin(ISS_INC), cosI = Math.cos(ISS_INC);
+      var sinR = Math.sin(raan),    cosR = Math.cos(raan);
+      return new THREE.Vector3(
+        -Math.sin(u) * cosR - Math.cos(u) * cosI * sinR,
+        -Math.sin(u) * sinR + Math.cos(u) * cosI * cosR,
+         Math.cos(u) * sinI
+      );
+    }
+
+    // Draw orbit ring at current RAAN
+    var _issInitRaan = ISS_RAAN0 + ISS_RAAN_DOT * ((Date.now() - ISS_EPOCH_MS) / 1000);
     var issOrbitPts = [];
-    for (var i = 0; i <= 80; i++) { 
-      var a = (i/80)*Math.PI*2; 
-      issOrbitPts.push(new THREE.Vector3(ISS_SCENE_R*Math.cos(a), ISS_SCENE_R*Math.sin(a)*0.2, ISS_SCENE_R*Math.sin(a)*0.98)); 
+    for (var i = 0; i <= 80; i++) {
+      var sp = issECIDir(ISS_ARGP + (i / 80) * Math.PI * 2, _issInitRaan).applyMatrix4(rotMat).normalize().multiplyScalar(ISS_SCENE_R);
+      issOrbitPts.push(sp);
     }
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(issOrbitPts), new THREE.LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.1 })));
     
@@ -265,6 +344,187 @@
       issGroup = createISSModel(THREE);
     }
     scene.add(issGroup);
+
+    // ── USS John P. Murtha (LPD-26) — Artemis II recovery ship ────────────
+    var MURTHA_WAYPOINTS = [
+      { lat: 32.6735, lng: -117.1555, timeMs: Date.UTC(2026, 3, 1, 0, 0, 0),
+        label: 'Homeport \u2013 Naval Base San Diego' },
+      { lat: 32.5,    lng: -119.0,    timeMs: Date.UTC(2026, 3, 11, 0, 15, 0),
+        label: 'Splashdown recovery zone' }
+    ];
+    var SPLASHDOWN_LAT = 32.5, SPLASHDOWN_LNG = -119.0;
+    var SPLASHDOWN_MS  = Date.UTC(2026, 3, 11, 0, 15, 0); // 2026-04-11T00:15Z (≈17:15 PDT)
+
+    // Current ship position — interpolate by time between waypoints as fallback
+    var murthaLat = MURTHA_WAYPOINTS[0].lat;
+    var murthaLng = MURTHA_WAYPOINTS[0].lng;
+    var murthaLabel = 'AIS unavailable';
+    var murthaSpeed = null, murthaHeading = null;
+    (function() {
+      var now = Date.now();
+      var t0 = MURTHA_WAYPOINTS[0].timeMs, t1 = MURTHA_WAYPOINTS[1].timeMs;
+      var frac = Math.max(0, Math.min(1, (now - t0) / (t1 - t0)));
+      // Slerp lat/lng (approximate; ship barely moves on globe scale)
+      murthaLat = MURTHA_WAYPOINTS[0].lat + frac * (MURTHA_WAYPOINTS[1].lat - MURTHA_WAYPOINTS[0].lat);
+      murthaLng = MURTHA_WAYPOINTS[0].lng + frac * (MURTHA_WAYPOINTS[1].lng - MURTHA_WAYPOINTS[0].lng);
+    }());
+
+    // AIS fetch — wrapped in try/catch, fails gracefully (CORS expected on browser pages)
+    (function() {
+      try {
+        var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var timer = ctrl ? setTimeout(function() { ctrl.abort(); }, 5000) : null;
+        var opts = ctrl ? { signal: ctrl.signal } : {};
+        fetch('https://www.marinetraffic.com/en/ais/details/ships/mmsi:368926266', opts)
+          .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+          .then(function(html) {
+            if (timer) clearTimeout(timer);
+            var latM = html.match(/\"latitude\"[:\s]*\"?([-\d.]+)/i);
+            var lngM = html.match(/\"longitude\"[:\s]*\"?([-\d.]+)/i);
+            var spdM = html.match(/\"speed\"[:\s]*\"?([\d.]+)/i);
+            var hdgM = html.match(/\"course\"[:\s]*\"?([\d.]+)/i);
+            if (latM && lngM) {
+              murthaLat   = parseFloat(latM[1]);
+              murthaLng   = parseFloat(lngM[1]);
+              murthaLabel = 'AIS ' + new Date().toUTCString().slice(17, 22) + ' UTC';
+              if (spdM) murthaSpeed   = parseFloat(spdM[1]);
+              if (hdgM) murthaHeading = parseFloat(hdgM[1]);
+              rebuildMurthaGeometry();
+            }
+          })
+          ['catch'](function() { /* CORS expected — silently use fallback */ });
+      } catch(e) { /* ignore */ }
+    }());
+
+    // ── Build ship geometry (children of earth so they rotate with the globe) ──
+    var murthaGroup = new THREE.Group();
+    earth.add(murthaGroup);
+
+    // Ship marker — amber diamond (OctahedronGeometry ∈ r128)
+    var shipMarkerMat = new THREE.MeshBasicMaterial({ color: 0xffc200 });
+    var shipMarkerGeo = new THREE.OctahedronGeometry(0.012, 0);
+    var shipMarker    = new THREE.Mesh(shipMarkerGeo, shipMarkerMat);
+    murthaGroup.add(shipMarker);
+
+    // Outer glow ring around ship marker
+    var shipRingPts = [];
+    for (var _sri = 0; _sri <= 32; _sri++) {
+      var _sra = (_sri / 32) * Math.PI * 2;
+      shipRingPts.push(new THREE.Vector3(Math.cos(_sra) * 0.018, 0, Math.sin(_sra) * 0.018));
+    }
+    var shipRingGeo = new THREE.BufferGeometry().setFromPoints(shipRingPts);
+    var shipRingMat = new THREE.LineBasicMaterial({ color: 0xffc200, transparent: true, opacity: 0.5 });
+    var shipRing    = new THREE.Line(shipRingGeo, shipRingMat);
+    murthaGroup.add(shipRing);
+
+    // Historical track: homeport → current position
+    var histTrackMat = new THREE.LineBasicMaterial({ color: 0xffc200, transparent: true, opacity: 0.55 });
+    var histTrackLine = new THREE.Line(new THREE.BufferGeometry(), histTrackMat);
+    earth.add(histTrackLine);
+
+    // Projected path: current → splashdown (dimmer)
+    var projTrackMat = new THREE.LineBasicMaterial({ color: 0xffc200, transparent: true, opacity: 0.25 });
+    var projTrackLine = new THREE.Line(new THREE.BufferGeometry(), projTrackMat);
+    earth.add(projTrackLine);
+
+    // Splashdown target reticle (two rings, concentric)
+    var splashGroup = new THREE.Group();
+    earth.add(splashGroup);
+    (function() {
+      var sp = latLngToEarthLocal(SPLASHDOWN_LAT, SPLASHDOWN_LNG, SURFACE_RADIUS);
+      var norm = sp.clone().normalize();
+      var qRet = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), norm);
+      splashGroup.position.copy(sp);
+      splashGroup.quaternion.copy(qRet);
+      [0.025, 0.045].forEach(function(rad) {
+        var rPts = [];
+        for (var _ri = 0; _ri <= 48; _ri++) {
+          var _ra = (_ri / 48) * Math.PI * 2;
+          rPts.push(new THREE.Vector3(Math.cos(_ra) * rad, 0, Math.sin(_ra) * rad));
+        }
+        var rGeo = new THREE.BufferGeometry().setFromPoints(rPts);
+        var rMat = new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.9 });
+        splashGroup.add(new THREE.Line(rGeo, rMat));
+      });
+      // Crosshair lines
+      [[-0.05,0,0,0.05,0,0],[0,0,-0.05,0,0,0.05]].forEach(function(coords) {
+        var cGeo = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(coords[0],coords[1],coords[2]),
+          new THREE.Vector3(coords[3],coords[4],coords[5])
+        ]);
+        splashGroup.add(new THREE.Line(cGeo,
+          new THREE.LineBasicMaterial({ color: 0xffd700, transparent: true, opacity: 0.7 })));
+      });
+    }());
+
+    // Build/rebuild mutable geometry (historical + projected tracks, ship marker position)
+    function rebuildMurthaGeometry() {
+      var sp = latLngToEarthLocal(murthaLat, murthaLng, SURFACE_RADIUS);
+      var norm = sp.clone().normalize();
+      var qm = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), norm);
+      shipMarker.position.copy(sp);
+      shipRing.position.copy(sp);
+      shipRing.quaternion.copy(qm);
+
+      var histPts = greatCircleLocal(
+        MURTHA_WAYPOINTS[0].lat, MURTHA_WAYPOINTS[0].lng,
+        murthaLat, murthaLng, 24, SURFACE_RADIUS);
+      histTrackLine.geometry.setFromPoints(histPts);
+
+      var projPts = greatCircleLocal(
+        murthaLat, murthaLng,
+        SPLASHDOWN_LAT, SPLASHDOWN_LNG, 24, SURFACE_RADIUS);
+      projTrackLine.geometry.setFromPoints(projPts);
+    }
+    rebuildMurthaGeometry();
+    var _murthaLastUpdate = 0;
+
+    // Info panel (DOM) — amber style, consistent with dashboard
+    var murthaPanel = document.createElement('div');
+    murthaPanel.id = 'murtha-panel';
+    murthaPanel.style.cssText =
+      'position:absolute;bottom:44px;left:10px;z-index:4;background:rgba(4,8,18,0.88);' +
+      'border:1px solid rgba(255,194,0,0.35);border-radius:4px;padding:8px 12px;' +
+      'font-family:"Share Tech Mono",monospace;font-size:10px;color:#ffc200;' +
+      'pointer-events:none;max-width:200px;line-height:1.6;' +
+      'backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+    container.appendChild(murthaPanel);
+
+    function updateMurthaPanel() {
+      var now = Date.now();
+      var secsToSplash = (SPLASHDOWN_MS - now) / 1000;
+      var distKm = (function() {
+        var R = 6371;
+        var lat1 = murthaLat * Math.PI / 180, lat2 = SPLASHDOWN_LAT * Math.PI / 180;
+        var dlat = lat2 - lat1;
+        var dlng = (SPLASHDOWN_LNG - murthaLng) * Math.PI / 180;
+        var a = Math.sin(dlat/2)*Math.sin(dlat/2) +
+                Math.cos(lat1)*Math.cos(lat2)*Math.sin(dlng/2)*Math.sin(dlng/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }());
+      var cdStr = '\u2014';
+      if (secsToSplash > 0) {
+        var cdH = Math.floor(secsToSplash / 3600);
+        var cdM = Math.floor((secsToSplash % 3600) / 60);
+        var cdS = Math.floor(secsToSplash % 60);
+        cdStr = String(cdH).padStart(2,'0') + ':' + String(cdM).padStart(2,'0') + ':' + String(cdS).padStart(2,'0');
+      } else {
+        cdStr = 'RECOVERY IN PROGRESS';
+      }
+      var aisLine = murthaSpeed !== null
+        ? String(murthaSpeed.toFixed(1)) + ' kts &nbsp; HDG ' + Math.round(murthaHeading) + '\u00b0'
+        : murthaLabel;
+      murthaPanel.innerHTML =
+        '<div style="color:#ffd700;font-weight:bold;margin-bottom:3px;">\u2693 USS JOHN P. MURTHA</div>' +
+        '<div style="color:#aa8800;">LPD-26 &nbsp;\u00b7\u00b7 MMSI 368926266</div>' +
+        '<div style="margin-top:4px;">' + aisLine + '</div>' +
+        '<div>to splash: ' + distKm.toFixed(0) + ' km</div>' +
+        '<div style="color:#ffd700;">T\u2212splash ' + cdStr + '</div>' +
+        '<div style="color:#5a4400;font-size:9px;margin-top:2px;">Splashdown Apr\u00a011 ~17:15 PDT</div>';
+    }
+    updateMurthaPanel();
+
+    // ── End USS Murtha ──────────────────────────────────────────────────────
 
     // ── Moon — positioned dynamically from ephemeris ──
     var MOON_SCENE_R = 0.245; // realistic: Moon is 27.3% of Earth radius (0.9 * 0.273)
@@ -577,8 +837,8 @@
     bbox.getCenter(trajCenter);
 
     var camLookAt = trajCenter.clone();
-    var sph = { theta: 0.3, phi: 1.05, r: 95 };
-    var SPH_DEFAULT = { theta: 0.3, phi: 1.05, r: 95 };
+    var sph = { theta: 1.2, phi: 1.1, r: 90 };
+    var SPH_DEFAULT = { theta: 1.2, phi: 1.1, r: 90 };
     var reduceMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     var isDrag = false, isPan = false, lastMx = 0, lastMy = 0, autoRotate = !reduceMotion, rotTimer = null;
     var lastReducedRenderMs = 0;
@@ -853,7 +1113,10 @@
       var hits = raycaster.intersectObjects(wpMeshes);
       if (hits.length && hits[0].object.userData.desc) openPopup(hits[0].object.userData, e.clientX-rect.left, e.clientY-rect.top);
     });
-    document.addEventListener('keydown', function(e) { if (e.key==='Escape' && popupOpen) closePopup(); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && popupOpen) closePopup();
+      if (e.key === 's' || e.key === 'S') scaleDebugVisible = !scaleDebugVisible;
+    });
 
     var _resizeObs = new ResizeObserver(function() { W=container.clientWidth||400; H=container.clientHeight||300; renderer.setSize(W,H); lc.width=W; lc.height=H; camera.aspect=W/H; camera.updateProjectionMatrix(); });
     _resizeObs.observe(container);
@@ -1155,7 +1418,9 @@
         wpMeshes[i].scale.setScalar(ws === 'active' ? 1.0 + pulse * 0.2 : 1.0);
       });
 
-      earth.rotation.y = earthGMST(new Date(LAUNCH_UTC + nowMet * 1000)) + Math.PI; // +PI aligns Americas
+      var _egmst = earthGMST(new Date(LAUNCH_UTC + nowMet * 1000)) + Math.PI; // +PI: texture/hemisphere offset
+      var _qEarthSpin = new THREE.Quaternion().setFromAxisAngle(zAxis, _egmst);
+      earth.quaternion.multiplyQuaternions(_qEarthSpin, earthBaseQuat);
       cloudMesh.rotation.y += 0.00012; // slow relative cloud drift
       // Real sub-solar orientation from JPL data; fall back to slow spin when not ready
       if (typeof FlybyLighting !== 'undefined' && FlybyLighting.isReady()) {
@@ -1186,10 +1451,14 @@
         if (autoRotate) { sph.theta += 0.0008; applyCam(); }
       }
 
-      // ── Animate ISS ──
-      var issPhase = (now / 4000) % (Math.PI * 2); 
-      issGroup.position.set(ISS_SCENE_R*Math.cos(issPhase), ISS_SCENE_R*Math.sin(issPhase)*0.2, ISS_SCENE_R*Math.sin(issPhase)*0.98);
-      var issVelAnim = new THREE.Vector3(-ISS_SCENE_R*Math.sin(issPhase), ISS_SCENE_R*Math.cos(issPhase)*0.2, ISS_SCENE_R*Math.cos(issPhase)*0.98).normalize();
+      // ── Animate ISS (TLE propagation) ──
+      var issDtSec = (now - ISS_EPOCH_MS) / 1000;
+      var issRaan  = ISS_RAAN0 + ISS_RAAN_DOT * issDtSec;
+      var issM     = ((ISS_M0 + ISS_N_RAD * issDtSec) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+      var issU     = ISS_ARGP + issM; // argument of latitude (e≈0.0007, ν≈M)
+      var issDir   = issECIDir(issU, issRaan).applyMatrix4(rotMat).normalize();
+      issGroup.position.copy(issDir.clone().multiplyScalar(ISS_SCENE_R));
+      var issVelAnim = issECIVel(issU, issRaan).applyMatrix4(rotMat).normalize();
       var issQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), issVelAnim);
       issGroup.quaternion.copy(issQuat);
 
@@ -1210,6 +1479,58 @@
       drawCallout('INTEGRITY \u00b7 ' + orionSpeedStr + ' \u00b7 ' + earthDistStr + ' to Earth \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, _orionLabelY, orionGroup.position.z), '#00ffaa', 0, -30, true, orionGroup.position);
 
       drawCallout('ISS', new THREE.Vector3(issGroup.position.x, issGroup.position.y + 0.35, issGroup.position.z), '#00ccff', 0, -10, false, issGroup.position);
+
+      // ── USS Murtha callout ──
+      (function() {
+        var _mwp = shipMarker.getWorldPosition(new THREE.Vector3());
+        var _mwpLbl = _mwp.clone();
+        _mwpLbl.y += 0.08;
+        drawCallout('\u2693 MURTHA', _mwpLbl, '#ffc200', 0, -10, false, _mwp);
+      }());
+
+      // ── Splashdown target callout (only while ship is not there yet) ──
+      (function() {
+        if (Date.now() < SPLASHDOWN_MS) {
+          var _swp = splashGroup.getWorldPosition(new THREE.Vector3());
+          var _swpLbl = _swp.clone(); _swpLbl.y += 0.06;
+          drawCallout('SPLASHDOWN', _swpLbl, '#ffd700', 0, -10, false, _swp);
+        }
+      }());
+
+      // ── Scale debug overlay (toggle with S key) ──
+      if (scaleDebugVisible) {
+        lctx.save();
+        lctx.fillStyle = 'rgba(2,8,18,0.90)';
+        lctx.fillRect(10, 10, 285, 82);
+        lctx.strokeStyle = '#4A90D9';
+        lctx.lineWidth = 1;
+        lctx.strokeRect(10, 10, 285, 82);
+        lctx.font = 'bold 9px "Share Tech Mono",monospace';
+        lctx.fillStyle = '#00ccff';
+        lctx.textAlign = 'left';
+        lctx.fillText('SCALE DEBUG  [press S to hide]', 20, 27);
+        lctx.font = '9px "Share Tech Mono",monospace';
+        lctx.fillStyle = '#ccdde8';
+        lctx.fillText('Earth radius   : ' + SCENE_EARTH_R.toFixed(4) + ' scene units', 20, 42);
+        lctx.fillText('ISS orbit r    : ' + ISS_SCENE_R.toFixed(4) + ' scene units', 20, 55);
+        lctx.fillText('Ratio ISS/Earth: ' + (ISS_SCENE_R / SCENE_EARTH_R).toFixed(4) + '  (correct = 1.0640)', 20, 68);
+        lctx.fillText('1 scene unit   = ' + KM_PER_UNIT.toFixed(0) + ' km', 20, 81);
+        lctx.restore();
+      }
+
+      // ── Update Murtha info panel once per second ──
+      if (now - _murthaLastUpdate > 1000) {
+        _murthaLastUpdate = now;
+        updateMurthaPanel();
+      }
+
+      // Pulsing splashdown rings
+      (function() {
+        var _pulse2 = 0.5 + 0.5 * Math.sin(now / 600);
+        splashGroup.children.forEach(function(c) {
+          if (c.material) c.material.opacity = 0.5 + 0.4 * _pulse2;
+        });
+      }());
 
       drawCallout('EARTH', new THREE.Vector3(earth.position.x, earth.position.y - 1.4, earth.position.z), 'rgba(100,170,255,0.85)', 0, 0, false, earth.position);
       drawCallout('MOON', new THREE.Vector3(moon.position.x, moon.position.y - 1.0, moon.position.z), 'rgba(200,195,180,0.85)', 0, 0, false, moon.position);

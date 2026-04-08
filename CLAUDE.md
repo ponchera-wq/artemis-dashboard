@@ -27,7 +27,7 @@ css/styles.css
 js/shared.js, js/mission-ephemeris.js, js/mission-events.js, js/stats.js
 js/trajectory.js, js/timeline.js, js/clock.js, js/news.js, js/crew.js
 js/weather.js, js/dsn.js, js/ui.js, js/reference.js
-js/orion-model.js, js/apollo-model.js, js/iss-model.js
+js/orion-model.js, js/iss-model.js
 js/observer-astro.js, js/observer-ui.js
 
 ### Data Pipeline

@@ -15,7 +15,6 @@ const STATIC_ASSETS = [
   '/js/crew.js',
   '/js/weather.js',
   '/js/orion-model.js',
-  '/js/apollo-model.js',
   '/js/iss-model.js',
   '/js/trajectory.js',
   '/js/dsn.js',
