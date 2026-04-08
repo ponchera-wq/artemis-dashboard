@@ -161,7 +161,205 @@
     .ais-dot.live { background: #00ff88; box-shadow: 0 0 5px #00ff88; }
     .ais-dot.fallback { background: #ffa500; box-shadow: 0 0 5px #ffa500; }
 
+    /* ── SHIP TRACKER PANEL (right) ── */
+    #ship-tracker-panel {
+      position: fixed;
+      right: 18px;
+      top: 54px;
+      bottom: 24px;
+      width: 340px;
+      z-index: 60;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(255,165,0,0.25);
+      background: rgba(8,8,14,0.7);
+      backdrop-filter: blur(10px);
+    }
+
+    #ship-tracker-header {
+      flex-shrink: 0;
+      padding: 9px 14px;
+      background: rgba(255,165,0,0.08);
+      border-bottom: 1px solid rgba(255,165,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+    #ship-tracker-header:hover { background: rgba(255,165,0,0.13); }
+
+    #ship-tracker-header .tracker-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: #ffa500;
+      text-transform: uppercase;
+      flex: 1;
+    }
+    #ship-tracker-header .tracker-hint {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.55rem;
+      color: rgba(255,165,0,0.5);
+      letter-spacing: 0.05em;
+    }
+
+    #ship-iframe-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 0;
+    }
+
+    #ship-iframe {
+      width: 100%; height: 100%;
+      border: none;
+      display: block;
+    }
+
+    #ship-fallback {
+      display: none;
+      position: absolute;
+      inset: 0;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 24px;
+      text-align: center;
+      background: rgba(8,8,14,0.95);
+    }
+    #ship-fallback.visible { display: flex; }
+    #ship-fallback .fb-icon { font-size: 2rem; opacity: 0.5; }
+    #ship-fallback .fb-msg {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: #a0b0cc;
+      line-height: 1.7;
+    }
+    #ship-fallback a {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: #ffa500;
+      text-decoration: underline;
+    }
+
+    /* ── MODAL ── */
+    #ship-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    #ship-modal.open { display: flex; }
+
+    #ship-modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      pointer-events: auto;
+    }
+
+    #ship-modal-box {
+      position: relative;
+      z-index: 1;
+      width: min(520px, calc(100vw - 40px));
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+      background: rgba(10,12,22,0.97);
+      border: 1px solid rgba(255,165,0,0.3);
+      border-radius: 10px;
+      padding: 24px 26px 22px;
+      pointer-events: auto;
+      backdrop-filter: blur(16px);
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,165,0,0.3) transparent;
+    }
+
+    #ship-modal-close {
+      position: absolute;
+      top: 14px; right: 16px;
+      background: none; border: none;
+      color: #6080a0;
+      font-size: 1.1rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+    #ship-modal-close:hover { color: #e0e8ff; background: rgba(255,255,255,0.07); }
+
+    .modal-title {
+      font-family: 'Exo 2', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+      color: #ffa500;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      padding-right: 24px;
+    }
+
+    .modal-section { margin-bottom: 16px; }
+    .modal-section-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.12em;
+      color: #6080a0;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .modal-fact {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: #c0d0e8;
+      line-height: 1.75;
+    }
+    .modal-fact .key { color: #ffa500; }
+    .modal-fact .sub { color: #8090a8; font-size: 0.6rem; }
+    .modal-quote {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-left: 2px solid rgba(255,165,0,0.4);
+      background: rgba(255,165,0,0.04);
+      border-radius: 0 6px 6px 0;
+    }
+    .modal-quote p {
+      font-family: 'Exo 2', sans-serif;
+      font-style: italic;
+      font-size: 0.72rem;
+      color: #c0c8d8;
+      line-height: 1.6;
+      margin-bottom: 6px;
+    }
+    .modal-quote cite {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.58rem;
+      color: #6080a0;
+      letter-spacing: 0.04em;
+    }
+
+    /* ── SHIP LABEL — make clickable ── */
+    #label-ship {
+      pointer-events: auto;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background 0.15s;
+    }
+    #label-ship:hover { background: rgba(255,165,0,0.15); }
+
     /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      #ship-tracker-panel { display: none; }
+    }
     @media (max-width: 600px) {
       #info-panel { width: calc(100vw - 36px); bottom: 16px; left: 18px; font-size: 0.68rem; }
       #countdown-display { font-size: 0.9rem; }
@@ -185,6 +383,81 @@
 <div id="label-ship"     class="map-label">USS John P. Murtha</div>
 <div id="label-splashdown" class="map-label">SPLASHDOWN ZONE</div>
 <div id="label-reentry"  class="map-label">Re-entry Corridor</div>
+
+<!-- SHIP TRACKER PANEL (right) -->
+<div id="ship-tracker-panel">
+  <div id="ship-tracker-header" onclick="openShipModal()">
+    <span class="tracker-title">⚓ USS John P. Murtha — LPD-26 Live Position</span>
+    <span class="tracker-hint">tap for details ›</span>
+  </div>
+  <div id="ship-iframe-wrap">
+    <iframe
+      id="ship-iframe"
+      src="https://www.marinetraffic.com/en/ais/embed/zoom:7/centery:32.5/centerx:-118/maptype:0/shownames:true/mmsi:368926266/shipid:5523365/fleet:/fleet_id:/vtypes:/showmenu:false/remember:false"
+      frameborder="0"
+      referrerpolicy="no-referrer"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+    ></iframe>
+    <div id="ship-fallback">
+      <div class="fb-icon">🚢</div>
+      <div class="fb-msg">
+        Live AIS tracking unavailable<br>
+        (content policy or network block)
+      </div>
+      <a href="https://www.marinetraffic.com/en/ais/home/shipid:5523365/zoom:8" target="_blank" rel="noopener noreferrer">
+        Visit MarineTraffic — MMSI: 368926266 ↗
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- SHIP FACTS MODAL -->
+<div id="ship-modal" role="dialog" aria-modal="true" aria-label="USS John P. Murtha details">
+  <div id="ship-modal-backdrop" onclick="closeShipModal()"></div>
+  <div id="ship-modal-box">
+    <button id="ship-modal-close" onclick="closeShipModal()" aria-label="Close">×</button>
+    <div class="modal-title">⚓ USS John P. Murtha (LPD-26)</div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Vessel</div>
+      <div class="modal-fact">
+        <span class="key">Hull:</span> LPD-26 &nbsp;|&nbsp; <span class="key">Class:</span> San Antonio-class Amphibious Transport Dock<br>
+        <span class="key">Homeport:</span> Naval Base San Diego<br>
+        <span class="key">Commissioned:</span> 8 Oct 2016 &nbsp;|&nbsp; <span class="key">Built:</span> Ingalls Shipbuilding, Pascagoula MS<br>
+        <span class="key">CO:</span> Capt. Erik Kenny &nbsp;|&nbsp; <span class="key">MMSI:</span> 368926266
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Namesake — John P. Murtha (1932–2010)</div>
+      <div class="modal-fact">
+        <span class="key">·</span> Pennsylvania Congressman &nbsp;|&nbsp; 35+ years U.S. Marine Corps<br>
+        <span class="key">·</span> First Vietnam War veteran elected to the U.S. House (1974)<br>
+        <span class="key">·</span> Longtime Chair, House Defense Appropriations Subcommittee
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Artemis II Recovery Role</div>
+      <div class="modal-fact">
+        <span class="key">·</span> Primary Orion capsule &amp; crew recovery vessel<br>
+        <span class="key">·</span> Splashdown zone: ~50–80 miles off San Diego coast, Pacific Ocean<br>
+        <span class="key">·</span> Air support: HSC-23 "Wildcards" MH-60S Sea Hawks (NAS North Island)<br>
+        <span class="sub">&nbsp;&nbsp;&nbsp;— Track capsule descent through atmosphere</span><br>
+        <span class="sub">&nbsp;&nbsp;&nbsp;— Extract astronauts post-splashdown, transfer to ship</span><br>
+        <span class="key">·</span> Ship assets: Well deck (capsule recovery), helo pad, advanced medical,<br>
+        <span class="sub">&nbsp;&nbsp;&nbsp;3D air search radar, full comms suite</span><br>
+        <span class="key">·</span> Dive team: Elite Navy special ops divers on standby for medical assist<br>
+        <span class="key">·</span> Data role: Collect post-mission data to certify future crewed Artemis flights
+      </div>
+    </div>
+
+    <div class="modal-quote">
+      <p>"It is a fitting tribute to Congressman Murtha... that the ship bearing his name will be integral to this historic moment in space exploration."</p>
+      <cite>— Capt. Erik Kenny, CO USS John P. Murtha</cite>
+    </div>
+  </div>
+</div>
 
 <!-- INFO PANEL -->
 <div id="info-panel">
@@ -635,6 +908,42 @@
 
   animate();
 
+  // ── SHIP LABEL CLICK → MODAL ─────────────────────────────────────────────────
+  document.getElementById('label-ship').addEventListener('click', openShipModal);
+
+})();
+
+// ── MODAL OPEN / CLOSE ───────────────────────────────────────────────────────
+function openShipModal() {
+  document.getElementById('ship-modal').classList.add('open');
+  document.getElementById('ship-modal-box').scrollTop = 0;
+}
+function closeShipModal() {
+  document.getElementById('ship-modal').classList.remove('open');
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeShipModal();
+});
+
+// ── IFRAME FALLBACK ──────────────────────────────────────────────────────────
+(function() {
+  const iframe = document.getElementById('ship-iframe');
+  const fallback = document.getElementById('ship-fallback');
+  let loaded = false;
+
+  iframe.addEventListener('load', function() {
+    loaded = true;
+    // MarineTraffic may load but show a blocked page — we can't detect that
+    // cross-origin, so just trust the load event and keep the iframe visible.
+  });
+
+  // If the iframe hasn't fired load within 12s, assume it's blocked.
+  setTimeout(function() {
+    if (!loaded) {
+      iframe.style.display = 'none';
+      fallback.classList.add('visible');
+    }
+  }, 12000);
 })();
 </script>
 </body>
