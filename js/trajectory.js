@@ -352,13 +352,25 @@
       var sp = issECIDir(ISS_ARGP + (i / 80) * Math.PI * 2, _issInitRaan).applyMatrix4(rotMat).normalize().multiplyScalar(ISS_SCENE_R);
       issOrbitPts.push(sp);
     }
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(issOrbitPts), new THREE.LineBasicMaterial({ color: 0x00ccff, transparent: true, opacity: 0.1 })));
-    
+    var _issOrbitGeo = new THREE.BufferGeometry().setFromPoints(issOrbitPts);
+    var _issOrbitMat = new THREE.LineDashedMaterial({ color: 0xaa44ff, transparent: true, opacity: 0.4, dashSize: 0.055, gapSize: 0.028 });
+    var _issOrbitLine = new THREE.Line(_issOrbitGeo, _issOrbitMat);
+    _issOrbitLine.computeLineDistances();
+    scene.add(_issOrbitLine);
+
     var issGroup = new THREE.Group();
     if (typeof createISSModel !== 'undefined') {
       issGroup = createISSModel(THREE);
     }
     scene.add(issGroup);
+
+    // Velocity direction arrow — repositioned every frame in render loop
+    var _issArrow = new THREE.ArrowHelper(
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(0, 0, 0),
+      0.14, 0xcc55ff, 0.055, 0.036
+    );
+    scene.add(_issArrow);
 
     // ── USS John P. Murtha (LPD-26) — Artemis II recovery ship ────────────
     var MURTHA_WAYPOINTS = [
@@ -495,11 +507,13 @@
       shipRing.position.copy(sp);
       shipRing.quaternion.copy(qm);
 
-      // Position/orient the 3-D model; store base values for bob animation
+      // Position/orient the 3-D model; store base values for bob animation.
+      // Elevate 0.015 scene units above surface so the hull isn't clipped by
+      // the Earth mesh (which would hide everything below the globe surface).
       if (murthaModelGroup) {
-        _murthaBaseSp.copy(sp);
+        _murthaBaseSp.copy(sp).addScaledVector(norm, 0.015);
         _murthaBaseNorm.copy(norm);
-        murthaModelGroup.position.copy(sp);
+        murthaModelGroup.position.copy(_murthaBaseSp);
         murthaModelGroup.quaternion.copy(qm);
       }
 
@@ -1504,6 +1518,19 @@
       var issQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), issVelAnim);
       issGroup.quaternion.copy(issQuat);
 
+      // Velocity arrow tracks ISS
+      _issArrow.position.copy(issGroup.position);
+      _issArrow.setDirection(issVelAnim);
+
+      // ISS geographic position (ECI → ECEF → lat/lon)
+      var _issECIvec = issECIDir(issU, issRaan);
+      var _issGMST   = earthGMST(new Date(LAUNCH_UTC + metSec * 1000));
+      var _cg = Math.cos(_issGMST), _sg = Math.sin(_issGMST);
+      var _issFx = _issECIvec.x * _cg + _issECIvec.y * _sg;
+      var _issFy = -_issECIvec.x * _sg + _issECIvec.y * _cg;
+      var _issLat = Math.asin(Math.max(-1, Math.min(1, _issECIvec.z))) * 180 / Math.PI;
+      var _issLon = Math.atan2(_issFy, _issFx) * 180 / Math.PI;
+
       // Skybox follows camera so stars shift only with rotation, not translation
       skyMesh.position.copy(camera.position);
       renderer.render(scene, camera);
@@ -1522,7 +1549,44 @@
       var _orionLabelY = orionGroup.position.y - Math.max(1.5, Math.min(4.0, 80 / Math.max(1, camera.position.distanceTo(orionGroup.position))));
       drawCallout('INTEGRITY \u00b7 ' + orionSpeedStr + ' \u00b7 ' + earthDistStr + ' to Earth \u00b7 ' + moonDistStr + ' to Moon', new THREE.Vector3(orionGroup.position.x, _orionLabelY, orionGroup.position.z), '#00ffaa', 0, -30, true, orionGroup.position);
 
-      drawCallout('ISS', new THREE.Vector3(issGroup.position.x, issGroup.position.y + 0.35, issGroup.position.z), '#00ccff', 0, -10, false, issGroup.position);
+      // ── ISS multi-line purple stats label ──
+      (function() {
+        var _lp = new THREE.Vector3(issGroup.position.x, issGroup.position.y + 0.45, issGroup.position.z);
+        var _ls = proj(_lp); if (!_ls.vis) return;
+        var _is = proj(issGroup.position);
+        lctx.save();
+        if (_is.vis) {
+          lctx.beginPath(); lctx.moveTo(_is.x, _is.y); lctx.lineTo(_ls.x, _ls.y);
+          lctx.strokeStyle = 'rgba(180,80,255,0.35)'; lctx.setLineDash([4,4]); lctx.lineWidth = 1.2;
+          lctx.stroke(); lctx.setLineDash([]);
+        }
+        var _latStr = (_issLat >= 0 ? '+' : '') + _issLat.toFixed(1) + '\u00b0';
+        var _lonStr = _issLon.toFixed(1) + '\u00b0';
+        var _rows = [
+          { t: '\ud83d\udef0\ufe0f  ISS', bold: true,  c: '#cc55ff' },
+          { t: 'ALT 408 km  \u00b7  INC 51.6\u00b0', c: '#cc88ff' },
+          { t: 'SPD 7.66 km/s  \u00b7  ORB 93 min', c: '#cc88ff' },
+          { t: 'LAT ' + _latStr + '  LON ' + _lonStr, c: '#aa77ee' },
+        ];
+        var _lh = 15, _pad = 9, _mxW = 0;
+        _rows.forEach(function(r) {
+          lctx.font = (r.bold ? 'bold ' : '') + '11px "Share Tech Mono",monospace';
+          _mxW = Math.max(_mxW, lctx.measureText(r.t).width);
+        });
+        var _bw = _mxW + _pad * 2, _bh = _rows.length * _lh + _pad;
+        var _bx = _ls.x - _bw / 2, _by = _ls.y - _bh;
+        lctx.fillStyle = 'rgba(5,0,18,0.88)'; lctx.fillRect(_bx, _by, _bw, _bh);
+        lctx.strokeStyle = '#aa44ff'; lctx.lineWidth = 1.1; lctx.globalAlpha = 0.85;
+        lctx.strokeRect(_bx, _by, _bw, _bh); lctx.globalAlpha = 1.0;
+        _rows.forEach(function(r, i) {
+          lctx.font = (r.bold ? 'bold ' : '') + '11px "Share Tech Mono",monospace';
+          lctx.textAlign = 'center'; lctx.textBaseline = 'middle';
+          lctx.fillStyle = r.c;
+          lctx.shadowColor = r.bold ? '#cc44ff' : 'transparent'; lctx.shadowBlur = r.bold ? 7 : 0;
+          lctx.fillText(r.t, _ls.x, _by + _pad / 2 + i * _lh + _lh / 2);
+        });
+        lctx.restore();
+      }());
 
       // ── USS Murtha callout ──
       (function() {
