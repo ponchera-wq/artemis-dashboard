@@ -220,7 +220,7 @@
 
     // ── Skybox — equirectangular star map ──
     var skyGeo = new THREE.SphereGeometry(300, 32, 32);
-    var skyMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide, transparent: true, opacity: 0.25 });
+    var skyMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.BackSide, transparent: false, opacity: 1.0 });
     var skyMesh = new THREE.Mesh(skyGeo, skyMat);
     scene.add(skyMesh);
     var skyPaths = ['bg-3dtraj.jpg', 'css/bg-3dtraj.jpg', './css/bg-3dtraj.jpg',
@@ -261,7 +261,24 @@
     }
 
     // ── Earth ──
-    var earthMat = new THREE.MeshPhongMaterial({ color: 0x2255aa, emissive: 0x051828, shininess: 25, specular: 0x224466 });
+    var earthMat = new THREE.MeshPhongMaterial({ color: 0x2255aa, emissive: 0x000000, shininess: 25, specular: 0x224466 });
+    // Uniform for night-side city-light masking — updated each frame from sunLight.position
+    var _earthSunDir = { value: new THREE.Vector3(20, 8, 14).normalize() };
+    earthMat.onBeforeCompile = function(shader) {
+      shader.uniforms.earthSunDir = _earthSunDir;
+      shader.fragmentShader = 'uniform vec3 earthSunDir;\n' + shader.fragmentShader;
+      // After THREE sets totalEmissiveRadiance from the emissive map, fade it to zero on the day side.
+      // vNormal is view-space; transform sun direction to view space to match.
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <emissivemap_fragment>',
+        [
+          '#include <emissivemap_fragment>',
+          'vec3 _sunV = normalize(mat3(viewMatrix) * earthSunDir);',
+          'float _night = 1.0 - smoothstep(-0.12, 0.12, dot(normalize(vNormal), _sunV));',
+          'totalEmissiveRadiance *= _night;'
+        ].join('\n')
+      );
+    };
     var earth = new THREE.Mesh(new THREE.SphereGeometry(SCENE_EARTH_R, 48, 48), earthMat);
     earth.rotation.order = 'YXZ';
     scene.add(earth);
@@ -272,10 +289,10 @@
       'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg',
     ], function(tex) { earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; });
 
-    // Night lights (emissive map — city lights on dark side)
+    // Night lights (emissive map — city lights on dark side, masked by shader to night side only)
     loadTex([
       'https://unpkg.com/three-globe/example/img/earth-night.jpg',
-    ], function(tex) { earthMat.emissiveMap = tex; earthMat.emissive.set(0x888888); earthMat.needsUpdate = true; });
+    ], function(tex) { earthMat.emissiveMap = tex; earthMat.emissive.set(0xdddddd); earthMat.needsUpdate = true; });
 
     // Cloud layer mesh
     var cloudMat = new THREE.MeshPhongMaterial({ transparent: true, opacity: 0.35, depthWrite: false });
@@ -1275,6 +1292,8 @@
           sunLight.position.copy(_flybySV.multiplyScalar(50));
         }
       }
+      // Keep city-light shader uniform in sync with sun position
+      _earthSunDir.value.copy(sunLight.position).normalize();
 
       // ── Get current state from shared ephemeris ──
       var state = MissionEphemeris.getState(metSec);
@@ -1485,6 +1504,8 @@
       var issQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), issVelAnim);
       issGroup.quaternion.copy(issQuat);
 
+      // Skybox follows camera so stars shift only with rotation, not translation
+      skyMesh.position.copy(camera.position);
       renderer.render(scene, camera);
 
       // ── 2D Holographic callouts ──
