@@ -499,6 +499,45 @@
     }
     .geo-label.country::before { display: none; }
 
+    /* ── SCANLINES ── */
+    #scanlines {
+      position: fixed;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.04) 2px,
+        rgba(0,0,0,0.04) 4px
+      );
+      opacity: 0.6;
+      will-change: transform;
+    }
+
+    /* ── SPLASHDOWN PULSE RINGS ── */
+    #label-splashdown {
+      position: relative;
+      overflow: visible;
+    }
+    #label-splashdown::before,
+    #label-splashdown::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1px solid rgba(255,102,51,0.5);
+      animation: splashPulse 2.4s ease-out infinite;
+    }
+    #label-splashdown::after {
+      animation-delay: 1.2s;
+    }
+    @keyframes splashPulse {
+      0%   { transform: scale(1);   opacity: 0.7; }
+      100% { transform: scale(2.8); opacity: 0;   }
+    }
+
     /* ── MOBILE ── */
     @media (max-width: 768px) {
       /* Make the ship tracker a top strip across the full width.
@@ -527,6 +566,9 @@
   <a href="index.html">← Dashboard</a>
   <a href="splashdown.html" class="active">Splashdown</a>
 </nav>
+
+<!-- SCANLINES OVERLAY -->
+<div id="scanlines"></div>
 
 <!-- 3D CANVAS -->
 <div id="canvas-container"></div>
@@ -1454,6 +1496,26 @@ function bootSplashdownScene() {
 
   updateCountdown();
   setInterval(updateCountdown, 1000);
+
+  // ── COUNTDOWN FLICKER ────────────────────────────────────────────────────────
+  (function() {
+    const cdEl = document.getElementById('countdown-display');
+    let _realText = null;
+    function scheduleFlicker() {
+      const delay = (7 + Math.random() * 6) * 1000;
+      setTimeout(function() {
+        if (!cdEl) return;
+        _realText = cdEl.textContent;
+        cdEl.textContent = Math.random().toString().slice(2, 8) + 's';
+        setTimeout(function() {
+          if (_realText !== null) cdEl.textContent = _realText;
+          _realText = null;
+          scheduleFlicker();
+        }, 80);
+      }, delay);
+    }
+    scheduleFlicker();
+  })();
 
   // ── SHIP POSITION UPDATE ─────────────────────────────────────────────────────
   function updateShipMarker(data) {
