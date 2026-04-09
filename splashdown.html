@@ -861,7 +861,7 @@ function bootSplashdownScene() {
       'varying vec3 vNormal;',
       'void main() {',
       '  vUv = uv;',
-      '  vNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);',
+      '  vNormal = normalize(normalMatrix * normal);',
       '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
       '}'
     ].join('\n'),
@@ -882,11 +882,30 @@ function bootSplashdownScene() {
   const earth = new THREE.Mesh(earthGeo, earthMat);
   earthGroup.add(earth);
 
-  // Earth day texture
-  new THREE.TextureLoader().load(
-    'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_atmos_2048.jpg',
-    function(tex) { earthMat.uniforms.dayMap.value = tex; earthMat.needsUpdate = true; }
-  );
+  // Earth day texture — fallback chain
+  (function tryDayTex(idx) {
+    const dayPaths = [
+      'https://unpkg.com/three@0.128.0/examples/textures/planets/earth_atmos_2048.jpg',
+      'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/planets/earth_atmos_2048.jpg',
+      'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
+    ];
+    if (idx >= dayPaths.length) {
+      // All failed — use a 2×2 blue-green DataTexture so the shader has something to sample
+      const data = new Uint8Array([0x22, 0x44, 0x66, 0xff, 0x22, 0x44, 0x66, 0xff,
+                                   0x22, 0x44, 0x66, 0xff, 0x22, 0x44, 0x66, 0xff]);
+      const fb = new THREE.DataTexture(data, 2, 2, THREE.RGBAFormat);
+      fb.needsUpdate = true;
+      earthMat.uniforms.dayMap.value = fb;
+      earthMat.needsUpdate = true;
+      return;
+    }
+    new THREE.TextureLoader().load(
+      dayPaths[idx],
+      function(tex) { earthMat.uniforms.dayMap.value = tex; earthMat.needsUpdate = true; },
+      undefined,
+      function() { tryDayTex(idx + 1); }
+    );
+  })(0);
   // Night lights texture (city lights on dark side)
   new THREE.TextureLoader().load(
     'https://unpkg.com/three-globe/example/img/earth-night.jpg',
@@ -910,8 +929,7 @@ function bootSplashdownScene() {
       '  vNormal = normalize(normalMatrix * normal);',
       '  vec4 worldPos = modelViewMatrix * vec4(position, 1.0);',
       '  vViewDir = -worldPos.xyz;',
-      '  vec3 worldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);',
-      '  vSunDot = dot(worldNormal, normalize(sunDirection));',
+      '  vSunDot = dot(vNormal, normalize(sunDirection));',
       '  gl_Position = projectionMatrix * worldPos;',
       '}'
     ].join('\n'),
@@ -1709,8 +1727,11 @@ function bootSplashdownScene() {
         // the real sun).
         const sunWorld = new THREE.Vector3(sd.x, sd.z, -sd.y).normalize();
         sunLight.position.copy(sunWorld.clone().multiplyScalar(50));
-        earthMat.uniforms.sunDirection.value.copy(sunWorld);
-        atmoMat.uniforms.sunDirection.value.copy(sunWorld);
+        const sunView = sunWorld.clone().applyMatrix3(
+          new THREE.Matrix3().getNormalMatrix(camera.matrixWorldInverse)
+        );
+        earthMat.uniforms.sunDirection.value.copy(sunView);
+        atmoMat.uniforms.sunDirection.value.copy(sunView);
         // Terminator disc — scene-parented, orient perpendicular to world-space sun
         terminatorDisc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sunWorld);
         // Sun billboard — place along world-space sun direction
