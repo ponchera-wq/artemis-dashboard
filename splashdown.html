@@ -846,10 +846,45 @@ function bootSplashdownScene() {
     undefined, function() { /* night map unavailable, skip */ }
   );
 
-  // Atmosphere glow
-  const atmoGeo = new THREE.SphereGeometry(1.02, 64, 64);
-  const atmoMat = new THREE.MeshBasicMaterial({
-    color: 0x4488ff, transparent: true, opacity: 0.08, side: THREE.BackSide
+  // Atmosphere glow — Fresnel limb shader
+  const atmoGeo = new THREE.SphereGeometry(1.06, 64, 64);
+  const atmoMat = new THREE.ShaderMaterial({
+    uniforms: {
+      sunDirection: { value: new THREE.Vector3(1, 0, 0) },
+      time:         { value: 0.0 }
+    },
+    vertexShader: [
+      'varying vec3 vNormal;',
+      'varying vec3 vViewDir;',
+      'varying float vSunDot;',
+      'uniform vec3 sunDirection;',
+      'void main() {',
+      '  vNormal = normalize(normalMatrix * normal);',
+      '  vec4 worldPos = modelViewMatrix * vec4(position, 1.0);',
+      '  vViewDir = -worldPos.xyz;',
+      '  vec3 worldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);',
+      '  vSunDot = dot(worldNormal, normalize(sunDirection));',
+      '  gl_Position = projectionMatrix * worldPos;',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'varying vec3 vNormal;',
+      'varying vec3 vViewDir;',
+      'varying float vSunDot;',
+      'uniform float time;',
+      'void main() {',
+      '  float fresnel = pow(1.0 - abs(dot(normalize(vNormal), normalize(vViewDir))), 3.0);',
+      '  float dayBlend = clamp(vSunDot * 2.0 + 0.5, 0.0, 1.0);',
+      '  vec3 dayColor  = vec3(0.15, 0.45, 1.0);',
+      '  vec3 termColor = vec3(0.8, 0.4, 0.15);',
+      '  vec3 col = mix(termColor, dayColor, dayBlend);',
+      '  gl_FragColor = vec4(col, fresnel * 0.55);',
+      '}'
+    ].join('\n'),
+    side: THREE.BackSide,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
   });
   earthGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
 
@@ -1402,10 +1437,14 @@ function bootSplashdownScene() {
   setInterval(fetchShipPosition, 5 * 60 * 1000);
 
   // ── ANIMATION LOOP ───────────────────────────────────────────────────────────
+  let _lastFrameMs = Date.now();
   function animate() {
     requestAnimationFrame(animate);
 
     const t = Date.now();
+    const delta = (t - _lastFrameMs) / 1000;
+    _lastFrameMs = t;
+    atmoMat.uniforms.time.value += delta;
 
     // Pulse Orion dot
     orionDotMat.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 0.003));
@@ -1432,6 +1471,7 @@ function bootSplashdownScene() {
         sunVec.applyQuaternion(earthGroup.quaternion);
         sunLight.position.copy(sunVec.clone().multiplyScalar(50));
         earthMat.uniforms.sunDirection.value.copy(sunVec);
+        atmoMat.uniforms.sunDirection.value.copy(sunVec);
       }
     }
 
