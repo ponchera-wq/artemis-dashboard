@@ -1249,6 +1249,65 @@ function bootSplashdownScene() {
   );
   scene.add(trailDimLine);
 
+  // ── AURORA RIBBONS ───────────────────────────────────────────────────────────
+  // Two polar aurora groups: ~70°N and ~70°S. Each group: 3 CatmullRomCurve3 ribbons.
+  // Added directly to scene (fixed in space, like the terminator/sun).
+  const AURORA_SEEDS   = [0, 1.7, 3.4];
+  const AURORA_COLORS  = [0x00ff88, 0x8844ff, 0x00ff88]; // alternating green / violet / green
+  const AURORA_LAT_N   =  70 * Math.PI / 180;
+  const AURORA_LAT_S   = -70 * Math.PI / 180;
+
+  // Build one ribbon's control points for a given polar latitude and seed
+  function buildAuroraPoints(polarLat, seed, auroraT) {
+    const pts = [];
+    const cosLat = Math.cos(Math.PI / 2 - Math.abs(polarLat));
+    const sinLat = Math.sin(Math.PI / 2 - Math.abs(polarLat));
+    const ySign  = polarLat >= 0 ? 1 : -1;
+    for (let i = 0; i < 12; i++) {
+      const angle  = (i / 12) * Math.PI * 2;
+      const base   = 1.05;                          // mid altitude
+      const r      = base + Math.sin(i * 2.3 + seed + auroraT) * 0.02;
+      const xz     = r * sinLat;                    // radius in XZ plane
+      pts.push(new THREE.Vector3(
+        xz * Math.cos(angle),
+        ySign * r * cosLat,
+        xz * Math.sin(angle)
+      ));
+    }
+    pts.push(pts[0].clone()); // close the loop
+    return pts;
+  }
+
+  // Create geometries and lines for all 6 ribbons (3 north + 3 south)
+  const auroraLines = [];
+  [AURORA_LAT_N, AURORA_LAT_S].forEach(function(lat) {
+    AURORA_SEEDS.forEach(function(seed, si) {
+      const pts   = buildAuroraPoints(lat, seed, 0);
+      const curve = new THREE.CatmullRomCurve3(pts, true);
+      const positions = new Float32Array(80 * 3);
+      const cpts = curve.getPoints(79);
+      for (let k = 0; k < 80; k++) {
+        positions[k * 3]     = cpts[k].x;
+        positions[k * 3 + 1] = cpts[k].y;
+        positions[k * 3 + 2] = cpts[k].z;
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3).setUsage(THREE.DynamicDrawUsage));
+      const mat = new THREE.LineBasicMaterial({
+        color:       AURORA_COLORS[si],
+        transparent: true,
+        opacity:     0.35,
+        blending:    THREE.AdditiveBlending,
+        depthWrite:  false
+      });
+      const line = new THREE.Line(geo, mat);
+      scene.add(line);
+      auroraLines.push({ line: line, lat: lat, seed: seed });
+    });
+  });
+
+  let auroraTime = 0;
+
   // ── LABEL PROJECTION ─────────────────────────────────────────────────────────
   function projectToScreen(vec3world, cam, rend) {
     // vec3world is in earthGroup local space; transform to world first
@@ -1719,6 +1778,22 @@ function bootSplashdownScene() {
     if (murthaModelGroup && _murthaBaseNorm.lengthSq() > 0) {
       const bob = Math.sin(t * 0.0008) * 0.003;
       murthaModelGroup.position.copy(_murthaBaseSp).addScaledVector(_murthaBaseNorm, bob);
+    }
+
+    // ── Aurora ribbon animation ──────────────────────────────────────────────
+    auroraTime += 0.0003;
+    for (let _ai = 0; _ai < auroraLines.length; _ai++) {
+      const _ab = auroraLines[_ai];
+      const _pts = buildAuroraPoints(_ab.lat, _ab.seed, auroraTime);
+      const _curve = new THREE.CatmullRomCurve3(_pts, true);
+      const _cpts  = _curve.getPoints(79);
+      const _posArr = _ab.line.geometry.attributes.position.array;
+      for (let _k = 0; _k < 80; _k++) {
+        _posArr[_k * 3]     = _cpts[_k].x;
+        _posArr[_k * 3 + 1] = _cpts[_k].y;
+        _posArr[_k * 3 + 2] = _cpts[_k].z;
+      }
+      _ab.line.geometry.attributes.position.needsUpdate = true;
     }
 
     renderer.render(scene, camera);
