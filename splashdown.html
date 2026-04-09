@@ -882,30 +882,11 @@ function bootSplashdownScene() {
   const earth = new THREE.Mesh(earthGeo, earthMat);
   earthGroup.add(earth);
 
-  // Earth day texture — fallback chain
-  (function tryDayTex(idx) {
-    const dayPaths = [
-      'https://unpkg.com/three@0.128.0/examples/textures/planets/earth_atmos_2048.jpg',
-      'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/planets/earth_atmos_2048.jpg',
-      'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
-    ];
-    if (idx >= dayPaths.length) {
-      // All failed — use a 2×2 blue-green DataTexture so the shader has something to sample
-      const data = new Uint8Array([0x22, 0x44, 0x66, 0xff, 0x22, 0x44, 0x66, 0xff,
-                                   0x22, 0x44, 0x66, 0xff, 0x22, 0x44, 0x66, 0xff]);
-      const fb = new THREE.DataTexture(data, 2, 2, THREE.RGBAFormat);
-      fb.needsUpdate = true;
-      earthMat.uniforms.dayMap.value = fb;
-      earthMat.needsUpdate = true;
-      return;
-    }
-    new THREE.TextureLoader().load(
-      dayPaths[idx],
-      function(tex) { earthMat.uniforms.dayMap.value = tex; earthMat.needsUpdate = true; },
-      undefined,
-      function() { tryDayTex(idx + 1); }
-    );
-  })(0);
+  // Earth day texture
+  new THREE.TextureLoader().load(
+    'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg',
+    function(tex) { earthMat.uniforms.dayMap.value = tex; earthMat.needsUpdate = true; }
+  );
   // Night lights texture (city lights on dark side)
   new THREE.TextureLoader().load(
     'https://unpkg.com/three-globe/example/img/earth-night.jpg',
@@ -964,19 +945,10 @@ function bootSplashdownScene() {
     });
     cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
     cloudMesh.visible = false;
-    (function tryCloudTex(idx) {
-      const cloudPaths = [
-        'https://unpkg.com/three@0.128.0/examples/textures/planets/earth_clouds_2048.jpg',
-        'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/planets/earth_clouds_2048.jpg'
-      ];
-      if (idx >= cloudPaths.length) return; // all failed — skip silently, leave cloudMat.map null
-      new THREE.TextureLoader().load(
-        cloudPaths[idx],
-        function(tex) { cloudMat.map = tex; cloudMat.needsUpdate = true; cloudMesh.visible = true; },
-        undefined,
-        function() { tryCloudTex(idx + 1); }
-      );
-    })(0);
+    new THREE.TextureLoader().load(
+      'https://threejs.org/examples/textures/planets/earth_clouds_2048.jpg',
+      function(tex) { cloudMat.map = tex; cloudMat.needsUpdate = true; cloudMesh.visible = true; }
+    );
     earthGroup.add(cloudMesh);
   })();
 
@@ -1678,6 +1650,21 @@ function bootSplashdownScene() {
   setInterval(fetchShipPosition, 5 * 60 * 1000);
 
   // ── ANIMATION LOOP ───────────────────────────────────────────────────────────
+  // Sun direction — direct VSOP87 approximation, no JSON required
+  function getSunDirectionApprox(dateMs) {
+    const JD = dateMs / 86400000 + 2440587.5;
+    const n  = JD - 2451545.0;
+    const L  = (280.460 + 0.9856474 * n) * Math.PI / 180;
+    const g  = (357.528 + 0.9856003 * n) * Math.PI / 180;
+    const lam = L + (1.915 * Math.sin(g) + 0.020 * Math.sin(2*g)) * Math.PI / 180;
+    const eps = 23.439 * Math.PI / 180;
+    return new THREE.Vector3(
+      Math.cos(lam),
+      Math.sin(lam) * Math.cos(eps),
+      Math.sin(lam) * Math.sin(eps)
+    ).normalize();
+  }
+
   let _lastFrameMs = Date.now();
   function animate() {
     requestAnimationFrame(animate);
@@ -1724,28 +1711,16 @@ function bootSplashdownScene() {
     );
 
     // ── Sun direction update (real-time day/night terminator) ──
-    if (typeof FlybyLighting !== 'undefined' && FlybyLighting.ready) {
-      const metSec = (t - LAUNCH_UTC.getTime()) / 1000;
-      const sd = FlybyLighting.getSunDir(metSec);
-      if (sd) {
-        // getSunDir returns ECI (Z=north). Convert to scene (Y=north).
-        // Keep in world space — shaders use world-space normals (modelMatrix * normal),
-        // so sunDirection must also be world-space. Do NOT rotate by earthGroup.quaternion
-        // (that was the bug: it made the terminator locked to Earth's surface instead of
-        // the real sun).
-        const sunWorld = new THREE.Vector3(sd.x, sd.z, -sd.y).normalize();
-        sunLight.position.copy(sunWorld.clone().multiplyScalar(50));
-        const sunView = sunWorld.clone().applyMatrix3(
-          new THREE.Matrix3().getNormalMatrix(camera.matrixWorldInverse)
-        );
-        earthMat.uniforms.sunDirection.value.copy(sunView);
-        atmoMat.uniforms.sunDirection.value.copy(sunView);
-        // Terminator disc — scene-parented, orient perpendicular to world-space sun
-        terminatorDisc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sunWorld);
-        // Sun billboard — place along world-space sun direction
-        sunSprite.position.copy(sunWorld.clone().multiplyScalar(12));
-      }
-    }
+    const sunWorld = getSunDirectionApprox(Date.now());
+    sunLight.position.copy(sunWorld.clone().multiplyScalar(50));
+
+    // Convert world-space sun to view space for the shader (normalMatrix space)
+    const _m3 = new THREE.Matrix3().getNormalMatrix(camera.matrixWorldInverse);
+    const sunView = sunWorld.clone().applyMatrix3(_m3);
+    earthMat.uniforms.sunDirection.value.copy(sunView);
+    atmoMat.uniforms.sunDirection.value.copy(sunView);
+    if (terminatorDisc) terminatorDisc.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), sunWorld);
+    if (sunSprite) sunSprite.position.copy(sunWorld.clone().multiplyScalar(12));
 
     // ── ISS propagation (TLE-based, ~92 min orbit) ──
     const issDtSec = (t - ISS_EPOCH_MS) / 1000;
