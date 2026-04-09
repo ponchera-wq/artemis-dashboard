@@ -543,7 +543,7 @@
 </div>
 
 <!-- SHIP TRACKER PANEL (right) -->
-<div id="ship-tracker-panel" class="collapsed">
+<div id="ship-tracker-panel">
   <div id="ship-tracker-header">
     <div id="ship-tracker-header-left" onclick="openShipModal()">
       <span class="tracker-title">⚓ USS John P. Murtha — LPD-26 Live Position</span>
@@ -554,16 +554,9 @@
   <div id="ship-iframe-wrap">
     <iframe
       id="ship-iframe"
-      src="https://www.marinetraffic.com/en/ais/embed/zoom:7/centery:32.7/centerx:-117.8/maptype:0/shownames:true/mmsi:368926266/shipid:5523365/showmenu:false/remember:false"
+      src="https://www.marinetraffic.com/en/ais/embed/zoom:5/centery:32.7/centerx:-117.8/maptype:0/shownames:true/mmsi:368926266/shipid:5523365/showmenu:false/remember:false"
       frameborder="0"
       sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-    ></iframe>
-    <iframe
-      id="ship-iframe-vf"
-      src=""
-      frameborder="0"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-      style="display:none"
     ></iframe>
     <div id="ship-fallback">
       <div class="fb-icon">⚓</div>
@@ -707,16 +700,29 @@
 function bootSplashdownScene() {
   'use strict';
 
-  // Guard: if THREE or ColladaLoader hasn't loaded yet, retry briefly.
-  if (typeof THREE === 'undefined' || typeof THREE.ColladaLoader === 'undefined') {
+  // Idempotency guard: don't double-boot if both DOMContentLoaded and load fire.
+  if (bootSplashdownScene._booted) return;
+
+  // Guard: retry briefly until THREE, ColladaLoader, local helper scripts and
+  // the canvas container are all available. On a cold first load any of these
+  // can lag behind the DOMContentLoaded/load event, leaving an empty scene.
+  const _ready =
+    typeof THREE !== 'undefined' &&
+    typeof THREE.ColladaLoader !== 'undefined' &&
+    typeof FlybyLighting !== 'undefined' &&
+    typeof createMurthaModel !== 'undefined' &&
+    typeof createISSModel !== 'undefined' &&
+    !!document.getElementById('canvas-container');
+  if (!_ready) {
     if (!bootSplashdownScene._retries) bootSplashdownScene._retries = 0;
-    if (bootSplashdownScene._retries++ < 40) {
+    if (bootSplashdownScene._retries++ < 80) {
       setTimeout(bootSplashdownScene, 100);
       return;
     }
-    console.error('[splashdown] THREE / ColladaLoader failed to load after retries');
+    console.error('[splashdown] dependencies failed to load after retries');
     return;
   }
+  bootSplashdownScene._booted = true;
 
   // ── SCENE SETUP ──────────────────────────────────────────────────────────────
   const container = document.getElementById('canvas-container');
@@ -1463,11 +1469,12 @@ function _splashdownBootSafe() {
     document.body.appendChild(msg);
   }
 }
-if (document.readyState === 'complete') {
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
   _splashdownBootSafe();
 } else {
-  window.addEventListener('load', _splashdownBootSafe);
+  document.addEventListener('DOMContentLoaded', _splashdownBootSafe);
 }
+window.addEventListener('load', _splashdownBootSafe);
 
 // ── PANEL TOGGLES ────────────────────────────────────────────────────────────
 function toggleInfoPanel() {
@@ -1489,18 +1496,29 @@ document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') closeShipModal();
 });
 
-// ── SHIP TRACKER PANEL — show fallback link card ─────────────────────────────
-// Both MarineTraffic and VesselFinder embeds load (HTTP 200) but render blank /
-// blocked content for LPD-26, so old auto-detection never triggered the fallback.
-// Live position is already shown in the left HUD via /api/ship; the side panel
-// just provides a quick link out to the public trackers.
+// ── MOBILE: collapse both side panels by default ────────────────────────────
+(function() {
+  if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches) {
+    const info = document.getElementById('info-panel');
+    const ship = document.getElementById('ship-tracker-panel');
+    if (info) info.classList.add('collapsed');
+    if (ship) ship.classList.add('collapsed');
+  }
+})();
+
+// ── SHIP TRACKER PANEL — MarineTraffic embed (VesselFinder blocks iframe via X-Frame-Options) ─
 (function() {
   const iframeMT = document.getElementById('ship-iframe');
-  const iframeVF = document.getElementById('ship-iframe-vf');
   const fallback = document.getElementById('ship-fallback');
-  if (iframeMT) iframeMT.style.display = 'none';
-  if (iframeVF) iframeVF.style.display = 'none';
-  if (fallback) fallback.classList.add('visible');
+  let mtLoaded = false;
+  if (iframeMT) iframeMT.addEventListener('load', function() { mtLoaded = true; });
+  // If the embed never loads (network/CSP), show the link-card fallback.
+  setTimeout(function() {
+    if (!mtLoaded) {
+      if (iframeMT) iframeMT.style.display = 'none';
+      if (fallback) fallback.classList.add('visible');
+    }
+  }, 9000);
 })();
 </script>
 </body>
