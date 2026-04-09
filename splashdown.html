@@ -1182,6 +1182,31 @@ function bootSplashdownScene() {
   );
   earthGroup.add(_issArrow);
 
+  // ── ISS PERSISTENCE TRAIL ─────────────────────────────────────────────────
+  const ISS_TRAIL_LEN = 180;
+  const issTrailBuf   = new Float32Array(ISS_TRAIL_LEN * 3); // ring buffer, initialised to 0
+  let   issTrailHead  = 0;
+
+  // Bright trail: newest 60 points
+  const trailBrightGeo = new THREE.BufferGeometry();
+  const trailBrightArr = new Float32Array(60 * 3);
+  trailBrightGeo.setAttribute('position', new THREE.BufferAttribute(trailBrightArr, 3).setUsage(THREE.DynamicDrawUsage));
+  const trailBrightLine = new THREE.Line(
+    trailBrightGeo,
+    new THREE.LineBasicMaterial({ color: 0xcc55ff, transparent: true, opacity: 0.6, vertexColors: false })
+  );
+  scene.add(trailBrightLine);
+
+  // Dim trail: oldest 120 points
+  const trailDimGeo = new THREE.BufferGeometry();
+  const trailDimArr = new Float32Array(120 * 3);
+  trailDimGeo.setAttribute('position', new THREE.BufferAttribute(trailDimArr, 3).setUsage(THREE.DynamicDrawUsage));
+  const trailDimLine = new THREE.Line(
+    trailDimGeo,
+    new THREE.LineBasicMaterial({ color: 0xcc55ff, transparent: true, opacity: 0.2, vertexColors: false })
+  );
+  scene.add(trailDimLine);
+
   // ── LABEL PROJECTION ─────────────────────────────────────────────────────────
   function projectToScreen(vec3world, cam, rend) {
     // vec3world is in earthGroup local space; transform to world first
@@ -1582,6 +1607,27 @@ function bootSplashdownScene() {
     issGroup.position.copy(eciToScene(issECIDir(issU, issRaan)).normalize().multiplyScalar(ISS_SCENE_R));
     const issVelScene = eciToScene(issECIVel(issU, issRaan)).normalize();
     issGroup.quaternion.copy(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), issVelScene));
+
+    // ── ISS trail ring-buffer update ──
+    // Get ISS world position (earthGroup may be rotated by user drag)
+    const _issWorldPos = new THREE.Vector3();
+    issGroup.getWorldPosition(_issWorldPos);
+    // Write into ring buffer
+    issTrailBuf[issTrailHead * 3]     = _issWorldPos.x;
+    issTrailBuf[issTrailHead * 3 + 1] = _issWorldPos.y;
+    issTrailBuf[issTrailHead * 3 + 2] = _issWorldPos.z;
+    issTrailHead = (issTrailHead + 1) % ISS_TRAIL_LEN;
+    // Reorder: index 0 = oldest, index ISS_TRAIL_LEN-1 = newest
+    const _trailOrdered = new Float32Array(ISS_TRAIL_LEN * 3);
+    const _tail = ISS_TRAIL_LEN - issTrailHead;
+    _trailOrdered.set(issTrailBuf.subarray(issTrailHead * 3), 0);
+    _trailOrdered.set(issTrailBuf.subarray(0, issTrailHead * 3), _tail * 3);
+    // Dim segment: oldest 120 points (indices 0–119)
+    trailDimArr.set(_trailOrdered.subarray(0, 120 * 3));
+    trailDimGeo.attributes.position.needsUpdate = true;
+    // Bright segment: newest 60 points (indices 120–179)
+    trailBrightArr.set(_trailOrdered.subarray(120 * 3));
+    trailBrightGeo.attributes.position.needsUpdate = true;
 
     // Velocity arrow tracks ISS
     _issArrow.position.copy(issGroup.position);
