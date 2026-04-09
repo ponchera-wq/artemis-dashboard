@@ -99,8 +99,8 @@
       transform: translate(-50%, -130%);
     }
     #label-orion    { color: #00e5ff; }
-    #label-ship     { color: #ffa500; transform: translate(-50%, 90%); }
-    #label-splashdown { color: #ff6633; transform: translate(-50%, -180%); }
+    #label-ship     { color: #ffa500; transform: translate(-50%, -50%); }
+    #label-splashdown { color: #ff6633; transform: translate(-50%, -50%); }
     #label-reentry  { color: #ff4422; transform: translate(-50%, -380%); }
     #label-iss {
       color: #cc55ff;
@@ -112,6 +112,7 @@
       border-radius: 4px;
       padding: 4px 9px 5px;
       text-shadow: 0 0 7px #cc44ff, 0 1px 3px rgba(0,0,0,0.9);
+      transform: translate(-50%, -50%);
     }
     #label-iss .iss-title { font-size: 0.72rem; font-weight: bold; letter-spacing: 0.1em; }
     #label-iss .iss-stat  { font-size: 0.60rem; opacity: 0.85; display: block; }
@@ -530,6 +531,13 @@
 <!-- 3D CANVAS -->
 <div id="canvas-container"></div>
 
+<!-- SVG connector lines (drawn each frame) -->
+<svg id="label-connectors" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:49;" xmlns="http://www.w3.org/2000/svg">
+  <line id="connector-iss"      stroke="#cc55ff" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+  <line id="connector-splash"   stroke="#ff6633" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+  <line id="connector-murtha"   stroke="#ffa500" stroke-width="1" stroke-dasharray="4 3" opacity="0.7"/>
+</svg>
+
 <!-- LABELS -->
 <div id="label-orion"    class="map-label">INTEGRITY &mdash; Inbound</div>
 <div id="label-ship"     class="map-label">⚓ USS John P. Murtha<span class="click-hint">▸ details</span></div>
@@ -798,6 +806,7 @@ function bootSplashdownScene() {
   const earthGroup = new THREE.Group();
   scene.add(earthGroup);
 
+  let cloudMesh = null;
   const earthGeo = new THREE.SphereGeometry(1.0, 64, 64);
   const earthMat = new THREE.ShaderMaterial({
     uniforms: {
@@ -887,6 +896,24 @@ function bootSplashdownScene() {
     blending: THREE.AdditiveBlending
   });
   earthGroup.add(new THREE.Mesh(atmoGeo, atmoMat));
+
+  // Cloud layer — independent sphere slightly above Earth surface
+  (function() {
+    const cloudGeo = new THREE.SphereGeometry(1.012, 64, 64);
+    const cloudMat = new THREE.MeshPhongMaterial({
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false
+    });
+    cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
+    new THREE.TextureLoader().load(
+      'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_clouds_2048.jpg',
+      function(tex) { cloudMat.map = tex; cloudMat.needsUpdate = true; },
+      undefined,
+      function() { /* cloud texture unavailable — skip silently */ }
+    );
+    earthGroup.add(cloudMesh);
+  })();
 
   // Three-light setup: ambient (deep blue) + sun directional + fill point
   scene.add(new THREE.AmbientLight(0x1a2a6a, 0.2));
@@ -1062,7 +1089,7 @@ function bootSplashdownScene() {
   // Scale: Earth R = 1.0 scene units → ISS orbit R = (6371+408)/6371 ≈ 1.064
   const EARTH_R_KM   = 6371;
   const ISS_ALT_KM   = 408;
-  const ISS_SCENE_R  = 1.0 * (EARTH_R_KM + ISS_ALT_KM) / EARTH_R_KM; // ≈ 1.064
+  const ISS_SCENE_R  = 1.0 * (EARTH_R_KM + ISS_ALT_KM) / EARTH_R_KM * 1.06; // ≈ 1.128 — scaled out for visibility
   const ISS_INC      = 51.6332 * Math.PI / 180;
   const ISS_RAAN0    = 329.4800 * Math.PI / 180;
   const ISS_ARGP     = 251.7519 * Math.PI / 180;
@@ -1256,6 +1283,26 @@ function bootSplashdownScene() {
   const labelISS       = document.getElementById('label-iss');
   const issLatLonEl    = document.getElementById('iss-latlon');
 
+  // SVG connector lines
+  const connISS    = document.getElementById('connector-iss');
+  const connSplash = document.getElementById('connector-splash');
+  const connMurtha = document.getElementById('connector-murtha');
+
+  // Offset positions for labels that need to be pulled away from their target
+  // Splashdown label — shown well NW of the target zone
+  const splashLabelOffsetPos = latLonToVec3(33.4, -119.8, 1.1);
+  // Murtha label offset will be computed dynamically (offset from shipLabelPos)
+  const _murthaLabelOffset = new THREE.Vector3();
+
+  function setConnector(svgLine, x1, y1, x2, y2, visible) {
+    if (!visible) { svgLine.setAttribute('stroke-opacity', '0'); return; }
+    svgLine.setAttribute('x1', x1.toFixed(1));
+    svgLine.setAttribute('y1', y1.toFixed(1));
+    svgLine.setAttribute('x2', x2.toFixed(1));
+    svgLine.setAttribute('y2', y2.toFixed(1));
+    svgLine.setAttribute('stroke-opacity', '0.7');
+  }
+
   // ── MOUSE / TOUCH CONTROLS ───────────────────────────────────────────────────
   let isDragging = false;
   let prevMouse  = { x: 0, y: 0 };
@@ -1446,6 +1493,9 @@ function bootSplashdownScene() {
     _lastFrameMs = t;
     atmoMat.uniforms.time.value += delta;
 
+    // Rotate cloud layer independently
+    if (cloudMesh) cloudMesh.rotation.y += 0.00004;
+
     // Pulse Orion dot
     orionDotMat.opacity = 0.4 + 0.6 * (0.5 + 0.5 * Math.sin(t * 0.003));
 
@@ -1455,10 +1505,29 @@ function bootSplashdownScene() {
 
     // Update labels
     updateLabel(labelOrion,   orionLabelPos);
-    updateLabel(labelShip,    shipLabelPos);
-    updateLabel(labelSplash,  splashLabelPos);
     updateLabel(labelReentry, reentryLabelPos);
     updateGeoLabels();
+
+    // Splashdown label — offset NW of target, with connector line to target
+    updateLabel(labelSplash, splashLabelOffsetPos);
+    const _splashScreenTarget = projectToScreen(splashLabelPos, camera, renderer);
+    const _splashScreenLabel  = projectToScreen(splashLabelOffsetPos, camera, renderer);
+    setConnector(connSplash,
+      _splashScreenTarget.x, _splashScreenTarget.y,
+      _splashScreenLabel.x,  _splashScreenLabel.y,
+      _splashScreenTarget.visible && _splashScreenLabel.visible
+    );
+
+    // Murtha (ship) label — offset above-right of ship position, with connector line
+    _murthaLabelOffset.copy(shipLabelPos).multiplyScalar(1.0).addScaledVector(shipLabelPos.clone().normalize(), 0.18);
+    updateLabel(labelShip, _murthaLabelOffset);
+    const _murthaScreenObj = projectToScreen(shipLabelPos, camera, renderer);
+    const _murthaScreenLbl = projectToScreen(_murthaLabelOffset, camera, renderer);
+    setConnector(connMurtha,
+      _murthaScreenObj.x, _murthaScreenObj.y,
+      _murthaScreenLbl.x, _murthaScreenLbl.y,
+      _murthaScreenObj.visible && _murthaScreenLbl.visible
+    );
 
     // ── Sun direction update (real-time day/night terminator) ──
     if (typeof FlybyLighting !== 'undefined' && FlybyLighting.isReady()) {
@@ -1497,8 +1566,16 @@ function bootSplashdownScene() {
     const _issLat  = Math.asin(Math.max(-1, Math.min(1, _issECI.z))) * 180 / Math.PI;
     const _issLon  = Math.atan2(_issFy, _issFx) * 180 / Math.PI;
     issLatLonEl.textContent = 'LAT ' + (_issLat >= 0 ? '+' : '') + _issLat.toFixed(1) + '°  LON ' + _issLon.toFixed(1) + '°';
-    // Push label anchor well outside Earth so it doesn't overlap the model
-    updateLabel(labelISS, issGroup.position.clone().multiplyScalar(2.2));
+    // ISS label — anchor near ISS, connector line from ISS to label
+    const _issScreenObj   = projectToScreen(issGroup.position, camera, renderer);
+    const _issLabelAnchor = issGroup.position.clone().multiplyScalar(1.45);
+    updateLabel(labelISS, _issLabelAnchor);
+    const _issScreenLbl   = projectToScreen(_issLabelAnchor, camera, renderer);
+    setConnector(connISS,
+      _issScreenObj.x, _issScreenObj.y,
+      _issScreenLbl.x, _issScreenLbl.y,
+      _issScreenObj.visible && _issScreenLbl.visible
+    );
 
     // ── Murtha model bob ────────────────────────────────────────────────────
     if (murthaModelGroup && _murthaBaseNorm.lengthSq() > 0) {
