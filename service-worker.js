@@ -1,13 +1,8 @@
-const CACHE_NAME = 'artemis-dashboard-v16';
+const CACHE_NAME = 'artemis-dashboard-v17';
 const STATIC_ASSETS = [
   '/',
-  '/index.html',
-  '/observer.html',
-  '/splashdown.html',
   '/js/murtha-model.js',
   '/js/flyby-lighting.js',
-  'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/ColladaLoader.js',
-  '/data/mission-ephemeris.json',
   '/css/styles.css',
   '/js/shared.js',
   '/js/mission-ephemeris.js',
@@ -41,9 +36,6 @@ const STATIC_ASSETS = [
   '/content/comms.html',
   '/content/canada.html',
   '/content/esm.html',
-  'https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js',
-  'https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap',
 ];
 
 const API_DOMAINS = [

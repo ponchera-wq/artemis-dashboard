@@ -858,27 +858,24 @@ function bootSplashdownScene() {
     },
     vertexShader: [
       'varying vec2 vUv;',
-      'varying float vSunDot;',
-      'uniform vec3 sunDirection;',
+      'varying vec3 vNormal;',
       'void main() {',
       '  vUv = uv;',
-      '  vec3 worldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);',
-      '  vSunDot = dot(worldNormal, normalize(sunDirection));',
+      '  vNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);',
       '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
       '}'
     ].join('\n'),
     fragmentShader: [
       'uniform sampler2D dayMap;',
       'uniform sampler2D nightMap;',
+      'uniform vec3 sunDirection;',
       'varying vec2 vUv;',
-      'varying float vSunDot;',
+      'varying vec3 vNormal;',
       'void main() {',
-      '  vec3 dayColor   = texture2D(dayMap, vUv).rgb;',
-      '  vec3 nightColor = texture2D(nightMap, vUv).rgb;',
-      '  float blend = smoothstep(-0.1, 0.15, vSunDot);',
-      '  vec3 color = mix(vec3(0.0), dayColor, blend);',
-      '  color += nightColor * max(0.0, -vSunDot) * 1.8;',
-      '  gl_FragColor = vec4(color, 1.0);',
+      '  float vSunDot = dot(vNormal, normalize(sunDirection));',
+      '  vec3 night = texture2D(nightMap, vUv).rgb * max(0.0, -vSunDot) * 2.2;',
+      '  vec3 day   = texture2D(dayMap,   vUv).rgb * max(0.0, vSunDot * 1.3 + 0.1);',
+      '  gl_FragColor = vec4(day + night, 1.0);',
       '}'
     ].join('\n')
   });
@@ -1705,18 +1702,19 @@ function bootSplashdownScene() {
       const metSec = (t - LAUNCH_UTC.getTime()) / 1000;
       const sd = FlybyLighting.getSunDir(metSec);
       if (sd) {
-        // getSunDir returns ECI (Z=north). Convert to scene (Y=north), then rotate with
-        // earthGroup so the terminator stays locked to Earth's surface regardless of drag.
-        const sunVec = new THREE.Vector3(sd.x, sd.z, -sd.y);
-        sunVec.applyQuaternion(earthGroup.quaternion);
-        sunLight.position.copy(sunVec.clone().multiplyScalar(50));
-        earthMat.uniforms.sunDirection.value.copy(sunVec);
-        atmoMat.uniforms.sunDirection.value.copy(sunVec);
-        // Terminator disc — orient perpendicular to sun direction
-        const sunDirNorm = sunVec.clone().normalize();
-        terminatorDisc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sunDirNorm);
-        // Sun billboard — place along sun direction
-        sunSprite.position.copy(sunDirNorm.clone().multiplyScalar(12));
+        // getSunDir returns ECI (Z=north). Convert to scene (Y=north).
+        // Keep in world space — shaders use world-space normals (modelMatrix * normal),
+        // so sunDirection must also be world-space. Do NOT rotate by earthGroup.quaternion
+        // (that was the bug: it made the terminator locked to Earth's surface instead of
+        // the real sun).
+        const sunWorld = new THREE.Vector3(sd.x, sd.z, -sd.y).normalize();
+        sunLight.position.copy(sunWorld.clone().multiplyScalar(50));
+        earthMat.uniforms.sunDirection.value.copy(sunWorld);
+        atmoMat.uniforms.sunDirection.value.copy(sunWorld);
+        // Terminator disc — scene-parented, orient perpendicular to world-space sun
+        terminatorDisc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sunWorld);
+        // Sun billboard — place along world-space sun direction
+        sunSprite.position.copy(sunWorld.clone().multiplyScalar(12));
       }
     }
 
