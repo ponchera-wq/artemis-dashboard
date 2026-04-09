@@ -963,12 +963,19 @@ function bootSplashdownScene() {
       depthWrite: false
     });
     cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
-    new THREE.TextureLoader().load(
-      'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_clouds_2048.jpg',
-      function(tex) { cloudMat.map = tex; cloudMat.needsUpdate = true; },
-      undefined,
-      function() { /* cloud texture unavailable — skip silently */ }
-    );
+    (function tryCloudTex(idx) {
+      const cloudPaths = [
+        'https://unpkg.com/three@0.128.0/examples/textures/planets/earth_clouds_2048.jpg',
+        'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/textures/planets/earth_clouds_2048.jpg'
+      ];
+      if (idx >= cloudPaths.length) return; // all failed — skip silently, leave cloudMat.map null
+      new THREE.TextureLoader().load(
+        cloudPaths[idx],
+        function(tex) { cloudMat.map = tex; cloudMat.needsUpdate = true; },
+        undefined,
+        function() { tryCloudTex(idx + 1); }
+      );
+    })(0);
     earthGroup.add(cloudMesh);
   })();
 
@@ -1716,7 +1723,7 @@ function bootSplashdownScene() {
     );
 
     // ── Sun direction update (real-time day/night terminator) ──
-    if (typeof FlybyLighting !== 'undefined' && FlybyLighting.isReady()) {
+    if (typeof FlybyLighting !== 'undefined' && FlybyLighting.ready) {
       const metSec = (t - LAUNCH_UTC.getTime()) / 1000;
       const sd = FlybyLighting.getSunDir(metSec);
       if (sd) {
