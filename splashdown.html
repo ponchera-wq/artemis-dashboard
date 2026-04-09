@@ -924,6 +924,31 @@ function bootSplashdownScene() {
   fillLight.position.set(-10, -5, -8);
   scene.add(fillLight);
 
+  // ── TERMINATOR DISC ──────────────────────────────────────────────────────────
+  const terminatorDisc = new THREE.Mesh(
+    new THREE.RingGeometry(0.998, 1.001, 128),
+    new THREE.MeshBasicMaterial({
+      color: 0x4466ff,
+      transparent: true,
+      opacity: 0.18,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    })
+  );
+  scene.add(terminatorDisc);
+
+  // ── SUN BILLBOARD ────────────────────────────────────────────────────────────
+  const sunSprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      color: 0xfff5cc,
+      transparent: true,
+      opacity: 0.7,
+      blending: THREE.AdditiveBlending
+    })
+  );
+  sunSprite.scale.set(0.18, 0.18, 1);
+  scene.add(sunSprite);
+
   // ── ORION TRAJECTORY ARC ─────────────────────────────────────────────────────
   const orionWaypoints = [
     [10.0, -155.0],
@@ -1541,6 +1566,11 @@ function bootSplashdownScene() {
         sunLight.position.copy(sunVec.clone().multiplyScalar(50));
         earthMat.uniforms.sunDirection.value.copy(sunVec);
         atmoMat.uniforms.sunDirection.value.copy(sunVec);
+        // Terminator disc — orient perpendicular to sun direction
+        const sunDirNorm = sunVec.clone().normalize();
+        terminatorDisc.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), sunDirNorm);
+        // Sun billboard — place along sun direction
+        sunSprite.position.copy(sunDirNorm.clone().multiplyScalar(12));
       }
     }
 
