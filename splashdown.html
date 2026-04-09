@@ -799,19 +799,50 @@ function bootSplashdownScene() {
   scene.add(earthGroup);
 
   const earthGeo = new THREE.SphereGeometry(1.0, 64, 64);
-  const earthMat = new THREE.MeshPhongMaterial({ color: 0x2255aa, emissive: 0x051828, shininess: 25, specular: 0x224466 });
+  const earthMat = new THREE.ShaderMaterial({
+    uniforms: {
+      dayMap:       { value: null },
+      nightMap:     { value: null },
+      sunDirection: { value: new THREE.Vector3(1, 0, 0) }
+    },
+    vertexShader: [
+      'varying vec2 vUv;',
+      'varying float vSunDot;',
+      'uniform vec3 sunDirection;',
+      'void main() {',
+      '  vUv = uv;',
+      '  vec3 worldNormal = normalize((modelMatrix * vec4(normal, 0.0)).xyz);',
+      '  vSunDot = dot(worldNormal, normalize(sunDirection));',
+      '  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);',
+      '}'
+    ].join('\n'),
+    fragmentShader: [
+      'uniform sampler2D dayMap;',
+      'uniform sampler2D nightMap;',
+      'varying vec2 vUv;',
+      'varying float vSunDot;',
+      'void main() {',
+      '  vec3 dayColor   = texture2D(dayMap, vUv).rgb;',
+      '  vec3 nightColor = texture2D(nightMap, vUv).rgb;',
+      '  float blend = smoothstep(-0.1, 0.15, vSunDot);',
+      '  vec3 color = mix(vec3(0.0), dayColor, blend);',
+      '  color += nightColor * max(0.0, -vSunDot) * 1.8;',
+      '  gl_FragColor = vec4(color, 1.0);',
+      '}'
+    ].join('\n')
+  });
   const earth = new THREE.Mesh(earthGeo, earthMat);
   earthGroup.add(earth);
 
   // Earth day texture
   new THREE.TextureLoader().load(
     'https://raw.githubusercontent.com/mrdoob/three.js/r128/examples/textures/planets/earth_atmos_2048.jpg',
-    function(tex) { earthMat.map = tex; earthMat.color.set(0xffffff); earthMat.needsUpdate = true; }
+    function(tex) { earthMat.uniforms.dayMap.value = tex; earthMat.needsUpdate = true; }
   );
-  // Night lights emissive map (city lights on dark side)
+  // Night lights texture (city lights on dark side)
   new THREE.TextureLoader().load(
     'https://unpkg.com/three-globe/example/img/earth-night.jpg',
-    function(tex) { earthMat.emissiveMap = tex; earthMat.emissive.set(0x888888); earthMat.needsUpdate = true; },
+    function(tex) { earthMat.uniforms.nightMap.value = tex; earthMat.needsUpdate = true; },
     undefined, function() { /* night map unavailable, skip */ }
   );
 
@@ -1399,7 +1430,8 @@ function bootSplashdownScene() {
         // earthGroup so the terminator stays locked to Earth's surface regardless of drag.
         const sunVec = new THREE.Vector3(sd.x, sd.z, -sd.y);
         sunVec.applyQuaternion(earthGroup.quaternion);
-        sunLight.position.copy(sunVec.multiplyScalar(50));
+        sunLight.position.copy(sunVec.clone().multiplyScalar(50));
+        earthMat.uniforms.sunDirection.value.copy(sunVec);
       }
     }
 
