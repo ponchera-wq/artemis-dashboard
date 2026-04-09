@@ -963,6 +963,7 @@ function bootSplashdownScene() {
       depthWrite: false
     });
     cloudMesh = new THREE.Mesh(cloudGeo, cloudMat);
+    cloudMesh.visible = false;
     (function tryCloudTex(idx) {
       const cloudPaths = [
         'https://unpkg.com/three@0.128.0/examples/textures/planets/earth_clouds_2048.jpg',
@@ -971,7 +972,7 @@ function bootSplashdownScene() {
       if (idx >= cloudPaths.length) return; // all failed — skip silently, leave cloudMat.map null
       new THREE.TextureLoader().load(
         cloudPaths[idx],
-        function(tex) { cloudMat.map = tex; cloudMat.needsUpdate = true; },
+        function(tex) { cloudMat.map = tex; cloudMat.needsUpdate = true; cloudMesh.visible = true; },
         undefined,
         function() { tryCloudTex(idx + 1); }
       );
