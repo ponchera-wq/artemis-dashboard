@@ -4,7 +4,9 @@
     "minify": "node scripts/minify-assets.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "csso": "^5.0.1",
+    "http-server": "^14.1.1",
     "terser": "^5.31.0"
   },
   "dependencies": {
