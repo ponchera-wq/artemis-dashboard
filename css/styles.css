@@ -3498,3 +3498,73 @@ a:focus-visible,
   }
   .archive-banner-sub { display: none; }
 }
+
+/* ── Scrub bar (artemis-ii.html only) ── */
+#scrub-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: rgba(0, 0, 0, 0.92);
+  border-top: 1px solid var(--border, rgba(168, 224, 0, 0.2));
+  z-index: 90;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  color: var(--text, #d0f0c0);
+  letter-spacing: 0.06em;
+}
+#scrub-bar button {
+  background: none;
+  border: 1px solid var(--border, rgba(168, 224, 0, 0.3));
+  color: var(--text, #d0f0c0);
+  font-family: inherit;
+  font-size: 11px;
+  padding: 6px 12px;
+  cursor: pointer;
+  letter-spacing: inherit;
+  text-transform: uppercase;
+}
+#scrub-bar button:hover {
+  background: rgba(168, 224, 0, 0.1);
+}
+#scrub-bar input[type="range"] {
+  flex: 1;
+  accent-color: var(--cyan, #00ffcc);
+}
+#scrub-bar .scrub-readout {
+  min-width: 280px;
+  text-align: right;
+  color: var(--cyan, #00ffcc);
+}
+#scrub-bar .scrub-phase {
+  color: var(--amber, #ffa726);
+  margin-left: 8px;
+}
+@media (max-width: 768px) {
+  #scrub-bar {
+    height: auto;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    gap: 8px;
+    font-size: 10px;
+  }
+  #scrub-bar .scrub-readout {
+    min-width: 0;
+    width: 100%;
+    text-align: center;
+  }
+}
+/* Push main content up so it's not hidden behind the scrub bar */
+body.archive-mode #main-content {
+  padding-bottom: 70px;
+}
+@media (max-width: 768px) {
+  body.archive-mode #main-content {
+    padding-bottom: 100px;
+  }
+}
