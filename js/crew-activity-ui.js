@@ -11,7 +11,7 @@
 
   // ── Helpers ────────────────────────────────────────────────────────
   function metNow() {
-    return (Date.now() - window.LAUNCH_UTC.getTime()) / 1000;
+    return window.getScrubMetSec();
   }
 
   function fmtCountdown(diffSec) {

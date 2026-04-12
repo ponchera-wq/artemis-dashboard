@@ -189,14 +189,14 @@
   }
 
   function tickTimeline() {
-    var nowMet = (Date.now() - LAUNCH_UTC) / 1000;
+    var nowMet = window.getScrubMetSec();
     var activeIdx = getActiveIdx(nowMet);
     updateTimelineChrome(nowMet, activeIdx);
     updateTimelineRows(nowMet, activeIdx);
   }
 
   function renderTimeline() {
-    var nowMet = (Date.now() - LAUNCH_UTC) / 1000;
+    var nowMet = window.getScrubMetSec();
     var activeIdx = getActiveIdx(nowMet);
     var scroll = document.getElementById('timeline-scroll');
     if (!scroll) return;

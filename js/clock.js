@@ -57,8 +57,8 @@ if (phaseBar) {
 let lastPhaseIdx = -1;
 
 function tick() {
-  const now     = new Date();
-  const elapsed = now - LAUNCH_UTC;
+  const elapsed    = window.getScrubMetMs();
+  const now        = new Date(LAUNCH_UTC.getTime() + elapsed);
   const elapsedMin = elapsed / 60000;
 
   // MET

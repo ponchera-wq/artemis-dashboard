@@ -194,7 +194,7 @@
   }
 
   function funStatHTML() {
-    const elapsedSec = Math.max(0, Date.now() - LAUNCH_UTC) / 1000;
+    const elapsedSec = Math.max(0, window.getScrubMetSec());
     const frames = Math.floor((2_000_000 * elapsedSec) / 512);
     return `<div class="dsn-funstat">📊 EST. TELEMETRY FRAMES SINCE LAUNCH: ~${frames.toLocaleString()}</div>`;
   }

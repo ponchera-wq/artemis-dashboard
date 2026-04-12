@@ -1024,7 +1024,7 @@
     container.appendChild(presetWrapper);
 
     function updatePresetBtns() {
-      var _nowMetS = (Date.now() - LAUNCH_UTC) / 1000;
+      var _nowMetS = window.getScrubMetSec();
       var _inFlybyWindow = _nowMetS > 345600 && _nowMetS < 518400; // Day 4–6
       Object.entries(presetBtns).forEach(function(entry) {
         var key = entry[0], btn = entry[1];
@@ -1254,7 +1254,7 @@
       var metH = Math.floor(wp.metSec / 3600);
       var metM = Math.floor((wp.metSec % 3600) / 60);
       var metStr = 'T+' + metH + 'h ' + metM + 'm';
-      var nowMet2 = (Date.now() - LAUNCH_UTC) / 1000;
+      var nowMet2 = window.getScrubMetSec();
       var diff = wp.metSec - nowMet2;
       var statusStr = '';
       if (diff > 0) {
@@ -1296,7 +1296,7 @@
       var _pop = document.createElement('div');
       _pop.className = 'moonview-popup';
       _pop.style.cssText = 'position:absolute;z-index:20;background:rgba(5,12,30,0.95);border:1px solid rgba(200,195,180,0.4);border-radius:6px;padding:14px 18px;font-family:"Share Tech Mono",monospace;box-shadow:0 0 20px rgba(200,195,180,0.2);max-width:290px;left:50%;top:60px;transform:translateX(-50%);text-align:center;pointer-events:none;';
-      var _nowMetPop = (Date.now() - LAUNCH_UTC) / 1000;
+      var _nowMetPop = window.getScrubMetSec();
       var _caMet   = points[caIdx].metSec;
       var _cdSec   = _caMet - _nowMetPop;
       var _caKmPop = points[caIdx].distMoonKm;
@@ -1329,7 +1329,7 @@
         }
         lastReducedRenderMs = now;
       }
-      var elapsed = now - LAUNCH_UTC;
+      var elapsed = window.getScrubMetMs();
       var metSec = elapsed / 1000;
       var pulse = 0.5 + 0.5 * Math.sin(now / 430);
 
@@ -2046,7 +2046,7 @@
         var ds = window.dashboardState || {};
         var _tuEarthHud = document.getElementById('tu-earth');
         var isImp = _tuEarthHud ? _tuEarthHud.textContent.trim() === 'MI' : false;
-        var elapsed = Date.now() - LAUNCH_UTC;
+        var elapsed = window.getScrubMetMs();
         var metSec = elapsed / 1000;
         var state = MissionEphemeris.getState(metSec);
         var earthKm = state.distEarthKm, moonKm = state.distMoonKm, speedKmh = state.speedKms * 3600;

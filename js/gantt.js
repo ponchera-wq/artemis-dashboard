@@ -283,7 +283,7 @@
     var nl = document.getElementById('gantt-now-line');
     var nb = document.getElementById('gantt-now-label');
     if (!nl) return;
-    var nowMet = (Date.now() - LAUNCH_UTC) / 1000;
+    var nowMet = window.getScrubMetSec();
     if (nowMet < 0) {
       nl.style.display = 'none';
       if (nb) { nb.style.left = (LW + 2) + 'px'; nb.textContent = 'T\u2212'; nb.style.display = 'block'; }
@@ -304,7 +304,7 @@
   function scrollToNow() {
     var s = document.getElementById('gantt-scroll');
     if (!s) return;
-    var nowMet = (Date.now() - LAUNCH_UTC) / 1000;
+    var nowMet = window.getScrubMetSec();
     var x = metToPx(Math.max(0, Math.min(nowMet, MISSION_END))) + LW;
     s.scrollTo({ left: Math.max(0, x - s.clientWidth / 2), behavior: 'smooth' });
   }

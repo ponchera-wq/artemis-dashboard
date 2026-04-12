@@ -49,7 +49,7 @@ function distAnalogy(km) {
 
 function tickSplashdown() {
   if (!elSplashdown || typeof SPLASHDOWN_UTC === 'undefined') return;
-  var diff = SPLASHDOWN_UTC - Date.now();
+  var diff = SPLASHDOWN_UTC - (LAUNCH_UTC.getTime() + window.getScrubMetMs());
   var str, cls = 'stat-value';
   if (diff > 0) {
     var d = Math.floor(diff / 86400000);
@@ -91,7 +91,7 @@ function tickPerilune(metSec) {
   }
   // Fallback: wall-clock PERILUNE_UTC
   if (typeof PERILUNE_UTC === 'undefined') return;
-  var diff = PERILUNE_UTC - Date.now();
+  var diff = PERILUNE_UTC - (LAUNCH_UTC.getTime() + window.getScrubMetMs());
   var absDiff = Math.abs(diff);
   var str, cls = 'stat-value';
   if (absDiff < 30 * 60 * 1000) {
@@ -118,7 +118,7 @@ function tickPerilune(metSec) {
 
 function tickTelem() {
   if (!tvEarth || !tvMoon || !tvSpeed || !tuEarth || !tuMoon || !tuSpeed) return;
-  var metSec = (Date.now() - LAUNCH_UTC) / 1000;
+  var metSec = window.getScrubMetSec();
   var state = MissionEphemeris.getState(metSec);
 
   var earthKm  = state.distEarthKm;
