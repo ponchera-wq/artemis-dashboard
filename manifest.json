@@ -1,6 +1,6 @@
 {
-  "name": "Artemis II Mission Dashboard",
-  "short_name": "Artemis II",
+  "name": "Artemis III · Mission Dashboard",
+  "short_name": "Artemis III",
   "description": "Real-time Artemis II mission tracking with live telemetry, 3D trajectory, and space weather.",
   "start_url": "/",
   "display": "standalone",

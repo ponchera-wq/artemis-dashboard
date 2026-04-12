@@ -1,4 +1,4 @@
-const CACHE_NAME = 'artemis-dashboard-v17';
+const CACHE_NAME = 'artemis-dashboard-v18';
 const STATIC_ASSETS = [
   '/',
   '/js/murtha-model.js',
@@ -36,6 +36,13 @@ const STATIC_ASSETS = [
   '/content/comms.html',
   '/content/canada.html',
   '/content/esm.html',
+  '/js/artemis3.js',
+  '/js/milestones.js',
+  '/js/partners.js',
+  '/js/starship-ticker.js',
+  '/data/artemis3-milestones.json',
+  '/data/partners-status.json',
+  '/data/starship-flights.json',
 ];
 
 const API_DOMAINS = [

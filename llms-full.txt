@@ -1,6 +1,22 @@
-# Artemis II — Comprehensive Machine-Readable Mission Brief
+# Artemis III & II Mission Dashboard — Comprehensive Mission Brief
 # Source: https://artemis-live-dashboard.vercel.app/
 # Data sources: NASA/JSC/FOD/FDO OEM trajectory file, NASA press kit, CSA public affairs
+
+HYBRID ARCHITECTURE
+===================
+This project hosts two distinct mission dashboards:
+
+1. ARTEMIS III HUB (/) — Mission readiness tracker for the upcoming crewed lunar docking
+demonstration. Countdown timers, mission status, partner milestones, and Starship flight cadence.
+Targets mid-2027 for the crewed LEO rendezvous and docking mission.
+
+2. ARTEMIS II ARCHIVE (/artemis-ii.html) — Playable record of the completed Artemis II crewed
+lunar flyby mission (April 2026). Interactive scrub bar for timeline scrubbing, 3D trajectory
+visualization, crew profiles, and historical telemetry playback.
+
+Both pages share the same codebase, infrastructure, and styling.
+
+================================================================================
 
 ================================================================================
 MISSION IDENTITY
