@@ -3464,3 +3464,37 @@ a:focus-visible,
 #top-bar {
   box-shadow: 0 0 0 1px rgba(168,224,0,0.12), 0 0 30px rgba(168,224,0,0.04);
 }
+
+/* ── Archive banner (artemis-ii.html only) ── */
+#archive-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 24px;
+  background: linear-gradient(90deg, rgba(255,167,38,0.08), rgba(255,167,38,0.02));
+  border-top: 1px solid rgba(255,167,38,0.3);
+  border-bottom: 1px solid rgba(255,167,38,0.3);
+  color: var(--amber, #ffa726);
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.archive-banner-icon { font-size: 14px; opacity: 0.8; }
+.archive-banner-text { font-weight: 600; }
+.archive-banner-sub {
+  opacity: 0.6;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  margin-left: auto;
+  font-size: 11px;
+}
+@media (max-width: 768px) {
+  #archive-banner {
+    padding: 8px 16px;
+    font-size: 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .archive-banner-sub { display: none; }
+}

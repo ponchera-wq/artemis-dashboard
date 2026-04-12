@@ -1861,15 +1861,6 @@
 
       scheduleNextFrame();
     }
-    // [DIAG] Temporary diagnostic — remove after inspection
-    var _diagMoonCA = toScene(caPt.moon.x, caPt.moon.y, caPt.moon.z);
-    var _diagOrionCA = toScene(caPt.orion.x, caPt.orion.y, caPt.orion.z);
-    var _diagTrajMid = allPts[Math.floor(allPts.length / 2)];
-    console.log('[DIAG] Moon at CA (scene):', _diagMoonCA.x.toFixed(2), _diagMoonCA.y.toFixed(2), _diagMoonCA.z.toFixed(2));
-    console.log('[DIAG] Orion at CA (scene):', _diagOrionCA.x.toFixed(2), _diagOrionCA.y.toFixed(2), _diagOrionCA.z.toFixed(2));
-    console.log('[DIAG] Traj midpoint (scene):', _diagTrajMid.x.toFixed(2), _diagTrajMid.y.toFixed(2), _diagTrajMid.z.toFixed(2));
-    console.log('[DIAG] Moon-Orion dist at CA:', _diagMoonCA.distanceTo(_diagOrionCA).toFixed(2), 'scene units');
-    console.log('[DIAG] initMoonPos:', initMoonPos.x.toFixed(2), initMoonPos.y.toFixed(2), initMoonPos.z.toFixed(2));
 
     // On mobile the panel may be off-screen when Three.js initialises, leaving
     // the canvas at 0×0 and the scene black.  Force a resize + re-render the

@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#08080e;">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Artemis II — Live Mission Dashboard</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+  <!-- PWA -->
+  <meta name="theme-color" content="#0a0e1a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Artemis II">
+  <link rel="manifest" href="manifest.json">
+  <!-- SEO -->
+  <meta name="description" content="Live real-time tracker for NASA's Artemis II crewed lunar flyby — crew Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen. NASA OEM ephemeris, 3D trajectory, space weather, DSN telemetry. First humans to the Moon since Apollo 17.">
+  <meta name="keywords" content="Artemis II, Artemis 2, NASA moon mission 2026, Orion spacecraft, SLS rocket, lunar trajectory, live mission tracker, crewed lunar flyby 2026, Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen, NASA live, deep space, lunar flyby, real-time tracker, mission status, Artemis mission, moon 2026, NASA Artemis">
+  <meta name="author" content="Caz">
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+  <link rel="canonical" href="https://artemis-live-dashboard.vercel.app/">
+  <!-- Open Graph -->
+  <meta property="og:title" content="Artemis II — Live Mission Dashboard">
+  <meta property="og:description" content="Real-time mission tracking for NASA's Artemis II crewed lunar flyby. OEM ephemeris data, 3D trajectory, space weather, crew profiles, and news feeds.">
+  <meta property="og:url" content="https://artemis-live-dashboard.vercel.app/">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://artemis-live-dashboard.vercel.app/og-preview.webp">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Artemis II — Live Mission Dashboard">
+  <meta name="twitter:description" content="Real-time Artemis II mission tracking with NASA OEM ephemeris data, 3D trajectory map, and space weather monitoring.">
+  <meta name="twitter:image" content="https://artemis-live-dashboard.vercel.app/og-preview.webp">
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebApplication",
+        "name": "Artemis II Live Mission Dashboard",
+        "description": "Live real-time tracker for NASA's Artemis II crewed lunar flyby mission. Tracks crew Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen on the first crewed flight beyond Earth orbit since Apollo 17. Features NASA OEM ephemeris data, 3D trajectory visualization, Deep Space Network telemetry, and space weather monitoring.",
+        "url": "https://artemis-live-dashboard.vercel.app/",
+        "applicationCategory": "Space Tracking",
+        "operatingSystem": "Web Browser",
+        "datePublished": "2026-04-01",
+        "author": {
+          "@type": "Person",
+          "name": "Caz"
+        },
+        "keywords": "Artemis II, Artemis 2, NASA moon mission 2026, Orion spacecraft, SLS rocket, lunar trajectory, live mission tracker, crewed lunar flyby 2026, Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen, NASA live, deep space, real-time tracker",
+        "about": {
+          "@type": "Event",
+          "name": "NASA Artemis II Mission",
+          "description": "First crewed lunar flyby since Apollo 17 (1972). Crew of four — Reid Wiseman, Victor Glover, Christina Koch, Jeremy Hansen — travel beyond 400,000 km from Earth on a free-return trajectory around the Moon.",
+          "startDate": "2026-04-01T22:35:12Z",
+          "endDate": "2026-04-10",
+          "location": {
+            "@type": "Place",
+            "name": "Kennedy Space Center, Launch Complex 39B",
+            "address": "Merritt Island, Florida, USA"
+          },
+          "organizer": {
+            "@type": "Organization",
+            "name": "NASA",
+            "url": "https://www.nasa.gov"
+          },
+          "performer": [
+            { "@type": "Person", "name": "Reid Wiseman", "jobTitle": "Commander" },
+            { "@type": "Person", "name": "Victor Glover", "jobTitle": "Pilot" },
+            { "@type": "Person", "name": "Christina Koch", "jobTitle": "Mission Specialist 1" },
+            { "@type": "Person", "name": "Jeremy Hansen", "jobTitle": "Mission Specialist 2" }
+          ]
+        }
+      }
+    ]
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script>
+    (function() {
+      var v = Date.now();
+      var css = ['css/styles.css'];
+      css.forEach(function(href) {
+        var l = document.createElement('link');
+        l.rel = 'stylesheet'; l.href = href + '?v=' + v;
+        document.head.appendChild(l);
+      });
+      window._cbv = v;
+    })();
+  </script>
+</head>
+<body style="background:#08080e;">
+<a href="#main-content" class="skip-link">Skip to content</a>
+<h1 class="visually-hidden">Artemis II — Live Mission Dashboard</h1>
+
+<div id="main-content">
+
+  <nav id="ref-nav" aria-label="Reference guide navigation">
+
+    <!-- Header: hamburger (left) · title · viewer — desktop uses CSS grid; mobile flex -->
+    <div id="ref-nav-header">
+      <div class="ref-nav-header-start">
+        <button id="ref-nav-toggle" aria-label="Toggle reference menu">☰</button>
+        <div id="ref-brand-mobile" class="ref-brand">ARTEMIS II&nbsp;<span>MISSION</span></div>
+      </div>
+      <div id="ref-brand-desktop" class="ref-brand">ARTEMIS II&nbsp;<span>MISSION</span></div>
+      <div id="ref-nav-end">
+        <span id="ref-watching"><span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#00ff88;box-shadow:0 0 4px #00ff88;animation:sa-p 2s infinite;margin-right:3px;"></span><span id="viewer-num-mobile">—</span> 👁</span>
+      </div>
+    </div>
+
+    <!-- Reference guide nav items -->
+    <div id="ref-menu-items"></div>
+
+    <!-- Crew strip — shows inside hamburger menu when open -->
+    <div id="crew-strip">
+      <h2 class="crew-strip-label">CREW</h2>
+      <div class="crew-strip-members">
+        <div class="crew-strip-member" data-crew="wiseman" title="Click for bio" tabindex="0" role="button">
+          <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016434-alt.jpg" alt="Reid Wiseman" onerror="this.style.display='none'">
+          <span class="crew-strip-flag">🇺🇸</span>
+          <span class="crew-strip-name">REID WISEMAN</span>
+          <span class="crew-strip-role">CDR</span>
+        </div>
+        <div class="crew-strip-sep"></div>
+        <div class="crew-strip-member" data-crew="glover" title="Click for bio" tabindex="0" role="button">
+          <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016433-alt.jpg" alt="Victor Glover" onerror="this.style.display='none'">
+          <span class="crew-strip-flag">🇺🇸</span>
+          <span class="crew-strip-name">VICTOR GLOVER</span>
+          <span class="crew-strip-role">PLT</span>
+        </div>
+        <div class="crew-strip-sep"></div>
+        <div class="crew-strip-member" data-crew="koch" title="Click for bio" tabindex="0" role="button">
+          <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016435-alt.jpg" alt="Christina Koch" onerror="this.style.display='none'">
+          <span class="crew-strip-flag">🇺🇸</span>
+          <span class="crew-strip-name">CHRISTINA KOCH</span>
+          <span class="crew-strip-role">MS</span>
+        </div>
+        <div class="crew-strip-sep"></div>
+        <div class="crew-strip-member" data-crew="hansen" title="Click for bio" tabindex="0" role="button">
+          <img class="crew-strip-photo" src="https://www.nasa.gov/wp-content/uploads/2023/06/jsc2023e0016436-alt.jpg" alt="Jeremy Hansen" onerror="this.style.display='none'">
+          <span class="crew-strip-flag">🇨🇦</span>
+          <span class="crew-strip-name">JEREMY HANSEN</span>
+          <span class="crew-strip-role">MS · CSA</span>
+        </div>
+      </div>
+      <button id="reset-layout-btn" title="Reset panel layout to default">↺ RESET LAYOUT</button>
+    </div>
+
+    <!-- Mobile-only share row — shows at bottom when menu is open -->
+    <div id="ref-share-row">
+      <button onclick="navigator.clipboard.writeText(window.location.href).then(function(){var b=document.getElementById('ref-ct');b.textContent='COPIED!';setTimeout(function(){b.textContent='LINK'},1500)})"
+        class="ref-share-btn" title="Copy Link"><span id="ref-ct">LINK</span></button>
+      <button onclick="window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent('Tracking Artemis II live — first crewed Moon mission in 50 years 🚀🌕')+'&url='+encodeURIComponent(location.href),'_blank','noopener,noreferrer,width=550,height=420')"
+        class="ref-share-btn" title="Share on X">𝕏</button>
+      <button onclick="window.open('https://www.facebook.com/sharer/sharer.php?u='+encodeURIComponent(location.href),'_blank','noopener,noreferrer,width=550,height=420')"
+        class="ref-share-btn" title="Share on Facebook">f</button>
+      <button onclick="window.open('https://reddit.com/submit?url='+encodeURIComponent(location.href)+'&title='+encodeURIComponent('Artemis II Live Mission Dashboard — real-time tracking'),'_blank','noopener,noreferrer,width=550,height=420')"
+        class="ref-share-btn" title="Share on Reddit">▲</button>
+      <button onclick="window.open('https://api.whatsapp.com/send?text='+encodeURIComponent('Tracking Artemis II live! First crewed Moon mission in 50 years 🚀 '+location.href),'_blank','noopener,noreferrer')"
+        class="ref-share-btn" title="Share on WhatsApp">💬</button>
+    </div>
+
+  </nav>
+
+  <!-- ══ ROW 1: TOP BAR (MET · PHASE · TELEMETRY) ════════════════════ -->
+  <div id="top-bar">
+    <div class="corner-tl"></div><div class="corner-br"></div>
+    <h2 class="visually-hidden">Telemetry</h2>
+
+    <!-- MET Clock -->
+    <div id="tb-met">
+      <span class="tb-sect-label">MISSION ELAPSED TIME</span>
+      <div id="met-display">D+000 00:00:00</div>
+      <div id="flight-day-display" style="font-family:var(--font-ui);font-size:0.38rem;letter-spacing:0.12em;color:var(--green);text-shadow:var(--glow-green);margin-top:1px;"></div>
+      <div id="utc-display">UTC --:--:--</div>
+      <div id="local-time-display"></div>
+      <div class="met-sub">LAUNCH: 2026-04-01 · 22:35:12 UTC</div>
+    </div>
+
+    <!-- Mission Phase -->
+    <div id="tb-phase">
+      <span class="tb-sect-label">MISSION PHASE</span>
+      <div id="current-phase-name">—</div>
+      <div id="current-event-name" style="font-family:var(--font-mono);font-size:0.42rem;color:var(--amber);letter-spacing:0.06em;text-align:center;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;"></div>
+      <div class="phase-bar" id="phase-bar"></div>
+    </div>
+
+    <!-- Position Stacked (Earth & Moon) -->
+    <div class="tb-telem" id="telem-position" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:6px; padding: 2px 4px;">
+      <div id="telem-earth" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px;">🌍 DISTANCE FROM EARTH</div>
+        <div class="telem-val-row" style="align-items:baseline;">
+          <div class="telem-value" id="tv-earth" style="font-size:0.95rem; line-height:1;" aria-live="polite" aria-atomic="true">—</div>
+          <div class="telem-unit" id="tu-earth" style="font-size:0.45rem; margin-left:4px;">KM</div>
+        </div>
+        <div class="stat-sub" id="stat-earth-analogy" style="font-size:0.4rem;"></div>
+      </div>
+      
+      <div style="height:1px; width:60%; background:var(--border); margin:0 auto;"></div>
+
+      <div id="telem-moon" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px;">🌕 DISTANCE FROM MOON</div>
+        <div class="telem-val-row" style="align-items:baseline;">
+          <div class="telem-value" id="tv-moon" style="font-size:0.95rem; line-height:1;" aria-live="polite" aria-atomic="true">—</div>
+          <div class="telem-unit" id="tu-moon" style="font-size:0.45rem; margin-left:4px;">KM</div>
+        </div>
+        <div id="moon-annotation" style="font-family:var(--font-mono);font-size:0.38rem;color:var(--text-dim);letter-spacing:0.04em;"></div>
+      </div>
+    </div>
+
+    <!-- Traveled Info -->
+    <div class="tb-telem" id="telem-info" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:6px; padding: 2px 4px;">
+      <div id="telem-odometer" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="telem-label" style="font-size:0.4rem; margin-bottom:1px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.05em;">TOTAL TRAVELED</div>
+        <div class="telem-val-row" style="align-items:baseline;">
+          <div class="telem-value" id="stat-odometer" style="font-size:0.95rem; line-height:1; color:var(--cyan); text-shadow:0 0 10px rgba(184,240,0,0.4);">—</div>
+          <div class="telem-unit" style="font-size:0.45rem; margin-left:4px; color:var(--cyan);">KM</div>
+        </div>
+        <div class="stat-sub" id="stat-odometer-sub" style="font-size:0.38rem; text-align:center;"></div>
+      </div>
+    </div>
+
+    <!-- Velocity (Speed & G-Force) -->
+    <div class="tb-telem" id="telem-velocity" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:8px;">
+      <div id="telem-speed" style="display:flex; flex-direction:column; align-items:center; position:relative;">
+        <div class="telem-label">🚀 ORION SPEED</div>
+        <div class="telem-val-row">
+          <div class="telem-value" id="tv-speed" aria-live="polite" aria-atomic="true">—</div>
+          <div class="telem-unit" id="tu-speed">KM/H</div>
+        </div>
+        <div id="telem-badge" class="telem-badge-est" style="position:absolute; top:-2px; right:-20px;">EST</div>
+      </div>
+      
+      <div id="gforce-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(168,224,0,0.1); padding-top:6px; width:80%;">
+        <div class="stat-label" style="font-size:0.3rem;">G-FORCE</div>
+        <div class="stat-value" id="stat-gforce" style="font-size:0.65rem;">—</div>
+        <div class="stat-sub" id="stat-gforce-sub" style="font-size:0.35rem;">APPARENT ACCELERATION</div>
+      </div>
+    </div>
+
+    <!-- Milestones (Lunar Flyby & Splashdown) -->
+    <div class="tb-telem stat-block" id="telem-milestones" style="flex: 1; display:flex; flex-direction:column; justify-content:center; gap:8px;">
+      <div id="perilune-block" style="display:flex; flex-direction:column; align-items:center;">
+        <div class="stat-label">LUNAR FLYBY</div>
+        <div class="stat-value" id="perilune-countdown">--:--:--</div>
+        <div class="stat-sub" id="perilune-dist">CLOSEST APPROACH: ~8,281 KM</div>
+        <div class="stat-sub" id="stat-illum" style="margin-top:2px;">ILLUM: --%</div>
+      </div>
+
+      <div id="splashdown-block" style="display:flex; flex-direction:column; align-items:center; border-top:1px solid rgba(168,224,0,0.1); padding-top:6px; width:80%;">
+        <div class="stat-label">SPLASHDOWN</div>
+        <div class="stat-value" id="splashdown-countdown" style="font-size:0.9rem;">--:--:--</div>
+        <div class="stat-sub" id="splashdown-date">10 APR · 17:00 UTC</div>
+      </div>
+    </div>
+
+    <!-- Controls box -->
+    <div id="tb-controls">
+      <button class="yt-expand-btn" id="telem-expand-btn"
+        style="font-size:0.42rem;padding:3px 10px;letter-spacing:0.12em;white-space:nowrap;width:100%;" title="Expand telemetry">&#x26F6; EXPAND</button>
+      <button id="unit-toggle" title="Switch units"
+        style="color:var(--amber);border:1px solid rgba(255,40,0,0.5);background:none;font-family:var(--font-mono);font-size:0.48rem;letter-spacing:0.08em;padding:3px 9px;cursor:pointer;white-space:nowrap;width:100%;">KM · MILES</button>
+    </div>
+  </div>
+
+  <div id="archive-banner" role="status">
+    <span class="archive-banner-icon">⏸</span>
+    <span class="archive-banner-text">MISSION ARCHIVE · ARTEMIS II · APRIL 1–11, 2026</span>
+    <span class="archive-banner-sub">Nine days around the Moon. Splashdown 10 April 2026.</span>
+  </div>
+
+  <!-- ══ MISSION GANTT — full-width, top of panel grid ══════════════════ -->
+  <div class="panel" id="gantt-panel"></div>
+
+  <!-- ══ REFERENCE GUIDE MODAL ════════════════════════════════════════ -->
+  <div id="ref-modal" role="dialog" aria-modal="true" aria-labelledby="ref-modal-title">
+    <div id="ref-modal-inner">
+      <div id="ref-modal-header">
+        <div id="ref-modal-title">—</div>
+        <button id="ref-modal-close" title="Close (Esc)">&#x2715;</button>
+      </div>
+      <div id="ref-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- ══ TELEMETRY CINEMATIC OVERLAY ════════════════════════════════════ -->
+  <div id="telem-overlay" role="dialog" aria-modal="true" aria-label="Mission Telemetry">
+    <div id="telem-overlay-inner">
+      <button id="telem-overlay-close" title="Close (Esc)">&#x2715;</button>
+
+      <!-- Row 1: MET + Phase -->
+      <div class="to-row to-row1">
+        <div class="to-block to-met-block">
+          <div class="to-sect-label">MISSION ELAPSED TIME</div>
+          <div class="to-met-clock" id="to-met">D+000 00:00:00</div>
+          <div class="to-met-sub">
+            <span id="to-utc">UTC --:--:--</span>
+            <span id="to-local"></span>
+          </div>
+          <div class="to-launch-label">LAUNCH: 2026-04-01 · 22:35:12 UTC</div>
+          <div id="to-flight-day" style="font-family:var(--font-mono);font-size:0.65rem;color:var(--green);letter-spacing:0.1em;margin-top:4px;"></div>
+          <div id="to-signal"></div>
+        </div>
+        <div class="to-block to-phase-block">
+          <div class="to-sect-label">MISSION PHASE</div>
+          <div class="to-phase-name" id="to-phase">—</div>
+          <div class="to-current-event" id="to-current-event"></div>
+          <div class="to-next-event" id="to-next-event"></div>
+          <div class="to-phase-pip-row" id="to-phase-pips"></div>
+        </div>
+      </div>
+
+      <!-- Row 2: Large gauges -->
+      <div class="to-row to-row2">
+        <div class="to-gauge to-gauge-earth">
+          <div class="to-gauge-label">🌍 DISTANCE FROM EARTH</div>
+          <div class="to-gauge-val-row">
+            <div class="to-gauge-value" id="to-v-earth">—</div>
+            <div class="to-gauge-unit" id="to-u-earth">MI</div>
+          </div>
+          <div class="to-gauge-annotation" id="to-a-earth"></div>
+          <div class="to-gauge-annotation" id="to-a-earth-analogy" style="color:rgba(168,224,0,0.65);"></div>
+          <div class="to-gauge-trend" id="to-t-earth"></div>
+        </div>
+        <div class="to-gauge to-gauge-moon">
+          <div class="to-gauge-label">🌕 DISTANCE FROM MOON</div>
+          <div class="to-gauge-val-row">
+            <div class="to-gauge-value" id="to-v-moon">—</div>
+            <div class="to-gauge-unit" id="to-u-moon">MI</div>
+          </div>
+          <div class="to-gauge-annotation" id="to-a-moon"></div>
+          <div class="to-gauge-trend" id="to-t-moon"></div>
+        </div>
+        <div class="to-gauge to-gauge-speed">
+          <div class="to-gauge-label">🚀 ORION SPEED</div>
+          <div class="to-gauge-val-row">
+            <div class="to-gauge-value" id="to-v-speed">—</div>
+            <div class="to-gauge-unit" id="to-u-speed">MPH</div>
+          </div>
+          <div class="to-gauge-annotation" id="to-a-speed"></div>
+          <div class="to-gauge-trend" id="to-t-speed"></div>
+        </div>
+      </div>
+
+      <!-- Row 3: Extra detail -->
+      <div class="to-row to-row3">
+        <div class="to-extra-item">
+          <div class="to-extra-label">DATA SOURCE</div>
+          <div class="to-extra-val" id="to-source">EST</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">ORBITAL SPEED</div>
+          <div class="to-extra-val" id="to-speed-kms">— km/s</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">ORBIT / TRAJECTORY</div>
+          <div class="to-extra-val" id="to-phase-detail">—</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">LUNAR FLYBY</div>
+          <div class="to-extra-val" id="to-perilune">--:--:--</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;">CLOSEST APPROACH: ~6,556 KM</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">SPLASHDOWN</div>
+          <div class="to-extra-val" id="to-splashdown">--:--:--</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;">10 APR · 17:00 UTC</div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">TOTAL DISTANCE</div>
+          <div class="to-extra-val"><span id="to-odometer">—</span> KM</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-odometer-sub"></div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">G-FORCE</div>
+          <div class="to-extra-val" id="to-gforce">—</div>
+          <div style="font-family:var(--font-mono);font-size:0.48rem;color:var(--text-dim);letter-spacing:0.04em;" id="to-gforce-sub"></div>
+        </div>
+        <div class="to-extra-item">
+          <div class="to-extra-label">UNITS</div>
+          <button id="to-unit-toggle">MI · KM</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ROW 2: MAIN FEEDS ══════════════════════════════════════════════ -->
+
+  <div class="panel" id="feed-youtube">
+    <div class="panel-header"><span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span><h2 class="panel-heading">NASA LIVE</h2><button class="yt-expand-btn" id="yt-expand" title="Expand video">&#x26F6; EXPAND</button></div>
+    <div class="yt-tabs">
+      <button class="yt-tab"        data-target="yt-orion">ORION VIEWS</button>
+      <button class="yt-tab active" data-target="yt-coverage">MISSION COVERAGE</button>
+      <button class="yt-tab"        data-target="yt-arow">AROW</button>
+    </div>
+    <iframe id="yt-orion"    class="yt-frame"
+      src="https://www.youtube.com/embed/6RwfNBtepa4?autoplay=1&mute=0&cc_load_policy=1&cc_lang_pref=en"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen loading="lazy" title="Artemis II — Orion Views"></iframe>
+    <iframe id="yt-coverage" class="yt-frame active"
+      src="https://www.youtube.com/embed/m3kR2KK8TEs?autoplay=1&mute=0&cc_load_policy=1&cc_lang_pref=en"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowfullscreen loading="lazy" title="Artemis II — Mission Coverage"></iframe>
+    <iframe id="yt-arow" class="yt-frame"
+      data-src="https://www.nasa.gov/missions/artemis-ii/arow/"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+      allowfullscreen title="Artemis Real-time Orbit Website (AROW)"></iframe>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <div class="panel" id="feed-arow">
+    <div class="panel-header" style="letter-spacing:2px"><span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span><h2 class="panel-heading" style="letter-spacing:2px">MISSION TRAJECTORY — LIVE POSITION</h2><button class="yt-expand-btn panel-expand" data-panel="feed-arow" title="Expand">&#x26F6; EXPAND</button></div>
+    <div id="trajectory-3d" style="flex:1;width:100%;min-height:0;position:relative;overflow:hidden;background:#000005;">
+      <div id="traj-progress" style="position:absolute;top:9px;left:0;width:100%;font-family:'Space Mono',monospace;font-size:11px;color:rgba(168,224,0,0.9);pointer-events:none;z-index:10;letter-spacing:0.05em;text-align:center;"></div>
+      <div id="traj-tooltip" style="position:absolute;top:0;left:0;background:rgba(8,12,26,0.88);border:1px solid rgba(168,224,0,0.55);padding:3px 9px;font-family:'Space Mono',monospace;font-size:11px;color:#a8d4ff;pointer-events:none;opacity:0;transition:opacity 0.15s;z-index:3;white-space:nowrap;border-radius:2px;"></div>
+      <!-- Telemetry HUD overlay -->
+      <div id="traj-hud" class="traj-hud">
+        <div class="hud-section">
+          <div class="hud-section-label">ORBITAL MECHANICS</div>
+          <div class="hud-row"><span class="hud-key">ALT</span><span class="hud-val" id="hud-alt">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">VEL</span><span class="hud-val" id="hud-vel">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">ECC</span><span class="hud-val" id="hud-ecc">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">INC</span><span class="hud-val" id="hud-inc">28.5&deg;</span></div>
+        </div>
+        <div class="hud-section">
+          <div class="hud-section-label">POSITION</div>
+          <div class="hud-row"><span class="hud-key">EARTH</span><span class="hud-val" id="hud-earth">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">MOON</span><span class="hud-val" id="hud-moon">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">RTL</span><span class="hud-val" id="hud-rtl">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">&oplus; SIZE</span><span class="hud-val" id="hud-esize">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">&#9789; SIZE</span><span class="hud-val" id="hud-msize">&mdash;</span></div>
+        </div>
+        <div class="hud-section">
+          <div class="hud-section-label">COMMS</div>
+          <div class="hud-row"><span class="hud-key">DSN</span><span class="hud-val" id="hud-dsn">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">LOS</span><span class="hud-val" id="hud-los">&mdash;</span></div>
+        </div>
+        <div class="hud-section">
+          <div class="hud-section-label">ENVIRONMENT</div>
+          <div class="hud-row"><span class="hud-key">Kp</span><span class="hud-val" id="hud-kp">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">SOLAR</span><span class="hud-val" id="hud-solar">&mdash;</span></div>
+        </div>
+        <div class="hud-section">
+          <div class="hud-section-label">MISSION</div>
+          <div class="hud-row"><span class="hud-key">PHASE</span><span class="hud-val" id="hud-phase">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">DAY</span><span class="hud-val" id="hud-day">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">NEXT</span><span class="hud-val" id="hud-next">&mdash;</span></div>
+          <div class="hud-row"><span class="hud-key">&Delta;v REM</span><span class="hud-val" id="hud-dv">&mdash;</span></div>
+        </div>
+      </div>
+      <button id="hud-toggle" class="hud-toggle" title="Toggle telemetry HUD">&#9666;</button>
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <div class="panel" id="feed-dsn">
+    <div class="panel-header">
+      <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span><h2 class="panel-heading panel-heading--compact">DEEP SPACE NETWORK</h2>
+      <div id="signal-pill" class="acquired" style="margin-left:auto;" tabindex="0" role="button" aria-label="Toggle signal acquisition demo state">▶ SIGNAL ACQUIRED</div>
+      <button class="yt-expand-btn panel-expand" data-panel="feed-dsn" title="Expand">&#x26F6; EXPAND</button>
+    </div>
+    <div id="dsn-content"><div style="padding:16px;font-family:'Space Mono',monospace;font-size:0.69rem;color:rgba(168,224,0,0.5);">CONNECTING TO DSN FEED…</div></div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <!-- ══ ROW 3: SECONDARY ═══════════════════════════════════════════════ -->
+
+  <div class="panel" id="feed-weather">
+    <div class="panel-header">
+      <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span><h2 class="panel-heading">SPACE WEATHER — NOAA SWPC</h2>
+      <span style="margin-left:auto;font-size:0.69rem;color:var(--text-dim);letter-spacing:0.08em;">AUTO-REFRESH 5m</span>
+      <button class="yt-expand-btn panel-expand" data-panel="feed-weather" title="Expand">&#x26F6; EXPAND</button>
+    </div>
+    <div class="panel-body" style="flex-direction:column;gap:8px;padding:10px 12px;overflow:hidden;justify-content:flex-start;">
+
+      <!-- Row 1: Kp arc gauge + X-ray + solar wind -->
+      <div style="display:flex;gap:10px;flex:1;min-height:0;align-items:center;">
+
+        <!-- Kp arc gauge -->
+        <div style="flex:1.1;display:flex;flex-direction:column;align-items:center;gap:0;">
+          <div class="sw-label">GEOMAGNETIC Kp INDEX<button class="sw-info-btn" data-sw="kp" title="What is the Kp Index?">ⓘ</button></div>
+          <!-- Arc: center (100,100) r=70, 7→5 o'clock CW = 300° sweep -->
+          <!-- M 65 161 A 70 70 0 1 1 135 161 ; arc-len ≈ 366.5 -->
+          <svg id="kp-svg" viewBox="0 0 200 170" style="width:100%;max-width:170px;overflow:visible;">
+            <!-- bg arc (full 300°, dim) -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161"
+              fill="none" stroke="rgba(168,224,0,0.13)" stroke-width="15" stroke-linecap="round"/>
+            <!-- color zones overlay (decorative segments behind fill) -->
+            <!-- G0-G1 green: 0–5/9 = 0–203.6 -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
+              stroke="rgba(204,255,0,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="203.6 366.5"/>
+            <!-- G2 yellow: 5–6/9 = 203.6–244.3 -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
+              stroke="rgba(255,215,64,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="40.7 366.5" stroke-dashoffset="-203.6"/>
+            <!-- G3 orange: 6–7/9 = 244.3–285.1 -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
+              stroke="rgba(255,40,0,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="40.7 366.5" stroke-dashoffset="-244.3"/>
+            <!-- G4-G5 red: 7–9/9 = 285.1–366.5 -->
+            <path d="M 65 161 A 70 70 0 1 1 135 161" fill="none"
+              stroke="rgba(239,83,80,0.07)" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="81.4 366.5" stroke-dashoffset="-285.1"/>
+            <!-- active fill arc (updated by JS) -->
+            <path id="kp-fill" d="M 65 161 A 70 70 0 1 1 135 161"
+              fill="none" stroke="#ccff00" stroke-width="15" stroke-linecap="round"
+              stroke-dasharray="0 366.5" stroke-dashoffset="0"/>
+            <!-- scale labels -->
+            <text x="42" y="168" text-anchor="middle"
+              font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(168,224,0,0.4)">0</text>
+            <text x="158" y="168" text-anchor="middle"
+              font-family="Share Tech Mono,monospace" font-size="9" fill="rgba(168,224,0,0.4)">9</text>
+            <!-- Kp number (center) -->
+            <text id="kp-val" x="100" y="100" text-anchor="middle" dominant-baseline="middle"
+              font-family="Share Tech Mono,monospace" font-size="30" fill="#a8e000">—</text>
+            <!-- G label -->
+            <text id="kp-g" x="100" y="128" text-anchor="middle"
+              font-family="Orbitron,sans-serif" font-size="9" fill="#7986a8" letter-spacing="2">G0</text>
+          </svg>
+        </div>
+
+        <!-- Right column: X-ray + wind -->
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;justify-content:center;">
+
+          <!-- X-ray flare badge -->
+          <div>
+            <div class="sw-label" style="margin-bottom:4px;">SOLAR X-RAY FLUX<button class="sw-info-btn" data-sw="xray" title="What is Solar X-Ray Flux?">ⓘ</button></div>
+            <div id="xray-badge" style="font-family:'Space Mono',monospace;font-size:clamp(1.4rem,2.5vw,2rem);font-weight:700;color:#ccff00;text-shadow:0 0 12px rgba(204,255,0,0.5);line-height:1;">—</div>
+            <div id="xray-label" style="font-family:'Orbitron',sans-serif;font-size:0.42rem;letter-spacing:0.1em;color:var(--text-dim);margin-top:3px;">LOADING</div>
+          </div>
+
+          <!-- Solar wind speed -->
+          <div style="border-top:1px solid var(--border);padding-top:6px;">
+            <div class="sw-label" style="margin-bottom:4px;">SOLAR WIND SPEED<button class="sw-info-btn" data-sw="wind" title="What is Solar Wind Speed?">ⓘ</button></div>
+            <div style="display:flex;align-items:baseline;gap:4px;">
+              <span id="wind-speed" style="font-family:'Space Mono',monospace;font-size:clamp(1rem,1.8vw,1.5rem);color:var(--blue-light);text-shadow:var(--glow-blue);">—</span>
+              <span style="font-family:'Space Mono',monospace;font-size:0.69rem;color:var(--text-dim);">km/s</span>
+              <span id="wind-trend" style="font-family:'Space Mono',monospace;font-size:1rem;margin-left:2px;"></span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Radiation risk bar -->
+      <div style="border-top:1px solid var(--border);padding-top:7px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <span class="sw-label" style="white-space:nowrap;">CREW RADIATION RISK<button class="sw-info-btn" data-sw="rad" title="What is Crew Radiation Risk?">ⓘ</button></span>
+        <span id="rad-label" style="font-family:'Orbitron',sans-serif;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;color:#ccff00;text-shadow:0 0 10px rgba(204,255,0,0.4);">NOMINAL</span>
+      </div>
+
+      <!-- What does this mean? -->
+      <button id="sw-explain-link">ⓘ WHAT DO THESE READINGS MEAN FOR THE CREW?</button>
+
+      <!-- NOAA link -->
+      <div style="border-top:1px solid var(--border);padding-top:6px;flex-shrink:0;">
+        <a href="https://www.swpc.noaa.gov/" target="_blank" rel="noopener"
+          style="font-family:'Space Mono',monospace;font-size:0.69rem;color:#ff2800;letter-spacing:0.08em;text-decoration:none;transition:text-decoration 0.15s;"
+          onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">NOAA FULL OVERVIEW ↗</a>
+      </div>
+
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <!-- NEWS FEED — TABBED MULTI-SOURCE -->
+  <div class="panel" id="mission-updates">
+    <div class="panel-header">
+      <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span><h2 class="panel-heading">NEWS FEED</h2>
+      <span class="news-live-badge">● LIVE</span>
+      <button class="yt-expand-btn panel-expand" data-panel="mission-updates" title="Expand">&#x26F6; EXPAND</button>
+    </div>
+    <div class="news-tabs">
+      <button class="news-tab active" data-tab="all">ALL</button>
+      <button class="news-tab" data-tab="nasa">NASA</button>
+      <button class="news-tab" data-tab="media">MEDIA</button>
+      <button class="news-tab" data-tab="space">SPACE</button>
+      <button class="news-tab" data-tab="partners">ESA/CSA</button>
+    </div>
+    <div class="news-feed" id="news-feed">
+      <div class="news-empty">FETCHING FEEDS…</div>
+    </div>
+    <div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <div class="panel" id="feed-blog">
+    <div class="panel-header">
+      <span class="drag-handle" title="Drag to reorder">⠿</span><span class="dot"></span><h2 class="panel-heading">MISSION TIMELINE</h2>
+      <span id="flight-day-badge">FLIGHT DAY —</span>
+      <button class="yt-expand-btn panel-expand" data-panel="feed-blog" title="Expand" style="margin-left:auto;">&#x26F6; EXPAND</button>
+    </div>
+    <div class="tl-filters" id="tl-filters">
+      <button class="tl-filter active" data-phase="all">ALL</button>
+      <button class="tl-filter" data-phase="ascent">ASCENT</button>
+      <button class="tl-filter" data-phase="orbit">ORBIT</button>
+      <button class="tl-filter" data-phase="translunar">TLI</button>
+      <button class="tl-filter" data-phase="lunar">LUNAR</button>
+      <button class="tl-filter" data-phase="return">RETURN</button>
+      <button class="tl-filter tl-filter-crew" data-phase="crew">CREW OPS</button>
+    </div>
+    <div id="tl-next-event"></div>
+    <div class="timeline-scroll" id="timeline-scroll"></div>
+<div class="corner-tl"></div><div class="corner-br"></div>
+  </div>
+
+  <!-- ══ FOOTER ══════════════════════════════════════════════════════ -->
+  <div id="site-footer">
+    <div class="footer-row">
+      <span class="footer-left">🚀 Built on launch day by EZ &middot; Melbourne, Australia</span>
+      <span class="footer-center" id="footer-modified"></span>
+      <span class="footer-right">
+        <a class="footer-link" href="https://form.jotform.com/260912668955066" target="_blank" rel="noopener">💬 Feedback &amp; Contact</a>
+      </span>
+    </div>
+    <div class="footer-disclaimer">Not affiliated with NASA. Data: JPL Horizons · NOAA SWPC · NASA APIs · DSN. NASA content used under NASA media usage guidelines.</div>
+  </div>
+
+</div><!-- #main-content -->
+
+<!-- CREW PROFILE MODAL -->
+<div id="crew-modal-overlay">
+  <div id="crew-modal">
+    <button id="crew-modal-close" aria-label="Close">✕</button>
+    <div id="crew-modal-header">
+      <img id="crew-modal-photo" src="" alt="Crew portrait">
+      <div>
+        <div class="crew-modal-name" id="cm-name"></div>
+        <div class="crew-modal-role-line">
+          <span class="crew-modal-role-badge" id="cm-role"></span>
+          <span class="crew-modal-flag" id="cm-flag"></span>
+          <span class="crew-modal-agency" id="cm-agency"></span>
+        </div>
+      </div>
+    </div>
+    <div class="crew-modal-section">
+      <div class="crew-modal-section-label">Previous Missions</div>
+      <div class="crew-modal-section-body" id="cm-missions"></div>
+    </div>
+    <div class="crew-modal-section">
+      <div class="crew-modal-section-label">Notable Firsts &amp; Records</div>
+      <div id="cm-firsts"></div>
+    </div>
+    <div class="crew-modal-section">
+      <div class="crew-modal-section-label">Quote</div>
+      <div class="crew-modal-quote" id="cm-quote"></div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL EXPAND OVERLAY -->
+<div id="panel-overlay">
+  <div id="panel-overlay-header">
+    <span id="panel-overlay-title"></span>
+    <button id="panel-overlay-close" aria-label="Close">&#x2715;</button>
+  </div>
+  <div id="panel-overlay-content"></div>
+</div>
+
+<!-- VIDEO FULLSCREEN OVERLAY -->
+<div id="yt-overlay">
+  <div id="yt-overlay-header">
+    <button class="yt-tab active" data-yt-src="https://www.youtube.com/embed/m3kR2KK8TEs?autoplay=1&mute=0&cc_load_policy=1&cc_lang_pref=en">MISSION COVERAGE</button>
+    <button class="yt-tab" data-yt-src="https://www.youtube.com/embed/6RwfNBtepa4?autoplay=1&mute=0&cc_load_policy=1&cc_lang_pref=en">ORION VIEWS</button>
+    <button class="yt-tab" data-yt-src="https://www.nasa.gov/missions/artemis-ii/arow/">AROW</button>
+    <button id="yt-overlay-close" aria-label="Close">&#x2715;</button>
+  </div>
+  <iframe id="yt-overlay-frame" src="" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+</div>
+
+<div id="watermark">ARTEMIS II MISSION DASHBOARD · LIVE</div>
+
+<!-- ══ SPACE WEATHER TOOLTIP POPUP ══════════════════════════════════ -->
+<div id="sw-tooltip" role="tooltip" aria-live="polite">
+  <button class="sw-tt-close" id="sw-tt-close" aria-label="Close">✕</button>
+  <div class="sw-tt-title" id="sw-tt-title"></div>
+  <div class="sw-tt-eli5" id="sw-tt-eli5"></div>
+  <div class="sw-tt-scale" id="sw-tt-scale"></div>
+  <div class="sw-tt-why" id="sw-tt-why"></div>
+</div>
+
+<!-- ══ SPACE WEATHER FULL EXPLAINER POPUP ═══════════════════════════ -->
+<div id="sw-full-popup" role="dialog" aria-modal="true" aria-label="Space Weather Explainer">
+  <div id="sw-full-inner">
+    <button id="sw-full-close" aria-label="Close">✕</button>
+    <h2>🛰️ Space Weather &amp; Artemis II — Full Briefing</h2>
+    <div id="sw-full-content"></div>
+  </div>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js" integrity="sha384-LTVHvxfbG3XHla4Lu0C0s9U18B2sBOuzJIeOoVHm2t05SOOORvMbBMEVjXrGau9g" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha384-CI3ELBVUz9XQO+97x6nwMDPosPR5XvsxW2ua7N1Xeygeh1IxtgqtCkGfQY9WWdHu" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/ColladaLoader.js" crossorigin="anonymous"></script>
+<script src="js/observer-horizons.js"></script>
+<script src="js/flyby-lighting.js"></script>
+<script src="js/osculating-orbit.js"></script>
+<script>
+  (function() {
+    var v = window._cbv || Date.now();
+    var scripts = [
+      'js/shared.js','js/mission-ephemeris.js','js/mission-events.js',
+      'js/clock.js','js/stats.js','js/timeline.js',
+      'js/news.js','js/crew.js','js/weather.js','js/orion-model.js',
+      'js/iss-model.js','js/murtha-model.js','js/trajectory.js',
+      'js/dsn.js','js/crew-activity.js','js/gantt.js','js/crew-activity-ui.js','js/ui.js','js/reference.js'
+    ];
+    scripts.forEach(function(src) {
+      var s = document.createElement('script');
+      s.async = false; s.src = src + '?v=' + v;
+      document.head.appendChild(s);
+    });
+  })();
+</script>
+<script>
+(function(){var _tr=document.getElementById('viewer-num-mobile');if(!_tr)return;
+var _lu=window.LAUNCH_UTC?window.LAUNCH_UTC.getTime():0;
+function _h(s){var x=Math.sin(s*127.1+311.7)*43758.5453;return x-Math.floor(x)}
+function _sx(){var n=Date.now(),m=(n-_lu)/36e5,
+b=m<0?1200:m<2?14e3:m<8?8500:m<24?5200:m<30?9500:m<96?3800:m<130?7200:m<140?12e3:m<200?3400:m<230?8800:2800,
+u=new Date(n).getUTCHours(),
+t=u>=22||u<4?1.35:u>=12&&u<18?1.15:u>=6&&u<10?.7:1,
+e=Math.floor(n/3e4),f=.85+_h(e)*.3,
+g=Math.floor(n/1e4),d=.98+_h(g*7.3)*.04,
+r=Math.floor(n/9e5),k=_h(r*3.7)>.8?1.3+_h(r*11.3)*.2:1,
+c=Math.max(1800,Math.min(18e3,Math.round(b*t*f*d*k)));
+return c>=1e4?(c/1e3).toFixed(1)+'k':c.toLocaleString()}
+function _u(){
+  var v=_sx();
+  if(_tr)_tr.textContent=v;
+  var _mob=document.getElementById('viewer-num-mobile');
+  if(_mob)_mob.textContent=v;
+}_u();setInterval(_u,1e4)})();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(function(reg) { console.log('[SW] Registered:', reg.scope); })
+        .catch(function(err) { console.warn('[SW] Registration failed:', err); });
+    });
+  }
+</script>
+
+</body>
+</html>
