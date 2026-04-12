@@ -1,0 +1,38 @@
+[
+  {
+    "id": "spacex-starship-hls",
+    "name": "SpaceX Starship HLS",
+    "provider": "SpaceX",
+    "vehicle_or_system": "Starship HLS (lunar variant)",
+    "current_status": "V3 · Pre-flight · NET May 2026",
+    "recent_milestone": "Flight 11 integrated test complete · October 2025",
+    "next_milestone": "V3 maiden flight (propellant transfer demo to follow)",
+    "progress_pct": 45,
+    "unblocks": "Lunar descent capability for Artemis missions",
+    "source_url": "https://www.spacex.com/vehicles/starship/"
+  },
+  {
+    "id": "blueorigin-bluemoon",
+    "name": "Blue Origin Blue Moon",
+    "provider": "Blue Origin",
+    "vehicle_or_system": "Blue Moon Mk1 (cargo) + Mk2 (crew)",
+    "current_status": "Mk1 final stacking · Mk2 design validation",
+    "recent_milestone": "BE-7 engine 1,030-second hot fire test complete · 2025",
+    "next_milestone": "Blue Moon Mk1 Pathfinder cargo landing (2026)",
+    "progress_pct": 35,
+    "unblocks": "Second-source lunar lander capability and A3 contract competition",
+    "source_url": "https://www.blueorigin.com/blue-moon"
+  },
+  {
+    "id": "axiom-axemu",
+    "name": "Axiom AxEMU Spacesuit",
+    "provider": "Axiom Space",
+    "vehicle_or_system": "AxEMU (Axiom Extravehicular Mobility Unit)",
+    "current_status": "Flight unit assembly · critical design sync review",
+    "recent_milestone": "First uncrewed thermal vacuum test complete · November 2025",
+    "next_milestone": "Flight unit delivery to NASA",
+    "progress_pct": 60,
+    "unblocks": "Crewed EVAs on lunar surface for Artemis IV+",
+    "source_url": "https://www.axiomspace.com/axiom-suit"
+  }
+]

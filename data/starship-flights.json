@@ -1,0 +1,101 @@
+[
+  {
+    "flight_number": 1,
+    "date": "2023-04-20",
+    "vehicle_version": "V1",
+    "ship_number": "S24",
+    "booster_number": "B7",
+    "outcome": "failure",
+    "notes": "Hot stage ignition failed, vehicle rapidly unscheduled disassembly during ascent"
+  },
+  {
+    "flight_number": 2,
+    "date": "2023-11-18",
+    "vehicle_version": "V1",
+    "ship_number": "S25",
+    "booster_number": "B9",
+    "outcome": "partial",
+    "notes": "Hot stage separation successful, both vehicles lost during powered flight"
+  },
+  {
+    "flight_number": 3,
+    "date": "2024-03-14",
+    "vehicle_version": "V1",
+    "ship_number": "S28",
+    "booster_number": "B10",
+    "outcome": "partial",
+    "notes": "Achieved orbital speed, ship lost during controlled reentry"
+  },
+  {
+    "flight_number": 4,
+    "date": "2024-06-06",
+    "vehicle_version": "V1",
+    "ship_number": "S29",
+    "booster_number": "B11",
+    "outcome": "success",
+    "notes": "First soft splashdown of Starship in Indian Ocean"
+  },
+  {
+    "flight_number": 5,
+    "date": "2024-10-13",
+    "vehicle_version": "V2",
+    "ship_number": "S30",
+    "booster_number": "B12",
+    "outcome": "success",
+    "notes": "First booster catch by chopstick arms, ship soft landing"
+  },
+  {
+    "flight_number": 6,
+    "date": "2024-11-19",
+    "vehicle_version": "V2",
+    "ship_number": "S31",
+    "booster_number": "B13",
+    "outcome": "success",
+    "notes": "Booster catch and ship splashdown, second successful consecutive flight"
+  },
+  {
+    "flight_number": 7,
+    "date": "2025-01-16",
+    "vehicle_version": "V2",
+    "ship_number": null,
+    "booster_number": null,
+    "outcome": "failure",
+    "notes": "First V2 variant attempted, failure during ascent phase"
+  },
+  {
+    "flight_number": 8,
+    "date": "2025-03-06",
+    "vehicle_version": "V2",
+    "ship_number": null,
+    "booster_number": null,
+    "outcome": "partial",
+    "notes": "Partial success with partial system recovery, lessons for V2 refinement"
+  },
+  {
+    "flight_number": 9,
+    "date": "2025-05-27",
+    "vehicle_version": "V2",
+    "ship_number": null,
+    "booster_number": null,
+    "outcome": "partial",
+    "notes": "Continued V2 validation, incremental progress on systems integration"
+  },
+  {
+    "flight_number": 10,
+    "date": "2025-08-01",
+    "vehicle_version": "V2",
+    "ship_number": null,
+    "booster_number": null,
+    "outcome": "success",
+    "notes": "Successful test flight advancing V2 toward operational capability"
+  },
+  {
+    "flight_number": 11,
+    "date": "2025-10-13",
+    "vehicle_version": "V2",
+    "ship_number": null,
+    "booster_number": null,
+    "outcome": "success",
+    "notes": "Deliberate heat shield stress test, validation for future lunar missions"
+  }
+]

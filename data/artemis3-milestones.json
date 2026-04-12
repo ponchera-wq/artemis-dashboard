@@ -1,0 +1,122 @@
+[
+  {
+    "id": "artemis-ii-complete",
+    "title": "Artemis II flight complete",
+    "description": "The crewed lunar flyby flight of the Artemis programme. Launched April 1, 2026 from KSC LC-39B and splashed down April 11, 2026 after a nine-day mission around the Moon.",
+    "status": "complete",
+    "target_date": null,
+    "completed_date": "2026-04-11",
+    "category": "mission",
+    "source_url": "https://www.nasa.gov/mission/artemis-ii/"
+  },
+  {
+    "id": "starship-v3-maiden",
+    "title": "Starship V3 maiden flight",
+    "description": "SpaceX's third-generation Starship design for lunar descent operations. First integrated flight planned for May 2026 to demonstrate orbital capabilities.",
+    "status": "in-progress",
+    "target_date": "2026-05-01",
+    "completed_date": null,
+    "category": "vehicle",
+    "source_url": "https://www.spacex.com/vehicles/starship/"
+  },
+  {
+    "id": "starship-prop-transfer",
+    "title": "Starship orbital propellant transfer demo",
+    "description": "Demonstration of orbital propellant transfer between two Starship vehicles in Earth orbit. Critical capability for lunar descent and return missions.",
+    "status": "pending",
+    "target_date": "2026-12-01",
+    "completed_date": null,
+    "category": "hls",
+    "source_url": "https://www.nasa.gov/humans-in-space/human-landing-system/"
+  },
+  {
+    "id": "bluemoon-mk1-pathfinder",
+    "title": "Blue Moon Mk1 Pathfinder cargo landing",
+    "description": "Blue Origin's first lunar cargo lander completing a pathfinder mission. Validates cargo delivery systems and landing procedures for human lunar operations.",
+    "status": "pending",
+    "target_date": "2026-12-01",
+    "completed_date": null,
+    "category": "hls",
+    "source_url": "https://www.blueorigin.com/blue-moon"
+  },
+  {
+    "id": "axemu-flight-delivery",
+    "title": "AxEMU flight unit delivery to NASA",
+    "description": "Axiom Space's Extravehicular Mobility Unit spacesuit delivered for testing and integration. First modern pressure suit designed for lunar surface operations.",
+    "status": "pending",
+    "target_date": null,
+    "completed_date": null,
+    "category": "suit",
+    "source_url": "https://www.axiomspace.com/axiom-suit"
+  },
+  {
+    "id": "axiom-design-review",
+    "title": "Axiom critical design sync review pass",
+    "description": "Axiom's critical design review and synchronization assessment with NASA. Final gate before flight unit manufacturing and qualification testing.",
+    "status": "in-progress",
+    "target_date": "2026-06-01",
+    "completed_date": null,
+    "category": "suit",
+    "source_url": "https://www.axiomspace.com/axiom-suit"
+  },
+  {
+    "id": "bluemoon-mk2-demo",
+    "title": "Blue Moon Mk2 uncrewed demo",
+    "description": "Blue Origin's crew-rated lunar lander performing an uncrewed demonstration mission. Validates all systems before human crew transport.",
+    "status": "pending",
+    "target_date": "2027-06-01",
+    "completed_date": null,
+    "category": "hls",
+    "source_url": "https://www.blueorigin.com/blue-moon"
+  },
+  {
+    "id": "starship-hls-checkout",
+    "title": "Starship HLS uncrewed LEO checkout",
+    "description": "Integrated test of the Starship lunar variant in low Earth orbit. Validates all systems in space environment before lunar missions.",
+    "status": "pending",
+    "target_date": "2027-03-01",
+    "completed_date": null,
+    "category": "hls",
+    "source_url": "https://www.nasa.gov/humans-in-space/human-landing-system/"
+  },
+  {
+    "id": "a3-crew-announcement",
+    "title": "Artemis III crew announcement",
+    "description": "Official announcement of the Artemis III crew composition. Public declaration of astronauts selected for the lunar landing mission.",
+    "status": "pending",
+    "target_date": null,
+    "completed_date": null,
+    "category": "mission",
+    "source_url": "https://www.nasa.gov/mission/artemis-iii/"
+  },
+  {
+    "id": "a3-core-stage-ksc",
+    "title": "Artemis III SLS core stage at KSC",
+    "description": "Artemis III Space Launch System core stage delivered to Kennedy Space Center for assembly and integration. Major structural component of the launch vehicle.",
+    "status": "pending",
+    "target_date": "2026-07-01",
+    "completed_date": null,
+    "category": "sls",
+    "source_url": "https://www.nasa.gov/mission/artemis-iii/"
+  },
+  {
+    "id": "a3-rollout-lc39b",
+    "title": "Artemis III rollout to LC-39B",
+    "description": "Artemis III fully-stacked launch vehicle rolled out to Launch Complex 39B at Kennedy Space Center. Final preparation phase begins.",
+    "status": "pending",
+    "target_date": null,
+    "completed_date": null,
+    "category": "mission",
+    "source_url": "https://www.nasa.gov/mission/artemis-iii/"
+  },
+  {
+    "id": "a3-launch",
+    "title": "Artemis III launch",
+    "description": "Artemis III crewed lunar landing mission launch. Completes the return to the Moon and carries astronauts to the lunar surface.",
+    "status": "pending",
+    "target_date": "2027-07-01T00:00:00Z",
+    "completed_date": null,
+    "category": "mission",
+    "source_url": "https://www.nasa.gov/mission/artemis-iii/"
+  }
+]
