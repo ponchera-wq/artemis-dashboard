@@ -1177,13 +1177,6 @@
       // Check osculating orbit periapsis dot (30 px radius)
       if (typeof OsculatingOrbit !== 'undefined' && OsculatingOrbit.handleClick(mx, my)) { popupOpen = true; return; }
 
-      // Check Murtha label → navigate to splashdown view
-      if (_murthaClickBox && mx >= _murthaClickBox.x && mx <= _murthaClickBox.x + _murthaClickBox.w &&
-          my >= _murthaClickBox.y && my <= _murthaClickBox.y + _murthaClickBox.h) {
-        window.location.href = 'splashdown.html';
-        e.stopPropagation(); return;
-      }
-
       // Check 2D label hit areas first
       for (var wi = wpClickAreas.length - 1; wi >= 0; wi--) {
         var a = wpClickAreas[wi];
