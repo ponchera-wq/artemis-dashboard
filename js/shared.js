@@ -10,6 +10,21 @@ window.SPLASHDOWN_UTC = new Date(window.LAUNCH_UTC.getTime() + window.SPLASHDOWN
 window.PERILUNE_MET_SEC = 434079;
 window.PERILUNE_UTC = new Date(window.LAUNCH_UTC.getTime() + window.PERILUNE_MET_SEC * 1000);
 
+// ── Scrub state shim ──
+// Archive page (artemis-ii.html) sets window.ARCHIVE_MODE = true and controls
+// window._scrubMetSec via the scrub bar. Hub (index.html) leaves ARCHIVE_MODE
+// undefined and this falls through to live wall-clock MET.
+window.getScrubMetSec = function() {
+  if (window.ARCHIVE_MODE === true && typeof window._scrubMetSec === 'number') {
+    return window._scrubMetSec;
+  }
+  return (Date.now() - LAUNCH_UTC) / 1000;
+};
+
+window.getScrubMetMs = function() {
+  return window.getScrubMetSec() * 1000;
+};
+
 window.userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 window.tzAbbr = function(date) {
