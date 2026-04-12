@@ -1,0 +1,9 @@
+{
+  "/artemis-ii.html": [
+    { "selector": "#archive-banner", "rule": "visible" },
+    { "selector": "#archive-banner", "rule": "top<100" }
+  ],
+  "/index.html": [
+    { "selector": "#archive-banner", "rule": "hidden" }
+  ]
+}
