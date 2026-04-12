@@ -3568,3 +3568,285 @@ body.archive-mode #main-content {
     padding-bottom: 100px;
   }
 }
+
+/* ══ ARTEMIS III HUB ══════════════════════════════════════════════════ */
+
+/* Desktop grid override — 6 rows: nav | topbar | hero | panels | panels | footer */
+body.hub-layout #main-content {
+  grid-template-rows: auto 72px 220px 1fr auto 38px;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-areas:
+    "nav       nav       nav"
+    "topbar    topbar    topbar"
+    "hero      hero      hero"
+    "milestones partners  crew"
+    "news      news      starship"
+    "footer    footer    footer";
+}
+
+/* Assign hub panels to named grid areas */
+body.hub-layout #ref-nav             { grid-area: nav; }
+body.hub-layout #top-bar             { grid-area: topbar; }
+body.hub-layout #launch-hero         { grid-area: hero; }
+body.hub-layout #milestones-panel    { grid-area: milestones; }
+body.hub-layout #partners-panel      { grid-area: partners; }
+body.hub-layout #crew-panel          { grid-area: crew; }
+body.hub-layout #mission-updates     { grid-area: news; }
+body.hub-layout #starship-ticker-panel { grid-area: starship; }
+body.hub-layout #site-footer         { grid-area: footer; }
+
+/* ── Launch hero ───────────────────────────────────────────────────── */
+#launch-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(0,20,60,0.95) 0%, rgba(8,8,14,0.98) 100%);
+  border-bottom: 1px solid var(--border, rgba(168,224,0,0.2));
+  padding: 16px 24px;
+  position: relative;
+  overflow: hidden;
+}
+#launch-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,80,200,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+.hero-mission-id {
+  font-family: var(--font-display, 'Exo 2', sans-serif);
+  font-size: clamp(1.1rem, 2.5vw, 1.8rem);
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  color: var(--text, #d0f0c0);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.hero-net {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: clamp(0.55rem, 1vw, 0.75rem);
+  letter-spacing: 0.15em;
+  color: var(--amber, #ffa726);
+  margin-bottom: 12px;
+}
+.hero-countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-mono, 'Space Mono', monospace);
+}
+.hero-cd-sign {
+  font-size: clamp(0.8rem, 1.5vw, 1.1rem);
+  color: var(--green, #a8e000);
+  letter-spacing: 0.05em;
+  margin-right: 4px;
+}
+.hero-cd-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 52px;
+}
+.hero-cd-value {
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  font-weight: 700;
+  color: var(--green, #a8e000);
+  text-shadow: 0 0 16px rgba(168,224,0,0.5);
+  line-height: 1;
+}
+.hero-cd-label {
+  font-size: 0.42rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim, rgba(208,240,192,0.45));
+  margin-top: 3px;
+}
+.hero-cd-sep {
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  color: var(--green, #a8e000);
+  opacity: 0.4;
+  align-self: flex-start;
+  padding-top: 4px;
+  margin: 0 2px;
+}
+.hero-footnote {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.48rem;
+  color: var(--text-dim, rgba(208,240,192,0.35));
+  letter-spacing: 0.06em;
+  margin-top: 10px;
+}
+
+/* ── Hub top-bar status strip ──────────────────────────────────────── */
+body.hub-layout #top-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  height: 72px;
+}
+.hub-tb-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 16px;
+  border-right: 1px solid var(--border, rgba(168,224,0,0.15));
+  min-width: 0;
+  flex: 1;
+}
+.hub-tb-cell:last-child { border-right: none; }
+.hub-tb-label {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.38rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim, rgba(208,240,192,0.45));
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.hub-tb-value {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 700;
+  color: var(--green, #a8e000);
+  text-shadow: 0 0 10px rgba(168,224,0,0.4);
+  line-height: 1;
+}
+.hub-tb-static {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.65rem;
+  color: var(--text, #d0f0c0);
+  letter-spacing: 0.08em;
+}
+
+/* ── Status pills ──────────────────────────────────────────────────── */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 3px 10px;
+  border-radius: 2px;
+  border: 1px solid currentColor;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.status-pill::before {
+  content: '●';
+  font-size: 0.5em;
+}
+.status-pill.green  { color: var(--green,  #a8e000); border-color: rgba(168,224,0,0.4);   background: rgba(168,224,0,0.06);  }
+.status-pill.amber  { color: var(--amber,  #ffa726); border-color: rgba(255,167,38,0.4);  background: rgba(255,167,38,0.06); }
+.status-pill.red    { color: var(--red,    #ef5350); border-color: rgba(239,83,80,0.4);   background: rgba(239,83,80,0.06);  }
+.status-pill.dim    { color: var(--text-dim, rgba(208,240,192,0.45)); border-color: rgba(208,240,192,0.15); background: rgba(208,240,192,0.03); }
+
+/* ── Crew TBA panel ────────────────────────────────────────────────── */
+#crew-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+#crew-tba-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  flex: 1;
+  background: var(--border, rgba(168,224,0,0.1));
+}
+.crew-tba-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 8px;
+  background: var(--bg, #08080e);
+  transition: background 0.2s;
+}
+.crew-tba-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(168,224,0,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono, monospace);
+  font-size: 1.2rem;
+  color: rgba(168,224,0,0.2);
+  background: rgba(168,224,0,0.03);
+  margin-bottom: 4px;
+}
+.crew-tba-slot {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.42rem;
+  letter-spacing: 0.12em;
+  color: var(--text-dim, rgba(208,240,192,0.45));
+}
+.crew-tba-role {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.48rem;
+  letter-spacing: 0.08em;
+  color: var(--amber, #ffa726);
+  text-align: center;
+}
+.crew-tba-status {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.45rem;
+  letter-spacing: 0.1em;
+  color: rgba(208,240,192,0.25);
+  text-align: center;
+}
+.crew-tba-footnote {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.42rem;
+  color: var(--text-dim, rgba(208,240,192,0.35));
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border, rgba(168,224,0,0.1));
+  font-style: italic;
+}
+
+/* ── Empty batch-6 panel shells ────────────────────────────────────── */
+#milestones-panel,
+#partners-panel,
+#starship-ticker-panel {
+  min-height: 200px;
+}
+
+/* ── Mobile overrides (≤768px) ─────────────────────────────────────── */
+@media (max-width: 768px) {
+  body.hub-layout #main-content {
+    grid-template-rows: auto auto auto auto auto auto auto auto;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "nav"
+      "topbar"
+      "hero"
+      "milestones"
+      "partners"
+      "crew"
+      "news"
+      "starship"
+      "footer";
+  }
+
+  body.hub-layout #top-bar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 56px;
+  }
+  .hub-tb-cell {
+    flex: none;
+    width: 50%;
+    border-bottom: 1px solid var(--border, rgba(168,224,0,0.15));
+  }
+  .hub-tb-value { font-size: 1.1rem; }
+
+  #launch-hero { padding: 12px 16px; }
+  .hero-cd-value { font-size: 1.6rem; }
+  .hero-cd-block { min-width: 38px; }
+}
+}
