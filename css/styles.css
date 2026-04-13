@@ -3816,6 +3816,157 @@ body.hub-layout #top-bar {
   min-height: 200px;
 }
 
+/* ── Partners panel ──────────────────────────────────────────────────── */
+.partners-container {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  align-items: stretch;
+  height: 100%;
+}
+
+.partner-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--bg-card, #10121e);
+  border: 1px solid var(--border, rgba(255,255,255,0.07));
+  border-radius: 4px;
+  transition: box-shadow 0.2s;
+}
+
+.partner-card:hover {
+  box-shadow: 0 0 12px rgba(204,255,0,0.25);
+}
+
+.partner-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.partner-provider {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.42rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim, #5a5c70);
+  text-transform: uppercase;
+}
+
+.partner-name {
+  font-family: var(--font-ui, 'Exo 2', sans-serif);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text, #f0f0f2);
+  letter-spacing: 0.05em;
+}
+
+.partner-card-vehicle {
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-size: 0.65rem;
+  color: var(--text-dim, #5a5c70);
+  line-height: 1.3;
+}
+
+.partner-card-status {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  padding: 4px 6px;
+  background: rgba(204,255,0,0.08);
+  border: 1px solid rgba(204,255,0,0.25);
+  color: var(--green, #ccff00);
+  text-transform: uppercase;
+  border-radius: 2px;
+  line-height: 1.2;
+}
+
+.partner-card-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.partner-progress-bar {
+  height: 6px;
+  background: var(--border, rgba(255,255,255,0.07));
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.partner-progress-fill {
+  height: 100%;
+  background: var(--cyan, #00d4ff);
+  transition: width 0.3s;
+}
+
+.partner-readiness {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.48rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim, #5a5c70);
+  text-transform: uppercase;
+}
+
+.partner-card-recent,
+.partner-card-next {
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-size: 0.55rem;
+  color: var(--text, #f0f0f2);
+  line-height: 1.3;
+}
+
+.partner-card-recent strong,
+.partner-card-next strong {
+  color: var(--green, #ccff00);
+  font-weight: 700;
+}
+
+.partner-card-unblocks {
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-size: 0.5rem;
+  color: var(--text-dim, #5a5c70);
+  font-style: italic;
+  margin-top: 4px;
+  line-height: 1.3;
+}
+
+.partner-card-source {
+  margin-top: auto;
+  padding-top: 4px;
+  border-top: 1px solid var(--border, rgba(255,255,255,0.07));
+}
+
+.partner-card-source a {
+  font-family: var(--font-mono, 'Space Mono', monospace);
+  font-size: 0.48rem;
+  color: var(--text, #f0f0f2);
+  text-decoration: none;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+
+.partner-card-source a:hover {
+  color: var(--green, #ccff00);
+}
+
+/* Mobile: stack cards vertically */
+@media (max-width: 768px) {
+  .partners-container {
+    flex-direction: column;
+  }
+
+  .partner-card {
+    flex: none;
+  }
+
+  .partner-progress-bar {
+    width: 100%;
+  }
+}
+
 /* ── Mobile overrides (≤768px) ─────────────────────────────────────── */
 @media (max-width: 768px) {
   body.hub-layout #main-content {
