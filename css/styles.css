@@ -3584,16 +3584,18 @@ body.hub-layout #main-content {
     "footer    footer    footer";
 }
 
-/* Assign hub panels to named grid areas */
-body.hub-layout #ref-nav             { grid-area: nav; }
-body.hub-layout #top-bar             { grid-area: topbar; }
-body.hub-layout #launch-hero         { grid-area: hero; }
-body.hub-layout #milestones-panel    { grid-area: milestones; }
-body.hub-layout #partners-panel      { grid-area: partners; }
-body.hub-layout #crew-panel          { grid-area: crew; }
-body.hub-layout #mission-updates     { grid-area: news; }
-body.hub-layout #starship-ticker-panel { grid-area: starship; }
-body.hub-layout #site-footer         { grid-area: footer; }
+/* Assign hub panels to named grid areas — !important guards against
+legacy unqualified rules at lines 100 and 1538 that set grid-row/grid-column
+directly and interfere with the named area resolution. */
+body.hub-layout #ref-nav             { grid-area: nav       !important; grid-row: nav       !important; grid-column: nav       !important; }
+body.hub-layout #top-bar             { grid-area: topbar    !important; grid-row: topbar    !important; grid-column: topbar    !important; }
+body.hub-layout #launch-hero         { grid-area: hero      !important; grid-row: hero      !important; grid-column: hero      !important; }
+body.hub-layout #milestones-panel    { grid-area: milestones !important; grid-row: milestones !important; grid-column: milestones !important; }
+body.hub-layout #partners-panel      { grid-area: partners  !important; grid-row: partners  !important; grid-column: partners  !important; }
+body.hub-layout #crew-panel          { grid-area: crew      !important; grid-row: crew      !important; grid-column: crew      !important; }
+body.hub-layout #mission-updates     { grid-area: news      !important; grid-row: news      !important; grid-column: news      !important; }
+body.hub-layout #starship-ticker-panel { grid-area: starship !important; grid-row: starship !important; grid-column: starship !important; }
+body.hub-layout #site-footer         { grid-area: footer    !important; grid-row: footer    !important; grid-column: footer    !important; }
 
 /* ── Launch hero ───────────────────────────────────────────────────── */
 #launch-hero {
