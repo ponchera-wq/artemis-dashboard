@@ -3573,15 +3573,15 @@ body.archive-mode #main-content {
 
 /* Desktop grid override — 6 rows: nav | topbar | hero | panels | panels | footer */
 body.hub-layout #main-content {
-  grid-template-rows: auto 72px 220px 1fr auto 38px;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto 72px 200px minmax(440px, 1fr) minmax(280px, auto) 38px !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
   grid-template-areas:
     "nav       nav       nav"
     "topbar    topbar    topbar"
     "hero      hero      hero"
     "milestones partners  crew"
     "news      news      starship"
-    "footer    footer    footer";
+    "footer    footer    footer" !important;
 }
 
 /* Assign hub panels to named grid areas — !important guards against
