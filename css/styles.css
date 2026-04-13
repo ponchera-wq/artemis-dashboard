@@ -3967,6 +3967,144 @@ body.hub-layout #top-bar {
   }
 }
 
+/* ── Milestones panel ── */
+#milestones-panel {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+#milestones-panel::-webkit-scrollbar { width: 4px; }
+#milestones-panel::-webkit-scrollbar-track { background: transparent; }
+#milestones-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.ms-timeline {
+  position: relative;
+  padding: 10px 12px 12px 12px;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+/* Vertical connecting line */
+.ms-timeline::before {
+  content: '';
+  position: absolute;
+  left: 26px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.milestone-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  position: relative;
+}
+
+.milestone-pip {
+  position: relative;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.milestone-pip.pip-complete    { color: var(--green); }
+.milestone-pip.pip-inprogress  { color: var(--amber); }
+.milestone-pip.pip-pending     { color: var(--text-dim); }
+.milestone-pip.pip-launch      { font-size: 1rem; }
+
+@keyframes ms-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+.milestone-pip.pip-inprogress { animation: ms-pulse 2s ease-in-out infinite; }
+
+.milestone-content {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.milestone-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+  flex-wrap: wrap;
+}
+
+.milestone-category {
+  font-family: var(--font-ui);
+  font-size: 0.42rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+.milestone-date {
+  font-family: var(--font-mono);
+  font-size: 0.44rem;
+  color: var(--text-dim);
+  letter-spacing: 0.04em;
+}
+
+.milestone-source {
+  font-size: 0.5rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.milestone-source:hover { opacity: 1; color: var(--blue-light); }
+
+.milestone-title {
+  font-family: var(--font-ui);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+  line-height: 1.3;
+}
+.milestone-row.complete    .milestone-title { color: var(--green); }
+.milestone-row.in-progress .milestone-title { color: var(--amber); }
+.milestone-row.pending     .milestone-title { color: var(--text); }
+
+.milestone-description {
+  font-family: var(--font-body);
+  font-size: 0.48rem;
+  color: var(--text-dim);
+  line-height: 1.45;
+}
+
+.ms-error {
+  font-family: var(--font-mono);
+  font-size: 0.5rem;
+  color: var(--text-dim);
+  padding: 16px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .ms-timeline { padding: 8px; }
+  .ms-timeline::before { left: 22px; }
+  .milestone-pip { width: 14px; height: 14px; font-size: 0.65rem; }
+  .milestone-title { font-size: 0.5rem; }
+  .milestone-description { font-size: 0.44rem; }
+}
+
 /* ── Mobile overrides (≤768px) ─────────────────────────────────────── */
 @media (max-width: 768px) {
   body.hub-layout #main-content {
