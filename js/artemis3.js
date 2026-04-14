@@ -110,6 +110,23 @@ window.MissionEphemeris = window.MissionEphemeris || {
     }).join('');
   }
 
+  // ── STATUS PILLS ─────────────────────────────────────────────────────
+  // Fetch data/program-status.json and populate the three pill spans.
+  function initStatusPills() {
+    fetch('data/program-status.json')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        ['sls', 'orion', 'crew'].forEach(function (key) {
+          var d = data[key];
+          if (!d) return;
+          var labelEl = document.getElementById('pill-' + key + '-label');
+          var pillEl  = document.getElementById('pill-' + key);
+          if (labelEl) labelEl.textContent = d.label;
+          if (pillEl)  { pillEl.textContent = d.status; pillEl.className = 'status-pill ' + d.color; }
+        });
+      });
+  }
+
   // ── INIT ─────────────────────────────────────────────────────────────
   // Hook tickHub to the shared 1 Hz event bus.
   window.addEventListener('dashboard-tick', tickHub);
@@ -117,5 +134,6 @@ window.MissionEphemeris = window.MissionEphemeris || {
   // Render immediately — don't wait for the first tick.
   tickHub();
   renderCrewTBA();
+  initStatusPills();
 
 }());

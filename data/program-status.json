@@ -1,0 +1,20 @@
+{
+  "sls": {
+    "label": "SLS STATUS",
+    "status": "INTEGRATION",
+    "color": "amber",
+    "updated": "2026-04-14"
+  },
+  "orion": {
+    "label": "ORION STATUS",
+    "status": "ASSEMBLY",
+    "color": "amber",
+    "updated": "2026-04-14"
+  },
+  "crew": {
+    "label": "CREW STATUS",
+    "status": "TBA",
+    "color": "dim",
+    "updated": "2026-04-14"
+  }
+}
