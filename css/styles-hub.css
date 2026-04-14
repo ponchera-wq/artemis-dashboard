@@ -2,28 +2,29 @@
 
 /* Desktop grid override — 6 rows: nav | topbar | hero | panels | panels | footer */
 body.hub-layout #main-content {
-  grid-template-rows: auto 72px 200px minmax(440px, 1fr) minmax(280px, auto) 38px;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto 72px 200px minmax(440px, 1fr) minmax(280px, auto) 38px !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
   grid-template-areas:
     "nav       nav       nav"
     "topbar    topbar    topbar"
     "hero      hero      hero"
     "milestones partners  crew"
     "news      news      starship"
-    "footer    footer    footer";
+    "footer    footer    footer" !important;
 }
 
-/* Assign hub panels to named grid areas — body.hub-layout qualifier gives
-(0,2,1) specificity, which beats the bare #element rules in styles-common.css. */
-body.hub-layout #ref-nav             { grid-area: nav;        grid-row: nav;        grid-column: nav;        }
-body.hub-layout #top-bar             { grid-area: topbar;     grid-row: topbar;     grid-column: topbar;     }
-body.hub-layout #launch-hero         { grid-area: hero;       grid-row: hero;       grid-column: hero;       }
-body.hub-layout #milestones-panel    { grid-area: milestones; grid-row: milestones; grid-column: milestones; }
-body.hub-layout #partners-panel      { grid-area: partners;   grid-row: partners;   grid-column: partners;   }
-body.hub-layout #crew-panel          { grid-area: crew;       grid-row: crew;       grid-column: crew;       }
-body.hub-layout #mission-updates     { grid-area: news;       grid-row: news;       grid-column: news;       }
-body.hub-layout #starship-ticker-panel { grid-area: starship; grid-row: starship;   grid-column: starship;   }
-body.hub-layout #site-footer         { grid-area: footer;     grid-row: footer;     grid-column: footer;     }
+/* Assign hub panels to named grid areas — !important guards against
+legacy unqualified rules at lines 100 and 1538 that set grid-row/grid-column
+directly and interfere with the named area resolution. */
+body.hub-layout #ref-nav             { grid-area: nav       !important; grid-row: nav       !important; grid-column: nav       !important; }
+body.hub-layout #top-bar             { grid-area: topbar    !important; grid-row: topbar    !important; grid-column: topbar    !important; }
+body.hub-layout #launch-hero         { grid-area: hero      !important; grid-row: hero      !important; grid-column: hero      !important; }
+body.hub-layout #milestones-panel    { grid-area: milestones !important; grid-row: milestones !important; grid-column: milestones !important; }
+body.hub-layout #partners-panel      { grid-area: partners  !important; grid-row: partners  !important; grid-column: partners  !important; }
+body.hub-layout #crew-panel          { grid-area: crew      !important; grid-row: crew      !important; grid-column: crew      !important; }
+body.hub-layout #mission-updates     { grid-area: news      !important; grid-row: news      !important; grid-column: news      !important; }
+body.hub-layout #starship-ticker-panel { grid-area: starship !important; grid-row: starship !important; grid-column: starship !important; }
+body.hub-layout #site-footer         { grid-area: footer    !important; grid-row: footer    !important; grid-column: footer    !important; }
 
 /* ── Launch hero ───────────────────────────────────────────────────── */
 #launch-hero {
