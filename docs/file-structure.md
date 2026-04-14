@@ -1,19 +1,19 @@
 # File Structure
 
-File tree of the artemis-live-dashboard repo as of v1.0.0 release.
+File tree of the artemis-live-dashboard repo. Excludes `node_modules/`, `.git/`, and image/favicon assets.
 
 ```
-artemis-live-dashboard/
+.
+├── .claude/
+│   └── settings.local.json
 ├── api/
 │   └── ship.js
-├── artemis-ii.html
 ├── artemis-ephemeris-check.json
+├── artemis-ii.html
 ├── automation/
-│   ├── package.json
 │   ├── package-lock.json
-│   ├── record_observer.js
-│   ├── screenshots/
-│   └── videos/
+│   ├── package.json
+│   └── record_observer.js
 ├── CLAUDE.md
 ├── content/
 │   ├── a3-axemu.html
@@ -33,9 +33,12 @@ artemis-live-dashboard/
 │   ├── science.html
 │   └── sls.html
 ├── css/
-│   └── styles.css
+│   ├── styles-a2.css
+│   ├── styles-common.css
+│   └── styles-hub.css
 ├── data/
 │   ├── Artemis_II_OEM_*.asc (OEM source files)
+│   ├── artemis2_oem.asc
 │   ├── artemis3-milestones.json
 │   ├── astronomy.js
 │   ├── flyby-animation-data.json
@@ -53,16 +56,16 @@ artemis-live-dashboard/
 ├── docs/
 │   ├── batch-1b-pre-findings.md
 │   ├── batch-2-report.md
+│   ├── css-split-plan.md
 │   ├── file-structure.md (this file)
 │   └── spec-artemis3-hub.md
 ├── flyby.html
-├── img/
 ├── index.html
 ├── js/
 │   ├── artemis3.js
 │   ├── clock.js
-│   ├── crew-activity.js
 │   ├── crew-activity-ui.js
+│   ├── crew-activity.js
 │   ├── crew.js
 │   ├── dsn.js
 │   ├── flyby-lighting.js
@@ -76,6 +79,7 @@ artemis-live-dashboard/
 │   ├── observer-astro.js
 │   ├── observer-horizons.js
 │   ├── observer-ui.js
+│   ├── orion-model V1.js
 │   ├── orion-model.js
 │   ├── osculating-orbit.js
 │   ├── partners.js
@@ -93,15 +97,40 @@ artemis-live-dashboard/
 ├── manifest.json
 ├── min/ (generated minified assets)
 │   ├── css/
+│   │   └── styles.css
 │   ├── data/
+│   │   └── mission-ephemeris.json
 │   └── js/
+│       ├── apollo-model.js
+│       ├── clock.js
+│       ├── crew-activity-ui.js
+│       ├── crew-activity.js
+│       ├── crew.js
+│       ├── dsn.js
+│       ├── flyby-lighting.js
+│       ├── iss-model.js
+│       ├── mission-ephemeris.js
+│       ├── mission-events.js
+│       ├── news.js
+│       ├── observer-astro.js
+│       ├── observer-ui.js
+│       ├── orion-model V1.js
+│       ├── orion-model.js
+│       ├── osculating-orbit.js
+│       ├── reference.js
+│       ├── shared.js
+│       ├── stats.js
+│       ├── timeline.js
+│       ├── trajectory.js
+│       ├── ui.js
+│       └── weather.js
 ├── models/
 │   └── murtha/
 │       └── model.dae
-├── node_modules/
 ├── observer.html
-├── package.json
 ├── package-lock.json
+├── package.json
+├── posthog-setup-report.md
 ├── robots.txt
 ├── scripts/
 │   ├── minify-assets.mjs
